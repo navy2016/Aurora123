@@ -1,8 +1,6 @@
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:super_clipboard/super_clipboard.dart';
@@ -10,23 +8,19 @@ import 'package:super_clipboard/super_clipboard.dart';
 class ChatImageBubble extends StatefulWidget {
   final String imageUrl;
   final String? altText;
-
   const ChatImageBubble({
     super.key,
     required this.imageUrl,
     this.altText,
   });
-
   @override
   State<ChatImageBubble> createState() => _ChatImageBubbleState();
 }
 
 class _ChatImageBubbleState extends State<ChatImageBubble> {
   Uint8List? _cachedBytes;
-  
   bool get _isBase64 => widget.imageUrl.startsWith('data:');
   bool get _isLocalFile => !widget.imageUrl.startsWith('http') && !_isBase64;
-
   @override
   void initState() {
     super.initState();
@@ -47,7 +41,8 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
         final commaIndex = widget.imageUrl.indexOf(',');
         if (commaIndex != -1) {
           setState(() {
-            _cachedBytes = base64Decode(widget.imageUrl.substring(commaIndex + 1));
+            _cachedBytes =
+                base64Decode(widget.imageUrl.substring(commaIndex + 1));
           });
           return;
         }
@@ -65,15 +60,12 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
     if (bytes == null) {
       return;
     }
-
     try {
       final clipboard = SystemClipboard.instance;
       if (clipboard == null) return;
-
       final item = DataWriterItem();
       item.add(Formats.png(bytes));
       await clipboard.write([item]);
-      
       if (context.mounted) {
         displayInfoBar(context, builder: (context, close) {
           return InfoBar(
@@ -93,7 +85,8 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
         displayInfoBar(context, builder: (context, close) {
           return InfoBar(
             title: const Text('Clipboard Error'),
-            content: const Text('Failed to access clipboard. Please restart the app completely.'),
+            content: const Text(
+                'Failed to access clipboard. Please restart the app completely.'),
             severity: InfoBarSeverity.error,
             action: IconButton(
               icon: const Icon(FluentIcons.clear),
@@ -108,9 +101,9 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
   Future<void> _handleSave(BuildContext context) async {
     final bytes = _cachedBytes;
     if (bytes == null) return;
-
     final FileSaveLocation? result = await getSaveLocation(
-      suggestedName: 'generated_image_${DateTime.now().millisecondsSinceEpoch}.png',
+      suggestedName:
+          'generated_image_${DateTime.now().millisecondsSinceEpoch}.png',
       acceptedTypeGroups: [
         const XTypeGroup(
           label: 'Images',
@@ -118,7 +111,6 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
         ),
       ],
     );
-
     if (result != null) {
       final File file = File(result.path);
       await file.writeAsBytes(bytes);
@@ -131,11 +123,11 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
       builder: (context) {
         return ContentDialog(
           constraints: const BoxConstraints(maxWidth: 800, maxHeight: 600),
-          content: _isBase64 
-              ? (_cachedBytes != null 
+          content: _isBase64
+              ? (_cachedBytes != null
                   ? Image.memory(_cachedBytes!, fit: BoxFit.contain)
                   : const Icon(FluentIcons.error))
-              : (_isLocalFile 
+              : (_isLocalFile
                   ? Image.file(File(widget.imageUrl), fit: BoxFit.contain)
                   : Image.network(widget.imageUrl, fit: BoxFit.contain)),
           actions: [
@@ -161,10 +153,7 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
     if (_isBase64) {
       final bytes = _cachedBytes;
       if (bytes == null) return Icon(FluentIcons.error, color: Colors.red);
-
-      // Controller for the context menu
       final flyoutController = FlyoutController();
-
       return FlyoutTarget(
         controller: flyoutController,
         child: MouseRegion(
@@ -181,16 +170,16 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
                         leading: const Icon(FluentIcons.copy),
                         text: const Text('Copy Image'),
                         onPressed: () {
-                           Flyout.of(context).close();
-                           _handleCopy(context);
+                          Flyout.of(context).close();
+                          _handleCopy(context);
                         },
                       ),
                       MenuFlyoutItem(
                         leading: const Icon(FluentIcons.save),
                         text: const Text('Save Image As...'),
                         onPressed: () {
-                           Flyout.of(context).close();
-                           _handleSave(context);
+                          Flyout.of(context).close();
+                          _handleSave(context);
                         },
                       ),
                     ],
@@ -202,22 +191,22 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                boxShadow: [
-                   BoxShadow(
-                     color: Colors.black.withOpacity(0.1),
-                     blurRadius: 4,
-                     offset: const Offset(0, 2),
-                   )
-                ]
-              ),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.memory(
                   bytes,
                   fit: BoxFit.cover,
-                  errorBuilder: (ctx, err, stack) => const Icon(FluentIcons.error),
+                  errorBuilder: (ctx, err, stack) =>
+                      const Icon(FluentIcons.error),
                 ),
               ),
             ),
@@ -225,14 +214,16 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
         ),
       );
     }
-    
-    // Fallback for URLs or Local Files
     return SizedBox(
       width: 60,
-      height: 60, 
-      child: _isLocalFile 
-        ? Image.file(File(widget.imageUrl), fit: BoxFit.cover, errorBuilder: (ctx, err, stack) => const Icon(FluentIcons.error))
-        : Image.network(widget.imageUrl, fit: BoxFit.cover, errorBuilder: (ctx, err, stack) => const Icon(FluentIcons.error)),
+      height: 60,
+      child: _isLocalFile
+          ? Image.file(File(widget.imageUrl),
+              fit: BoxFit.cover,
+              errorBuilder: (ctx, err, stack) => const Icon(FluentIcons.error))
+          : Image.network(widget.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (ctx, err, stack) => const Icon(FluentIcons.error)),
     );
   }
 }

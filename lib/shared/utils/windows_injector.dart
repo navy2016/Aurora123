@@ -3,20 +3,15 @@ import 'dart:ui';
 class WindowsInjector {
   static WindowsInjector get instance => _instance;
   static final WindowsInjector _instance = WindowsInjector._();
-
   bool _startInjectKeyData = false;
-
   WindowsInjector._();
-
   void injectKeyData() {
-    // Wait a second to inject KeyData callback
     Future.delayed(const Duration(seconds: 1), _injectkeyData);
   }
 
   void _injectkeyData() {
     final KeyDataCallback? callback = PlatformDispatcher.instance.onKeyData;
     if (callback == null) {
-      // Failed to get the built-in callback, skip the injection.
       return;
     }
     PlatformDispatcher.instance.onKeyData = (data) {
@@ -25,7 +20,6 @@ class WindowsInjector {
           data.logical == 0x200000100 &&
           data.type == KeyEventType.down &&
           !data.synthesized) {
-        // Change to Control Left key down event.
         data = KeyData(
           timeStamp: data.timeStamp,
           type: KeyEventType.down,
@@ -46,7 +40,6 @@ class WindowsInjector {
           data.logical == 0x200000100 &&
           data.type == KeyEventType.up &&
           !data.synthesized) {
-        // Change to V key down event.
         data = KeyData(
           timeStamp: data.timeStamp,
           type: KeyEventType.down,
@@ -60,7 +53,6 @@ class WindowsInjector {
           data.logical == 0x200000100 &&
           data.type == KeyEventType.down &&
           data.synthesized) {
-        // Change to V key up event.
         data = KeyData(
           timeStamp: data.timeStamp,
           type: KeyEventType.up,
@@ -74,7 +66,6 @@ class WindowsInjector {
           data.logical == 0x200000100 &&
           data.type == KeyEventType.up &&
           data.synthesized) {
-        // Change to Control Left key up event.
         data = KeyData(
           timeStamp: data.timeStamp,
           type: KeyEventType.up,

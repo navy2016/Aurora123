@@ -6,13 +6,16 @@ import '../../chat/data/session_entity.dart';
 
 class SettingsStorage {
   late Isar _isar;
-
   Isar get isar => _isar;
-
   Future<void> init() async {
     final dir = await getApplicationDocumentsDirectory();
     _isar = await Isar.open(
-      [ProviderConfigEntitySchema, AppSettingsEntitySchema, MessageEntitySchema, SessionEntitySchema],
+      [
+        ProviderConfigEntitySchema,
+        AppSettingsEntitySchema,
+        MessageEntitySchema,
+        SessionEntitySchema
+      ],
       directory: dir.path,
     );
   }
@@ -25,7 +28,10 @@ class SettingsStorage {
 
   Future<void> deleteProvider(String providerId) async {
     await _isar.writeTxn(() async {
-       await _isar.providerConfigEntitys.filter().providerIdEqualTo(providerId).deleteAll();
+      await _isar.providerConfigEntitys
+          .filter()
+          .providerIdEqualTo(providerId)
+          .deleteAll();
     });
   }
 
@@ -34,8 +40,8 @@ class SettingsStorage {
   }
 
   Future<void> saveAppSettings({
-    required String activeProviderId, 
-    String? selectedModel, 
+    required String activeProviderId,
+    String? selectedModel,
     List<String>? availableModels,
     String? userName,
     String? userAvatar,
@@ -43,9 +49,7 @@ class SettingsStorage {
     String? llmAvatar,
     String? themeMode,
   }) async {
-    // Load existing settings to preserve fields not being updated
     final existing = await loadAppSettings();
-    
     final settings = AppSettingsEntity()
       ..activeProviderId = activeProviderId
       ..selectedModel = selectedModel ?? existing?.selectedModel
@@ -55,7 +59,6 @@ class SettingsStorage {
       ..llmName = llmName ?? existing?.llmName ?? 'Assistant'
       ..llmAvatar = llmAvatar ?? existing?.llmAvatar
       ..themeMode = themeMode ?? existing?.themeMode ?? 'system';
-      
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -65,7 +68,7 @@ class SettingsStorage {
   Future<AppSettingsEntity?> loadAppSettings() async {
     return await _isar.appSettingsEntitys.where().findFirst();
   }
-  
+
   Future<void> saveChatDisplaySettings({
     String? userName,
     String? userAvatar,
@@ -74,7 +77,6 @@ class SettingsStorage {
   }) async {
     final existing = await loadAppSettings();
     if (existing == null) return;
-    
     final settings = AppSettingsEntity()
       ..activeProviderId = existing.activeProviderId
       ..selectedModel = existing.selectedModel
@@ -84,7 +86,6 @@ class SettingsStorage {
       ..llmName = llmName ?? existing.llmName
       ..llmAvatar = llmAvatar ?? existing.llmAvatar
       ..themeMode = existing.themeMode;
-      
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);

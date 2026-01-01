@@ -8,7 +8,6 @@ import 'settings_provider.dart';
 
 class MobileSettingsPage extends ConsumerStatefulWidget {
   const MobileSettingsPage({super.key});
-
   @override
   ConsumerState<MobileSettingsPage> createState() => _MobileSettingsPageState();
 }
@@ -17,7 +16,6 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
   final TextEditingController _apiKeyController = TextEditingController();
   final TextEditingController _baseUrlController = TextEditingController();
   final TextEditingController _userNameController = TextEditingController();
-
   @override
   void dispose() {
     _apiKeyController.dispose();
@@ -31,9 +29,8 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
     final settingsState = ref.watch(settingsProvider);
     final activeProvider = settingsState.activeProvider;
     final fluentTheme = fluent.FluentTheme.of(context);
-
     return Scaffold(
-      backgroundColor: fluentTheme.scaffoldBackgroundColor, 
+      backgroundColor: fluentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('设置'),
         backgroundColor: fluentTheme.scaffoldBackgroundColor,
@@ -41,9 +38,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
       ),
       body: ListView(
         children: [
-          // --- Provider Section ---
           _SectionHeader(title: '模型提供', icon: Icons.cloud_outlined),
-          
           ListTile(
             leading: const Icon(Icons.business),
             title: const Text('当前供应商'),
@@ -51,24 +46,22 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showProviderPicker(context, settingsState),
           ),
-          
           ListTile(
             leading: const Icon(Icons.key),
             title: const Text('API Key'),
-            subtitle: Text(activeProvider?.apiKey.isNotEmpty == true ? '••••••••' : '未配置'),
+            subtitle: Text(
+                activeProvider?.apiKey.isNotEmpty == true ? '••••••••' : '未配置'),
             trailing: const Icon(Icons.edit),
             onTap: () => _showApiKeyEditor(context, activeProvider),
           ),
-          
           ListTile(
             leading: const Icon(Icons.link),
             title: const Text('API Base URL'),
-            subtitle: Text(activeProvider?.baseUrl ?? 'https://api.openai.com/v1'),
+            subtitle:
+                Text(activeProvider?.baseUrl ?? 'https://api.openai.com/v1'),
             trailing: const Icon(Icons.edit),
             onTap: () => _showBaseUrlEditor(context, activeProvider),
           ),
-          
-          // --- Model List Section ---
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Row(
@@ -79,53 +72,61 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 OutlinedButton(
-                  onPressed: settingsState.isLoadingModels ? null : () {
-                    ref.read(settingsProvider.notifier).fetchModels();
-                  },
-                  child: settingsState.isLoadingModels 
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  onPressed: settingsState.isLoadingModels
+                      ? null
+                      : () {
+                          ref.read(settingsProvider.notifier).fetchModels();
+                        },
+                  child: settingsState.isLoadingModels
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : const Text('获取模型列表'),
                 ),
               ],
             ),
           ),
-          
           if (activeProvider != null && activeProvider.models.isNotEmpty)
             ...activeProvider.models.map((model) {
               final isSelected = model == settingsState.selectedModel;
               return ListTile(
-                leading: const Icon(Icons.account_tree_outlined), // Branch icon style
+                leading: const Icon(Icons.account_tree_outlined),
                 title: Text(model),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                     if (isSelected) 
-                       Icon(Icons.check, color: Theme.of(context).primaryColor),
-                     const SizedBox(width: 8),
-                     IconButton(
-                       icon: const Icon(Icons.settings_outlined),
-                       onPressed: () => _showModelConfigDialog(context, activeProvider, model),
-                     ),
+                    if (isSelected)
+                      Icon(Icons.check, color: Theme.of(context).primaryColor),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.settings_outlined),
+                      onPressed: () => _showModelConfigDialog(
+                          context, activeProvider, model),
+                    ),
                   ],
                 ),
-                tileColor: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
+                tileColor: isSelected
+                    ? Theme.of(context).primaryColor.withOpacity(0.1)
+                    : null,
                 onTap: () {
                   ref.read(settingsProvider.notifier).updateProvider(
-                    id: activeProvider.id,
-                    selectedModel: model,
-                  );
-                  ref.read(settingsProvider.notifier).selectProvider(activeProvider.id);
+                        id: activeProvider.id,
+                        selectedModel: model,
+                      );
+                  ref
+                      .read(settingsProvider.notifier)
+                      .selectProvider(activeProvider.id);
                 },
               );
             }).toList()
           else if (activeProvider != null)
-             const Padding(
-               padding: EdgeInsets.all(16),
-               child: Text('暂无模型，请点击右上角获取', style: TextStyle(color: Colors.grey)),
-             ),
-
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child:
+                  Text('暂无模型，请点击右上角获取', style: TextStyle(color: Colors.grey)),
+            ),
           const SizedBox(height: 8),
-
           const SizedBox(height: 16),
         ],
       ),
@@ -142,28 +143,34 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
             children: [
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('选择供应商', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text('选择供应商',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const Divider(height: 1),
               ...state.providers.map((p) => ListTile(
-                leading: Icon(
-                  p.id == state.activeProviderId ? Icons.check_circle : Icons.circle_outlined,
-                  color: p.id == state.activeProviderId ? Theme.of(context).primaryColor : null,
-                ),
-                title: Text(p.name),
-                subtitle: Text(p.selectedModel ?? '未选择模型'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _showProviderRenameDialog(context, p);
-                  },
-                ),
-                onTap: () {
-                  ref.read(settingsProvider.notifier).selectProvider(p.id);
-                  Navigator.pop(ctx);
-                },
-              )),
+                    leading: Icon(
+                      p.id == state.activeProviderId
+                          ? Icons.check_circle
+                          : Icons.circle_outlined,
+                      color: p.id == state.activeProviderId
+                          ? Theme.of(context).primaryColor
+                          : null,
+                    ),
+                    title: Text(p.name),
+                    subtitle: Text(p.selectedModel ?? '未选择模型'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _showProviderRenameDialog(context, p);
+                      },
+                    ),
+                    onTap: () {
+                      ref.read(settingsProvider.notifier).selectProvider(p.id);
+                      Navigator.pop(ctx);
+                    },
+                  )),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.add),
@@ -180,36 +187,36 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
     );
   }
 
-  void _showModelConfigDialog(BuildContext context, ProviderConfig provider, String modelName) {
-    // Get existing config/params for this model
+  void _showModelConfigDialog(
+      BuildContext context, ProviderConfig provider, String modelName) {
     final currentSettings = provider.modelSettings[modelName] ?? {};
-    
     showDialog(
       context: context,
       builder: (ctx) => _ModelConfigDialog(
         modelName: modelName,
         initialSettings: currentSettings,
         onSave: (newSettings) {
-          // Update provider's modelSettings map
-          final updatedModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+          final updatedModelSettings =
+              Map<String, Map<String, dynamic>>.from(provider.modelSettings);
           updatedModelSettings[modelName] = newSettings;
-          
           ref.read(settingsProvider.notifier).updateProvider(
-            id: provider.id,
-            modelSettings: updatedModelSettings,
-          );
+                id: provider.id,
+                modelSettings: updatedModelSettings,
+              );
         },
       ),
     );
   }
 
-  void _showProviderRenameDialog(BuildContext context, ProviderConfig provider) {
+  void _showProviderRenameDialog(
+      BuildContext context, ProviderConfig provider) {
     final controller = TextEditingController(text: provider.name);
-    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF202020) : Colors.white,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF202020)
+            : Colors.white,
         surfaceTintColor: Colors.transparent,
         title: const Text('重命名供应商'),
         content: TextField(
@@ -229,9 +236,9 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
             onPressed: () {
               if (controller.text.trim().isNotEmpty) {
                 ref.read(settingsProvider.notifier).updateProvider(
-                  id: provider.id,
-                  name: controller.text.trim(),
-                );
+                      id: provider.id,
+                      name: controller.text.trim(),
+                    );
               }
               Navigator.pop(ctx);
             },
@@ -242,16 +249,15 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
     );
   }
 
-
-
   void _showApiKeyEditor(BuildContext context, ProviderConfig? provider) {
     if (provider == null) return;
     _apiKeyController.text = provider.apiKey;
-    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF202020) : Colors.white,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF202020)
+            : Colors.white,
         surfaceTintColor: Colors.transparent,
         title: const Text('编辑 API Key'),
         content: TextField(
@@ -270,9 +276,9 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
           TextButton(
             onPressed: () {
               ref.read(settingsProvider.notifier).updateProvider(
-                id: provider.id,
-                apiKey: _apiKeyController.text,
-              );
+                    id: provider.id,
+                    apiKey: _apiKeyController.text,
+                  );
               Navigator.pop(ctx);
             },
             child: const Text('保存'),
@@ -285,11 +291,12 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
   void _showBaseUrlEditor(BuildContext context, ProviderConfig? provider) {
     if (provider == null) return;
     _baseUrlController.text = provider.baseUrl;
-    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF202020) : Colors.white,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF202020)
+            : Colors.white,
         surfaceTintColor: Colors.transparent,
         title: const Text('编辑 API Base URL'),
         content: TextField(
@@ -307,9 +314,9 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
           TextButton(
             onPressed: () {
               ref.read(settingsProvider.notifier).updateProvider(
-                id: provider.id,
-                baseUrl: _baseUrlController.text,
-              );
+                    id: provider.id,
+                    baseUrl: _baseUrlController.text,
+                  );
               Navigator.pop(ctx);
             },
             child: const Text('保存'),
@@ -319,13 +326,15 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
     );
   }
 
-  void _showTextEditor(BuildContext context, String title, String currentValue, Function(String) onSave) {
+  void _showTextEditor(BuildContext context, String title, String currentValue,
+      Function(String) onSave) {
     final controller = TextEditingController(text: currentValue);
-    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF202020) : Colors.white,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF202020)
+            : Colors.white,
         surfaceTintColor: Colors.transparent,
         title: Text('编辑$title'),
         content: TextField(
@@ -355,14 +364,19 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
   Future<void> _pickAvatar({required bool isUser}) async {
     final result = await openFile(
       acceptedTypeGroups: [
-        const XTypeGroup(label: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp']),
+        const XTypeGroup(
+            label: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp']),
       ],
     );
     if (result != null) {
       if (isUser) {
-        ref.read(settingsProvider.notifier).setChatDisplaySettings(userAvatar: result.path);
+        ref
+            .read(settingsProvider.notifier)
+            .setChatDisplaySettings(userAvatar: result.path);
       } else {
-        ref.read(settingsProvider.notifier).setChatDisplaySettings(llmAvatar: result.path);
+        ref
+            .read(settingsProvider.notifier)
+            .setChatDisplaySettings(llmAvatar: result.path);
       }
     }
   }
@@ -371,9 +385,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
-
   const _SectionHeader({required this.title, required this.icon});
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -400,21 +412,18 @@ class _ModelConfigDialog extends StatefulWidget {
   final String modelName;
   final Map<String, dynamic> initialSettings;
   final Function(Map<String, dynamic>) onSave;
-
   const _ModelConfigDialog({
     super.key,
     required this.modelName,
     required this.initialSettings,
     required this.onSave,
   });
-
   @override
   State<_ModelConfigDialog> createState() => _ModelConfigDialogState();
 }
 
 class _ModelConfigDialogState extends State<_ModelConfigDialog> {
   late Map<String, dynamic> _settings;
-
   @override
   void initState() {
     super.initState();
@@ -458,7 +467,9 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.modelName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(widget.modelName,
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const Text('配置', style: TextStyle(fontSize: 14, color: Colors.grey)),
         ],
       ),
@@ -471,7 +482,9 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
             if (_settings.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(child: Text('暂无自定义参数', style: TextStyle(color: Colors.grey))),
+                child: Center(
+                    child:
+                        Text('暂无自定义参数', style: TextStyle(color: Colors.grey))),
               )
             else
               Flexible(
@@ -483,8 +496,10 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
                     final value = _settings[key];
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(key, style: const TextStyle(fontWeight: FontWeight.w500)),
-                      subtitle: Text('$value', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      title: Text(key,
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text('$value',
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
                       onTap: () => _showEditDialog(key, value),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline, size: 20),
@@ -518,14 +533,12 @@ class _ParameterConfigDialog extends StatefulWidget {
   final String? initialKey;
   final dynamic initialValue;
   final Function(String key, dynamic value) onSave;
-
   const _ParameterConfigDialog({
     super.key,
     this.initialKey,
     this.initialValue,
     required this.onSave,
   });
-
   @override
   State<_ParameterConfigDialog> createState() => _ParameterConfigDialogState();
 }
@@ -536,7 +549,6 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
   String _type = '文本';
   final List<String> _types = ['文本', '数字', '布尔值', 'JSON'];
   bool _isInit = true;
-
   @override
   void initState() {
     super.initState();
@@ -552,7 +564,8 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
       } else if (val is Map || val is List) {
         _type = 'JSON';
         try {
-          _valueController.text = const JsonEncoder.withIndent('  ').convert(val);
+          _valueController.text =
+              const JsonEncoder.withIndent('  ').convert(val);
         } catch (_) {
           _valueController.text = jsonEncode(val);
         }
@@ -574,7 +587,6 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEditing = widget.initialKey != null;
-
     return AlertDialog(
       backgroundColor: isDark ? const Color(0xFF202020) : Colors.white,
       surfaceTintColor: Colors.transparent,
@@ -598,13 +610,15 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
               labelText: '类型',
               border: OutlineInputBorder(),
             ),
-            items: _types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+            items: _types
+                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                .toList(),
             onChanged: (v) => setState(() => _type = v!),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _valueController,
-            maxLines: _type == 'JSON' ? 5 : 1, // Larger area for JSON
+            maxLines: _type == 'JSON' ? 5 : 1,
             minLines: _type == 'JSON' ? 3 : 1,
             decoration: const InputDecoration(
               labelText: '值 (Value)',
@@ -624,7 +638,6 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
             final key = _keyController.text.trim();
             final valueStr = _valueController.text.trim();
             if (key.isEmpty) return;
-
             dynamic value;
             try {
               switch (_type) {
@@ -637,7 +650,7 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
                 case 'JSON':
                   value = jsonDecode(valueStr);
                   break;
-                default: // 文本
+                default:
                   value = valueStr;
               }
               widget.onSave(key, value);

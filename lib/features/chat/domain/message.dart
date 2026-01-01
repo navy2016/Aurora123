@@ -1,16 +1,13 @@
 class Message {
   final String id;
   final String content;
-  final String? reasoningContent; // Chain of Thought
+  final String? reasoningContent;
   final bool isUser;
   final DateTime timestamp;
-
-  final List<String> attachments; // List of local file paths
-  final List<String> images; // List of generated image data (Base64)
-
+  final List<String> attachments;
+  final List<String> images;
   final String? model;
   final String? provider;
-
   const Message({
     required this.id,
     required this.content,
@@ -22,7 +19,6 @@ class Message {
     this.model,
     this.provider,
   });
-
   factory Message.user(String content, {List<String> attachments = const []}) {
     return Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -32,8 +28,11 @@ class Message {
       attachments: attachments,
     );
   }
-
-  factory Message.ai(String content, {String? reasoningContent, List<String> images = const [], String? model, String? provider}) {
+  factory Message.ai(String content,
+      {String? reasoningContent,
+      List<String> images = const [],
+      String? model,
+      String? provider}) {
     return Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       content: content,

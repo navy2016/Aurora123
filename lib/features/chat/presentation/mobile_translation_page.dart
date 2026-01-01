@@ -5,26 +5,41 @@ import '../domain/message.dart';
 import 'chat_provider.dart';
 import '../../settings/presentation/settings_provider.dart';
 
-/// Mobile Translation Page with top/bottom split view and bilingual comparison
 class MobileTranslationPage extends ConsumerStatefulWidget {
   const MobileTranslationPage({super.key});
-
   @override
-  ConsumerState<MobileTranslationPage> createState() => _MobileTranslationPageState();
+  ConsumerState<MobileTranslationPage> createState() =>
+      _MobileTranslationPageState();
 }
 
 class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
   final TextEditingController _sourceController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  
   String _sourceLang = '自动检测';
   String _targetLang = '简体中文';
   bool _showComparison = true;
   bool _hasRestored = false;
-  
-  final List<String> _sourceLanguages = ['自动检测', '英语', '日语', '韩语', '简体中文', '繁体中文', '俄语', '法语', '德语'];
-  final List<String> _targetLanguages = ['简体中文', '英语', '日语', '韩语', '繁体中文', '俄语', '法语', '德语'];
-
+  final List<String> _sourceLanguages = [
+    '自动检测',
+    '英语',
+    '日语',
+    '韩语',
+    '简体中文',
+    '繁体中文',
+    '俄语',
+    '法语',
+    '德语'
+  ];
+  final List<String> _targetLanguages = [
+    '简体中文',
+    '英语',
+    '日语',
+    '韩语',
+    '繁体中文',
+    '俄语',
+    '法语',
+    '德语'
+  ];
   @override
   void initState() {
     super.initState();
@@ -35,10 +50,9 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
     if (_hasRestored) return;
     final chatState = ref.read(translationProvider);
     if (chatState.messages.isNotEmpty) {
-      final lastUserMsg = chatState.messages.lastWhere(
-        (m) => m.isUser, 
-        orElse: () => Message(content: '', isUser: true, id: '', timestamp: DateTime.now())
-      );
+      final lastUserMsg = chatState.messages.lastWhere((m) => m.isUser,
+          orElse: () => Message(
+              content: '', isUser: true, id: '', timestamp: DateTime.now()));
       if (lastUserMsg.content.isNotEmpty) {
         _sourceController.text = lastUserMsg.content;
         _hasRestored = true;
@@ -55,11 +69,11 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
 
   void _translate() {
     if (_sourceController.text.trim().isEmpty) return;
-    
     final notifier = ref.read(translationProvider.notifier);
     notifier.clearContext().then((_) {
       final sb = StringBuffer();
-      sb.writeln('你是一位精通多国语言的专业翻译专家。请将以下${_sourceLang == '自动检测' ? '' : _sourceLang}文本翻译成$_targetLang。');
+      sb.writeln(
+          '你是一位精通多国语言的专业翻译专家。请将以下${_sourceLang == '自动检测' ? '' : _sourceLang}文本翻译成$_targetLang。');
       sb.writeln('要求：');
       sb.writeln('1. 翻译准确、地道，符合目标语言的表达习惯。');
       sb.writeln('2. 严格保留原文的换行格式和段落结构，不要合并段落。');
@@ -67,7 +81,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
       sb.writeln('');
       sb.writeln('原文内容：');
       sb.writeln(_sourceController.text);
-      
       notifier.sendMessage(_sourceController.text, apiContent: sb.toString());
     });
   }
@@ -81,7 +94,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
       );
       return;
     }
-
     showModalBottomSheet(
       context: context,
       builder: (ctx) {
@@ -91,11 +103,13 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('选择模型', style: Theme.of(context).textTheme.titleMedium),
+                child: Text('选择模型',
+                    style: Theme.of(context).textTheme.titleMedium),
               ),
               const Divider(height: 1),
               ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.5),
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: provider.models.length,
@@ -105,15 +119,18 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                     return ListTile(
                       leading: Icon(
                         isSelected ? Icons.check_circle : Icons.circle_outlined,
-                        color: isSelected ? Theme.of(context).primaryColor : null,
+                        color:
+                            isSelected ? Theme.of(context).primaryColor : null,
                       ),
                       title: Text(model),
                       onTap: () {
                         ref.read(settingsProvider.notifier).updateProvider(
-                          id: provider.id,
-                          selectedModel: model,
-                        );
-                        ref.read(settingsProvider.notifier).selectProvider(provider.id);
+                              id: provider.id,
+                              selectedModel: model,
+                            );
+                        ref
+                            .read(settingsProvider.notifier)
+                            .selectProvider(provider.id);
                         Navigator.pop(ctx);
                       },
                     );
@@ -131,26 +148,23 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
   Widget build(BuildContext context) {
     ref.listen<ChatState>(translationProvider, (prev, next) {
       if (!_hasRestored && next.messages.isNotEmpty) {
-        final lastUserMsg = next.messages.lastWhere(
-          (m) => m.isUser, 
-          orElse: () => Message(content: '', isUser: true, id: '', timestamp: DateTime.now())
-        );
+        final lastUserMsg = next.messages.lastWhere((m) => m.isUser,
+            orElse: () => Message(
+                content: '', isUser: true, id: '', timestamp: DateTime.now()));
         if (lastUserMsg.content.isNotEmpty) {
           _sourceController.text = lastUserMsg.content;
           _hasRestored = true;
         }
       }
     });
-
     final chatState = ref.watch(translationProvider);
     final settingsState = ref.watch(settingsProvider);
     final theme = Theme.of(context);
     final fluentTheme = fluent.FluentTheme.of(context);
-    
-    final aiMessage = chatState.messages.isNotEmpty && !chatState.messages.last.isUser 
-        ? chatState.messages.last 
-        : null;
-
+    final aiMessage =
+        chatState.messages.isNotEmpty && !chatState.messages.last.isUser
+            ? chatState.messages.last
+            : null;
     return Scaffold(
       backgroundColor: fluentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -178,13 +192,12 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
           ),
         ),
         actions: [
-          // Bilingual toggle
           IconButton(
-            icon: Icon(_showComparison ? Icons.view_agenda : Icons.view_headline),
+            icon:
+                Icon(_showComparison ? Icons.view_agenda : Icons.view_headline),
             tooltip: _showComparison ? '关闭对照' : '双语对照',
             onPressed: () => setState(() => _showComparison = !_showComparison),
           ),
-          // Clear
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: '清空',
@@ -197,7 +210,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
       ),
       body: Column(
         children: [
-          // Language selector bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -206,7 +218,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
             ),
             child: Row(
               children: [
-                // Source language
                 Expanded(
                   child: _LanguageDropdown(
                     value: _sourceLang,
@@ -214,7 +225,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                     onChanged: (v) => setState(() => _sourceLang = v!),
                   ),
                 ),
-                // Swap button
                 IconButton(
                   icon: const Icon(Icons.swap_horiz, size: 22),
                   onPressed: () {
@@ -227,7 +237,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                     }
                   },
                 ),
-                // Target language
                 Expanded(
                   child: _LanguageDropdown(
                     value: _targetLang,
@@ -238,8 +247,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
               ],
             ),
           ),
-          
-          // Top panel: Source input
           Expanded(
             flex: 1,
             child: Container(
@@ -250,11 +257,14 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('原文', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                      Text('原文',
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 13)),
                       if (_sourceController.text.isNotEmpty)
                         GestureDetector(
                           onTap: () => _sourceController.clear(),
-                          child: Icon(Icons.close, size: 18, color: Colors.grey[600]),
+                          child: Icon(Icons.close,
+                              size: 18, color: Colors.grey[600]),
                         ),
                     ],
                   ),
@@ -278,8 +288,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
               ),
             ),
           ),
-          
-          // Translate button bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -295,8 +303,11 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                   width: 160,
                   child: ElevatedButton.icon(
                     onPressed: chatState.isLoading ? null : _translate,
-                    icon: chatState.isLoading 
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    icon: chatState.isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.translate, size: 18),
                     label: Text(chatState.isLoading ? '翻译中...' : '翻译'),
                     style: ElevatedButton.styleFrom(
@@ -307,8 +318,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
               ],
             ),
           ),
-          
-          // Bottom panel: Translation result
           Expanded(
             flex: 1,
             child: Container(
@@ -320,13 +329,14 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(_showComparison ? '双语对照' : '译文', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                      Text(_showComparison ? '双语对照' : '译文',
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 13)),
                       if (aiMessage != null)
                         GestureDetector(
-                          onTap: () {
-                            // TODO: Copy to clipboard
-                          },
-                          child: Icon(Icons.copy, size: 18, color: Colors.grey[600]),
+                          onTap: () {},
+                          child: Icon(Icons.copy,
+                              size: 18, color: Colors.grey[600]),
                         ),
                     ],
                   ),
@@ -352,46 +362,49 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
         ),
       );
     }
-
-    final sourceLines = _sourceController.text.split('\n').where((s) => s.trim().isNotEmpty).toList();
-    final targetLines = aiMessage.content.split('\n').where((s) => s.trim().isNotEmpty).toList();
-    final itemCount = _showComparison 
-        ? (sourceLines.length > targetLines.length ? sourceLines.length : targetLines.length)
+    final sourceLines = _sourceController.text
+        .split('\n')
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
+    final targetLines = aiMessage.content
+        .split('\n')
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
+    final itemCount = _showComparison
+        ? (sourceLines.length > targetLines.length
+            ? sourceLines.length
+            : targetLines.length)
         : targetLines.length;
-
     if (itemCount == 0 && aiMessage.content.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-
     return ListView.separated(
       itemCount: itemCount,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final tgt = index < targetLines.length ? targetLines[index] : '';
-        
         if (!_showComparison) {
           return SelectableText(
             tgt,
             style: const TextStyle(fontSize: 16, height: 1.5),
           );
         }
-        
         final src = index < sourceLines.length ? sourceLines[index] : '';
-        
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (src.isNotEmpty)
               SelectableText(
                 src,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
+                style: TextStyle(
+                    color: Colors.grey[600], fontSize: 14, height: 1.4),
               ),
-            if (src.isNotEmpty && tgt.isNotEmpty)
-              const SizedBox(height: 4),
+            if (src.isNotEmpty && tgt.isNotEmpty) const SizedBox(height: 4),
             if (tgt.isNotEmpty)
               SelectableText(
                 tgt,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, height: 1.5),
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w500, height: 1.5),
               ),
           ],
         );
@@ -404,13 +417,11 @@ class _LanguageDropdown extends StatelessWidget {
   final String value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
-
   const _LanguageDropdown({
     required this.value,
     required this.items,
     required this.onChanged,
   });
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -424,7 +435,10 @@ class _LanguageDropdown extends StatelessWidget {
         isExpanded: true,
         underline: const SizedBox.shrink(),
         icon: const Icon(Icons.arrow_drop_down, size: 20),
-        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),
+        items: items
+            .map((e) => DropdownMenuItem(
+                value: e, child: Text(e, style: const TextStyle(fontSize: 14))))
+            .toList(),
         onChanged: onChanged,
       ),
     );
