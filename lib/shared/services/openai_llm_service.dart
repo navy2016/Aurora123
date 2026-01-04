@@ -307,12 +307,18 @@ Search results include an `index` and `link`. You MUST cite your sources using M
         };
       }
       final hasAttachments = m.attachments.isNotEmpty;
-      if (!hasAttachments) {
+      final hasImages = m.images.isNotEmpty;
+      
+      // If no attachments and no model-generated images, return simple message
+      if (!hasAttachments && !hasImages) {
         return {
           'role': m.isUser ? 'user' : 'assistant',
           'content': m.content,
         };
-      } else {
+      }
+      
+      // Build multipart content with text, attachments, and/or model-generated images
+      {
         final List<Map<String, dynamic>> contentList = [];
         if (m.content.isNotEmpty) {
           contentList.add({
@@ -340,6 +346,15 @@ Search results include an `index` and `link`. You MUST cite your sources using M
               'text': '[Failed to load image: $path]',
             });
           }
+        }
+        // Include model-generated images (already base64 data URLs or http URLs)
+        for (final imageUrl in m.images) {
+          contentList.add({
+            'type': 'image_url',
+            'image_url': {
+              'url': imageUrl,
+            },
+          });
         }
         return {
           'role': m.isUser ? 'user' : 'assistant',
