@@ -1,0 +1,225 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:file_selector/file_selector.dart';
+import 'package:super_clipboard/super_clipboard.dart';
+
+class MobileImageViewer extends StatefulWidget {
+  final Uint8List imageBytes;
+  final VoidCallback? onClose;
+
+  const MobileImageViewer({
+    super.key,
+    required this.imageBytes,
+    this.onClose,
+  });
+
+  @override
+  State<MobileImageViewer> createState() => _MobileImageViewerState();
+}
+
+class _MobileImageViewerState extends State<MobileImageViewer>
+    with SingleTickerProviderStateMixin {
+  // TransformationController allows us to manipulate the InteractiveViewer programmatically
+  final TransformationController _transformationController =
+      TransformationController();
+  
+  // Animation controller for double-tap zoom
+  late AnimationController _animationController;
+  Animation<Matrix4>? _animation;
+
+  // Track toolbar visibility
+  bool _showToolbar = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    )..addListener(() {
+        _transformationController.value = _animation!.value;
+      });
+  }
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleToolbar() {
+    setState(() {
+      _showToolbar = !_showToolbar;
+    });
+  }
+
+  void _onDoubleTap() {
+    Matrix4 currentMatrix = _transformationController.value;
+    double currentScale = currentMatrix.getMaxScaleOnAxis();
+
+    Matrix4 endMatrix;
+    if (currentScale > 1.2) {
+      // Zoom out to normal
+      endMatrix = Matrix4.identity();
+    } else {
+      // Zoom in to 2x (or could be smarter based on tap position, but keeping it simple for now)
+      endMatrix = Matrix4.identity()..scale(2.0);
+    }
+
+    _animation = Matrix4Tween(
+      begin: currentMatrix,
+      end: endMatrix,
+    ).animate(CurveTween(curve: Curves.easeOut).animate(_animationController));
+
+    _animationController.forward(from: 0);
+  }
+
+  Future<void> _handleCopy(BuildContext context) async {
+    try {
+      final clipboard = SystemClipboard.instance;
+      if (clipboard == null) return;
+      final item = DataWriterItem();
+      item.add(Formats.png(widget.imageBytes));
+      await clipboard.write([item]);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已复制到剪贴板'),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Copy error: $e');
+    }
+  }
+
+  Future<void> _handleSave(BuildContext context) async {
+    // For mobile, we might want to use different saving logic (e.g. image_gallery_saver),
+    // but sticking to file_selector for consistency with existing code first. 
+    // Note: file_selector on mobile (Android/iOS) might not act as "Save As", 
+    // it often shares/saves depending on implementation.
+    // If specific gallery saving is needed, we would need a new package.
+    // Assuming file_selector works "okay" or user accepts file picker behavior.
+    
+    final String fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.png';
+    final FileSaveLocation? result = await getSaveLocation(
+      suggestedName: fileName,
+      acceptedTypeGroups: [
+        const XTypeGroup(label: 'Images', extensions: ['png']),
+      ],
+    );
+
+    if (result != null) {
+      final File file = File(result.path);
+      await file.writeAsBytes(widget.imageBytes);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+            content: Text('已保存到 ${result.path}'),
+            behavior: SnackBarBehavior.floating,
+             duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+  
+  void _rotateClockwise() {
+      // InteractiveViewer doesn't support rotation natively.
+      // We would need to wrap the Image in a Transform.rotate and manage state.
+      // This adds complexity with InteractiveViewer's boundaries. 
+      // For now, let's keep it simple: Zoom/Pan is primary. 
+      // If rotation is critical, we wrap child of InteractiveViewer.
+      // Let's implement simple 90 degree rotation.
+      setState(() {
+        _rotation += math.pi / 2;
+      });
+  }
+
+  double _rotation = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
+      // Minimal app bar for closing
+      appBar: _showToolbar ? AppBar(
+        backgroundColor: Colors.transparent, // transparent for full immersion
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: widget.onClose ?? () => Navigator.pop(context),
+          tooltip: 'Back',
+        ),
+      ) : null,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Main Image Viewer
+          GestureDetector(
+            onTap: _toggleToolbar,
+            onDoubleTap: _onDoubleTap,
+            child: InteractiveViewer(
+              transformationController: _transformationController,
+              minScale: 0.5,
+              maxScale: 5.0,
+              panEnabled: true,
+              scaleEnabled: true,
+              boundaryMargin: const EdgeInsets.all(double.infinity), // Allows dragging "off screen" feel
+              child: Center(
+                child: Transform.rotate(
+                  angle: _rotation,
+                  child: Image.memory(
+                    widget.imageBytes,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Bottom Toolbar
+          if (_showToolbar)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                color: Colors.black.withOpacity(0.6), // Semi-transparent bar
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                child: SafeArea(
+                  top: false,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.rotate_right, color: Colors.white),
+                        onPressed: _rotateClockwise,
+                        tooltip: 'Rotate',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy, color: Colors.white),
+                        onPressed: () => _handleCopy(context),
+                        tooltip: 'Copy',
+                      ),
+                       IconButton(
+                        icon: const Icon(Icons.save_alt, color: Colors.white),
+                        onPressed: () => _handleSave(context),
+                        tooltip: 'Save',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

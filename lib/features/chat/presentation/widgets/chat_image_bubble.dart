@@ -7,6 +7,7 @@ import 'package:flutter/material.dart' as material show CircularProgressIndicato
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:flutter/foundation.dart';
 import 'windows_image_viewer.dart';
+import 'mobile_image_viewer.dart';
 
 // Top-level function for compute
 Uint8List? _decodeBase64Isolate(String imageUrl) {
@@ -178,32 +179,19 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
         ),
       );
     } else {
-      // Mobile: Simple zoomable viewer
+      // Mobile: Full-featured mobile viewer
       Navigator.of(context).push(
         PageRouteBuilder(
-          opaque: true,
+          opaque: true, // Opaque for full immersion
           pageBuilder: (context, animation, secondaryAnimation) {
-            return material.Scaffold(
-              backgroundColor: Colors.black,
-              appBar: material.AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                leading: material.IconButton(
-                  icon: const Icon(material.Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-              extendBodyBehindAppBar: true,
-              body: Center(
-                child: material.InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 4.0,
-                  child: Image.memory(bytes, fit: BoxFit.contain),
-                ),
-              ),
+            return MobileImageViewer(
+              imageBytes: bytes,
+              onClose: () => Navigator.pop(context),
             );
           },
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            // Slide transition works well for mobile full screen
+            // or we can stick to Fade. Let's stick to Fade for consistency with PC or use Zoom.
             return FadeTransition(opacity: animation, child: child);
           },
         ),
