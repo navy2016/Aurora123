@@ -28,9 +28,11 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   String _currentViewKey = 'new_chat'; // Default to initial session
   String _lastSessionId = 'new_chat';
 
+  DateTime? _lastPopTime;
+
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
     // Initialize session ID from provider on load if valid
     final selected = ref.read(selectedHistorySessionIdProvider);
     if (selected != null) {
@@ -39,7 +41,20 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     }
   }
 
-  void _navigateTo(String key) {
+  Future<void> _navigateTo(String key) async {
+    // If we are navigating away from a session to a special page (Settings, etc)
+    // OR we are navigating to a different session, we should check cleanup
+    
+    // Note: If navigating to a different session via Drawer, the Drawer callback might have already handled it.
+    // But _navigateTo is also used for User/Settings/Translation pages.
+    
+    if (_isSpecialKey(key)) {
+       final currentId = ref.read(selectedHistorySessionIdProvider);
+       if (currentId != null) {
+         await ref.read(sessionsProvider.notifier).cleanupSessionIfEmpty(currentId);
+       }
+    }
+
     setState(() {
       _currentViewKey = key;
       // If it's a session key, update the last session reference
@@ -51,7 +66,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     });
     // Close drawer if open
     if (_scaffoldKey.currentState?.isDrawerOpen == true) {
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
     }
   }
   
@@ -101,58 +116,88 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return Stack(
-      children: [
-        if (!isDark)
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFE0F7FA), Color(0xFFF1F8E9)],
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Stack(
+        children: [
+          if (!isDark)
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFE0F7FA), Color(0xFFF1F8E9)],
+                  ),
                 ),
               ),
             ),
-          ),
-          
-        Scaffold(
-          key: _scaffoldKey,
-          backgroundColor: Colors.transparent, // Let gradient show through
-          drawer: MobileNavigationDrawer(
-            sessionsState: sessionsState,
-            selectedSessionId: selectedSessionId,
-            onNewChat: () {
-               ref.read(sessionsProvider.notifier).startNewSession();
-            },
-            onNavigate: _navigateTo,
-            onThemeCycle: _cycleTheme,
-            onAbout: _showAboutDialog,
-          ),
-          body:  fluent.NavigationPaneTheme(
-              data: fluent.NavigationPaneThemeData(
-                 backgroundColor: isDark ? fluent.FluentTheme.of(context).scaffoldBackgroundColor : Colors.transparent,
-              ),
-              child: CachedPageStack(
-              selectedKey: _currentViewKey,
-              cacheSize: 10,
-              itemBuilder: (context, key) {
-                if (key == keySettings) {
-                  return MobileSettingsPage(onBack: _navigateBackToSession);
-                } else if (key == keyTranslation) {
-                  return MobileTranslationPage(onBack: _navigateBackToSession);
-                } else if (key == keyUser) {
-                  return MobileUserPage(onBack: _navigateBackToSession);
-                } else {
-                  // It's a Session ID
-                  return _buildSessionPage(context, key, sessionTitle, settingsState, sessionsState, selectedSessionId, isDark);
-                }
+            
+          Scaffold(
+            key: _scaffoldKey,
+            backgroundColor: Colors.transparent, // Let gradient show through
+            drawer: MobileNavigationDrawer(
+              sessionsState: sessionsState,
+              selectedSessionId: selectedSessionId,
+              onNewChat: () {
+                 ref.read(sessionsProvider.notifier).startNewSession();
               },
+              onNavigate: _navigateTo,
+              onThemeCycle: _cycleTheme,
+              onAbout: _showAboutDialog,
+            ),
+            body:  fluent.NavigationPaneTheme(
+                data: fluent.NavigationPaneThemeData(
+                   backgroundColor: isDark ? fluent.FluentTheme.of(context).scaffoldBackgroundColor : Colors.transparent,
+                ),
+                child: CachedPageStack(
+                selectedKey: _currentViewKey,
+                cacheSize: 10,
+                itemBuilder: (context, key) {
+                  if (key == keySettings) {
+                    return MobileSettingsPage(onBack: _navigateBackToSession);
+                  } else if (key == keyTranslation) {
+                    return MobileTranslationPage(onBack: _navigateBackToSession);
+                  } else if (key == keyUser) {
+                    return MobileUserPage(onBack: _navigateBackToSession);
+                  } else {
+                    // It's a Session ID
+                    return _buildSessionPage(context, key, sessionTitle, settingsState, sessionsState, selectedSessionId, isDark);
+                  }
+                },
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  Future<bool> _onWillPop() async {
+    // If drawer is open, let Scaffold handle it (it usually closes drawer on back)
+    if (_scaffoldKey.currentState?.isDrawerOpen == true) {
+      return true;
+    }
+
+    if (_isSpecialKey(_currentViewKey)) {
+      _navigateBackToSession();
+      return false; // Prevent exit, just navigate back
+    }
+
+    // In Chat Session
+    final now = DateTime.now();
+    if (_lastPopTime == null || 
+        now.difference(_lastPopTime!) > const Duration(seconds: 2)) {
+      _lastPopTime = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('再按一次退出应用'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return false;
+    }
+    return true; // Exit app
   }
 
   Widget _buildSessionPage(BuildContext context, String sessionId, String sessionTitle, SettingsState settingsState, SessionsState sessionsState, String? selectedSessionId, bool isDark) {
@@ -173,47 +218,52 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
           },
         ),
         titleSpacing: 0,
-        title: GestureDetector(
-          onTap: () async {
-            FocusManager.instance.primaryFocus?.unfocus();
-            await Future.delayed(const Duration(milliseconds: 50));
-            _openModelSwitcher();
-          },
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                     Text(
-                      sessionTitle,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Row(
+        title: Consumer(
+          builder: (context, ref, _) {
+            final currentSettings = ref.watch(settingsProvider);
+            return GestureDetector(
+              onTap: () async {
+                FocusManager.instance.primaryFocus?.unfocus();
+                await Future.delayed(const Duration(milliseconds: 50));
+                _openModelSwitcher();
+              },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Flexible(
-                          child: Text(
-                            settingsState.selectedModel ?? '未选择模型',
-                            style: TextStyle(
-                                fontSize: 13, color: Colors.grey[600]),
-                            overflow: TextOverflow.ellipsis,
+                         Text(
+                          sessionTitle,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        Icon(Icons.arrow_drop_down,
-                            size: 18, color: Colors.grey[600]),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                currentSettings.selectedModel ?? '未选择模型',
+                                style: TextStyle(
+                                    fontSize: 13, color: Colors.grey[600]),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Icon(Icons.arrow_drop_down,
+                                size: 18, color: Colors.grey[600]),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
         actions: [
           IconButton(
@@ -276,13 +326,10 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                       ),
                       title: Text(model),
                       onTap: () {
-                        ref.read(settingsProvider.notifier).updateProvider(
-                              id: provider.id,
-                              selectedModel: model,
-                            );
+                        print('DEBUG: MobileChatScreen - Selected model: $model');
                         ref
                             .read(settingsProvider.notifier)
-                            .selectProvider(provider.id);
+                            .setSelectedModel(model);
                         Navigator.pop(ctx);
                       },
                     );

@@ -54,6 +54,10 @@ dependencies:
   ddgs: 0.3.1
   clipboard: ^3.0.9
   image_picker: ^1.2.1
+  permission_handler: ^11.3.1
+  image_cropper: ^11.0.0
+  crop_image: ^1.0.17
+
 
 dev_dependencies:
   flutter_test:

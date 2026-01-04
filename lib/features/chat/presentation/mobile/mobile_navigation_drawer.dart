@@ -101,7 +101,11 @@ class MobileNavigationDrawer extends ConsumerWidget {
                 child: SessionListWidget(
                   sessionsState: sessionsState,
                   selectedSessionId: selectedSessionId,
-                  onSessionSelected: (sessionId) {
+                  onSessionSelected: (sessionId) async {
+                    final currentId = ref.read(selectedHistorySessionIdProvider);
+                    if (currentId != null && currentId != sessionId) {
+                      await ref.read(sessionsProvider.notifier).cleanupSessionIfEmpty(currentId);
+                    }
                     ref.read(selectedHistorySessionIdProvider.notifier).state = sessionId;
                     Navigator.pop(context);
                   },

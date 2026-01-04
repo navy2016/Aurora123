@@ -225,13 +225,16 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   Future<void> setSelectedModel(String model) async {
+    print('DEBUG: SettingsNotifier - setSelectedModel called with: $model');
     await updateProvider(id: state.activeProviderId, selectedModel: model);
+    print('DEBUG: SettingsNotifier - updateProvider completed');
     final provider = state.activeProvider;
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       selectedModel: model,
       availableModels: provider.models,
     );
+     print('DEBUG: SettingsNotifier - saveAppSettings completed');
   }
 
   Future<void> addProvider() async {

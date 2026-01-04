@@ -5,12 +5,15 @@ import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_selector/file_selector.dart';
 import 'settings_provider.dart';
+import '../../../shared/utils/avatar_cropper.dart';
 
 class SettingsContent extends ConsumerStatefulWidget {
   const SettingsContent({super.key});
   @override
   ConsumerState<SettingsContent> createState() => _SettingsContentState();
 }
+
+
 
 class _SettingsContentState extends ConsumerState<SettingsContent> {
   final TextEditingController _apiKeyController = TextEditingController();
@@ -362,29 +365,18 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: fluent.HoverButton(
-                              onPressed: () async {
-                                await ref
-                                    .read(settingsProvider.notifier)
-                                    .updateProvider(
-                                        id: viewingProvider.id,
-                                        selectedModel: model);
-                                await ref
-                                    .read(settingsProvider.notifier)
-                                    .selectProvider(viewingProvider.id);
-                              },
+                              onPressed: () {}, // No action on press
                               builder: (context, states) {
                                 return Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 12),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(4),
-                                    color: isSelected
-                                        ? theme.accentColor.withOpacity(0.1)
-                                        : states.isHovering
-                                            ? theme.typography.body?.color
-                                                    ?.withOpacity(0.05) ??
-                                                Colors.transparent
-                                            : Colors.transparent,
+                                    color: states.isHovering
+                                        ? theme.typography.body?.color
+                                                ?.withOpacity(0.05) ??
+                                            Colors.transparent
+                                        : Colors.transparent,
                                   ),
                                   width: double.infinity,
                                   alignment: Alignment.centerLeft,
@@ -392,17 +384,12 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                                     children: [
                                       Icon(fluent.FluentIcons.org,
                                           size: 16,
-                                          color: isSelected
-                                              ? theme.accentColor
-                                              : theme.typography.body?.color
-                                                  ?.withOpacity(0.7)),
+                                          color: theme.typography.body?.color
+                                              ?.withOpacity(0.7)),
                                       const SizedBox(width: 12),
                                       Expanded(
                                           child: Text(model,
                                               overflow: TextOverflow.ellipsis)),
-                                      if (isSelected)
-                                        Icon(fluent.FluentIcons.check_mark,
-                                            size: 14, color: theme.accentColor),
                                       fluent.IconButton(
                                         icon: const fluent.Icon(
                                             fluent.FluentIcons.settings,
@@ -497,9 +484,12 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                       ],
                     );
                     if (result != null) {
-                      ref
-                          .read(settingsProvider.notifier)
-                          .setChatDisplaySettings(userAvatar: result.path);
+                      final croppedPath = await AvatarCropper.cropImage(context, result.path);
+                      if (croppedPath != null) {
+                        ref
+                            .read(settingsProvider.notifier)
+                            .setChatDisplaySettings(userAvatar: croppedPath);
+                      }
                     }
                   },
                 ),
@@ -568,9 +558,12 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                       ],
                     );
                     if (result != null) {
-                      ref
-                          .read(settingsProvider.notifier)
-                          .setChatDisplaySettings(llmAvatar: result.path);
+                      final croppedPath = await AvatarCropper.cropImage(context, result.path);
+                      if (croppedPath != null) {
+                        ref
+                            .read(settingsProvider.notifier)
+                            .setChatDisplaySettings(llmAvatar: croppedPath);
+                      }
                     }
                   },
                 ),

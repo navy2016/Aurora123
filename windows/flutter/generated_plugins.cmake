@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   irondash_engine_context
   isar_flutter_libs
   pasteboard
+  permission_handler_windows
   screen_retriever_windows
   super_native_extensions
   window_manager

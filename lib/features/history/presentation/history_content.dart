@@ -64,7 +64,11 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
               children: [
                 fluent.IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () {
+                  onPressed: () async {
+                    final currentId = ref.read(selectedHistorySessionIdProvider);
+                    if (currentId != null) {
+                      await ref.read(sessionsProvider.notifier).cleanupSessionIfEmpty(currentId);
+                    }
                     ref
                         .read(selectedHistorySessionIdProvider.notifier)
                         .state = null;

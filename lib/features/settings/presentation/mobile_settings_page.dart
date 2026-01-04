@@ -186,7 +186,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
       context: context,
       builder: (ctx) {
         return Consumer(
-          builder: (context, ref, _) {
+          builder: (scopedContext, ref, _) {
             final state = ref.watch(settingsProvider);
             return SafeArea(
               child: Column(
@@ -205,7 +205,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                               ? Icons.check_circle
                               : Icons.circle_outlined,
                           color: p.id == state.activeProviderId
-                              ? Theme.of(context).primaryColor
+                              ? Theme.of(scopedContext).primaryColor
                               : null,
                         ),
                         title: Text(p.name),
@@ -218,7 +218,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                               onPressed: () {
                                 Navigator.pop(ctx);
                                 showDialog(
-                                    context: context,
+                                    context: scopedContext,
                                     builder: (context) {
                                       return AlertDialog(
                                         title: const Text('删除供应商'),
@@ -248,7 +248,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                               icon: const Icon(Icons.edit_outlined, size: 20),
                               onPressed: () {
                                 Navigator.pop(ctx);
-                                _showProviderRenameDialog(context, p);
+                                _showProviderRenameDialog(scopedContext, p);
                               },
                             ),
                           ],
