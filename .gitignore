@@ -6,6 +6,7 @@
 .DS_Store
 .atom/
 .build/
+assets/
 .buildlog/
 .history
 .svn/
@@ -48,3 +49,4 @@ app.*.map.json
 build_output.txt
 .metadata
 *.bak
+build_release.ps1
