@@ -480,7 +480,6 @@ class ChatViewState extends ConsumerState<ChatView> {
     final settings = ref.read(settingsProvider);
     
     if (text.trim().isEmpty && _attachments.isEmpty) {
-      print('DEBUG: UI _sendMessage ignored (empty)');
       return;
     }
     final currentSessionId = ref.read(selectedHistorySessionIdProvider);
@@ -619,9 +618,10 @@ class ChatViewState extends ConsumerState<ChatView> {
               return false;
             },
             child: Platform.isWindows
-                ? Padding(
-                    padding: const EdgeInsets.only(right: 4.0, top: 2.0, bottom: 2.0),
-                    child: fluent.Scrollbar(
+                ? SelectionArea(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 4.0, top: 2.0, bottom: 2.0),
+                      child: fluent.Scrollbar(
                       controller: _scrollController,
                       thumbVisibility: true,
                       style: const fluent.ScrollbarThemeData(
@@ -711,45 +711,48 @@ class ChatViewState extends ConsumerState<ChatView> {
                         ),
                       ),
                     ),
-                  )
-                : Scrollbar(
+                  ),
+                )
+                : CustomScrollView(
                     controller: _scrollController,
-                    child: ListView.builder(
-                          cacheExtent: 2000,
-                          key: ValueKey(ref.watch(selectedHistorySessionIdProvider)),
-                          controller: _scrollController,
-                          reverse: true,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: displayItems.length,
-                          itemBuilder: (context, index) {
-                             final reversedIndex = displayItems.length - 1 - index;
-                             final item = displayItems[reversedIndex];
-                             final isLatest = index == 0;
-                             final isGenerating = isLatest && isLoading;
+                    reverse: true,
+                    slivers: [
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          verticalDirection: VerticalDirection.up,
+                          children: [
+                            for (int index = 0; index < displayItems.length; index++)
+                              Builder(builder: (context) {
+                                final reversedIndex = displayItems.length - 1 - index;
+                                final item = displayItems[reversedIndex];
+                                final isLatest = index == 0;
+                                final isGenerating = isLatest && isLoading;
 
-                             if (item is MergedGroupItem) {
-                                return MergedMessageBubble(
-                                   key: ValueKey(item.id),
-                                   group: item,
-                                   isLast: isLatest,
-                                   isGenerating: isGenerating,
-                                );
-                             } else if (item is SingleMessageItem) {
-                                final msg = item.message;
-                                
-                                bool mergeTop = false;
-                                if (reversedIndex > 0) {
-                                  final prevItem = displayItems[reversedIndex - 1];
-                                  if (prevItem is SingleMessageItem && prevItem.message.isUser) mergeTop = true;
-                                }
-                                bool mergeBottom = false;
-                                if (reversedIndex < displayItems.length - 1) {
-                                   final nextItem = displayItems[reversedIndex + 1];
-                                   if (nextItem is SingleMessageItem && nextItem.message.isUser) mergeBottom = true;
-                                }
-                                bool showAvatar = !mergeTop;
+                                if (item is MergedGroupItem) {
+                                  return MergedMessageBubble(
+                                    key: ValueKey(item.id),
+                                    group: item,
+                                    isLast: isLatest,
+                                    isGenerating: isGenerating,
+                                  );
+                                } else if (item is SingleMessageItem) {
+                                  final msg = item.message;
+                                  
+                                  bool mergeTop = false;
+                                  if (reversedIndex > 0) {
+                                    final prevItem = displayItems[reversedIndex - 1];
+                                    if (prevItem is SingleMessageItem && prevItem.message.isUser) mergeTop = true;
+                                  }
+                                  bool mergeBottom = false;
+                                  if (reversedIndex < displayItems.length - 1) {
+                                    final nextItem = displayItems[reversedIndex + 1];
+                                    if (nextItem is SingleMessageItem && nextItem.message.isUser) mergeBottom = true;
+                                  }
+                                  bool showAvatar = !mergeTop;
 
-                                final bubble = MessageBubble(
+                                  final bubble = MessageBubble(
                                     key: ValueKey(msg.id),
                                     message: msg,
                                     isLast: isLatest,
@@ -757,33 +760,35 @@ class ChatViewState extends ConsumerState<ChatView> {
                                     showAvatar: showAvatar,
                                     mergeTop: mergeTop,
                                     mergeBottom: mergeBottom,
-                                );
-                                
-                                if (isLatest) {
-                                  return TweenAnimationBuilder<double>(
-                                    tween: Tween(begin: 0.0, end: 1.0),
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeOutCubic,
-                                    builder: (context, value, child) {
-                                      return Opacity(
-                                        opacity: value,
-                                        child: Transform.translate(
-                                          offset: Offset(0, 20 * (1 - value)),
-                                          child: child,
-                                        ),
-                                      );
-                                    },
-                                    child: bubble,
                                   );
+                                  
+                                  if (isLatest) {
+                                    return TweenAnimationBuilder<double>(
+                                      tween: Tween(begin: 0.0, end: 1.0),
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeOutCubic,
+                                      builder: (context, value, child) {
+                                        return Opacity(
+                                          opacity: value,
+                                          child: Transform.translate(
+                                            offset: Offset(0, 20 * (1 - value)),
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                      child: bubble,
+                                    );
+                                  }
+                                  return bubble;
                                 }
-                                return bubble;
-                             }
-                             return const SizedBox.shrink();
-                          },
-                          physics: const BouncingScrollPhysics(
-                              parent: AlwaysScrollableScrollPhysics()),
+                                return const SizedBox.shrink();
+                              }),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
           ),
         ),
         if (_attachments.isNotEmpty)
@@ -1244,6 +1249,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
     }
   }
 
+  bool _isPasting = false;
+
   Future<void> _pickFiles() async {
     const typeGroup = XTypeGroup(
         label: 'images', extensions: ['jpg', 'png', 'jpeg', 'bmp', 'gif']);
@@ -1263,61 +1270,105 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
   }
 
   Future<void> _handlePaste() async {
-    final clipboard = SystemClipboard.instance;
-    if (clipboard == null) return;
-    final reader = await clipboard.read();
-    if (reader.canProvide(Formats.png) ||
-        reader.canProvide(Formats.jpeg) ||
-        reader.canProvide(Formats.fileUri)) {
-      _processReader(reader);
+    if (_isPasting) {
       return;
     }
-    if (reader.canProvide(Formats.plainText)) {
-      final text = await reader.readValue(Formats.plainText);
-      if (text != null && text.isNotEmpty) {
-        final selection = _editController.selection;
-        final currentText = _editController.text;
-        if (selection.isValid) {
-          final newText =
-              currentText.replaceRange(selection.start, selection.end, text);
-          _editController.value = TextEditingValue(
-            text: newText,
-            selection:
-                TextSelection.collapsed(offset: selection.start + text.length),
-          );
-        } else {
-          _editController.text += text;
-        }
-      }
-      return;
-    }
-    // Pasteboard fallback
+    _isPasting = true;
     try {
-      final imageBytes = await Pasteboard.image;
-      if (imageBytes != null && imageBytes.isNotEmpty) {
-        final tempDir = await getTemporaryDirectory();
-        final path =
-            '${tempDir.path}${Platform.pathSeparator}paste_fb_${DateTime.now().millisecondsSinceEpoch}.png';
-        await File(path).writeAsBytes(imageBytes);
-        if (mounted) {
-          if (!_newAttachments.contains(path)) {
-            setState(() {
-              _newAttachments.add(path);
-            });
+      final clipboard = SystemClipboard.instance;
+      if (clipboard == null) {
+        return;
+      }
+      final reader = await clipboard.read();
+      if (reader.canProvide(Formats.png) ||
+          reader.canProvide(Formats.jpeg) ||
+          reader.canProvide(Formats.fileUri)) {
+        await _processReader(reader);
+        return;
+      }
+      if (reader.canProvide(Formats.plainText)) {
+        final text = await reader.readValue(Formats.plainText);
+        if (text != null && text.isNotEmpty) {
+          final selection = _editController.selection;
+          final currentText = _editController.text;
+          if (selection.isValid) {
+            final newText =
+                currentText.replaceRange(selection.start, selection.end, text);
+            _editController.value = TextEditingValue(
+              text: newText,
+              selection:
+                  TextSelection.collapsed(offset: selection.start + text.length),
+            );
+          } else {
+            _editController.text += text;
           }
         }
         return;
       }
-    } catch (e) {
-      debugPrint('Pasteboard Fallback Error: $e');
+      // Pasteboard fallback
+      try {
+        final imageBytes = await Pasteboard.image;
+        if (imageBytes != null && imageBytes.isNotEmpty) {
+          final tempDir = await getTemporaryDirectory();
+          final path =
+              '${tempDir.path}${Platform.pathSeparator}paste_fb_${DateTime.now().millisecondsSinceEpoch}.png';
+          await File(path).writeAsBytes(imageBytes);
+          if (mounted) {
+            if (!_newAttachments.contains(path)) {
+              setState(() {
+                _newAttachments.add(path);
+              });
+            } else {
+            }
+          }
+          return;
+        }
+      } catch (e) {
+        debugPrint('Pasteboard Fallback Error: $e');
+      }
+    } finally {
+      _isPasting = false;
     }
   }
 
   Future<void> _processReader(ClipboardReader reader) async {
+    final completer = Completer<void>();
+    
     if (reader.canProvide(Formats.png)) {
-      reader.getFile(Formats.png, (file) => _saveClipImage(file));
+      reader.getFile(Formats.png, (file) async {
+        await _saveClipImage(file);
+        if (!completer.isCompleted) completer.complete();
+      });
     } else if (reader.canProvide(Formats.jpeg)) {
-      reader.getFile(Formats.jpeg, (file) => _saveClipImage(file));
+      reader.getFile(Formats.jpeg, (file) async {
+        await _saveClipImage(file);
+        if (!completer.isCompleted) completer.complete();
+      });
+    } else if (reader.canProvide(Formats.fileUri)) {
+      final uri = await reader.readValue(Formats.fileUri);
+      if (uri != null) {
+        final path = uri.toFilePath();
+        // Check extensions
+        final ext = path.split('.').last.toLowerCase();
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(ext)) {
+             if (mounted && !_newAttachments.contains(path)) {
+                setState(() {
+                  _newAttachments.add(path);
+                });
+             } else {
+             }
+        }
+      }
+      if (!completer.isCompleted) completer.complete();
+    } else {
+      if (!completer.isCompleted) completer.complete();
+    }
+    
+    // Wait for the file operation to complete, with a timeout to prevent hanging
+    try {
+      await completer.future.timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('Paste completion timeout: $e');
     }
   }
 
@@ -1338,6 +1389,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
             setState(() {
               _newAttachments.add(path);
             });
+          } else {
           }
         }
       }
@@ -1433,12 +1485,15 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                         Padding(
                           padding:
                               const EdgeInsets.only(bottom: 4, left: 4, right: 4),
-                          child: Column(
-                          crossAxisAlignment: isUser
-                              ? CrossAxisAlignment.end
-                              : CrossAxisAlignment.start,
+                          child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            Text(
+                              '${message.timestamp.month}/${message.timestamp.day} ${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                  color: Colors.grey[600], fontSize: 11),
+                            ),
+                            const SizedBox(width: 8),
                             Text(
                               isUser
                                   ? (settingsState.userName.isNotEmpty
@@ -1447,11 +1502,6 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                   : '${message.model ?? settingsState.selectedModel} | ${message.provider ?? settingsState.activeProvider?.name ?? 'AI'}',
                               style: TextStyle(
                                   color: Colors.grey[600], fontSize: 12),
-                            ),
-                            Text(
-                              '${message.timestamp.month}/${message.timestamp.day} ${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-                              style: TextStyle(
-                                  color: Colors.grey[600], fontSize: 11),
                             ),
                           ],
                         ),
@@ -1698,7 +1748,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                             else if (message.role == 'tool')
                               BuildToolOutput(content: message.content)
                             else if (isUser)
-                              SelectableText(
+                              Text(
                                 message.content,
                                 style: TextStyle(
                                   fontSize: 14,
@@ -1709,21 +1759,19 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                             else
                               fluent.FluentTheme(
                                 data: theme,
-                                child: SelectionArea(
-                                  child: MarkdownBody(
-                                    data: message.content,
-                                    selectable: false,
-                                    softLineBreak: true,
-                                    styleSheet: MarkdownStyleSheet(
-                                      p: TextStyle(
-                                        fontSize: 14,
-                                        height: 1.5,
-                                        color: theme.typography.body!.color,
-                                      ),
-                                      code: TextStyle(
-                                        backgroundColor: theme.micaBackgroundColor,
-                                        color: theme.typography.body!.color,
-                                      ),
+                                child: MarkdownBody(
+                                  data: message.content,
+                                  selectable: false,
+                                  softLineBreak: true,
+                                  styleSheet: MarkdownStyleSheet(
+                                    p: TextStyle(
+                                      fontSize: 14,
+                                      height: 1.5,
+                                      color: theme.typography.body!.color,
+                                    ),
+                                    code: TextStyle(
+                                      backgroundColor: theme.micaBackgroundColor,
+                                      color: theme.typography.body!.color,
                                     ),
                                   ),
                                 ),
@@ -2356,15 +2404,15 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble> with 
                     child: Row(
                       children: [
                          Text(
-                          '${headerMsg.model ?? 'AI'} | ${headerMsg.provider ?? 'Assistant'}',
-                          style: TextStyle(
-                              color: Colors.grey[600], fontSize: 12),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
                           '${headerMsg.timestamp.month}/${headerMsg.timestamp.day} ${headerMsg.timestamp.hour.toString().padLeft(2, '0')}:${headerMsg.timestamp.minute.toString().padLeft(2, '0')}',
                           style: TextStyle(
                               color: Colors.grey[600], fontSize: 11),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${headerMsg.model ?? 'AI'} | ${headerMsg.provider ?? 'Assistant'}',
+                          style: TextStyle(
+                              color: Colors.grey[600], fontSize: 12),
                         ),
                       ],
                     ),
@@ -2557,23 +2605,21 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble> with 
        parts.add(
           fluent.FluentTheme(
             data: theme,
-            child: SelectionArea(
-              child: MarkdownBody(
-                data: message.content,
-                selectable: false,
-                softLineBreak: true,
-                styleSheet: MarkdownStyleSheet(
-                  p: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: theme.typography.body!.color,
-                    fontFamily: 'Microsoft YaHei',
-                  ),
-                  code: TextStyle(
-                    backgroundColor: theme.micaBackgroundColor,
-                    color: theme.typography.body!.color,
-                    fontFamily: 'Consolas', 
-                  ),
+            child: MarkdownBody(
+              data: message.content,
+              selectable: false,
+              softLineBreak: true,
+              styleSheet: MarkdownStyleSheet(
+                p: TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: theme.typography.body!.color,
+                  fontFamily: 'Microsoft YaHei',
+                ),
+                code: TextStyle(
+                  backgroundColor: theme.micaBackgroundColor,
+                  color: theme.typography.body!.color,
+                  fontFamily: 'Consolas', 
                 ),
               ),
             ),

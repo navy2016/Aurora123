@@ -1,3 +1,5 @@
+import 'package:uuid/uuid.dart';
+
 class ToolCall {
   final String id;
   final String type;
@@ -76,7 +78,7 @@ class Message {
 
   factory Message.user(String content, {List<String> attachments = const []}) {
     return Message(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       content: content,
       isUser: true,
       timestamp: DateTime.now(),
@@ -93,7 +95,7 @@ class Message {
       double? reasoningDurationSeconds,
       List<ToolCall>? toolCalls}) {
     return Message(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       content: content,
       reasoningContent: reasoningContent,
       isUser: false,
@@ -109,7 +111,7 @@ class Message {
   
   factory Message.tool(String content, {required String toolCallId}) {
     return Message(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       content: content,
       isUser: false, // Tool messages are not user messages
       timestamp: DateTime.now(),

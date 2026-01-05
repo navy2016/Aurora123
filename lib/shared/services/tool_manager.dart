@@ -29,12 +29,10 @@ class ToolManager {
 
   /// Executes a tool call and returns the result as a JSON string
   Future<String> executeTool(String name, Map<String, dynamic> args, {String preferredEngine = 'duckduckgo'}) async {
-    print('DEBUG: ToolManager executing $name with args: $args, engine: $preferredEngine');
     if (name == 'search_web') {
       final query = args['query'] as String;
       // Use preferred engine from settings, ignoring any hallucinated engine arg
       final result = await _searchWeb(query, preferredEngine);
-      print('DEBUG: ToolManager result length: ${result.length}');
       return result;
     }
     return jsonEncode({'error': 'Tool not found: $name'});
@@ -42,7 +40,6 @@ class ToolManager {
 
   Future<String> _searchWeb(String query, String engine) async {
     try {
-      print('DEBUG: _searchWeb processing query: "$query" with engine: $engine');
       
       // Attempt 1
       var results = await _ddgs.text(
@@ -50,28 +47,23 @@ class ToolManager {
         backend: engine,
         maxResults: 5,
       );
-      print('DEBUG: _searchWeb attempt 1 ($engine) results: ${results.length}');
 
       // Fallback 1: If Google/Bing fails, try DuckDuckGo
       if (results.isEmpty && engine != 'duckduckgo') {
-        print('DEBUG: _searchWeb fallback to duckduckgo...');
         results = await _ddgs.text(
           query,
           backend: 'duckduckgo',
           maxResults: 5,
         );
-        print('DEBUG: _searchWeb fallback 1 results: ${results.length}');
       }
       
       // Fallback 2: If still empty, try Bing (if not already tried)
       if (results.isEmpty && engine != 'bing') {
-         print('DEBUG: _searchWeb fallback to bing...');
          results = await _ddgs.text(
            query,
            backend: 'bing',
            maxResults: 5,
          );
-         print('DEBUG: _searchWeb fallback 2 results: ${results.length}');
       }
 
       if (results.isEmpty) {
@@ -99,7 +91,6 @@ class ToolManager {
         'results': formattedResults
       });
     } catch (e) {
-      print('DEBUG: _searchWeb exception: $e');
       return jsonEncode({
         'status': 'error',
         'message': 'Search failed: $e'

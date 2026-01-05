@@ -189,7 +189,7 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 8),
-                      SelectableText(
+                      Text(
                         widget.content,
                         style: TextStyle(
                           fontSize: 13,

@@ -169,11 +169,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   Future<String> sendMessage(String? text,
       {List<String> attachments = const [], String? apiContent}) async {
-    print('DEBUG: sendMessage called - text: $text - sessionId: $_sessionId');
     
     // Concurrent control: if already loading, don't start another one for this session
     if (state.isLoading && text != null) {
-      print('DEBUG: sendMessage ignored because already loading');
       return _sessionId;
     }
     
@@ -239,9 +237,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       List<Map<String, dynamic>>? tools;
       if (settings.isSearchEnabled) {
         tools = toolManager.getTools();
-        print('DEBUG: sendMessage - Tools enabled. Count: ${tools.length}');
       } else {
-        print('DEBUG: sendMessage - Tools disabled globally.');
       }
 
       // Loop for tool execution (Max 3 turns to prevent infinite loops)
@@ -250,7 +246,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
       
       while (continueGeneration && turns < 3 && !_isAborted && mounted) {
         turns++;
-        print('DEBUG: sendMessage - Turn $turns/5 started');
         continueGeneration = false; // Assume done unless tool call occurs
         
         // ... (lines 198-375 match existing structure, omitted in replace logic, need to only target changed lines? No, replace tool works on chunks)
@@ -261,7 +256,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
         // Check stream mode (from global settings) BEFORE making API call
         if (settings.isStreamEnabled) {
-          print('DEBUG: sendMessage - Stream Enabled: true');
           // Streaming mode - call streamResponse
           final responseStream = llmService.streamResponse(
             messagesForApi,
@@ -372,7 +366,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
           }
 
         } else {
-          print('DEBUG: sendMessage - Stream Enabled: false');
           // Non-streaming mode
           final response = await llmService.getResponse(
             messagesForApi, 
@@ -449,7 +442,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
         if (mounted) state = state.copyWith(isLoading: false, hasUnreadResponse: true);
       }
     } catch (e, stack) {
-      print('DEBUG: sendMessage - Error: $e\n$stack');
       if (!_isAborted && mounted) {
         state = state.copyWith(isLoading: false, error: e.toString());
       }
@@ -499,14 +491,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     if (index == -1) return;
     final oldMsg = state.messages[index];
     final updatedAttachments = newAttachments ?? oldMsg.attachments;
-    List<String> updatedImages = oldMsg.images;
-    if (newAttachments != null) {
-      final imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-      updatedImages = newAttachments.where((path) {
-        final ext = path.split('.').last.toLowerCase();
-        return imageExts.contains(ext);
-      }).toList();
-    }
+    // Keep AI-generated images unchanged; do NOT copy user attachments to images
     final newMsg = Message(
       id: oldMsg.id,
       content: newContent,
@@ -514,7 +499,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       timestamp: oldMsg.timestamp,
       reasoningContent: oldMsg.reasoningContent,
       attachments: updatedAttachments,
-      images: updatedImages,
+      images: oldMsg.images,
     );
     final newMessages = List<Message>.from(state.messages);
     newMessages[index] = newMsg;

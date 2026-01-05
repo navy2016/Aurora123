@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:image/image.dart' as img;
 import '../../features/chat/domain/message.dart';
 import '../../features/settings/presentation/settings_provider.dart';
 import 'llm_service.dart';
@@ -39,15 +41,32 @@ class OpenAILLMService implements LLMService {
       return;
     }
     try {
-      final List<Map<String, dynamic>> apiMessages =
+      List<Map<String, dynamic>> apiMessages =
           _buildApiMessages(messages, attachments);
+      
+      // Early debug: Log message count and structure
+      for (int i = 0; i < apiMessages.length; i++) {
+        final msg = apiMessages[i];
+        final role = msg['role'];
+        final content = msg['content'];
+        if (content is List) {
+          for (final part in content) {
+            if (part is Map) {
+              print('  - type: ${part['type']}');
+            }
+          }
+        } else if (content is String) {
+        }
+      }
+      
+      // Compress images if request size exceeds threshold
+      apiMessages = _compressApiMessagesIfNeeded(apiMessages);
       final Map<String, dynamic> requestData = {
         'model': model,
         'messages': apiMessages,
         'stream': true,
       };
       if (tools != null) {
-        print('DEBUG: streamResponse - attaching ${tools.length} tools to request');
         requestData['tools'] = tools;
         if (toolChoice != null) {
           requestData['tool_choice'] = toolChoice;
@@ -86,6 +105,20 @@ Search results include an `index` and `link`. You MUST cite your sources using M
         requestData.addAll(provider.modelSettings[model]!);
       }
       
+      // Debug: Log message structure
+      for (int i = 0; i < apiMessages.length; i++) {
+        final msg = apiMessages[i];
+        final content = msg['content'];
+        if (content is List) {
+          for (final part in content) {
+            if (part is Map) {
+              print('  - type: ${part['type']}, hasImageUrl: ${part['image_url'] != null}');
+            }
+          }
+        } else {
+        }
+      }
+      
       final response = await _dio.post(
         '${baseUrl}chat/completions',
         options: Options(
@@ -112,7 +145,6 @@ Search results include an `index` and `link`. You MUST cite your sources using M
           final data = line.substring(6).trim();
           if (data == '[DONE]') return;
           if (data.contains('"images"') && data.length > 1000) {
-            print('DEBUG: Found images chunk, length=${data.length}');
           }
           try {
             final json = jsonDecode(data);
@@ -141,7 +173,6 @@ Search results include an `index` and `link`. You MUST cite your sources using M
                        final String? name = function['name'];
                        final String? arguments = function['arguments'];
                        if (name != null || arguments != null) {
-                          print('DEBUG: Stream received tool call chunk: index=$index name=$name args=$arguments');
                        }
                        yield LLMResponseChunk(
                          toolCalls: [
@@ -202,7 +233,6 @@ Search results include an `index` and `link`. You MUST cite your sources using M
                     }
                   } else if (delta['images'] != null &&
                       delta['images'] is List) {
-                    print('DEBUG: Found delta[images] list');
                     final images = delta['images'] as List;
                     if (images.isNotEmpty) {
                       final imgData = images[0];
@@ -260,11 +290,24 @@ Search results include an `index` and `link`. You MUST cite your sources using M
               }
             }
           } catch (e) {
-            print('DEBUG: JSON parse error: $e for data length ${data.length}');
           }
         }
       }
     } on DioException catch (e) {
+      // Log detailed error info including response body
+      // Try to read stream response body for error details
+      try {
+        if (e.response?.data != null) {
+          final responseData = e.response?.data;
+          if (responseData is ResponseBody) {
+            final stream = responseData.stream;
+            final bytes = await stream.fold<List<int>>([], (prev, chunk) => prev..addAll(chunk));
+            final errorBody = utf8.decode(bytes);
+          } else {
+          }
+        }
+      } catch (readError) {
+      }
       yield LLMResponseChunk(content: 'Connection Error: ${e.message}');
     } catch (e) {
       yield LLMResponseChunk(content: 'Unexpected Error: $e');
@@ -320,12 +363,22 @@ Search results include an `index` and `link`. You MUST cite your sources using M
       // Build multipart content with text, attachments, and/or model-generated images
       {
         final List<Map<String, dynamic>> contentList = [];
+        
+        // Always add text content (even if empty) for assistant messages with images
+        // Some APIs require text in all messages
         if (m.content.isNotEmpty) {
           contentList.add({
             'type': 'text',
             'text': m.content,
           });
+        } else if (!m.isUser && hasImages) {
+          // Add empty text placeholder for assistant messages with only images
+          contentList.add({
+            'type': 'text',
+            'text': '',
+          });
         }
+        
         for (final path in m.attachments) {
           try {
             final file = File(path);
@@ -348,13 +401,36 @@ Search results include an `index` and `link`. You MUST cite your sources using M
           }
         }
         // Include model-generated images (already base64 data URLs or http URLs)
-        for (final imageUrl in m.images) {
-          contentList.add({
-            'type': 'image_url',
-            'image_url': {
-              'url': imageUrl,
-            },
-          });
+        // CLIProxyAPI expects image_url format and auto-converts to Gemini inlineData
+        // For multi-turn editing, only use the LAST image (final/larger one, not draft)
+        if (m.images.isNotEmpty) {
+          final lastImage = m.images.last;
+          // Debug: Log image URL format
+          if (lastImage.startsWith('data:')) {
+          }
+          
+          // Only add if it's a valid data URL
+          if (lastImage.startsWith('data:')) {
+            // For assistant messages, add thought_signature to bypass Gemini's validation
+            // This is needed for multi-turn image editing (Gemini 3 requirement)
+            if (!m.isUser) {
+              contentList.add({
+                'type': 'image_url',
+                'image_url': {
+                  'url': lastImage,
+                },
+                'thought_signature': 'skip_thought_signature_validator',
+              });
+            } else {
+              contentList.add({
+                'type': 'image_url',
+                'image_url': {
+                  'url': lastImage,
+                },
+              });
+            }
+          } else {
+          }
         }
         return {
           'role': m.isUser ? 'user' : 'assistant',
@@ -363,6 +439,98 @@ Search results include an `index` and `link`. You MUST cite your sources using M
       }
     }).toList();
   }
+
+  /// Compress image bytes to 1080p JPG format
+  /// Returns compressed base64 string or original if compression fails
+  String _compressImageToBase64(Uint8List bytes) {
+    try {
+      final image = img.decodeImage(bytes);
+      if (image == null) return base64Encode(bytes);
+      
+      // Calculate target dimensions (max 1920x1080, maintain aspect ratio)
+      int targetWidth = image.width;
+      int targetHeight = image.height;
+      
+      if (targetWidth > 1920 || targetHeight > 1080) {
+        final aspectRatio = targetWidth / targetHeight;
+        if (aspectRatio > 1920 / 1080) {
+          // Width is the limiting factor
+          targetWidth = 1920;
+          targetHeight = (1920 / aspectRatio).round();
+        } else {
+          // Height is the limiting factor
+          targetHeight = 1080;
+          targetWidth = (1080 * aspectRatio).round();
+        }
+      }
+      
+      // Resize if needed
+      final resized = (targetWidth != image.width || targetHeight != image.height)
+          ? img.copyResize(image, width: targetWidth, height: targetHeight)
+          : image;
+      
+      // Encode as JPG with quality 85
+      final compressed = img.encodeJpg(resized, quality: 85);
+      return base64Encode(compressed);
+    } catch (e) {
+      return base64Encode(bytes);
+    }
+  }
+
+  /// Estimate the size of the request payload in bytes
+  int _estimateRequestSize(List<Map<String, dynamic>> apiMessages) {
+    try {
+      final json = jsonEncode(apiMessages);
+      return utf8.encode(json).length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Compress images in API messages if total size exceeds threshold (4MB)
+  List<Map<String, dynamic>> _compressApiMessagesIfNeeded(
+      List<Map<String, dynamic>> apiMessages) {
+    const maxSizeBytes = 4 * 1024 * 1024; // 4MB threshold
+    
+    final currentSize = _estimateRequestSize(apiMessages);
+    if (currentSize <= maxSizeBytes) {
+      return apiMessages; // No compression needed
+    }
+    
+    
+    // Deep copy and compress images
+    return apiMessages.map((msg) {
+      final content = msg['content'];
+      if (content is List) {
+        final compressedContent = content.map((item) {
+          if (item is Map && item['type'] == 'image_url') {
+            final imageUrl = item['image_url']?['url'];
+            if (imageUrl is String && imageUrl.startsWith('data:')) {
+              // Extract base64 data and compress
+              final parts = imageUrl.split(',');
+              if (parts.length == 2) {
+                try {
+                  final bytes = base64Decode(parts[1]);
+                  final compressed = _compressImageToBase64(Uint8List.fromList(bytes));
+                  return {
+                    'type': 'image_url',
+                    'image_url': {
+                      'url': 'data:image/jpeg;base64,$compressed',
+                    },
+                  };
+                } catch (e) {
+                }
+              }
+            }
+          }
+          return item;
+        }).toList();
+        return {...msg, 'content': compressedContent};
+      }
+      return msg;
+    }).toList();
+  }
+
 
   @override
   Future<LLMResponseChunk> getResponse(List<Message> messages,
@@ -383,15 +551,16 @@ Search results include an `index` and `link`. You MUST cite your sources using M
     }
 
     try {
-      final List<Map<String, dynamic>> apiMessages =
+      List<Map<String, dynamic>> apiMessages =
           _buildApiMessages(messages, attachments);
+      // Compress images if request size exceeds threshold
+      apiMessages = _compressApiMessagesIfNeeded(apiMessages);
       final Map<String, dynamic> requestData = {
         'model': model,
         'messages': apiMessages,
         'stream': false,
       };
       if (tools != null) {
-        print('DEBUG: getResponse - attaching ${tools.length} tools to request');
         requestData['tools'] = tools;
         if (toolChoice != null) {
            requestData['tool_choice'] = toolChoice;
@@ -430,11 +599,9 @@ Search results include an `index` and `link`. You MUST cite your sources using M
       );
 
       final data = response.data;
-      // print('DEBUG: raw response data: $data'); // Too verbose?
       final choices = data['choices'] as List;
       if (choices.isNotEmpty) {
         final message = choices[0]['message'];
-        print('DEBUG: getResponse - Model: $model - Raw tool_calls: ${message['tool_calls']}');
         final String? content = message['content'];
         // Handle deepseek reasoning (often in reasoning_content)
         final String? reasoning = (message['reasoning_content'] ?? message['reasoning'])?.toString();

@@ -326,7 +326,6 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                       ),
                       title: Text(model),
                       onTap: () {
-                        print('DEBUG: MobileChatScreen - Selected model: $model');
                         ref
                             .read(settingsProvider.notifier)
                             .setSelectedModel(model);

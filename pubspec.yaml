@@ -58,6 +58,7 @@ dependencies:
   image_cropper: ^11.0.0
   crop_image: ^1.0.17
   gal: ^2.3.0
+  image: ^4.5.3
 
 
 dev_dependencies:
