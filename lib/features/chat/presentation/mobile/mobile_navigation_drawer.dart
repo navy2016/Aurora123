@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import '../chat_provider.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import '../../../history/presentation/history_content.dart';
+import '../../../../shared/widgets/custom_toast.dart';
 
 class MobileNavigationDrawer extends ConsumerWidget {
   final SessionsState sessionsState;
@@ -159,12 +161,18 @@ class MobileNavigationDrawer extends ConsumerWidget {
                             label: '模型',
                             onTap: () => onNavigate('__settings__')),
                         _MobileDrawerNavItem(
-                            icon: Icons.link_outlined,
-                            label: '其它',
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('敬请期待'), duration: Duration(seconds: 1)),
-                              );
+                            icon: Icons.update,
+                            label: '更新',
+                            onTap: () async {
+                              const url = 'https://github.com/huangusaki/Aurora';
+                              final uri = Uri.parse(url);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } else {
+                                if (context.mounted) {
+                                  showTopToast(context, '无法打开链接: $url');
+                                }
+                              }
                             }),
                         _MobileDrawerNavItem(
                             icon: Icons.info_outline,

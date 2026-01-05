@@ -32,5 +32,7 @@ class AppSettingsEntity {
   bool isStreamEnabled = true;
   bool isSearchEnabled = false;
   String searchEngine = 'duckduckgo';
+  bool enableSmartTopic = true;
+  String? topicGenerationModel;
   String? lastSessionId;
 }

@@ -36,6 +36,27 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
       ),
       body: ListView(
         children: [
+          _SectionHeader(title: '对话体验', icon: Icons.chat_bubble_outline),
+          SwitchListTile(
+            title: const Text('智能话题生成'),
+            subtitle: const Text('使用 LLM 自动总结作为话题标题'),
+            value: settingsState.enableSmartTopic,
+            onChanged: (bool value) {
+              ref.read(settingsProvider.notifier).toggleSmartTopicEnabled(value);
+            },
+          ),
+          if (settingsState.enableSmartTopic)
+            ListTile(
+              title: const Text('生成模型'),
+              subtitle: Text(settingsState.topicGenerationModel == null
+                  ? '未选择 (回退到截断)'
+                  : settingsState.topicGenerationModel!.split('@').last),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                _showModelPicker(context, settingsState);
+              },
+            ),
+          const Divider(),
           _SectionHeader(title: '用户信息', icon: Icons.person_outline),
           ListTile(
             leading: const Icon(Icons.badge_outlined),
@@ -273,6 +294,47 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
           ),
         ],
       ),
+    );
+  }
+  void _showModelPicker(BuildContext context, SettingsState settings) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: 400,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('选择话题生成模型',
+                    style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              Expanded(
+                child: ListView(
+                  children: [
+                    for (final provider in settings.providers)
+                      if (provider.isEnabled)
+                        for (final model in provider.models)
+                          ListTile(
+                            title: Text(model),
+                            subtitle: Text(provider.name),
+                            selected: settings.topicGenerationModel ==
+                                '${provider.id}@$model',
+                            onTap: () {
+                              ref
+                                  .read(settingsProvider.notifier)
+                                  .setTopicGenerationModel('${provider.id}@$model');
+                              Navigator.pop(context);
+                            },
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

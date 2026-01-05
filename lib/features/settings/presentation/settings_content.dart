@@ -434,6 +434,79 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
               style: fluent.FluentTheme.of(context).typography.subtitle),
           const SizedBox(height: 24),
           fluent.InfoLabel(
+            label: '智能话题生成',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                fluent.ToggleSwitch(
+                  checked: settingsState.enableSmartTopic,
+                  onChanged: (v) {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .toggleSmartTopicEnabled(v);
+                  },
+                  content: fluent.Text(settingsState.enableSmartTopic ? '已启用' : '已禁用'),
+                ),
+                if (settingsState.enableSmartTopic) ...[
+                  const SizedBox(height: 12),
+                  fluent.DropDownButton(
+                    title: Text(() {
+                      if (settingsState.topicGenerationModel == null) {
+                        return '选择话题生成模型';
+                      }
+                      final parts =
+                          settingsState.topicGenerationModel!.split('@');
+                      if (parts.length == 2) {
+                        final provider = settingsState.providers.firstWhere(
+                            (p) => p.id == parts[0],
+                            orElse: () => settingsState.providers.first);
+                        return '${provider.name} - ${parts[1]}';
+                      }
+                      return settingsState.topicGenerationModel!;
+                    }()),
+                    items: () {
+                      final items = <fluent.MenuFlyoutItemBase>[];
+                      for (final provider in settingsState.providers) {
+                        if (provider.isEnabled) {
+                          for (final model in provider.models) {
+                            final value = '${provider.id}@$model';
+                            final isSelected =
+                                settingsState.topicGenerationModel == value;
+                            items.add(fluent.MenuFlyoutItem(
+                              leading: isSelected
+                                  ? const Icon(fluent.FluentIcons.check_mark,
+                                      size: 12)
+                                  : null,
+                              text: Text('${provider.name} - $model'),
+                              onPressed: () {
+                                ref
+                                    .read(settingsProvider.notifier)
+                                    .setTopicGenerationModel(value);
+                              },
+                            ));
+                          }
+                        }
+                      }
+                      return items;
+                    }(),
+                  ),
+                  if (settingsState.topicGenerationModel == null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        '未选择模型将回退到默认截断逻辑',
+                        style: TextStyle(
+                            color: fluent.Colors.orange, fontSize: 12),
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          const fluent.Divider(),
+          const SizedBox(height: 24),
+          fluent.InfoLabel(
             label: '用户名称',
             child: fluent.TextBox(
               placeholder: 'User',

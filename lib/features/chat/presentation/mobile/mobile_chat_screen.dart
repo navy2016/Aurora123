@@ -10,6 +10,7 @@ import '../../../settings/presentation/mobile_user_page.dart';
 import '../mobile_translation_page.dart';
 import '../widgets/cached_page_stack.dart';
 import 'mobile_navigation_drawer.dart';
+import '../../../../shared/widgets/custom_toast.dart';
 
 class MobileChatScreen extends ConsumerStatefulWidget {
   const MobileChatScreen({super.key});
@@ -221,6 +222,17 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
         title: Consumer(
           builder: (context, ref, _) {
             final currentSettings = ref.watch(settingsProvider);
+            final sessionsState = ref.watch(sessionsProvider); // Watch sessions
+            
+            // Re-calculate title dynamically
+            String dynamicTitle = sessionTitle; // Default/Fallback
+            if (sessionId != 'new_chat' && sessionsState.sessions.isNotEmpty) {
+               final sessionMatch = sessionsState.sessions.where((s) => s.sessionId == sessionId);
+               if (sessionMatch.isNotEmpty) {
+                 dynamicTitle = sessionMatch.first.title;
+               }
+            }
+
             return GestureDetector(
               onTap: () async {
                 FocusManager.instance.primaryFocus?.unfocus();
@@ -235,7 +247,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                          Text(
-                          sessionTitle,
+                          dynamicTitle,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -358,10 +370,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     ref.read(settingsProvider.notifier).setThemeMode(next);
     final message =
         next == 'light' ? '浅色模式' : (next == 'dark' ? '深色模式' : '跟随系统');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text('已切换到$message'), duration: const Duration(seconds: 1)),
-    );
+    showTopToast(context, '已切换到$message');
   }
 
   void _showAboutDialog() {

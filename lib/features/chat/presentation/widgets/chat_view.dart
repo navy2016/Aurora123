@@ -720,7 +720,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
                           verticalDirection: VerticalDirection.up,
                           children: [
                             for (int index = 0; index < displayItems.length; index++)
@@ -1430,15 +1430,17 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
     }
   }
 
-  void _saveEdit() {
+  Future<void> _saveEdit() async {
     if (_editController.text.trim().isNotEmpty) {
-      ref.read(historyChatProvider).editMessage(
+      await ref.read(historyChatProvider).editMessage(
           widget.message.id, _editController.text,
           newAttachments: _newAttachments);
     }
-    setState(() {
-      _isEditing = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isEditing = false;
+      });
+    }
   }
 
   @override
@@ -1733,8 +1735,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                         ActionButton(
                                             icon: fluent.FluentIcons.send,
                                             tooltip: 'Send & Regenerate',
-                                            onPressed: () {
-                                              _saveEdit();
+                                            onPressed: () async {
+                                              await _saveEdit();
                                               ref
                                                   .read(historyChatProvider)
                                                   .regenerateResponse(
@@ -2609,19 +2611,19 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble> with 
               data: message.content,
               selectable: false,
               softLineBreak: true,
-              styleSheet: MarkdownStyleSheet(
-                p: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: theme.typography.body!.color,
-                  fontFamily: 'Microsoft YaHei',
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  code: TextStyle(
+                    backgroundColor: theme.micaBackgroundColor,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Consolas' : null, 
+                  ),
                 ),
-                code: TextStyle(
-                  backgroundColor: theme.micaBackgroundColor,
-                  color: theme.typography.body!.color,
-                  fontFamily: 'Consolas', 
-                ),
-              ),
             ),
           )
        );

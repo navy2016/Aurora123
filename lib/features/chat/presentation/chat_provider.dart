@@ -189,14 +189,30 @@ class ChatNotifier extends StateNotifier<ChatState> {
         onSessionCreated!(realId);
       }
       _sessionId = realId;
-      // Load empty history or initialize? Usually createSession makes empty DB.
-      // We don't need to reload, just update ID.
+      
+      // Background smart topic generation
+      // Fire and forget, but update title if successful
+      _generateTopic(text).then((smartTitle) async {
+        if (smartTitle != title && smartTitle.isNotEmpty) {
+           await _storage.updateSessionTitle(realId, smartTitle);
+           _ref.read(sessionsProvider.notifier).loadSessions();
+        }
+      });
     } else if (text != null && state.messages.isEmpty) {
       // Logic for pre-created empty sessions (e.g. from "New Chat" button which calls startNewSession)
       // We want to update the title from "New Chat" to the user's prompt
        final title = text.length > 15 ? '${text.substring(0, 15)}...' : text;
        await _storage.updateSessionTitle(_sessionId, title);
        _ref.read(sessionsProvider.notifier).loadSessions();
+       
+       // Background smart topic generation
+       final currentSessionId = _sessionId;
+       _generateTopic(text).then((smartTitle) async {
+         if (smartTitle != title && smartTitle.isNotEmpty) {
+            await _storage.updateSessionTitle(currentSessionId, smartTitle);
+            _ref.read(sessionsProvider.notifier).loadSessions();
+         }
+       });
     }
 
     if (text != null) {
@@ -561,6 +577,83 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   void setSearchEngine(SearchEngine engine) {
     _ref.read(settingsProvider.notifier).setSearchEngine(engine.name);
+  }
+  Future<String> _generateTopic(String text) async {
+    final settings = _ref.read(settingsProvider);
+    
+    // 1. Fallback if disabled or no model selected
+    if (!settings.enableSmartTopic || settings.topicGenerationModel == null) {
+      return text.length > 15 ? '${text.substring(0, 15)}...' : text;
+    }
+
+    // 2. Parse model config
+    final parts = settings.topicGenerationModel!.split('@');
+    if (parts.length != 2) {
+      return text.length > 15 ? '${text.substring(0, 15)}...' : text;
+    }
+    final providerId = parts[0];
+    final modelId = parts[1];
+
+    // 3. Image Model Safeguard (Cherry Studio Regex)
+    final imageModelRegex = RegExp(
+      r'(dall-e|gpt-image|midjourney|mj-|flux|stable-diffusion|sd-|sdxl|imagen|cogview|qwen-image)',
+      caseSensitive: false,
+    );
+    if (imageModelRegex.hasMatch(modelId)) {
+      debugPrint('Skipping smart topic generation: Image model detected ($modelId)');
+      return text.length > 15 ? '${text.substring(0, 15)}...' : text;
+    }
+
+    // 4. Construct Temporary Service
+    // Find provider
+    final providerIndex = settings.providers.indexWhere((p) => p.id == providerId);
+    if (providerIndex == -1) {
+       return text.length > 15 ? '${text.substring(0, 15)}...' : text;
+    }
+    
+    // Create temp settings with target provider active and target model selected
+    final tempProviders = List<ProviderConfig>.from(settings.providers);
+    tempProviders[providerIndex] = tempProviders[providerIndex].copyWith(selectedModel: modelId);
+    
+    final tempSettings = settings.copyWith(
+      activeProviderId: providerId,
+      providers: tempProviders,
+    );
+    
+    final tempLLMService = OpenAILLMService(tempSettings);
+
+    // 5. Generate
+    try {
+      // Truncate input for prompt context (3000 chars limit)
+      final inputContent = text.length > 3000 ? text.substring(0, 3000) : text;
+      final prompt = '''Analyze the conversation in <content> and generate a concise title.
+Rules:
+1. Language: Use the same language as the conversation.
+2. Length: Max 10 characters or 5 words.
+3. Style: Concise, no punctuation, no special symbols.
+4. Output: The title text only.
+
+<content>
+$inputContent
+</content>''';
+
+      final response = await tempLLMService.getResponse([Message.user(prompt)]);
+      final generatedTitle = response.content?.trim() ?? '';
+      
+      if (generatedTitle.isNotEmpty) {
+        // Cleanup quotes if LLM adds them
+        var cleanTitle = generatedTitle.replaceAll('"', '').replaceAll("'", "");
+        if (cleanTitle.length > 20) {
+           cleanTitle = cleanTitle.substring(0, 20);
+        }
+        return cleanTitle;
+      }
+    } catch (e) {
+      debugPrint('Error generating topic: $e');
+    }
+    
+    // Fallback
+    return text.length > 15 ? '${text.substring(0, 15)}...' : text;
   }
 }
 

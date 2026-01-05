@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'provider_config_entity.dart';
@@ -53,6 +54,8 @@ class SettingsStorage {
     bool? isStreamEnabled,
     bool? isSearchEnabled,
     String? searchEngine,
+    bool? enableSmartTopic,
+    String? topicGenerationModel,
     String? lastSessionId,
   }) async {
     final existing = await loadAppSettings();
@@ -68,7 +71,10 @@ class SettingsStorage {
       ..isStreamEnabled = isStreamEnabled ?? existing?.isStreamEnabled ?? true
       ..isSearchEnabled = isSearchEnabled ?? existing?.isSearchEnabled ?? false
       ..searchEngine = searchEngine ?? existing?.searchEngine ?? 'duckduckgo'
+      ..enableSmartTopic = enableSmartTopic ?? existing?.enableSmartTopic ?? true
+        ..topicGenerationModel = topicGenerationModel ?? existing?.topicGenerationModel
       ..lastSessionId = lastSessionId ?? existing?.lastSessionId;
+    
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -90,6 +96,8 @@ class SettingsStorage {
       ..isStreamEnabled = existing.isStreamEnabled
       ..isSearchEnabled = existing.isSearchEnabled
       ..searchEngine = existing.searchEngine
+      ..enableSmartTopic = existing.enableSmartTopic
+      ..topicGenerationModel = existing.topicGenerationModel
       ..lastSessionId = sessionId;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
@@ -120,7 +128,9 @@ class SettingsStorage {
       ..themeMode = existing.themeMode
       ..isStreamEnabled = existing.isStreamEnabled
       ..isSearchEnabled = existing.isSearchEnabled
-      ..searchEngine = existing.searchEngine;
+      ..searchEngine = existing.searchEngine
+      ..enableSmartTopic = existing.enableSmartTopic
+      ..topicGenerationModel = existing.topicGenerationModel;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);

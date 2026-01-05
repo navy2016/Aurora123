@@ -66,6 +66,8 @@ class SettingsState {
   final bool isStreamEnabled;
   final bool isSearchEnabled;
   final String searchEngine;
+  final bool enableSmartTopic;
+  final String? topicGenerationModel;
   SettingsState({
     required this.providers,
     required this.activeProviderId,
@@ -80,6 +82,8 @@ class SettingsState {
     this.isStreamEnabled = true,
     this.isSearchEnabled = false,
     this.searchEngine = 'duckduckgo',
+    this.enableSmartTopic = true,
+    this.topicGenerationModel,
   });
   ProviderConfig get activeProvider =>
       providers.firstWhere((p) => p.id == activeProviderId);
@@ -102,6 +106,8 @@ class SettingsState {
     bool? isStreamEnabled,
     bool? isSearchEnabled,
     String? searchEngine,
+    bool? enableSmartTopic,
+    String? topicGenerationModel,
   }) {
     return SettingsState(
       providers: providers ?? this.providers,
@@ -117,6 +123,8 @@ class SettingsState {
       isStreamEnabled: isStreamEnabled ?? this.isStreamEnabled,
       isSearchEnabled: isSearchEnabled ?? this.isSearchEnabled,
       searchEngine: searchEngine ?? this.searchEngine,
+      enableSmartTopic: enableSmartTopic ?? this.enableSmartTopic,
+      topicGenerationModel: topicGenerationModel ?? this.topicGenerationModel,
     );
   }
 }
@@ -135,6 +143,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     bool isStreamEnabled = true,
     bool isSearchEnabled = false,
     String searchEngine = 'duckduckgo',
+    bool enableSmartTopic = true,
+    String? topicGenerationModel,
   })  : _storage = storage,
         super(SettingsState(
           providers: initialProviders,
@@ -148,6 +158,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           isStreamEnabled: isStreamEnabled,
           isSearchEnabled: isSearchEnabled,
           searchEngine: searchEngine,
+          enableSmartTopic: enableSmartTopic,
+          topicGenerationModel: topicGenerationModel,
         ));
   void viewProvider(String id) {
     if (state.viewingProviderId != id) {
@@ -385,6 +397,22 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       searchEngine: engine,
+    );
+  }
+
+  Future<void> toggleSmartTopicEnabled(bool enabled) async {
+    state = state.copyWith(enableSmartTopic: enabled);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      enableSmartTopic: enabled,
+    );
+  }
+
+  Future<void> setTopicGenerationModel(String? model) async {
+    state = state.copyWith(topicGenerationModel: model);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      topicGenerationModel: model,
     );
   }
 }

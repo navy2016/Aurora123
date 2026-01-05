@@ -102,6 +102,8 @@ void main() async {
           isStreamEnabled: appSettings?.isStreamEnabled ?? true,
           isSearchEnabled: appSettings?.isSearchEnabled ?? false,
           searchEngine: appSettings?.searchEngine ?? 'duckduckgo',
+          enableSmartTopic: appSettings?.enableSmartTopic ?? true,
+          topicGenerationModel: appSettings?.topicGenerationModel,
         );
       }),
     ],

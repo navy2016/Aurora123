@@ -103,9 +103,7 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
   Widget build(BuildContext context) {
     super.build(context);
     if (widget.content.isEmpty) return const SizedBox.shrink();
-    final isDark = widget.isWindows
-        ? fluent.FluentTheme.of(context).brightness == fluent.Brightness.dark
-        : Theme.of(context).brightness == Brightness.dark;
+    final isDark = fluent.FluentTheme.of(context).brightness == fluent.Brightness.dark;
     final backgroundColor =
         isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF5F5F5);
     final textColor = isDark ? Colors.white70 : Colors.black87;
@@ -194,7 +192,7 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
                         style: TextStyle(
                           fontSize: 13,
                           height: 1.5,
-                          fontFamily: 'Consolas',
+                          fontFamily: widget.isWindows ? 'Consolas' : null,
                           color: isDark ? Colors.white60 : Colors.black54,
                         ),
                       ),

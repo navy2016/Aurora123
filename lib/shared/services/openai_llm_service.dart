@@ -61,6 +61,25 @@ class OpenAILLMService implements LLMService {
       
       // Compress images if request size exceeds threshold
       apiMessages = _compressApiMessagesIfNeeded(apiMessages);
+      // Add System Time Prompt (Always)
+      final now = DateTime.now();
+      final dateStr = now.toIso8601String().split('T')[0]; // YYYY-MM-DD
+      final timeInstruction = 'Current Date: $dateStr. Today is ${now.year}.';
+      
+      final systemMsgIndex = apiMessages.indexWhere((m) => m['role'] == 'system');
+      if (systemMsgIndex != -1) {
+           final oldContent = apiMessages[systemMsgIndex]['content'];
+           // Avoid duplicating if already present (basic check)
+           if (!oldContent.toString().contains('Current Date:')) {
+             apiMessages[systemMsgIndex]['content'] = '$timeInstruction\n\n$oldContent';
+           }
+      } else {
+         apiMessages.insert(0, {
+           'role': 'system', 
+           'content': timeInstruction
+         });
+      }
+
       final Map<String, dynamic> requestData = {
         'model': model,
         'messages': apiMessages,
@@ -71,33 +90,47 @@ class OpenAILLMService implements LLMService {
         if (toolChoice != null) {
           requestData['tool_choice'] = toolChoice;
         }
-        // Force System Prompt for Tools
-        final now = DateTime.now();
-        final dateStr = now.toIso8601String().split('T')[0]; // YYYY-MM-DD
-        final systemInstruction = 'Current Date: $dateStr. Today is ${now.year}. Use this date for all searches.';
         
-        final systemMsgIndex = apiMessages.indexWhere((m) => m['role'] == 'system');
-        if (systemMsgIndex != -1) {
-             final oldContent = apiMessages[systemMsgIndex]['content'];
-             apiMessages[systemMsgIndex]['content'] = '$systemInstruction\n\n$oldContent';
-        } else {
-           apiMessages.insert(0, {
-             'role': 'system', 
-             'content': '''$systemInstruction
-## Tools
-You have access to a `search_web` tool. Use it when the user asks for real-time information, news, or specific technical documentation.
+        // Add Search Tool Guidelines if search_web is available
+        // Locate system message again (it might have moved or been created above)
+        final sysIdx = apiMessages.indexWhere((m) => m['role'] == 'system');
+        if (sysIdx != -1) {
+           final oldContent = apiMessages[sysIdx]['content'];
+           final searchGuide = '''
+## Web Search Tool Usage Guide (`search_web`)
 
-## Citation Format (CRITICAL)
-Search results include an `index` and `link`. You MUST cite your sources using Markdown links in the format `[index](link)`.
-- **Placement**: Citations must immediately follow the relevant information.
-- **Do not** list all citations at the end.
-- **Example**: "Google released Gemini in 2023.[1](https://google.com/gemini) It competes with GPT-4.[2](https://openai.com)"
+### When to Use
+Activate the search tool in these scenarios:
+1. **Latest Information**: Queries about current events, news, weather, or sports scores.
+2. **Fact Checking**: Verification of claims or data.
+3. **Specific Knowledge**: Technical documentation, API references, or niche topics not in your training data.
 
-## Response Style
-- Summarize the search results directly.
-- Do not say "Based on the search results" repeatedly.
-- If results are conflicting, mention the discrepancy.'''
-           });
+**Region Note**: Prefer using `region: "us-en"` for high-quality, uncensored results, even for Chinese queries. Only use `zh-cn` if local Chinese news is explicitly required.
+
+### Citation Rules (STRICT)
+You MUST cite your sources using the format `[index](link)`.
+- **Immediate Placement**: Citations must be placed *immediately* after the relevant sentence or clause, before the period if possible.
+- **No Summary List**: Do NOT include a "References" or "Sources" section at the end of your response.
+- **Multiple Sources**: If a fact is supported by multiple sources, list them together: `[1](link1) [2](link2)`.
+
+### Response Guidelines
+- **Synthesize**: Combine information from multiple results into a coherent narrative. Don't just list them.
+- **Objectivity**: Report facts as found. If sources conflict, explicitly state the discrepancy.
+- **Completeness**: If search results are insufficient, honestly state what is missing rather than hallucinating.
+
+### Example
+✅ Correct:
+> "Stable Diffusion 3 was released in early 2024[1](https://stability.ai), featuring improved text handling[2](https://techcrunch.com)."
+
+❌ Incorrect:
+> "Stable Diffusion 3 was released in early 2024 and has better text."
+> Sources:
+> 1. https://stability.ai
+''';
+           // Only add if not already present
+           if (!oldContent.toString().contains('Web Search Tool Usage Guide')) {
+              apiMessages[sysIdx]['content'] = '$oldContent\n\n$searchGuide';
+           } 
         }
       }
       requestData.addAll(provider.customParameters);
@@ -555,6 +588,24 @@ Search results include an `index` and `link`. You MUST cite your sources using M
           _buildApiMessages(messages, attachments);
       // Compress images if request size exceeds threshold
       apiMessages = _compressApiMessagesIfNeeded(apiMessages);
+      // Add System Time Prompt (Always)
+      final now = DateTime.now();
+      final dateStr = now.toIso8601String().split('T')[0]; // YYYY-MM-DD
+      final timeInstruction = 'Current Date: $dateStr. Today is ${now.year}.';
+      
+      final systemMsgIndex = apiMessages.indexWhere((m) => m['role'] == 'system');
+      if (systemMsgIndex != -1) {
+           final oldContent = apiMessages[systemMsgIndex]['content'];
+           if (!oldContent.toString().contains('Current Date:')) {
+             apiMessages[systemMsgIndex]['content'] = '$timeInstruction\n\n$oldContent';
+           }
+      } else {
+         apiMessages.insert(0, {
+           'role': 'system', 
+           'content': timeInstruction
+         });
+      }
+
       final Map<String, dynamic> requestData = {
         'model': model,
         'messages': apiMessages,
@@ -565,21 +616,15 @@ Search results include an `index` and `link`. You MUST cite your sources using M
         if (toolChoice != null) {
            requestData['tool_choice'] = toolChoice;
         }
-        // Force System Prompt for Tools
-        // Force System Prompt for Tools
-        final systemMsgIndex = apiMessages.indexWhere((m) => m['role'] == 'system');
-        final now = DateTime.now();
-        final dateStr = now.toIso8601String().split('T')[0];
-        final systemInstruction = 'Current Date: $dateStr. Today is ${now.year}. Use this date for all searches.';
         
-        if (systemMsgIndex != -1) {
-           final oldContent = apiMessages[systemMsgIndex]['content'];
-           apiMessages[systemMsgIndex]['content'] = '$systemInstruction\n\n$oldContent';
-        } else {
-           apiMessages.insert(0, {
-             'role': 'system', 
-             'content': '$systemInstruction\nYou are a helpful assistant with access to a web search tool. Use it for current information.'
-           });
+        // Add Search Tool Guidelines if search_web is available
+        final sysIdx = apiMessages.indexWhere((m) => m['role'] == 'system');
+        if (sysIdx != -1) {
+           final oldContent = apiMessages[sysIdx]['content'];
+           final searchGuide = 'You have access to a web search tool. Use it for current information.';
+           if (!oldContent.toString().contains('web search tool')) {
+              apiMessages[sysIdx]['content'] = '$oldContent\n\n$searchGuide';
+           }
         }
       }
       requestData.addAll(provider.customParameters);
