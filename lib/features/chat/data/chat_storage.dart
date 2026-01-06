@@ -28,7 +28,7 @@ class ChatStorage {
     debugPrint('ChatStorage: preloadAllSessions completed in ${sw.elapsedMilliseconds}ms for ${sessions.length} sessions');
   }
   
-  Future<void> saveMessage(Message message, String sessionId) async {
+  Future<String> saveMessage(Message message, String sessionId) async {
     final entity = MessageEntity()
       ..timestamp = message.timestamp
       ..isUser = message.isUser
@@ -55,6 +55,9 @@ class ChatStorage {
     if (_messagesCache.containsKey(sessionId)) {
       _messagesCache[sessionId]!.add(message);
     }
+    
+    // Return the DB-assigned ID
+    return entity.id.toString();
   }
 
   Future<void> saveHistory(List<Message> messages, String sessionId) async {

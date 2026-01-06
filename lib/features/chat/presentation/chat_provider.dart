@@ -80,7 +80,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   String _sessionId;
   final void Function(String newId)? onSessionCreated;
   final void Function()? onStateChanged;
-  bool _isAborted = false;
+  String _currentGenerationId = '';
   double? _savedScrollOffset;
   
   // Per-session listeners for targeted rebuilds
@@ -144,7 +144,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
   
   void abortGeneration() {
-    _isAborted = true;
+    _currentGenerationId = ''; // Invalidate current generation
     state = state.copyWith(isLoading: false);
   }
   
@@ -178,7 +178,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // If new text provided, validate it
     if (text != null && text.trim().isEmpty && attachments.isEmpty) return _sessionId;
     
-    _isAborted = false; // Reset abort flag
+    final myGenerationId = const Uuid().v4();
+    _currentGenerationId = myGenerationId;
     
     // Session handling
     if (text != null && (_sessionId == 'chat' || _sessionId == 'new_chat')) {
@@ -260,7 +261,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       bool continueGeneration = true;
       int turns = 0;
       
-      while (continueGeneration && turns < 3 && !_isAborted && mounted) {
+      while (continueGeneration && turns < 3 && _currentGenerationId == myGenerationId && mounted) {
         turns++;
         continueGeneration = false; // Assume done unless tool call occurs
         
@@ -282,7 +283,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           DateTime? reasoningStartTime;
           
           await for (final chunk in responseStream) {
-            if (_isAborted || !mounted) break; // Check abort flag and mounted state
+            if (_currentGenerationId != myGenerationId || !mounted) break; // Check generation ID and mounted state
             
             // Track reasoning start
             if (chunk.reasoning != null && chunk.reasoning!.isNotEmpty) {
@@ -389,7 +390,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
             tools: tools
           );
           
-          if (!_isAborted && mounted) {
+          if (_currentGenerationId == myGenerationId && mounted) {
             aiMsg = Message(
               id: aiMsg.id,
               content: response.content ?? '',
@@ -435,7 +436,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         }
       } // End while loop
 
-      if (!_isAborted) {
+      if (_currentGenerationId == myGenerationId) {
         // Save the *final* conversation state 
         // (Note: Intermediate tool calls constitute valid history, so we should save all new messages)
         // We iterate and save messages that aren't saved yet? 
@@ -449,16 +450,34 @@ class ChatNotifier extends StateNotifier<ChatState> {
         final messages = state.messages;
         if (messages.length > startSaveIndex) {
           final unsaved = messages.sublist(startSaveIndex);
-          for (final m in unsaved) {
-             await _storage.saveMessage(m, _sessionId);
+          final updatedMessages = List<Message>.from(state.messages);
+          
+          for (int i = 0; i < unsaved.length; i++) {
+             // CRITICAL: Strict check inside the loop to catch aborts during previous iterations
+             if (_currentGenerationId != myGenerationId) {
+                break;
+             }
+             final m = unsaved[i];
+             final dbId = await _storage.saveMessage(m, _sessionId);
+             
+             // Update the message in state with the correct DB ID
+             final stateIndex = startSaveIndex + i;
+             if (stateIndex < updatedMessages.length) {
+               updatedMessages[stateIndex] = m.copyWith(id: dbId);
+             }
           }
+          
+          // Commit updated IDs to state
+          if (mounted && _currentGenerationId == myGenerationId) {
+            state = state.copyWith(messages: updatedMessages, isLoading: false, hasUnreadResponse: true);
+          }
+        } else {
+          // Generation complete, mark as unread
+          if (mounted) state = state.copyWith(isLoading: false, hasUnreadResponse: true);
         }
-        
-        // Generation complete, mark as unread
-        if (mounted) state = state.copyWith(isLoading: false, hasUnreadResponse: true);
       }
     } catch (e, stack) {
-      if (!_isAborted && mounted) {
+      if (_currentGenerationId == myGenerationId && mounted) {
         state = state.copyWith(isLoading: false, error: e.toString());
       }
     } finally {
@@ -532,7 +551,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // Allow a tiny bit of time for the loop to break if it was running
     await Future.delayed(const Duration(milliseconds: 100));
     
-    _isAborted = false; // Reset abort flag
     final rootMsg = state.messages[index];
     List<Message> historyToKeep;
     
