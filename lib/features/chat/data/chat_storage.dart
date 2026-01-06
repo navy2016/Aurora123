@@ -1,10 +1,26 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import '../../settings/data/settings_storage.dart';
 import 'message_entity.dart';
 import 'session_entity.dart';
 import '../domain/message.dart';
+
+/// Deletes local attachment files for given paths.
+/// Silently ignores errors (e.g., file already deleted).
+Future<void> _deleteAttachmentFiles(List<String> paths) async {
+  for (final path in paths) {
+    try {
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      debugPrint('Failed to delete attachment: $path, error: $e');
+    }
+  }
+}
 
 class ChatStorage {
   final Isar _isar;
@@ -163,6 +179,13 @@ class ChatStorage {
   Future<void> deleteMessage(String id) async {
     final intId = int.tryParse(id);
     if (intId == null) return;
+    
+    // Fetch the message to get attachments before deleting
+    final entity = await _isar.messageEntitys.get(intId);
+    if (entity != null && entity.attachments.isNotEmpty) {
+      await _deleteAttachmentFiles(entity.attachments);
+    }
+    
     await _isar.writeTxn(() async {
       await _isar.messageEntitys.delete(intId);
     });
@@ -221,6 +244,23 @@ class ChatStorage {
   }
 
   Future<void> deleteSession(String sessionId) async {
+    // Fetch all messages for the session to get attachments before deleting
+    final messages = await _isar.messageEntitys
+        .filter()
+        .sessionIdEqualTo(sessionId)
+        .findAll();
+    
+    // Collect all attachment paths
+    final allAttachments = <String>[];
+    for (final msg in messages) {
+      allAttachments.addAll(msg.attachments);
+    }
+    
+    // Delete attachment files
+    if (allAttachments.isNotEmpty) {
+      await _deleteAttachmentFiles(allAttachments);
+    }
+    
     await _isar.writeTxn(() async {
       await _isar.messageEntitys
           .filter()

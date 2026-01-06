@@ -19,6 +19,17 @@ import 'chat_image_bubble.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import '../../../history/presentation/widgets/hover_image_preview.dart';
 
+/// Returns a persistent directory for storing user-uploaded attachments.
+/// Creates the directory if it doesn't exist.
+Future<Directory> getAttachmentsDir() async {
+  final appDir = await getApplicationDocumentsDirectory();
+  final attachmentsDir = Directory('${appDir.path}${Platform.pathSeparator}Aurora${Platform.pathSeparator}attachments');
+  if (!await attachmentsDir.exists()) {
+    await attachmentsDir.create(recursive: true);
+  }
+  return attachmentsDir;
+}
+
 class ChatView extends ConsumerStatefulWidget {
   final String sessionId;
   
@@ -321,9 +332,9 @@ class ChatViewState extends ConsumerState<ChatView> {
       try {
         final imageBytes = await Pasteboard.image;
         if (imageBytes != null && imageBytes.isNotEmpty) {
-          final tempDir = await getTemporaryDirectory();
+          final attachDir = await getAttachmentsDir();
           final path =
-              '${tempDir.path}${Platform.pathSeparator}paste_fb_${DateTime.now().millisecondsSinceEpoch}.png';
+              '${attachDir.path}${Platform.pathSeparator}paste_fb_${DateTime.now().millisecondsSinceEpoch}.png';
           await File(path).writeAsBytes(imageBytes);
           if (mounted) {
             if (!_attachments.contains(path)) {
@@ -349,9 +360,9 @@ class ChatViewState extends ConsumerState<ChatView> {
       final completer = Completer<String?>();
       reader.getFile(Formats.png, (file) async {
         try {
-          final tempDir = await getTemporaryDirectory();
+          final attachDir = await getAttachmentsDir();
           final path =
-              '${tempDir.path}${Platform.pathSeparator}paste_${DateTime.now().millisecondsSinceEpoch}.png';
+              '${attachDir.path}${Platform.pathSeparator}paste_${DateTime.now().millisecondsSinceEpoch}.png';
           final stream = file.getStream();
           final bytes = await stream.toList();
           final allBytes = bytes.expand((x) => x).toList();
@@ -381,9 +392,9 @@ class ChatViewState extends ConsumerState<ChatView> {
       final completer = Completer<String?>();
       reader.getFile(Formats.jpeg, (file) async {
         try {
-          final tempDir = await getTemporaryDirectory();
+          final attachDir = await getAttachmentsDir();
           final path =
-              '${tempDir.path}${Platform.pathSeparator}paste_${DateTime.now().millisecondsSinceEpoch}.jpg';
+              '${attachDir.path}${Platform.pathSeparator}paste_${DateTime.now().millisecondsSinceEpoch}.jpg';
           final stream = file.getStream();
           final bytes = await stream.toList();
           final allBytes = bytes.expand((x) => x).toList();
@@ -1330,9 +1341,9 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
       try {
         final imageBytes = await Pasteboard.image;
         if (imageBytes != null && imageBytes.isNotEmpty) {
-          final tempDir = await getTemporaryDirectory();
+          final attachDir = await getAttachmentsDir();
           final path =
-              '${tempDir.path}${Platform.pathSeparator}paste_fb_${DateTime.now().millisecondsSinceEpoch}.png';
+              '${attachDir.path}${Platform.pathSeparator}paste_fb_${DateTime.now().millisecondsSinceEpoch}.png';
           await File(path).writeAsBytes(imageBytes);
           if (mounted) {
             if (!_newAttachments.contains(path)) {
@@ -1395,9 +1406,9 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
 
   Future<void> _saveClipImage(file) async {
     try {
-      final tempDir = await getTemporaryDirectory();
+      final attachDir = await getAttachmentsDir();
       final path =
-          '${tempDir.path}${Platform.pathSeparator}paste_${DateTime.now().millisecondsSinceEpoch}.png';
+          '${attachDir.path}${Platform.pathSeparator}paste_${DateTime.now().millisecondsSinceEpoch}.png';
       final stream = file.getStream();
       final List<int> bytes = [];
       await for (final chunk in stream) {
