@@ -292,7 +292,7 @@ class _ModelStatsList extends StatelessWidget {
     }
   }
 
-  Widget _buildItem(BuildContext context, MapEntry<String, ({int failure, int success})> entry, int maxTotal) {
+  Widget _buildItem(BuildContext context, MapEntry<String, ({int failure, int success, int totalDurationMs})> entry, int maxTotal) {
     final modelName = entry.key;
     final stats = entry.value;
     final total = stats.success + stats.failure;
@@ -401,6 +401,13 @@ class _ModelStatsList extends StatelessWidget {
                   Text(' · ', style: TextStyle(fontSize: 10, color: subTextColor)),
                 if (stats.failure > 0)
                   Text(l10n.failureCount(stats.failure), style: const TextStyle(fontSize: 10, color: Colors.red)),
+                if (total > 0) ...[
+                  Text(' · ', style: TextStyle(fontSize: 10, color: subTextColor)),
+                  Text(
+                    l10n.averageDuration((stats.totalDurationMs / total / 1000).toStringAsFixed(2)),
+                    style: TextStyle(fontSize: 10, color: subTextColor),
+                  ),
+                ],
               ],
             ),
           ),

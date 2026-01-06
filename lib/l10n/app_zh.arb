@@ -185,6 +185,12 @@
       "count": {"type": "int"}
     }
   },
+  "averageDuration": "平均: {duration}秒",
+  "@averageDuration": {
+    "placeholders": {
+      "duration": {"type": "String"}
+    }
+  },
   
   "mobileSettings": "移动端设置",
   "mobileSettingsHint": "请使用顶部导航栏的设置按钮访问完整设置页面",

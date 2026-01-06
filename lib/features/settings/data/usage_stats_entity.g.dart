@@ -31,6 +31,11 @@ const UsageStatsEntitySchema = CollectionSchema(
       id: 2,
       name: r'successCount',
       type: IsarType.long,
+    ),
+    r'totalDurationMs': PropertySchema(
+      id: 3,
+      name: r'totalDurationMs',
+      type: IsarType.long,
     )
   },
   estimateSize: _usageStatsEntityEstimateSize,
@@ -80,6 +85,7 @@ void _usageStatsEntitySerialize(
   writer.writeLong(offsets[0], object.failureCount);
   writer.writeString(offsets[1], object.modelName);
   writer.writeLong(offsets[2], object.successCount);
+  writer.writeLong(offsets[3], object.totalDurationMs);
 }
 
 UsageStatsEntity _usageStatsEntityDeserialize(
@@ -93,6 +99,7 @@ UsageStatsEntity _usageStatsEntityDeserialize(
   object.id = id;
   object.modelName = reader.readString(offsets[1]);
   object.successCount = reader.readLong(offsets[2]);
+  object.totalDurationMs = reader.readLong(offsets[3]);
   return object;
 }
 
@@ -108,6 +115,8 @@ P _usageStatsEntityDeserializeProp<P>(
     case 1:
       return (reader.readString(offset)) as P;
     case 2:
+      return (reader.readLong(offset)) as P;
+    case 3:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -612,6 +621,62 @@ extension UsageStatsEntityQueryFilter
       ));
     });
   }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalDurationMsEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'totalDurationMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalDurationMsGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'totalDurationMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalDurationMsLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'totalDurationMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalDurationMsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'totalDurationMs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension UsageStatsEntityQueryObject
@@ -661,6 +726,20 @@ extension UsageStatsEntityQuerySortBy
       sortBySuccessCountDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'successCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByTotalDurationMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalDurationMs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByTotalDurationMsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalDurationMs', Sort.desc);
     });
   }
 }
@@ -721,6 +800,20 @@ extension UsageStatsEntityQuerySortThenBy
       return query.addSortBy(r'successCount', Sort.desc);
     });
   }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByTotalDurationMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalDurationMs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByTotalDurationMsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalDurationMs', Sort.desc);
+    });
+  }
 }
 
 extension UsageStatsEntityQueryWhereDistinct
@@ -743,6 +836,13 @@ extension UsageStatsEntityQueryWhereDistinct
       distinctBySuccessCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'successCount');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
+      distinctByTotalDurationMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'totalDurationMs');
     });
   }
 }
@@ -770,6 +870,13 @@ extension UsageStatsEntityQueryProperty
   QueryBuilder<UsageStatsEntity, int, QQueryOperations> successCountProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'successCount');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, int, QQueryOperations>
+      totalDurationMsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'totalDurationMs');
     });
   }
 }

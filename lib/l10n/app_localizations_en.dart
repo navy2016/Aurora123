@@ -409,6 +409,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String averageDuration(String duration) {
+    return 'Avg: ${duration}s';
+  }
+
+  @override
   String get mobileSettings => 'Mobile Settings';
 
   @override

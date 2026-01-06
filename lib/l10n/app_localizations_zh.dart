@@ -401,6 +401,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String averageDuration(String duration) {
+    return '平均: $duration秒';
+  }
+
+  @override
   String get mobileSettings => '移动端设置';
 
   @override

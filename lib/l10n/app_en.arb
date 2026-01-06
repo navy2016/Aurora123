@@ -185,6 +185,12 @@
       "count": {"type": "int"}
     }
   },
+  "averageDuration": "Avg: {duration}s",
+  "@averageDuration": {
+    "placeholders": {
+      "duration": {"type": "String"}
+    }
+  },
   
   "mobileSettings": "Mobile Settings",
   "mobileSettingsHint": "Please use the settings button in the top navigation bar to access full settings",

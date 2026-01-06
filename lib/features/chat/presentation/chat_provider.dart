@@ -233,7 +233,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(isLoading: true, error: null, hasUnreadResponse: false);
     
     // Track index of first new AI/Tool message to save later
+    // Track index of first new AI/Tool message to save later
     final startSaveIndex = state.messages.length;
+    final startTime = DateTime.now();
 
     try {
       // Use current state messages for API context
@@ -479,7 +481,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
         
         // Track successful usage
         if (currentModel != null && currentModel.isNotEmpty) {
-          _ref.read(usageStatsProvider.notifier).incrementUsage(currentModel, success: true);
+          final duration = DateTime.now().difference(startTime).inMilliseconds;
+          _ref.read(usageStatsProvider.notifier).incrementUsage(currentModel, success: true, durationMs: duration);
         }
       }
     } catch (e, stack) {
@@ -489,7 +492,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
         // Track failed usage
         final currentModel = _ref.read(settingsProvider).activeProvider?.selectedModel;
         if (currentModel != null && currentModel.isNotEmpty) {
-          _ref.read(usageStatsProvider.notifier).incrementUsage(currentModel, success: false);
+          final duration = DateTime.now().difference(startTime).inMilliseconds;
+          _ref.read(usageStatsProvider.notifier).incrementUsage(currentModel, success: false, durationMs: duration);
         }
       }
     } finally {

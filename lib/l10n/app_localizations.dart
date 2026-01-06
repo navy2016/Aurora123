@@ -854,6 +854,12 @@ abstract class AppLocalizations {
   /// **'{count} 失败'**
   String failureCount(int count);
 
+  /// No description provided for @averageDuration.
+  ///
+  /// In zh, this message translates to:
+  /// **'平均: {duration}秒'**
+  String averageDuration(String duration);
+
   /// No description provided for @mobileSettings.
   ///
   /// In zh, this message translates to:

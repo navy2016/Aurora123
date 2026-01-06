@@ -172,7 +172,7 @@ class SettingsStorage {
   }
 
   // Usage Stats Methods
-  Future<void> incrementUsage(String modelName, {bool success = true}) async {
+  Future<void> incrementUsage(String modelName, {bool success = true, int durationMs = 0}) async {
     await _isar.writeTxn(() async {
       var existing = await _isar.usageStatsEntitys
           .filter()
@@ -182,13 +182,15 @@ class SettingsStorage {
         existing = UsageStatsEntity()
           ..modelName = modelName
           ..successCount = success ? 1 : 0
-          ..failureCount = success ? 0 : 1;
+          ..failureCount = success ? 0 : 1
+          ..totalDurationMs = durationMs;
       } else {
         if (success) {
           existing.successCount++;
         } else {
           existing.failureCount++;
         }
+        existing.totalDurationMs += durationMs;
       }
       await _isar.usageStatsEntitys.put(existing);
     });

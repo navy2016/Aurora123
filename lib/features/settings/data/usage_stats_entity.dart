@@ -8,4 +8,5 @@ class UsageStatsEntity {
   late String modelName;
   int successCount = 0;
   int failureCount = 0;
+  int totalDurationMs = 0; // New: Track total duration
 }

@@ -3,7 +3,7 @@ import '../data/settings_storage.dart';
 import 'settings_provider.dart';
 
 class UsageStatsState {
-  final Map<String, ({int success, int failure})> stats;
+  final Map<String, ({int success, int failure, int totalDurationMs})> stats;
   final bool isLoading;
 
   const UsageStatsState({
@@ -12,7 +12,7 @@ class UsageStatsState {
   });
 
   UsageStatsState copyWith({
-    Map<String, ({int success, int failure})>? stats,
+    Map<String, ({int success, int failure, int totalDurationMs})>? stats,
     bool? isLoading,
   }) {
     return UsageStatsState(
@@ -36,21 +36,22 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
   Future<void> loadStats() async {
     state = state.copyWith(isLoading: true);
     final entities = await _storage.loadAllUsageStats();
-    final statsMap = <String, ({int success, int failure})>{};
+    final statsMap = <String, ({int success, int failure, int totalDurationMs})>{};
     for (final e in entities) {
-      statsMap[e.modelName] = (success: e.successCount, failure: e.failureCount);
+      statsMap[e.modelName] = (success: e.successCount, failure: e.failureCount, totalDurationMs: e.totalDurationMs);
     }
     state = UsageStatsState(stats: statsMap, isLoading: false);
   }
 
-  Future<void> incrementUsage(String modelName, {bool success = true}) async {
-    await _storage.incrementUsage(modelName, success: success);
+  Future<void> incrementUsage(String modelName, {bool success = true, int durationMs = 0}) async {
+    await _storage.incrementUsage(modelName, success: success, durationMs: durationMs);
     // Update local state
-    final current = state.stats[modelName] ?? (success: 0, failure: 0);
-    final newStats = Map<String, ({int success, int failure})>.from(state.stats);
+    final current = state.stats[modelName] ?? (success: 0, failure: 0, totalDurationMs: 0);
+    final newStats = Map<String, ({int success, int failure, int totalDurationMs})>.from(state.stats);
     newStats[modelName] = (
       success: current.success + (success ? 1 : 0),
       failure: current.failure + (success ? 0 : 1),
+      totalDurationMs: current.totalDurationMs + durationMs,
     );
     state = state.copyWith(stats: newStats);
   }
