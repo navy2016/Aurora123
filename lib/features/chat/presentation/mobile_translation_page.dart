@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/message.dart';
 import 'chat_provider.dart';
 import '../../settings/presentation/settings_provider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class MobileTranslationPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
@@ -91,7 +92,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
     final provider = settingsState.activeProvider;
     if (provider == null || provider.models.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请先在设置中配置模型')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.noModelsFetch)),
       );
       return;
     }
@@ -104,7 +105,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('选择模型',
+                child: Text(AppLocalizations.of(context)!.selectModel,
                     style: Theme.of(context).textTheme.titleMedium),
               ),
               const Divider(height: 1),
@@ -162,6 +163,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
     final settingsState = ref.watch(settingsProvider);
     final theme = Theme.of(context);
     final fluentTheme = fluent.FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final aiMessage =
         chatState.messages.isNotEmpty && !chatState.messages.last.isUser
             ? chatState.messages.last
@@ -185,7 +187,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
             children: [
               Flexible(
                 child: Text(
-                  settingsState.selectedModel ?? '未选择模型',
+                  settingsState.selectedModel ?? l10n.modelNotSelected,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -202,12 +204,12 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
           IconButton(
             icon:
                 Icon(_showComparison ? Icons.view_agenda : Icons.view_headline),
-            tooltip: _showComparison ? '关闭对照' : '双语对照',
+            tooltip: _showComparison ? l10n.closeComparison : l10n.bilingualComparison,
             onPressed: () => setState(() => _showComparison = !_showComparison),
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: '清空',
+            tooltip: l10n.clear,
             onPressed: () {
               _sourceController.clear();
               ref.read(translationProvider.notifier).clearContext();
@@ -264,7 +266,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('原文',
+                      Text(l10n.sourceText,
                           style:
                               TextStyle(color: Colors.grey[600], fontSize: 13)),
                       if (_sourceController.text.isNotEmpty)
@@ -283,8 +285,8 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                       maxLines: null,
                       expands: true,
                       textAlignVertical: TextAlignVertical.top,
-                      decoration: const InputDecoration(
-                        hintText: '在此输入要翻译的文本...',
+                      decoration: InputDecoration(
+                        hintText: l10n.enterTextToTranslate,
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
                       ),
@@ -316,7 +318,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.translate, size: 18),
-                    label: Text(chatState.isLoading ? '翻译中...' : '翻译'),
+                    label: Text(chatState.isLoading ? l10n.translating : l10n.translateButton),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -336,7 +338,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(_showComparison ? '双语对照' : '译文',
+                      Text(_showComparison ? l10n.bilingualComparison : l10n.targetText,
                           style:
                               TextStyle(color: Colors.grey[600], fontSize: 13)),
                       if (aiMessage != null)
@@ -364,7 +366,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
     if (aiMessage == null) {
       return Center(
         child: Text(
-          '翻译结果将显示在这里',
+          AppLocalizations.of(context)!.translationResultPlaceholder,
           style: TextStyle(color: Colors.grey[500]),
         ),
       );

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../shared/utils/avatar_cropper.dart';
 import 'settings_provider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class MobileUserPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
@@ -21,10 +22,11 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
   Widget build(BuildContext context) {
     final settingsState = ref.watch(settingsProvider);
     final fluentTheme = fluent.FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: fluentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('用户设置'),
+        title: Text(l10n.userSettings),
         backgroundColor: fluentTheme.scaffoldBackgroundColor,
         leading: widget.onBack != null
             ? IconButton(
@@ -36,10 +38,42 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
       ),
       body: ListView(
         children: [
-          _SectionHeader(title: '对话体验', icon: Icons.chat_bubble_outline),
+          _SectionHeader(title: l10n.displaySettings, icon: Icons.palette_outlined),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(l10n.language),
+            subtitle: Text(settingsState.language == 'zh' ? '简体中文' : 'English'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => SimpleDialog(
+                  title: Text(l10n.language),
+                  children: [
+                    SimpleDialogOption(
+                      onPressed: () {
+                        ref.read(settingsProvider.notifier).setLanguage('zh');
+                        Navigator.pop(context);
+                      },
+                      child: const Text('简体中文'),
+                    ),
+                    SimpleDialogOption(
+                      onPressed: () {
+                        ref.read(settingsProvider.notifier).setLanguage('en');
+                        Navigator.pop(context);
+                      },
+                      child: const Text('English'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          _SectionHeader(title: l10n.chatExperience, icon: Icons.chat_bubble_outline),
           SwitchListTile(
-            title: const Text('智能话题生成'),
-            subtitle: const Text('使用 LLM 自动总结作为话题标题'),
+            title: Text(l10n.smartTopicGeneration),
+            subtitle: Text(l10n.smartTopicDescription),
             value: settingsState.enableSmartTopic,
             onChanged: (bool value) {
               ref.read(settingsProvider.notifier).toggleSmartTopicEnabled(value);
@@ -47,9 +81,9 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
           ),
           if (settingsState.enableSmartTopic)
             ListTile(
-              title: const Text('生成模型'),
+              title: Text(l10n.generationModel),
               subtitle: Text(settingsState.topicGenerationModel == null
-                  ? '未选择 (回退到截断)'
+                  ? l10n.notSelectedFallback
                   : settingsState.topicGenerationModel!.split('@').last),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
@@ -57,17 +91,18 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
               },
             ),
           const Divider(),
-          _SectionHeader(title: '用户信息', icon: Icons.person_outline),
+          const Divider(),
+          _SectionHeader(title: l10n.userInfo, icon: Icons.person_outline),
           ListTile(
             leading: const Icon(Icons.badge_outlined),
-            title: const Text('用户名称'),
+            title: Text(l10n.userName),
             subtitle: Text(settingsState.userName.isNotEmpty
                 ? settingsState.userName
-                : '用户'),
+                : l10n.user),
             trailing: const Icon(Icons.edit),
             onTap: () => _showTextEditor(
               context,
-              '用户名称',
+              l10n.userName,
               settingsState.userName,
               (value) => ref
                   .read(settingsProvider.notifier)
@@ -84,23 +119,23 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
                   ? const Icon(Icons.person, size: 20)
                   : null,
             ),
-            title: const Text('用户头像'),
-            subtitle: const Text('点击更换头像'),
+            title: Text(l10n.userAvatar),
+            subtitle: Text(l10n.clickToChangeAvatar),
             trailing: const Icon(Icons.image),
             onTap: () => _showAvatarPicker(isUser: true),
           ),
           const Divider(),
-          _SectionHeader(title: 'AI 信息', icon: Icons.smart_toy_outlined),
+          _SectionHeader(title: l10n.aiInfo, icon: Icons.smart_toy_outlined),
           ListTile(
             leading: const Icon(Icons.badge_outlined),
-            title: const Text('AI 名称'),
+            title: Text(l10n.aiName),
             subtitle: Text(settingsState.llmName.isNotEmpty
                 ? settingsState.llmName
                 : 'Assistant'),
             trailing: const Icon(Icons.edit),
             onTap: () => _showTextEditor(
               context,
-              'AI 名称',
+              l10n.aiName,
               settingsState.llmName,
               (value) => ref
                   .read(settingsProvider.notifier)
@@ -117,8 +152,8 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
                   ? const Icon(Icons.smart_toy, size: 20)
                   : null,
             ),
-            title: const Text('AI 头像'),
-            subtitle: const Text('点击更换头像'),
+            title: Text(l10n.aiAvatar),
+            subtitle: Text(l10n.clickToChangeAvatar),
             trailing: const Icon(Icons.image),
             onTap: () => _showAvatarPicker(isUser: false),
           ),
@@ -130,29 +165,30 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
   void _showTextEditor(BuildContext context, String title, String currentValue,
       Function(String) onSave) {
     final controller = TextEditingController(text: currentValue);
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('编辑$title'),
+        title: Text('${l10n.edit}$title'),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: '请输入$title',
+            hintText: '${l10n.pleaseEnter}$title',
             border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               onSave(controller.text);
               Navigator.pop(ctx);
             },
-            child: const Text('保存'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -160,6 +196,7 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
   }
 
   void _showAvatarPicker({required bool isUser}) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent, // For rounded corners
@@ -184,13 +221,13 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
                  ),
                  const SizedBox(height: 16),
                  Text(
-                   '更换${isUser ? '用户' : 'AI'}头像',
+                   l10n.changeAvatarTitle(isUser ? l10n.user : 'AI'),
                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                  ),
                  const SizedBox(height: 16),
                  ListTile(
                    leading: const Icon(Icons.camera_alt),
-                   title: const Text('拍照'),
+                   title: Text(l10n.camera),
                    onTap: () {
                      Navigator.pop(ctx);
                      _pickImage(ImageSource.camera, isUser);
@@ -198,7 +235,7 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
                  ),
                  ListTile(
                    leading: const Icon(Icons.photo_library),
-                   title: const Text('从相册选择'),
+                   title: Text(l10n.photos),
                    onTap: () {
                      Navigator.pop(ctx);
                      _pickImage(ImageSource.gallery, isUser);
@@ -207,7 +244,7 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
                  if ((isUser ? ref.read(settingsProvider).userAvatar : ref.read(settingsProvider).llmAvatar) != null)
                     ListTile(
                       leading: const Icon(Icons.delete_outline, color: Colors.red),
-                      title: const Text('移除头像', style: TextStyle(color: Colors.red)),
+                      title: Text(l10n.removeAvatar, style: const TextStyle(color: Colors.red)),
                       onTap: () {
                          Navigator.pop(ctx);
                          if (isUser) {
@@ -267,36 +304,40 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
       }
     } catch (e) {
       if (mounted) {
+         final l10n = AppLocalizations.of(context)!;
          ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('选择图片失败: $e')),
+           SnackBar(content: Text('${l10n.pickImageFailed}: $e')),
          );
       }
     }
   }
 
   void _showPermissionDialog(String name) {
+    final l10n = AppLocalizations.of(context)!;
+    final localizedName = name == '相机' ? l10n.camera : name;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('需要$name权限'),
-        content: Text('请在设置中允许应用访问$name，以便拍摄头像。'),
+        title: Text(l10n.permissionRequired(localizedName)),
+        content: Text(l10n.permissionContent(localizedName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               openAppSettings();
             },
-            child: const Text('去设置'),
+            child: Text(l10n.goToSettings),
           ),
         ],
       ),
     );
   }
   void _showModelPicker(BuildContext context, SettingsState settings) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -306,8 +347,8 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text('选择话题生成模型',
-                    style: TextStyle(
+                child: Text(l10n.selectGenerationModel,
+                    style: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               Expanded(

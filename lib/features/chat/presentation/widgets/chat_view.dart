@@ -18,6 +18,7 @@ import 'reasoning_display.dart';
 import 'chat_image_bubble.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import '../../../history/presentation/widgets/hover_image_preview.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 /// Returns a persistent directory for storing user-uploaded attachments.
 /// Creates the directory if it doesn't exist.
@@ -145,7 +146,7 @@ class ChatViewState extends ConsumerState<ChatView> {
               const SizedBox(height: 20),
               _buildAttachmentOption(
                 icon: Icons.camera_alt_outlined,
-                label: '拍照',
+                label: AppLocalizations.of(context)!.takePhoto,
                 onTap: () async {
                   Navigator.pop(ctx);
                   await _pickImage(ImageSource.camera);
@@ -153,7 +154,7 @@ class ChatViewState extends ConsumerState<ChatView> {
               ),
               _buildAttachmentOption(
                 icon: Icons.photo_library_outlined,
-                label: '从相册选择',
+                label: AppLocalizations.of(context)!.selectFromGallery,
                 onTap: () async {
                   Navigator.pop(ctx);
                   await _pickImage(ImageSource.gallery);
@@ -161,7 +162,7 @@ class ChatViewState extends ConsumerState<ChatView> {
               ),
               _buildAttachmentOption(
                 icon: Icons.folder_open_outlined,
-                label: '选择文件',
+                label: AppLocalizations.of(context)!.selectFile,
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickFiles();
@@ -488,7 +489,7 @@ class ChatViewState extends ConsumerState<ChatView> {
 
   Future<void> _sendMessage() async {
     final text = _controller.text;
-    final settings = ref.read(settingsProvider);
+
     
     if (text.trim().isEmpty && _attachments.isEmpty) {
       return;
@@ -889,6 +890,7 @@ class ChatViewState extends ConsumerState<ChatView> {
 
   Widget _buildDesktopInputArea(bool isLoading, SettingsState settings) {
     final theme = fluent.FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -918,7 +920,7 @@ class ChatViewState extends ConsumerState<ChatView> {
             },
             child: fluent.TextBox(
               controller: _controller,
-              placeholder: '随便输入点什么吧 (Enter 换行，Ctrl + Enter 发送)',
+              placeholder: l10n.desktopInputHint,
               maxLines: 5,
               minLines: 1,
               // Completely transparent decoration to avoid "nested box" look
@@ -976,15 +978,15 @@ class ChatViewState extends ConsumerState<ChatView> {
                   showDialog(
                     context: context,
                     builder: (ctx) => fluent.ContentDialog(
-                      title: const Text('清空上下文'),
-                      content: const Text('确定要清空当前对话的历史记录吗？此操作不可撤销。'),
+                      title: Text(l10n.clearContext),
+                      content: Text(l10n.clearContextConfirm),
                       actions: [
                         fluent.Button(
-                          child: const Text('取消'),
+                          child: Text(l10n.cancel),
                           onPressed: () => Navigator.pop(ctx),
                         ),
                         fluent.FilledButton(
-                          child: const Text('确定'),
+                          child: Text(l10n.confirm),
                           onPressed: () {
                             Navigator.pop(ctx);
                             ref.read(historyChatProvider).clearContext();
@@ -1010,7 +1012,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                 onPressed: () {
                   final newState = !settings.isStreamEnabled;
                   ref.read(settingsProvider.notifier).toggleStreamEnabled();
-                  _showPillToast(newState ? '已开启流式传输' : '已关闭流式传输', fluent.FluentIcons.lightning_bolt);
+                  _showPillToast(newState ? l10n.streamEnabled : l10n.streamDisabled, fluent.FluentIcons.lightning_bolt);
                 },
                 style: fluent.ButtonStyle(
                   backgroundColor: fluent.WidgetStateProperty.resolveWith((states) {
@@ -1034,7 +1036,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                 onPressed: () {
                    final newState = !settings.isSearchEnabled;
                    ref.read(historyChatProvider).toggleSearch();
-                   _showPillToast(newState ? '已开启联网搜索' : '已关闭联网搜索', fluent.FluentIcons.globe);
+                   _showPillToast(newState ? l10n.searchEnabled : l10n.searchDisabled, fluent.FluentIcons.globe);
                 },
                 style: fluent.ButtonStyle(
                   backgroundColor: fluent.WidgetStateProperty.resolveWith((states) {
@@ -1070,6 +1072,7 @@ class ChatViewState extends ConsumerState<ChatView> {
   }
 
   Widget _buildMobileInputArea(bool isLoading, SettingsState settings) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
@@ -1091,9 +1094,9 @@ class ChatViewState extends ConsumerState<ChatView> {
               controller: _controller,
               maxLines: 5,
               minLines: 1,
-              decoration: const InputDecoration(
-                hintText: '随便输入点什么吧',
-                hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
+              decoration: InputDecoration(
+                hintText: l10n.mobileInputHint,
+                hintStyle: const TextStyle(fontSize: 15, color: Colors.grey),
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -1135,15 +1138,15 @@ class ChatViewState extends ConsumerState<ChatView> {
                   showDialog(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      title: const Text('清空上下文'),
-                      content: const Text('确定要清空当前对话的历史记录吗？此操作不可撤销。'),
+                      title: Text(l10n.clearContext),
+                      content: Text(l10n.clearContextConfirm),
                       actions: [
                         TextButton(
-                          child: const Text('取消'),
+                          child: Text(l10n.cancel),
                           onPressed: () => Navigator.pop(ctx),
                         ),
                         FilledButton(
-                          child: const Text('确定'),
+                          child: Text(l10n.confirm),
                           onPressed: () {
                             Navigator.pop(ctx);
                             ref.read(historyChatProvider).clearContext();
@@ -1171,7 +1174,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                 onTap: () {
                   final newState = !settings.isStreamEnabled;
                   ref.read(settingsProvider.notifier).toggleStreamEnabled();
-                  _showPillToast(newState ? '已开启流式传输' : '已关闭流式传输', fluent.FluentIcons.lightning_bolt);
+                  _showPillToast(newState ? l10n.streamEnabled : l10n.streamDisabled, fluent.FluentIcons.lightning_bolt);
                 },
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
@@ -1193,7 +1196,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                 onTap: () {
                    final newState = !settings.isSearchEnabled;
                    ref.read(historyChatProvider).toggleSearch();
-                   _showPillToast(newState ? '已开启联网搜索' : '已关闭联网搜索', fluent.FluentIcons.globe);
+                   _showPillToast(newState ? l10n.searchEnabled : l10n.searchDisabled, fluent.FluentIcons.globe);
                 },
                 onLongPress: () {
                    // Todo: Show bottom sheet for engine selection
@@ -1532,7 +1535,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                               isUser
                                   ? (settingsState.userName.isNotEmpty
                                       ? settingsState.userName
-                                      : '用户')
+                                      : AppLocalizations.of(context)!.user)
                                   : '${message.model ?? settingsState.selectedModel} | ${message.provider ?? settingsState.activeProvider?.name ?? 'AI'}',
                               style: TextStyle(
                                   color: Colors.grey[600], fontSize: 12),
@@ -1576,7 +1579,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      '思考中...',
+                                      '${AppLocalizations.of(context)!.thinking}...',
                                       style: TextStyle(
                                         color: theme.typography.body?.color?.withOpacity(0.6),
                                         fontSize: 14,

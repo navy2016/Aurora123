@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import '../../../settings/presentation/settings_content.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import '../../../history/presentation/history_content.dart';
@@ -29,10 +30,12 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
     final isExpanded = ref.watch(isSidebarExpandedProvider);
     final selectedIndex = ref.watch(desktopActiveTabProvider);
     
+    
+    final l10n = AppLocalizations.of(context)!;
     final navItems = [
-      (icon: fluent.FluentIcons.history, label: '历史', body: const HistoryContent()),
-      (icon: fluent.FluentIcons.translate, label: '翻译', body: const TranslationContent()),
-      (icon: fluent.FluentIcons.settings, label: '设置', body: const SettingsContent()),
+      (icon: fluent.FluentIcons.history, label: l10n.history, body: const HistoryContent()),
+      (icon: fluent.FluentIcons.translate, label: l10n.textTranslation, body: const TranslationContent()),
+      (icon: fluent.FluentIcons.settings, label: l10n.settings, body: const SettingsContent()),
     ];
 
     return Column(
@@ -209,7 +212,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                                             Expanded(
                                               child: Padding(
                                                 padding: const EdgeInsets.only(left: 8.0),
-                                                child: Text('主题', style: const TextStyle(fontWeight: FontWeight.normal), overflow: TextOverflow.ellipsis),
+                                                child: Text(l10n.theme, style: const TextStyle(fontWeight: FontWeight.normal), overflow: TextOverflow.ellipsis),
                                               ),
                                             ),
                                           ],

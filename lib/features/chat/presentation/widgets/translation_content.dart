@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import '../chat_provider.dart';
 import '../../domain/message.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class TranslationContent extends ConsumerStatefulWidget {
   const TranslationContent({super.key});
@@ -90,6 +91,7 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
     });
 
     final theme = fluent.FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final chatState = ref.watch(translationProvider);
     final isWindows = !kIsWeb && Platform.isWindows;
     final fontFamily = isWindows ? 'Microsoft YaHei' : null;
@@ -109,7 +111,7 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
             // Removed explicit color to blend with background (or transparent)
             child: Row(
               children: [
-                fluent.Text('文本翻译', 
+                fluent.Text(l10n.textTranslation, 
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14) // Reduced font size
                 ),
                 const SizedBox(width: 20), // Reduced spacing
@@ -153,14 +155,14 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
                   Expanded(
                     child: _buildCard(
                       theme: theme,
-                      title: '原文',
+                      title: l10n.sourceText,
                       fontFamily: fontFamily,
                       child: fluent.TextBox(
                         controller: _sourceController,
                         focusNode: _focusNode,
                         maxLines: null,
                         expands: true,
-                        placeholder: '在此输入要翻译的文本...',
+                        placeholder: l10n.enterTextToTranslate,
                         decoration: null,
                         highlightColor: Colors.transparent,
                         unfocusedColor: Colors.transparent,
@@ -193,7 +195,7 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
                                Icon(fluent.FluentIcons.translate, size: 14, color: theme.accentColor),
                                const SizedBox(width: 6),
                                Text(
-                                 chatState.isLoading ? '...' : '翻译', 
+                                 chatState.isLoading ? '...' : l10n.translateButton, 
                                  style: TextStyle(color: theme.accentColor, fontWeight: FontWeight.normal)
                                ),
                              ],
@@ -209,11 +211,11 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
                   Expanded(
                     child: _buildCard(
                       theme: theme,
-                      title: '译文',
+                      title: l10n.targetText,
                       fontFamily: fontFamily,
                       actions: [
                         fluent.Tooltip(
-                          message: _showComparison ? '关闭双语对照' : '开启双语对照',
+                          message: _showComparison ? l10n.disableCompare : l10n.enableCompare,
                           child: fluent.IconButton(
                             icon: Icon(
                               fluent.FluentIcons.compare, 
@@ -256,11 +258,27 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
       width: 100, // Reduced width
       child: fluent.ComboBox<String>(
         value: value,
-        items: items.map((e) => fluent.ComboBoxItem(child: Text(e, style: const TextStyle(fontSize: 13)), value: e)).toList(),
+        items: items.map((e) => fluent.ComboBoxItem(child: Text(_getDisplayLanguage(context, e), style: const TextStyle(fontSize: 13)), value: e)).toList(),
         onChanged: onChanged,
-        placeholder: const Text('选择语言', style: TextStyle(fontSize: 13)),
+        placeholder: Text(AppLocalizations.of(context)!.selectLanguage, style: const TextStyle(fontSize: 13)),
       ),
     );
+  }
+
+  String _getDisplayLanguage(BuildContext context, String internalLang) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (internalLang) {
+      case '自动检测': return l10n.autoDetect;
+      case '英语': return l10n.english;
+      case '日语': return l10n.japanese;
+      case '韩语': return l10n.korean;
+      case '简体中文': return l10n.simplifiedChinese;
+      case '繁体中文': return l10n.traditionalChinese;
+      case '俄语': return l10n.russian;
+      case '法语': return l10n.french;
+      case '德语': return l10n.german;
+      default: return internalLang;
+    }
   }
 
   Widget _buildCard({
@@ -318,7 +336,10 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
   Widget _buildTargetContent(ChatState chatState, Message? aiMessage, fluent.FluentThemeData theme, String? fontFamily) {
     if (aiMessage == null && !chatState.isLoading) {
       return Center(
-        child: Text('翻译结果将显示在这里', style: TextStyle(color: theme.resources.textFillColorSecondary))
+        child: Text(
+          AppLocalizations.of(context)!.translationPlaceholder, 
+          style: TextStyle(color: theme.resources.textFillColorSecondary)
+        )
       );
     }
     

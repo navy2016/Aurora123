@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'usage_stats_provider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 /// PC View: Embedded in Settings Pane
 class UsageStatsView extends ConsumerWidget {
@@ -11,10 +12,11 @@ class UsageStatsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsState = ref.watch(usageStatsProvider);
     final theme = fluent.FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     
     return fluent.ScaffoldPage(
-      header: const fluent.PageHeader(
-        title: fluent.Text('数据统计'),
+      header: fluent.PageHeader(
+        title: fluent.Text(l10n.usageStats),
       ),
       content: statsState.isLoading
           ? const Center(child: fluent.ProgressRing())
@@ -27,7 +29,7 @@ class UsageStatsView extends ConsumerWidget {
                            size: 64, 
                            color: theme.resources.textFillColorSecondary),
                       const SizedBox(height: 16),
-                      Text('暂无使用数据', 
+                      Text(l10n.noUsageData, 
                            style: TextStyle(color: theme.resources.textFillColorSecondary)),
                     ],
                   ),
@@ -40,32 +42,32 @@ class UsageStatsView extends ConsumerWidget {
                       // Summary Cards
                       Row(
                         children: [
-                          Expanded(child: _buildSummaryCardPC(theme, '总调用', statsState.totalCalls, Colors.blue)),
+                          Expanded(child: _buildSummaryCardPC(theme, l10n.totalCalls, statsState.totalCalls, Colors.blue)),
                           const SizedBox(width: 16),
-                          Expanded(child: _buildSummaryCardPC(theme, '成功', statsState.totalSuccess, Colors.green)),
+                          Expanded(child: _buildSummaryCardPC(theme, l10n.success, statsState.totalSuccess, Colors.green)),
                           const SizedBox(width: 16),
-                          Expanded(child: _buildSummaryCardPC(theme, '失败', statsState.totalFailure, Colors.red)),
+                          Expanded(child: _buildSummaryCardPC(theme, l10n.failed, statsState.totalFailure, Colors.red)),
                         ],
                       ),
                       const SizedBox(height: 32),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('模型调用分布', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(l10n.modelCallDistribution, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           fluent.Button(
                             onPressed: () async {
                               final confirmed = await showDialog<bool>(
                                 context: context,
                                 builder: (context) => fluent.ContentDialog(
-                                  title: const Text('清除统计数据'),
-                                  content: const Text('确定要清除所有使用统计吗？此操作无法撤销。'),
+                                  title: Text(l10n.clearStats),
+                                  content: Text(l10n.clearStatsConfirm),
                                   actions: [
                                     fluent.Button(
-                                      child: const Text('取消'),
+                                      child: Text(l10n.cancel),
                                       onPressed: () => Navigator.pop(context, false),
                                     ),
                                     fluent.FilledButton(
-                                      child: const Text('清除'),
+                                      child: Text(l10n.clearData), // Button text "清除" -> assume clearData or create general "clear"? Arb has "clearData": "清除数据". I'll use clearData.
                                       onPressed: () => Navigator.pop(context, true),
                                     ),
                                   ],
@@ -75,12 +77,12 @@ class UsageStatsView extends ConsumerWidget {
                                 ref.read(usageStatsProvider.notifier).clearStats();
                               }
                             },
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(fluent.FluentIcons.delete, size: 12),
-                                SizedBox(width: 8),
-                                Text('清除数据'),
+                                const Icon(fluent.FluentIcons.delete, size: 12),
+                                const SizedBox(width: 8),
+                                Text(l10n.clearData),
                               ],
                             ),
                           ),
@@ -153,6 +155,7 @@ class UsageStatsMobileSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsState = ref.watch(usageStatsProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     
     return Container(
       decoration: BoxDecoration(
@@ -180,18 +183,18 @@ class UsageStatsMobileSheet extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('使用统计', style: theme.textTheme.titleLarge),
+                Text(l10n.usageStats, style: theme.textTheme.titleLarge),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
                   onPressed: () async {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('清除数据'),
-                        content: const Text('确定要清除所有统计数据吗？'),
+                        title: Text(l10n.clearData),
+                        content: Text(l10n.clearDataConfirm),
                         actions: [
-                          TextButton(child: const Text('取消'), onPressed: () => Navigator.pop(context, false)),
-                          TextButton(child: const Text('清除'), onPressed: () => Navigator.pop(context, true)),
+                          TextButton(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context, false)),
+                          TextButton(child: Text(l10n.clearData), onPressed: () => Navigator.pop(context, true)),
                         ],
                       ),
                     );
@@ -208,7 +211,7 @@ class UsageStatsMobileSheet extends ConsumerWidget {
           if (statsState.isLoading)
              const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()))
           else if (statsState.stats.isEmpty)
-             const SizedBox(height: 300, child: Center(child: Text('暂无使用数据')))
+             SizedBox(height: 300, child: Center(child: Text(l10n.noUsageData)))
           else
             Flexible(
               child: SingleChildScrollView(
@@ -219,11 +222,11 @@ class UsageStatsMobileSheet extends ConsumerWidget {
                      // Summary Cards Row
                     Row(
                       children: [
-                        Expanded(child: _buildSummaryCardMobile(theme, '总调用', statsState.totalCalls, Colors.blue)),
+                        Expanded(child: _buildSummaryCardMobile(theme, l10n.totalCalls, statsState.totalCalls, Colors.blue)),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildSummaryCardMobile(theme, '成功', statsState.totalSuccess, Colors.green)),
+                        Expanded(child: _buildSummaryCardMobile(theme, l10n.success, statsState.totalSuccess, Colors.green)),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildSummaryCardMobile(theme, '失败', statsState.totalFailure, Colors.red)),
+                        Expanded(child: _buildSummaryCardMobile(theme, l10n.failed, statsState.totalFailure, Colors.red)),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -300,7 +303,8 @@ class _ModelStatsList extends StatelessWidget {
     final theme = isMobile ? Theme.of(context) : null;
     final textColor = isMobile ? theme!.textTheme.bodyMedium?.color : fluent.FluentTheme.of(context).resources.textFillColorPrimary;
     final subTextColor = isMobile ? theme!.textTheme.bodySmall?.color : fluent.FluentTheme.of(context).resources.textFillColorSecondary;
-
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -323,7 +327,7 @@ class _ModelStatsList extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '$total 次调用', 
+                l10n.callsCount(total), 
                 style: TextStyle(
                   fontSize: 12, 
                   color: subTextColor
@@ -392,11 +396,11 @@ class _ModelStatsList extends StatelessWidget {
             child: Row(
               children: [
                 if (stats.success > 0)
-                  Text('${stats.success} 成功', style: const TextStyle(fontSize: 10, color: Colors.green)),
+                  Text(l10n.successCount(stats.success), style: const TextStyle(fontSize: 10, color: Colors.green)),
                 if (stats.success > 0 && stats.failure > 0)
                   Text(' · ', style: TextStyle(fontSize: 10, color: subTextColor)),
                 if (stats.failure > 0)
-                  Text('${stats.failure} 失败', style: const TextStyle(fontSize: 10, color: Colors.red)),
+                  Text(l10n.failureCount(stats.failure), style: const TextStyle(fontSize: 10, color: Colors.red)),
               ],
             ),
           ),

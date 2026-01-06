@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../chat/presentation/chat_provider.dart';
 import '../../chat/presentation/widgets/chat_view.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class HistoryContent extends ConsumerStatefulWidget {
   const HistoryContent({super.key});
@@ -41,6 +42,7 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
   }
 
   Widget _buildMobileLayout(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final selectedSessionId = ref.watch(selectedHistorySessionIdProvider);
     final sessionsState = ref.watch(sessionsProvider);
 
@@ -75,8 +77,8 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
                   },
                 ),
                 const SizedBox(width: 8),
-                const Text('会话详情',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(l10n.sessionDetails,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -96,6 +98,7 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
     final isSidebarVisible = ref.watch(isHistorySidebarVisibleProvider);
     final sessionsState = ref.watch(sessionsProvider);
     final selectedSessionId = ref.watch(selectedHistorySessionIdProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       color: fluent.FluentTheme.of(context).navigationPaneTheme.backgroundColor,
@@ -144,7 +147,7 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
                 borderRadius: BorderRadius.circular(16),
                 child: RepaintBoundary(
                   child: selectedSessionId == null
-                      ? const Center(child: Text('请选择或新建一个话题'))
+                      ? Center(child: Text(l10n.selectOrNewTopic))
                       : ChatView(key: ValueKey(selectedSessionId), sessionId: selectedSessionId),
                 ),
               ),
@@ -170,6 +173,7 @@ class _SessionList extends ConsumerWidget {
     final manager = ref.watch(chatSessionManagerProvider);
     // Watch trigger to rebuild when any session state changes
     ref.watch(chatStateUpdateTriggerProvider);
+    final l10n = AppLocalizations.of(context)!;
     
     return Column(
       children: [
@@ -203,7 +207,7 @@ class _SessionList extends ConsumerWidget {
                         size: 14, 
                         color: theme.accentColor),
                     const SizedBox(width: 12),
-                    Text('开启新对话', 
+                    Text(l10n.startNewChat, 
                         style: TextStyle(
                             fontSize: 14,
                             color: theme.typography.body?.color,

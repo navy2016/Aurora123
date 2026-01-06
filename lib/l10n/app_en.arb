@@ -1,0 +1,267 @@
+{
+  "@@locale": "en",
+  
+  "appTitle": "Aurora",
+  
+  "newChat": "New Chat",
+  "searchChatHistory": "Search chat history",
+  "send": "Send",
+  "retry": "Retry",
+  "copy": "Copy",
+  "copied": "Copied",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "done": "Done",
+  "close": "Close",
+  "history": "History",
+  "modelNotSelected": "Model Not Selected",
+  "closeComparison": "Close Comparison",
+  "bilingualComparison": "Bilingual Comparison",
+  "clear": "Clear",
+  "translating": "Translating...",
+  "translationResultPlaceholder": "Translation result will be shown here",
+  "selectModel": "Select Model",
+  "switchModel": "Switch Model",
+  "deepThinking": "Deep Thinking...",
+  "deepThoughtFinished": "Deep Thought ({duration}s)",
+  "@deepThoughtFinished": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "thoughtChain": "Chain of Thought",
+  "camera": "Camera",
+  "photos": "Photos",
+  "userSettings": "User Settings",
+  "chatExperience": "Chat Experience",
+  "smartTopicGeneration": "Smart Topic Generation",
+  "smartTopicDescription": "Use LLM to automatically summarize chat titles",
+  "generationModel": "Generation Model",
+  "notSelectedFallback": "Not Selected (Fallback to truncate)",
+  "userInfo": "User Info",
+  "userName": "User Name",
+  "userAvatar": "User Avatar",
+  "clickToChangeAvatar": "Tap to change avatar",
+  "aiInfo": "AI Info",
+  "aiName": "AI Name",
+  "aiAvatar": "AI Avatar",
+  "pleaseEnter": "Please enter",
+  "changeAvatarTitle": "Change {target} Avatar",
+  "@changeAvatarTitle": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "removeAvatar": "Remove Avatar",
+  "permissionRequired": "{name} Permission Required",
+  "@permissionRequired": {
+     "placeholders": {
+       "name": {
+         "type": "String"
+       }
+     }
+  },
+  "permissionContent": "Please grant access to {name} in settings to take photos.",
+  "@permissionContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "goToSettings": "Go to Settings",
+  "selectGenerationModel": "Select Topic Generation Model",
+  "pickImageFailed": "Failed to pick image",
+  "textTranslation": "Text Translation",
+  "selectLanguage": "Select Language",
+  "sourceText": "Source",
+  "targetText": "Translation",
+  "enterTextToTranslate": "Enter text to translate...",
+  "translateButton": "Translate",
+  "compareMode": "Compare Mode",
+  "enableCompare": "Enable Compare Mode",
+  "disableCompare": "Disable Compare Mode",
+  "translationPlaceholder": "Translation result will appear here",
+  "sessionDetails": "Session Details",
+  "selectOrNewTopic": "Please select or start a new topic",
+  "startNewChat": "Start New Chat",
+  "edit": "Edit",
+  "add": "Add",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "loading": "Loading",
+  "error": "Error",
+  "success": "Success",
+  "failed": "Failed",
+  
+  "settings": "Settings",
+  "modelProvider": "Model Provider",
+  "chatSettings": "Chat Settings",
+  "displaySettings": "UI Settings",
+  "dataSettings": "Data Settings",
+  "usageStats": "Usage Statistics",
+  
+  "providerName": "Provider Name",
+  "currentProvider": "Current Provider",
+  "selectProvider": "Select Provider",
+  "addProvider": "Add Provider",
+  "deleteProvider": "Delete Provider",
+  "deleteProviderConfirm": "Are you sure you want to delete this provider? This action cannot be undone.",
+  "renameProvider": "Rename Provider",
+  "enterProviderName": "Enter provider name",
+  "notConfigured": "Not configured",
+  "noModelSelected": "No model selected",
+  
+  "enabledStatus": "Enabled Status",
+  "availableModels": "Available Models",
+  "refreshList": "Refresh List",
+  "fetchModelList": "Fetch Model List",
+  "noModelsData": "No models available. Please configure and click to fetch.",
+  "noModelsFetch": "No models. Please click to fetch.",
+  
+  "modelConfig": "Configuration",
+  "configureModelParams": "Configure parameters for this model",
+  "paramsHigherPriority": "These parameters have higher priority than global settings",
+  "noCustomParams": "No custom parameters",
+  "addCustomParam": "Add Custom Parameter",
+  "editParam": "Edit Parameter",
+  "paramKey": "Key",
+  "paramValue": "Value",
+  "paramType": "Type",
+  "typeText": "Text",
+  "typeNumber": "Number",
+  "typeBoolean": "Boolean",
+  "typeJson": "JSON",
+  "formatError": "Format error",
+  
+  "smartTopicGeneration": "Smart Topic Generation",
+  "selectTopicModel": "Select topic generation model",
+  "noModelFallback": "Will fallback to default truncation if no model selected",
+  
+  "userName": "User Name",
+  "userAvatar": "User Avatar",
+  "aiName": "AI Name",
+  "aiAvatar": "AI Avatar",
+  "selectImage": "Select Image",
+  "cropAvatar": "Crop Avatar",
+  
+  "themeAndUiComingSoon": "Theme and UI settings (Coming soon)",
+  "language": "Language",
+  "languageChinese": "Chinese (Simplified)",
+  "languageEnglish": "English",
+  
+  "exportData": "Export Data",
+  "importData": "Import Data",
+  "clearAllData": "Clear All Data",
+  
+  "totalCalls": "Total Calls",
+  "modelCallDistribution": "Model Call Distribution",
+  "clearStats": "Clear Statistics",
+  "clearStatsConfirm": "Are you sure you want to clear all usage statistics? This action cannot be undone.",
+  "clearData": "Clear Data",
+  "clearDataConfirm": "Are you sure you want to clear all statistics?",
+  "noUsageData": "No usage data",
+  "callsCount": "{count} calls",
+  "@callsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "successCount": "{count} success",
+  "@successCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "failureCount": "{count} failed",
+  "@failureCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  
+  "mobileSettings": "Mobile Settings",
+  "mobileSettingsHint": "Please use the settings button in the top navigation bar to access full settings",
+  
+  "user": "User",
+  "translation": "Translation",
+  "theme": "Theme",
+  "model": "Model",
+  "stats": "Stats",
+  "about": "About",
+  
+  "aboutAurora": "About Aurora",
+  "crossPlatformLlmClient": "A cross-platform LLM client",
+  "githubProject": "GitHub Project",
+  
+  "takePhoto": "Take Photo",
+  "selectFromGallery": "Select from Gallery",
+  "selectFile": "Select File",
+  
+  "stopGenerating": "Stop Generating",
+  "regenerate": "Regenerate",
+  "copyCode": "Copy Code",
+  "codeCopied": "Code copied",
+  "contentCopied": "Content copied",
+  
+  "thinking": "Thinking",
+  "thinkingProcess": "Thinking Process",
+  "expandThinking": "Expand thinking",
+  "collapseThinking": "Collapse thinking",
+  
+  "searchWeb": "Search Web",
+  "searchResults": "Search Results",
+  
+  "imageGenerated": "Image generated",
+  "saveImage": "Save Image",
+  "imageSaved": "Image saved",
+  "imageSaveFailed": "Failed to save image",
+  
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "last7Days": "Last 7 Days",
+  "last30Days": "Last 30 Days",
+  "earlier": "Earlier",
+  
+  "deleteChat": "Delete Chat",
+  "deleteChatConfirm": "Are you sure you want to delete this chat?",
+  "pinChat": "Pin Chat",
+  "unpinChat": "Unpin Chat",
+  
+  "noMessages": "No messages",
+  "typeMessage": "Type a message...",
+  
+  "editApiKey": "Edit API Key",
+  "editBaseUrl": "Edit API Base URL",
+  
+  "sourceLanguage": "Source Language",
+  "targetLanguage": "Target Language",
+  "autoDetect": "Auto Detect",
+  "english": "English",
+  "japanese": "Japanese",
+  "korean": "Korean",
+  "simplifiedChinese": "Simplified Chinese",
+  "traditionalChinese": "Traditional Chinese",
+  "russian": "Russian",
+  "french": "French",
+  "german": "German",
+  
+  "streamOutput": "Stream Output",
+  "enableSearch": "Enable Search",
+  "searchEngine": "Search Engine",
+  
+  "clearContext": "Clear Context",
+  "clearContextConfirm": "Are you sure you want to clear the context? This cannot be undone.",
+  "streamEnabled": "Stream Output Enabled",
+  "streamDisabled": "Stream Output Disabled",
+  "searchEnabled": "Web Search Enabled",
+  "searchDisabled": "Web Search Disabled",
+  "desktopInputHint": "Type something... (Enter for new line, Ctrl + Enter to send)",
+  "mobileInputHint": "Type something..."
+}

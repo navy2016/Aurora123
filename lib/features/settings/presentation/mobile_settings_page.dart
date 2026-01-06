@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_selector/file_selector.dart';
 import 'settings_provider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class MobileSettingsPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
@@ -30,10 +31,11 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
     final settingsState = ref.watch(settingsProvider);
     final activeProvider = settingsState.activeProvider;
     final fluentTheme = fluent.FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: fluentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('设置'),
+        title: Text(l10n.settings),
         backgroundColor: fluentTheme.scaffoldBackgroundColor,
         leading: widget.onBack != null
             ? IconButton(
@@ -49,11 +51,12 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _SectionHeader(title: '模型提供', icon: Icons.cloud_outlined),
+
+                _SectionHeader(title: l10n.modelProvider, icon: Icons.cloud_outlined),
                 ListTile(
                   leading: const Icon(Icons.business),
-                  title: const Text('当前供应商'),
-                  subtitle: Text(activeProvider?.name ?? '未配置'),
+                  title: Text(l10n.currentProvider),
+                  subtitle: Text(activeProvider?.name ?? l10n.notConfigured),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showProviderPicker(context, settingsState),
                 ),
@@ -62,7 +65,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                   title: const Text('API Key'),
                   subtitle: Text(activeProvider?.apiKey.isNotEmpty == true
                       ? '••••••••'
-                      : '未配置'),
+                      : l10n.notConfigured),
                   trailing: const Icon(Icons.edit),
                   onTap: () => _showApiKeyEditor(context, activeProvider),
                 ),
@@ -76,9 +79,9 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.power_settings_new),
-                  title: const Text('启用状态'),
+                  title: Text(l10n.enabledStatus),
                   subtitle:
-                      Text(activeProvider?.isEnabled == true ? '已启用' : '已禁用'),
+                      Text(activeProvider?.isEnabled == true ? l10n.enabled : l10n.disabled),
                   trailing: Switch(
                     value: activeProvider?.isEnabled == true,
                     onChanged: (v) {
@@ -102,9 +105,9 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        '可用模型',
-                        style: TextStyle(
+                      Text(
+                        l10n.availableModels,
+                        style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       OutlinedButton(
@@ -121,7 +124,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                                 height: 16,
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2))
-                            : const Text('获取模型列表'),
+                            : Text(l10n.fetchModelList),
                       ),
                     ],
                   ),
@@ -147,13 +150,13 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
               },
             )
           else if (activeProvider != null)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child:
-                    Text('暂无模型，请点击右上角获取', style: TextStyle(color: Colors.grey)),
-              ),
-            ),
+                    Text(l10n.noModelsFetch, style: const TextStyle(color: Colors.grey)),
+                  ),
+                ),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
         ],
       ),
@@ -164,6 +167,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
     showModalBottomSheet(
       context: context,
       builder: (ctx) {
+        final l10n = AppLocalizations.of(context)!;
         return Consumer(
           builder: (scopedContext, ref, _) {
             final state = ref.watch(settingsProvider);
@@ -171,12 +175,13 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('选择供应商',
-                        style: TextStyle(
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(l10n.selectProvider,
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
+
                   const Divider(height: 1),
                   ...state.providers.map((p) => ListTile(
                         leading: Icon(
@@ -188,7 +193,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                               : null,
                         ),
                         title: Text(p.name),
-                        subtitle: Text(p.selectedModel ?? '未选择模型'),
+                        subtitle: Text(p.selectedModel ?? l10n.noModelSelected),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -200,17 +205,17 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                                     context: scopedContext,
                                     builder: (context) {
                                       return AlertDialog(
-                                        title: const Text('删除供应商'),
+                                        title: Text(l10n.deleteProvider),
                                         content:
-                                            const Text('确定要删除此供应商配置吗？此操作无法撤销。'),
+                                            Text(l10n.deleteProviderConfirm),
                                         actions: [
                                           TextButton(
-                                            child: const Text('取消'),
+                                            child: Text(l10n.cancel),
                                             onPressed: () =>
                                                 Navigator.pop(context),
                                           ),
                                           TextButton(
-                                            child: const Text('删除'),
+                                            child: Text(l10n.delete),
                                             onPressed: () {
                                               Navigator.pop(context);
                                               ref
@@ -249,7 +254,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.add),
-                    title: const Text('添加供应商'),
+                    title: Text(l10n.addProvider),
                     onTap: () {
                       Navigator.pop(ctx);
                       ref.read(settingsProvider.notifier).addProvider();
@@ -287,6 +292,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
 
   void _showProviderRenameDialog(
       BuildContext context, ProviderConfig provider) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: provider.name);
     showDialog(
       context: context,
@@ -295,19 +301,19 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
             ? const Color(0xFF202020)
             : Colors.white,
         surfaceTintColor: Colors.transparent,
-        title: const Text('重命名供应商'),
+        title: Text(l10n.renameProvider),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '请输入供应商名称',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: l10n.enterProviderName,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -319,7 +325,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('保存'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -328,6 +334,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
 
   void _showApiKeyEditor(BuildContext context, ProviderConfig? provider) {
     if (provider == null) return;
+    final l10n = AppLocalizations.of(context)!;
     _apiKeyController.text = provider.apiKey;
     showDialog(
       context: context,
@@ -336,7 +343,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
             ? const Color(0xFF202020)
             : Colors.white,
         surfaceTintColor: Colors.transparent,
-        title: const Text('编辑 API Key'),
+        title: Text(l10n.editApiKey),
         content: TextField(
           controller: _apiKeyController,
           obscureText: true,
@@ -348,7 +355,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -358,7 +365,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                   );
               Navigator.pop(ctx);
             },
-            child: const Text('保存'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -367,6 +374,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
 
   void _showBaseUrlEditor(BuildContext context, ProviderConfig? provider) {
     if (provider == null) return;
+    final l10n = AppLocalizations.of(context)!;
     _baseUrlController.text = provider.baseUrl;
     showDialog(
       context: context,
@@ -375,7 +383,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
             ? const Color(0xFF202020)
             : Colors.white,
         surfaceTintColor: Colors.transparent,
-        title: const Text('编辑 API Base URL'),
+        title: Text(l10n.editBaseUrl),
         content: TextField(
           controller: _baseUrlController,
           decoration: const InputDecoration(
@@ -386,7 +394,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -396,7 +404,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                   );
               Navigator.pop(ctx);
             },
-            child: const Text('保存'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -538,6 +546,7 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: isDark ? const Color(0xFF202020) : Colors.white,
       surfaceTintColor: Colors.transparent,
@@ -547,7 +556,7 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
           Text(widget.modelName,
               style:
                   const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const Text('配置', style: TextStyle(fontSize: 14, color: Colors.grey)),
+          Text(l10n.modelConfig, style: const TextStyle(fontSize: 14, color: Colors.grey)),
         ],
       ),
       content: SizedBox(
@@ -557,11 +566,11 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_settings.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Center(
                     child:
-                        Text('暂无自定义参数', style: TextStyle(color: Colors.grey))),
+                        Text(l10n.noCustomParams, style: const TextStyle(color: Colors.grey))),
               )
             else
               Flexible(
@@ -590,7 +599,7 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.add_circle_outline),
-              title: const Text('添加自定义参数'),
+              title: Text(l10n.addCustomParam),
               onTap: () => _showEditDialog(),
             ),
           ],
@@ -599,7 +608,7 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('完成'),
+          child: Text(l10n.done),
         ),
       ],
     );
@@ -623,8 +632,7 @@ class _ParameterConfigDialog extends StatefulWidget {
 class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
   final _keyController = TextEditingController();
   final _valueController = TextEditingController();
-  String _type = '文本';
-  final List<String> _types = ['文本', '数字', '布尔值', 'JSON'];
+  String _type = 'string';
   bool _isInit = true;
   @override
   void initState() {
@@ -633,13 +641,13 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
       _keyController.text = widget.initialKey!;
       final val = widget.initialValue;
       if (val is bool) {
-        _type = '布尔值';
+        _type = 'boolean';
         _valueController.text = val.toString();
       } else if (val is num) {
-        _type = '数字';
+        _type = 'number';
         _valueController.text = val.toString();
       } else if (val is Map || val is List) {
-        _type = 'JSON';
+        _type = 'json';
         try {
           _valueController.text =
               const JsonEncoder.withIndent('  ').convert(val);
@@ -647,7 +655,7 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
           _valueController.text = jsonEncode(val);
         }
       } else {
-        _type = '文本';
+        _type = 'string';
         _valueController.text = val.toString();
       }
     }
@@ -664,43 +672,52 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEditing = widget.initialKey != null;
+    final l10n = AppLocalizations.of(context)!;
+    
+    final typeMap = {
+      'string': l10n.typeText,
+      'number': l10n.typeNumber,
+      'boolean': l10n.typeBoolean,
+      'json': l10n.typeJson,
+    };
+    
     return AlertDialog(
       backgroundColor: isDark ? const Color(0xFF202020) : Colors.white,
       surfaceTintColor: Colors.transparent,
-      title: Text(isEditing ? '编辑参数' : '添加自定义参数'),
+      title: Text(isEditing ? l10n.editParam : l10n.addCustomParam),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _keyController,
-            decoration: const InputDecoration(
-              labelText: '参数名 (Key)',
+            decoration: InputDecoration(
+              labelText: l10n.paramKey,
               hintText: 'e.g. image_config',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             value: _type,
             dropdownColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-            decoration: const InputDecoration(
-              labelText: '类型',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.paramType,
+              border: const OutlineInputBorder(),
             ),
-            items: _types
-                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+            items: typeMap.entries
+                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
                 .toList(),
             onChanged: (v) => setState(() => _type = v!),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _valueController,
-            maxLines: _type == 'JSON' ? 5 : 1,
-            minLines: _type == 'JSON' ? 3 : 1,
-            decoration: const InputDecoration(
-              labelText: '值 (Value)',
+            maxLines: _type == 'json' ? 5 : 1,
+            minLines: _type == 'json' ? 3 : 1,
+            decoration: InputDecoration(
+              labelText: l10n.paramValue,
               hintText: 'Value',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
         ],
@@ -708,7 +725,7 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(l10n.cancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -718,13 +735,13 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
             dynamic value;
             try {
               switch (_type) {
-                case '数字':
+                case 'number':
                   value = num.parse(valueStr);
                   break;
-                case '布尔值':
+                case 'boolean':
                   value = valueStr.toLowerCase() == 'true';
                   break;
-                case 'JSON':
+                case 'json':
                   value = jsonDecode(valueStr);
                   break;
                 default:
@@ -734,11 +751,11 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
               Navigator.pop(context);
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('格式错误: $e')),
+                SnackBar(content: Text('${l10n.formatError}: $e')),
               );
             }
           },
-          child: Text(isEditing ? '保存' : '添加'),
+          child: Text(isEditing ? l10n.save : l10n.add),
         ),
       ],
     );

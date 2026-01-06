@@ -59,6 +59,7 @@ class SettingsStorage {
     bool? enableSmartTopic,
     String? topicGenerationModel,
     String? lastSessionId,
+    String? language,
   }) async {
     final existing = await loadAppSettings();
     final settings = AppSettingsEntity()
@@ -74,8 +75,9 @@ class SettingsStorage {
       ..isSearchEnabled = isSearchEnabled ?? existing?.isSearchEnabled ?? false
       ..searchEngine = searchEngine ?? existing?.searchEngine ?? 'duckduckgo'
       ..enableSmartTopic = enableSmartTopic ?? existing?.enableSmartTopic ?? true
-        ..topicGenerationModel = topicGenerationModel ?? existing?.topicGenerationModel
-      ..lastSessionId = lastSessionId ?? existing?.lastSessionId;
+      ..topicGenerationModel = topicGenerationModel ?? existing?.topicGenerationModel
+      ..lastSessionId = lastSessionId ?? existing?.lastSessionId
+      ..language = language ?? existing?.language ?? 'zh';
     
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
@@ -100,7 +102,8 @@ class SettingsStorage {
       ..searchEngine = existing.searchEngine
       ..enableSmartTopic = existing.enableSmartTopic
       ..topicGenerationModel = existing.topicGenerationModel
-      ..lastSessionId = sessionId;
+      ..lastSessionId = sessionId
+      ..language = existing.language;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -132,7 +135,8 @@ class SettingsStorage {
       ..isSearchEnabled = existing.isSearchEnabled
       ..searchEngine = existing.searchEngine
       ..enableSmartTopic = existing.enableSmartTopic
-      ..topicGenerationModel = existing.topicGenerationModel;
+      ..topicGenerationModel = existing.topicGenerationModel
+      ..language = existing.language;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);

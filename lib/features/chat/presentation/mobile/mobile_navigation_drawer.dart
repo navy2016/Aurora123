@@ -6,6 +6,7 @@ import '../chat_provider.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import '../../../settings/presentation/usage_stats_view.dart';
 import '../../../history/presentation/history_content.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class MobileNavigationDrawer extends ConsumerWidget {
   final SessionsState sessionsState;
@@ -48,7 +49,7 @@ class MobileNavigationDrawer extends ConsumerWidget {
                           ref.read(sessionSearchQueryProvider.notifier).state = value;
                         },
                         decoration: InputDecoration(
-                          hintText: '搜索聊天记录',
+                          hintText: AppLocalizations.of(context)!.searchChatHistory,
                           hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
                           prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[600]),
                           border: InputBorder.none,
@@ -86,7 +87,7 @@ class MobileNavigationDrawer extends ConsumerWidget {
                     children: [
                       Icon(Icons.add_circle_outline, size: 20, color: Theme.of(context).colorScheme.primary),
                       const SizedBox(width: 10),
-                      Text('新对话',
+                      Text(AppLocalizations.of(context)!.newChat,
                           style: TextStyle(
                               fontSize: 15,
                               color: Theme.of(context).colorScheme.primary,
@@ -135,20 +136,26 @@ class MobileNavigationDrawer extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _MobileDrawerNavItem(
+                        Expanded(
+                          child: _MobileDrawerNavItem(
                             icon: Icons.person_outline,
-                            label: '用户',
+                            label: AppLocalizations.of(context)!.user,
                             onTap: () => onNavigate('__user__')),
-                        _MobileDrawerNavItem(
+                        ),
+                        Expanded(
+                          child: _MobileDrawerNavItem(
                             icon: Icons.translate,
-                            label: '翻译',
+                            label: AppLocalizations.of(context)!.translation,
                             onTap: () => onNavigate('__translation__')),
+                        ),
                         Consumer(builder: (context, ref, _) {
-                           return _MobileDrawerNavItem(
-                            icon: _getThemeIcon(ref.watch(settingsProvider).themeMode),
-                            label: '主题',
-                            onTap: onThemeCycle,
-                          );
+                           return Expanded(
+                             child: _MobileDrawerNavItem(
+                              icon: _getThemeIcon(ref.watch(settingsProvider).themeMode),
+                              label: AppLocalizations.of(context)!.theme,
+                              onTap: onThemeCycle,
+                          ),
+                           );
                         }),
                       ],
                     ),
@@ -156,13 +163,16 @@ class MobileNavigationDrawer extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _MobileDrawerNavItem(
+                        Expanded(
+                          child: _MobileDrawerNavItem(
                             icon: Icons.cloud_outlined,
-                            label: '模型',
+                            label: AppLocalizations.of(context)!.model,
                             onTap: () => onNavigate('__settings__')),
-                        _MobileDrawerNavItem(
+                        ),
+                        Expanded(
+                          child: _MobileDrawerNavItem(
                             icon: Icons.analytics_outlined,
-                            label: '统计',
+                            label: AppLocalizations.of(context)!.stats,
                             onTap: () {
                               Navigator.pop(context);
                               showModalBottomSheet(
@@ -172,9 +182,11 @@ class MobileNavigationDrawer extends ConsumerWidget {
                                 builder: (context) => const UsageStatsMobileSheet(),
                               );
                             }),
-                        _MobileDrawerNavItem(
+                        ),
+                        Expanded(
+                          child: _MobileDrawerNavItem(
                             icon: Icons.info_outline,
-                            label: '关于',
+                            label: AppLocalizations.of(context)!.about,
                             onTap: () async {
                               FocusManager.instance.primaryFocus?.unfocus();
                               Navigator.pop(context);
@@ -184,12 +196,12 @@ class MobileNavigationDrawer extends ConsumerWidget {
                                 showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title: const Text('关于 Aurora'),
+                                    title: Text(AppLocalizations.of(context)!.aboutAurora),
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('一个跨平台 LLM 客户端'),
+                                        Text(AppLocalizations.of(context)!.crossPlatformLlmClient),
                                         const SizedBox(height: 16),
                                         InkWell(
                                           onTap: () async {
@@ -199,13 +211,13 @@ class MobileNavigationDrawer extends ConsumerWidget {
                                               await launchUrl(uri, mode: LaunchMode.externalApplication);
                                             }
                                           },
-                                          child: const Row(
+                                          child: Row(
                                             children: [
-                                              Icon(Icons.code, size: 18),
-                                              SizedBox(width: 8),
+                                              const Icon(Icons.code, size: 18),
+                                              const SizedBox(width: 8),
                                               Text(
-                                                'GitHub 项目',
-                                                style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                                                AppLocalizations.of(context)!.githubProject,
+                                                style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
                                               ),
                                             ],
                                           ),
@@ -215,13 +227,14 @@ class MobileNavigationDrawer extends ConsumerWidget {
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
-                                        child: const Text('关闭'),
+                                        child: Text(AppLocalizations.of(context)!.close),
                                       ),
                                     ],
                                   ),
                                 );
                               }
                             }),
+                        ),
                       ],
                     ),
                   ],

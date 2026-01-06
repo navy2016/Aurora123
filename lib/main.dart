@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'package:window_manager/window_manager.dart';
 import 'features/chat/presentation/chat_screen.dart';
 import 'features/chat/presentation/chat_provider.dart';
@@ -103,7 +105,9 @@ void main() async {
           isSearchEnabled: appSettings?.isSearchEnabled ?? false,
           searchEngine: appSettings?.searchEngine ?? 'duckduckgo',
           enableSmartTopic: appSettings?.enableSmartTopic ?? true,
+
           topicGenerationModel: appSettings?.topicGenerationModel,
+          language: appSettings?.language ?? (Platform.localeName.startsWith('zh') ? 'zh' : 'en'),
         );
       }),
     ],
@@ -122,6 +126,7 @@ class MyApp extends ConsumerWidget {
     });
 
     final themeModeStr = ref.watch(settingsProvider.select((value) => value.themeMode));
+    final language = ref.watch(settingsProvider.select((value) => value.language));
     fluent.ThemeMode fluentMode;
     ThemeMode materialMode;
     if (themeModeStr == 'light') {
@@ -134,6 +139,7 @@ class MyApp extends ConsumerWidget {
       fluentMode = fluent.ThemeMode.system;
       materialMode = ThemeMode.system;
     }
+    final locale = language == 'en' ? const Locale('en') : const Locale('zh');
     final String? fontFamily = Platform.isWindows ? 'Microsoft YaHei' : null;
     
     return Theme(
@@ -145,6 +151,15 @@ class MyApp extends ConsumerWidget {
         title: 'Aurora',
         debugShowCheckedModeBanner: false,
         themeMode: fluentMode,
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          fluent.FluentLocalizations.delegate,
+        ],
         theme: fluent.FluentThemeData(
           fontFamily: fontFamily,
           accentColor: fluent.Colors.blue,

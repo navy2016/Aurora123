@@ -68,6 +68,7 @@ class SettingsState {
   final String searchEngine;
   final bool enableSmartTopic;
   final String? topicGenerationModel;
+  final String language;
   SettingsState({
     required this.providers,
     required this.activeProviderId,
@@ -84,6 +85,7 @@ class SettingsState {
     this.searchEngine = 'duckduckgo',
     this.enableSmartTopic = true,
     this.topicGenerationModel,
+    this.language = 'zh',
   });
   ProviderConfig get activeProvider =>
       providers.firstWhere((p) => p.id == activeProviderId);
@@ -108,6 +110,7 @@ class SettingsState {
     String? searchEngine,
     bool? enableSmartTopic,
     String? topicGenerationModel,
+    String? language,
   }) {
     return SettingsState(
       providers: providers ?? this.providers,
@@ -125,6 +128,7 @@ class SettingsState {
       searchEngine: searchEngine ?? this.searchEngine,
       enableSmartTopic: enableSmartTopic ?? this.enableSmartTopic,
       topicGenerationModel: topicGenerationModel ?? this.topicGenerationModel,
+      language: language ?? this.language,
     );
   }
 }
@@ -145,6 +149,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     String searchEngine = 'duckduckgo',
     bool enableSmartTopic = true,
     String? topicGenerationModel,
+    String language = 'zh',
   })  : _storage = storage,
         super(SettingsState(
           providers: initialProviders,
@@ -160,6 +165,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           searchEngine: searchEngine,
           enableSmartTopic: enableSmartTopic,
           topicGenerationModel: topicGenerationModel,
+          language: language,
         ));
   void viewProvider(String id) {
     if (state.viewingProviderId != id) {
@@ -413,6 +419,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       topicGenerationModel: model,
+    );
+  }
+
+  Future<void> setLanguage(String lang) async {
+    state = state.copyWith(language: lang);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      language: lang,
     );
   }
 }

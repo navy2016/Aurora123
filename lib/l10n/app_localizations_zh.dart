@@ -1,0 +1,594 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Chinese (`zh`).
+class AppLocalizationsZh extends AppLocalizations {
+  AppLocalizationsZh([String locale = 'zh']) : super(locale);
+
+  @override
+  String get appTitle => 'Aurora';
+
+  @override
+  String get newChat => '新对话';
+
+  @override
+  String get searchChatHistory => '搜索聊天记录';
+
+  @override
+  String get send => '发送';
+
+  @override
+  String get retry => '重试';
+
+  @override
+  String get copy => '复制';
+
+  @override
+  String get copied => '已复制';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get confirm => '确认';
+
+  @override
+  String get save => '保存';
+
+  @override
+  String get done => '完成';
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String get history => '历史';
+
+  @override
+  String get modelNotSelected => '未选择模型';
+
+  @override
+  String get closeComparison => '关闭对照';
+
+  @override
+  String get bilingualComparison => '双语对照';
+
+  @override
+  String get clear => '清空';
+
+  @override
+  String get translating => '翻译中...';
+
+  @override
+  String get translationResultPlaceholder => '翻译结果将显示在这里';
+
+  @override
+  String get selectModel => '选择模型';
+
+  @override
+  String get switchModel => '切换模型';
+
+  @override
+  String get deepThinking => '深度思考中...';
+
+  @override
+  String deepThoughtFinished(String duration) {
+    return '已深度思考 (用时 $duration 秒)';
+  }
+
+  @override
+  String get thoughtChain => '思维链';
+
+  @override
+  String get camera => '相机';
+
+  @override
+  String get photos => '相册';
+
+  @override
+  String get userSettings => '用户设置';
+
+  @override
+  String get chatExperience => '对话体验';
+
+  @override
+  String get smartTopicGeneration => '智能话题生成';
+
+  @override
+  String get smartTopicDescription => '使用 LLM 自动总结作为话题标题';
+
+  @override
+  String get generationModel => '生成模型';
+
+  @override
+  String get notSelectedFallback => '未选择 (回退到截断)';
+
+  @override
+  String get userInfo => '用户信息';
+
+  @override
+  String get userName => '用户名称';
+
+  @override
+  String get userAvatar => '用户头像';
+
+  @override
+  String get clickToChangeAvatar => '点击更换头像';
+
+  @override
+  String get aiInfo => 'AI 信息';
+
+  @override
+  String get aiName => 'AI 名称';
+
+  @override
+  String get aiAvatar => 'AI 头像';
+
+  @override
+  String get pleaseEnter => '请输入';
+
+  @override
+  String changeAvatarTitle(String target) {
+    return '更换$target头像';
+  }
+
+  @override
+  String get removeAvatar => '移除头像';
+
+  @override
+  String permissionRequired(String name) {
+    return '需要$name权限';
+  }
+
+  @override
+  String permissionContent(String name) {
+    return '请在设置中允许应用访问$name，以便拍摄头像。';
+  }
+
+  @override
+  String get goToSettings => '去设置';
+
+  @override
+  String get selectGenerationModel => '选择话题生成模型';
+
+  @override
+  String get pickImageFailed => '选择图片失败';
+
+  @override
+  String get textTranslation => '文本翻译';
+
+  @override
+  String get selectLanguage => '选择语言';
+
+  @override
+  String get sourceText => '原文';
+
+  @override
+  String get targetText => '译文';
+
+  @override
+  String get enterTextToTranslate => '在此输入要翻译的文本...';
+
+  @override
+  String get translateButton => '翻译';
+
+  @override
+  String get compareMode => '双语对照';
+
+  @override
+  String get enableCompare => '开启双语对照';
+
+  @override
+  String get disableCompare => '关闭双语对照';
+
+  @override
+  String get translationPlaceholder => '翻译结果将显示在这里';
+
+  @override
+  String get sessionDetails => '会话详情';
+
+  @override
+  String get selectOrNewTopic => '请选择或新建一个话题';
+
+  @override
+  String get startNewChat => '开启新对话';
+
+  @override
+  String get edit => '编辑';
+
+  @override
+  String get add => '添加';
+
+  @override
+  String get enabled => '已启用';
+
+  @override
+  String get disabled => '已禁用';
+
+  @override
+  String get loading => '加载中';
+
+  @override
+  String get error => '错误';
+
+  @override
+  String get success => '成功';
+
+  @override
+  String get failed => '失败';
+
+  @override
+  String get settings => '设置';
+
+  @override
+  String get modelProvider => '模型提供';
+
+  @override
+  String get chatSettings => '对话设置';
+
+  @override
+  String get displaySettings => '界面设置';
+
+  @override
+  String get dataSettings => '数据设置';
+
+  @override
+  String get usageStats => '数据统计';
+
+  @override
+  String get providerName => '供应商名称';
+
+  @override
+  String get currentProvider => '当前供应商';
+
+  @override
+  String get selectProvider => '选择供应商';
+
+  @override
+  String get addProvider => '添加供应商';
+
+  @override
+  String get deleteProvider => '删除供应商';
+
+  @override
+  String get deleteProviderConfirm => '确定要删除此供应商配置吗？此操作无法撤销。';
+
+  @override
+  String get renameProvider => '重命名供应商';
+
+  @override
+  String get enterProviderName => '请输入供应商名称';
+
+  @override
+  String get notConfigured => '未配置';
+
+  @override
+  String get noModelSelected => '未选择模型';
+
+  @override
+  String get enabledStatus => '启用状态';
+
+  @override
+  String get availableModels => '可用模型';
+
+  @override
+  String get refreshList => '刷新列表';
+
+  @override
+  String get fetchModelList => '获取模型列表';
+
+  @override
+  String get noModelsData => '暂无模型数据，请配置后点击获取';
+
+  @override
+  String get noModelsFetch => '暂无模型，请点击右上角获取';
+
+  @override
+  String get modelConfig => '配置';
+
+  @override
+  String get configureModelParams => '为该模型配置专属参数';
+
+  @override
+  String get paramsHigherPriority => '这些参数优先级高于全局设置';
+
+  @override
+  String get noCustomParams => '暂无自定义参数';
+
+  @override
+  String get addCustomParam => '添加自定义参数';
+
+  @override
+  String get editParam => '编辑参数';
+
+  @override
+  String get paramKey => '参数名 (Key)';
+
+  @override
+  String get paramValue => '值 (Value)';
+
+  @override
+  String get paramType => '类型';
+
+  @override
+  String get typeText => '文本';
+
+  @override
+  String get typeNumber => '数字';
+
+  @override
+  String get typeBoolean => '布尔值';
+
+  @override
+  String get typeJson => 'JSON';
+
+  @override
+  String get formatError => '格式错误';
+
+  @override
+  String get selectTopicModel => '选择话题生成模型';
+
+  @override
+  String get noModelFallback => '未选择模型将回退到默认截断逻辑';
+
+  @override
+  String get selectImage => '选择图片';
+
+  @override
+  String get cropAvatar => '裁剪头像';
+
+  @override
+  String get themeAndUiComingSoon => '主题和 UI 样式设置 (即将推出)';
+
+  @override
+  String get language => '语言';
+
+  @override
+  String get languageChinese => '中文 (简体)';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get exportData => '导出数据';
+
+  @override
+  String get importData => '导入数据';
+
+  @override
+  String get clearAllData => '清除所有数据';
+
+  @override
+  String get totalCalls => '总调用';
+
+  @override
+  String get modelCallDistribution => '模型调用分布';
+
+  @override
+  String get clearStats => '清除统计数据';
+
+  @override
+  String get clearStatsConfirm => '确定要清除所有使用统计吗？此操作无法撤销。';
+
+  @override
+  String get clearData => '清除数据';
+
+  @override
+  String get clearDataConfirm => '确定要清除所有统计数据吗？';
+
+  @override
+  String get noUsageData => '暂无使用数据';
+
+  @override
+  String callsCount(int count) {
+    return '$count 次调用';
+  }
+
+  @override
+  String successCount(int count) {
+    return '$count 成功';
+  }
+
+  @override
+  String failureCount(int count) {
+    return '$count 失败';
+  }
+
+  @override
+  String get mobileSettings => '移动端设置';
+
+  @override
+  String get mobileSettingsHint => '请使用顶部导航栏的设置按钮访问完整设置页面';
+
+  @override
+  String get user => '用户';
+
+  @override
+  String get translation => '翻译';
+
+  @override
+  String get theme => '主题';
+
+  @override
+  String get model => '模型';
+
+  @override
+  String get stats => '统计';
+
+  @override
+  String get about => '关于';
+
+  @override
+  String get aboutAurora => '关于 Aurora';
+
+  @override
+  String get crossPlatformLlmClient => '一个跨平台 LLM 客户端';
+
+  @override
+  String get githubProject => 'GitHub 项目';
+
+  @override
+  String get takePhoto => '拍照';
+
+  @override
+  String get selectFromGallery => '从相册选择';
+
+  @override
+  String get selectFile => '选择文件';
+
+  @override
+  String get stopGenerating => '停止生成';
+
+  @override
+  String get regenerate => '重新生成';
+
+  @override
+  String get copyCode => '复制代码';
+
+  @override
+  String get codeCopied => '代码已复制';
+
+  @override
+  String get contentCopied => '内容已复制';
+
+  @override
+  String get thinking => '思考中';
+
+  @override
+  String get thinkingProcess => '思考过程';
+
+  @override
+  String get expandThinking => '展开思考过程';
+
+  @override
+  String get collapseThinking => '收起思考过程';
+
+  @override
+  String get searchWeb => '搜索网页';
+
+  @override
+  String get searchResults => '搜索结果';
+
+  @override
+  String get imageGenerated => '图片已生成';
+
+  @override
+  String get saveImage => '保存图片';
+
+  @override
+  String get imageSaved => '图片已保存';
+
+  @override
+  String get imageSaveFailed => '图片保存失败';
+
+  @override
+  String get today => '今天';
+
+  @override
+  String get yesterday => '昨天';
+
+  @override
+  String get last7Days => '最近 7 天';
+
+  @override
+  String get last30Days => '最近 30 天';
+
+  @override
+  String get earlier => '更早';
+
+  @override
+  String get deleteChat => '删除对话';
+
+  @override
+  String get deleteChatConfirm => '确定要删除此对话吗？';
+
+  @override
+  String get pinChat => '置顶对话';
+
+  @override
+  String get unpinChat => '取消置顶';
+
+  @override
+  String get noMessages => '暂无消息';
+
+  @override
+  String get typeMessage => '输入消息...';
+
+  @override
+  String get editApiKey => '编辑 API Key';
+
+  @override
+  String get editBaseUrl => '编辑 API Base URL';
+
+  @override
+  String get sourceLanguage => '源语言';
+
+  @override
+  String get targetLanguage => '目标语言';
+
+  @override
+  String get autoDetect => '自动检测';
+
+  @override
+  String get english => '英语';
+
+  @override
+  String get japanese => '日语';
+
+  @override
+  String get korean => '韩语';
+
+  @override
+  String get simplifiedChinese => '简体中文';
+
+  @override
+  String get traditionalChinese => '繁体中文';
+
+  @override
+  String get russian => '俄语';
+
+  @override
+  String get french => '法语';
+
+  @override
+  String get german => '德语';
+
+  @override
+  String get streamOutput => '流式输出';
+
+  @override
+  String get enableSearch => '启用搜索';
+
+  @override
+  String get searchEngine => '搜索引擎';
+
+  @override
+  String get clearContext => '清空上下文';
+
+  @override
+  String get clearContextConfirm => '确定要清空当前对话的历史记录吗？此操作不可撤销。';
+
+  @override
+  String get streamEnabled => '已开启流式传输';
+
+  @override
+  String get streamDisabled => '已关闭流式传输';
+
+  @override
+  String get searchEnabled => '已开启联网搜索';
+
+  @override
+  String get searchDisabled => '已关闭联网搜索';
+
+  @override
+  String get desktopInputHint => '随便输入点什么吧 (Enter 换行，Ctrl + Enter 发送)';
+
+  @override
+  String get mobileInputHint => '随便输入点什么吧';
+}

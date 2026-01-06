@@ -5,6 +5,7 @@ import '../../../settings/presentation/settings_provider.dart';
 import 'custom_dropdown_overlay.dart';
 
 import '../chat_provider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class ModelSelector extends ConsumerStatefulWidget {
   final bool isWindows;
@@ -165,7 +166,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
                    Container(
                      constraints: const BoxConstraints(maxWidth: 160),
                      child: fluent.Text(
-                       selected ?? '选择模型',
+                       selected ?? AppLocalizations.of(context)!.selectModel,
                        style: const TextStyle(fontWeight: FontWeight.w500),
                        overflow: TextOverflow.ellipsis,
                      ),
@@ -229,7 +230,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
         }
       }
       return PopupMenuButton<String>(
-        tooltip: '切换模型',
+        tooltip: AppLocalizations.of(context)!.switchModel,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onSelected: (value) {
           final parts = value.split('|');
@@ -248,7 +249,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 160),
                 child: Text(
-                  selected ?? '选择模型',
+                  selected ?? AppLocalizations.of(context)!.selectModel,
                   style: const TextStyle(fontWeight: FontWeight.w500),
                   overflow: TextOverflow.ellipsis,
                 ),

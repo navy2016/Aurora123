@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'settings_provider.dart';
 import 'usage_stats_view.dart';
 import '../../../shared/utils/avatar_cropper.dart';
@@ -69,12 +70,13 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
     _updateControllers(viewingProvider);
     if (Platform.isWindows) {
       final theme = fluent.FluentTheme.of(context);
+      final l10n = AppLocalizations.of(context)!;
       final settingsPages = [
-        (icon: fluent.FluentIcons.cloud_download, label: '模型提供'),
-        (icon: fluent.FluentIcons.chat, label: '对话设置'),
-        (icon: fluent.FluentIcons.color, label: '显示设置'),
-        (icon: fluent.FluentIcons.database, label: '数据设置'),
-        (icon: fluent.FluentIcons.analytics_view, label: '数据统计'),
+        (icon: fluent.FluentIcons.cloud_download, label: l10n.modelProvider),
+        (icon: fluent.FluentIcons.chat, label: l10n.chatSettings),
+        (icon: fluent.FluentIcons.color, label: l10n.displaySettings),
+        (icon: fluent.FluentIcons.database, label: l10n.dataSettings),
+        (icon: fluent.FluentIcons.analytics_view, label: l10n.usageStats),
       ];
       return Row(
         children: [
@@ -180,6 +182,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
 
   Widget _buildProviderSettings(
       SettingsState settingsState, ProviderConfig viewingProvider) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -209,15 +212,15 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                               context: context,
                               builder: (context) {
                                 return fluent.ContentDialog(
-                                  title: const Text('删除供应商'),
-                                  content: const Text('确定要删除此供应商配置吗？此操作无法撤销。'),
+                                  title: Text(l10n.deleteProvider),
+                                  content: Text(l10n.deleteProviderConfirm),
                                   actions: [
                                     fluent.Button(
-                                      child: const Text('取消'),
+                                      child: Text(l10n.cancel),
                                       onPressed: () => Navigator.pop(context),
                                     ),
                                     fluent.FilledButton(
-                                      child: const Text('删除'),
+                                      child: Text(l10n.delete),
                                       onPressed: () {
                                         Navigator.pop(context);
                                         ref
@@ -242,7 +245,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                   child: fluent.Button(
                     onPressed: () =>
                         ref.read(settingsProvider.notifier).addProvider(),
-                    child: const fluent.Text('添加供应商'),
+                    child: fluent.Text(l10n.addProvider),
                   ),
                 ),
               ),
@@ -260,7 +263,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     fluent.InfoLabel(
-                      label: '供应商名称',
+                      label: l10n.providerName,
                       child: fluent.TextBox(
                         controller: _nameController,
                         placeholder: 'My Provider',
@@ -297,7 +300,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                     ),
                     const SizedBox(height: 16),
                     fluent.InfoLabel(
-                      label: '启用状态',
+                      label: l10n.enabledStatus,
                       child: Row(
                         children: [
                           fluent.ToggleSwitch(
@@ -308,7 +311,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                                   .toggleProviderEnabled(viewingProvider.id);
                             },
                             content: fluent.Text(
-                                viewingProvider.isEnabled ? '已启用' : '已禁用'),
+                                viewingProvider.isEnabled ? l10n.enabled : l10n.disabled),
                           ),
                         ],
                       ),
@@ -317,7 +320,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                     Row(
                       children: [
                         Expanded(
-                          child: fluent.Text('可用模型',
+                          child: fluent.Text(l10n.availableModels,
                               overflow: TextOverflow.ellipsis,
                               style: fluent.FluentTheme.of(context)
                                   .typography
@@ -336,7 +339,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                                     width: 16,
                                     height: 16,
                                     child: fluent.ProgressRing())
-                                : const fluent.Text('刷新列表',
+                                : fluent.Text(l10n.refreshList,
                                     overflow: TextOverflow.ellipsis),
                           ),
                         ),
@@ -417,7 +420,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                               color: fluent.Colors.grey.withOpacity(0.2)),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const fluent.Text('暂无模型数据，请配置后点击获取'),
+                        child: fluent.Text(l10n.noModelsData),
                       ),
               ),
             ],
@@ -428,16 +431,17 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
   }
 
   Widget _buildChatSettings(SettingsState settingsState) {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          fluent.Text('对话设置',
+          fluent.Text(l10n.chatSettings,
               style: fluent.FluentTheme.of(context).typography.subtitle),
           const SizedBox(height: 24),
           fluent.InfoLabel(
-            label: '智能话题生成',
+            label: l10n.smartTopicGeneration,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -448,14 +452,14 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                         .read(settingsProvider.notifier)
                         .toggleSmartTopicEnabled(v);
                   },
-                  content: fluent.Text(settingsState.enableSmartTopic ? '已启用' : '已禁用'),
+                  content: fluent.Text(settingsState.enableSmartTopic ? l10n.enabled : l10n.disabled),
                 ),
                 if (settingsState.enableSmartTopic) ...[
                   const SizedBox(height: 12),
                   fluent.DropDownButton(
                     title: Text(() {
                       if (settingsState.topicGenerationModel == null) {
-                        return '选择话题生成模型';
+                        return l10n.selectTopicModel;
                       }
                       final parts =
                           settingsState.topicGenerationModel!.split('@');
@@ -493,11 +497,11 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                       return items;
                     }(),
                   ),
-                  if (settingsState.topicGenerationModel == null)
+                    if (settingsState.topicGenerationModel == null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4.0),
                       child: Text(
-                        '未选择模型将回退到默认截断逻辑',
+                        l10n.noModelFallback,
                         style: TextStyle(
                             color: fluent.Colors.orange, fontSize: 12),
                       ),
@@ -510,7 +514,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           const fluent.Divider(),
           const SizedBox(height: 24),
           fluent.InfoLabel(
-            label: '用户名称',
+            label: l10n.userName,
             child: fluent.TextBox(
               placeholder: 'User',
               controller: _userNameController,
@@ -523,7 +527,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           ),
           const SizedBox(height: 16),
           fluent.InfoLabel(
-            label: '用户头像',
+            label: l10n.userAvatar,
             child: Row(
               children: [
                 Container(
@@ -550,7 +554,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                 ),
                 const SizedBox(width: 12),
                 fluent.Button(
-                  child: const Text('选择图片'),
+                  child: Text(l10n.selectImage),
                   onPressed: () async {
                     final result = await openFile(
                       acceptedTypeGroups: [
@@ -585,7 +589,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           ),
           const SizedBox(height: 24),
           fluent.InfoLabel(
-            label: 'AI 名称',
+            label: l10n.aiName,
             child: fluent.TextBox(
               placeholder: 'Assistant',
               controller: _llmNameController,
@@ -598,7 +602,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           ),
           const SizedBox(height: 16),
           fluent.InfoLabel(
-            label: 'AI 头像',
+            label: l10n.aiAvatar,
             child: Row(
               children: [
                 Container(
@@ -663,13 +667,37 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
   }
 
   Widget _buildDisplaySettings() {
+    final l10n = AppLocalizations.of(context)!;
+    final settingsState = ref.watch(settingsProvider);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          fluent.Text('显示设置',
+          fluent.Text(l10n.displaySettings,
               style: fluent.FluentTheme.of(context).typography.subtitle),
+          const SizedBox(height: 24),
+          fluent.InfoLabel(
+            label: l10n.language,
+            child: fluent.ComboBox<String>(
+              value: settingsState.language,
+              items: [
+                fluent.ComboBoxItem(
+                  value: 'zh',
+                  child: Text(l10n.languageChinese),
+                ),
+                fluent.ComboBoxItem(
+                  value: 'en',
+                  child: Text(l10n.languageEnglish),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(settingsProvider.notifier).setLanguage(value);
+                }
+              },
+            ),
+          ),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(32),
@@ -677,9 +705,9 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
               border: Border.all(color: fluent.Colors.grey.withOpacity(0.2)),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: const Center(
-                child: Text('主题和 UI 样式设置 (即将推出)',
-                    style: TextStyle(color: Colors.grey))),
+            child: Center(
+                child: Text(l10n.themeAndUiComingSoon,
+                    style: const TextStyle(color: Colors.grey))),
           ),
         ],
       ),
@@ -687,27 +715,28 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
   }
 
   Widget _buildDataSettings() {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          fluent.Text('数据设置',
+          fluent.Text(l10n.dataSettings,
               style: fluent.FluentTheme.of(context).typography.subtitle),
           const SizedBox(height: 24),
           fluent.Button(
             onPressed: null,
-            child: const Text('导出数据'),
+            child: Text(l10n.exportData),
           ),
           const SizedBox(height: 8),
           fluent.Button(
             onPressed: null,
-            child: const Text('导入数据'),
+            child: Text(l10n.importData),
           ),
           const SizedBox(height: 8),
           fluent.Button(
             onPressed: null,
-            child: const Text('清除所有数据'),
+            child: Text(l10n.clearAllData),
           ),
         ],
       ),
@@ -715,22 +744,23 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
   }
 
   void _openModelSettings(ProviderConfig provider, String modelName) async {
+    final l10n = AppLocalizations.of(context)!;
     await showDialog(
         context: context,
         builder: (context) {
           return fluent.ContentDialog(
-            title: fluent.Text('$modelName 配置'),
+            title: fluent.Text('$modelName ${l10n.modelConfig}'),
             content: Container(
               width: 400,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const fluent.Text('为该模型配置专属参数',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  fluent.Text(l10n.configureModelParams,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  const fluent.Text('这些参数优先级高于全局设置',
-                      style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  fluent.Text(l10n.paramsHigherPriority,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 300,
@@ -768,7 +798,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
             actions: [
               fluent.Button(
                 onPressed: () => Navigator.pop(context),
-                child: const fluent.Text('完成'),
+                child: fluent.Text(l10n.done),
               ),
             ],
           );
@@ -822,8 +852,8 @@ class _ParamsEditorState extends State<_ParamsEditor> {
     if (!Platform.isWindows) {
       return TextField(
         controller: TextEditingController(text: jsonEncode(widget.params)),
-        decoration: const InputDecoration(
-            labelText: 'JSON Parameters', border: OutlineInputBorder()),
+        decoration: InputDecoration(
+            labelText: 'JSON Parameters', border: const OutlineInputBorder()),
         maxLines: 3,
         onSubmitted: (v) {
           try {
@@ -842,8 +872,8 @@ class _ParamsEditorState extends State<_ParamsEditor> {
               borderRadius: BorderRadius.circular(4),
             ),
             width: double.infinity,
-            child: const Center(
-                child: Text('无自定义参数', style: TextStyle(color: Colors.grey))),
+            child: Center(
+                child: Text(AppLocalizations.of(context)!.noCustomParams, style: const TextStyle(color: Colors.grey))),
           )
         else
           ...widget.params.entries.map((e) {
@@ -887,7 +917,7 @@ class _ParamsEditorState extends State<_ParamsEditor> {
           width: double.infinity,
           child: fluent.Button(
             onPressed: _addParam,
-            child: const Text('添加参数'),
+            child: Text(AppLocalizations.of(context)!.addCustomParam),
           ),
         ),
       ],
@@ -932,15 +962,16 @@ class _AddParamDialogState extends State<_AddParamDialog> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.initialKey != null;
+    final l10n = AppLocalizations.of(context)!;
     if (Platform.isWindows) {
       return fluent.ContentDialog(
-        title: Text(isEditing ? '编辑参数' : '添加自定义参数'),
+        title: Text(isEditing ? l10n.editParam : l10n.addCustomParam),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             fluent.InfoLabel(
-              label: '参数名 (Key)',
+              label: l10n.paramKey,
               child: fluent.TextBox(
                 controller: _keyController,
                 placeholder: 'e.g. image_config',
@@ -948,7 +979,7 @@ class _AddParamDialogState extends State<_AddParamDialog> {
             ),
             const SizedBox(height: 12),
             fluent.InfoLabel(
-              label: '类型',
+              label: l10n.paramType,
               child: fluent.ComboBox<String>(
                 value: _type,
                 items: ['String', 'JSON']
@@ -959,7 +990,7 @@ class _AddParamDialogState extends State<_AddParamDialog> {
             ),
             const SizedBox(height: 12),
             fluent.InfoLabel(
-              label: '值 (Value)',
+              label: l10n.paramValue,
               child: fluent.TextBox(
                 controller: _valueController,
                 placeholder: _type == 'JSON' ? '{"key": "value"}' : 'Value',
@@ -971,7 +1002,7 @@ class _AddParamDialogState extends State<_AddParamDialog> {
         actions: [
           fluent.Button(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           fluent.FilledButton(
             onPressed: () {
@@ -989,7 +1020,7 @@ class _AddParamDialogState extends State<_AddParamDialog> {
               }
               Navigator.pop(context, MapEntry(key, value));
             },
-            child: Text(isEditing ? '保存' : '添加'),
+            child: Text(isEditing ? l10n.save : l10n.add),
           ),
         ],
       );

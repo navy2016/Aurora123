@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class ReasoningDisplay extends StatefulWidget {
   final String content;
@@ -139,10 +140,10 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
                   const SizedBox(width: 8),
                   Text(
                     widget.isRunning
-                        ? '深度思考中... (${_currentDuration.toStringAsFixed(1)}s)'
+                        ? '${AppLocalizations.of(context)!.deepThinking} (${_currentDuration.toStringAsFixed(1)}s)'
                         : (widget.duration != null
-                            ? '已深度思考 (用时 ${widget.duration!.toStringAsFixed(1)} 秒)'
-                            : '思维链'),
+                            ? AppLocalizations.of(context)!.deepThoughtFinished(widget.duration!.toStringAsFixed(1))
+                            : AppLocalizations.of(context)!.thoughtChain),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

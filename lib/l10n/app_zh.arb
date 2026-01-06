@@ -1,0 +1,267 @@
+{
+  "@@locale": "zh",
+  
+  "appTitle": "Aurora",
+  
+  "newChat": "新对话",
+  "searchChatHistory": "搜索聊天记录",
+  "send": "发送",
+  "retry": "重试",
+  "copy": "复制",
+  "copied": "已复制",
+  "delete": "删除",
+  "cancel": "取消",
+  "confirm": "确认",
+  "save": "保存",
+  "done": "完成",
+  "close": "关闭",
+  "history": "历史",
+  "modelNotSelected": "未选择模型",
+  "closeComparison": "关闭对照",
+  "bilingualComparison": "双语对照",
+  "clear": "清空",
+  "translating": "翻译中...",
+  "translationResultPlaceholder": "翻译结果将显示在这里",
+  "selectModel": "选择模型",
+  "switchModel": "切换模型",
+  "deepThinking": "深度思考中...",
+  "deepThoughtFinished": "已深度思考 (用时 {duration} 秒)",
+  "@deepThoughtFinished": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "thoughtChain": "思维链",
+  "camera": "相机",
+  "photos": "相册",
+  "userSettings": "用户设置",
+  "chatExperience": "对话体验",
+  "smartTopicGeneration": "智能话题生成",
+  "smartTopicDescription": "使用 LLM 自动总结作为话题标题",
+  "generationModel": "生成模型",
+  "notSelectedFallback": "未选择 (回退到截断)",
+  "userInfo": "用户信息",
+  "userName": "用户名称",
+  "userAvatar": "用户头像",
+  "clickToChangeAvatar": "点击更换头像",
+  "aiInfo": "AI 信息",
+  "aiName": "AI 名称",
+  "aiAvatar": "AI 头像",
+  "pleaseEnter": "请输入",
+  "changeAvatarTitle": "更换{target}头像",
+  "@changeAvatarTitle": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "removeAvatar": "移除头像",
+  "permissionRequired": "需要{name}权限",
+  "@permissionRequired": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "permissionContent": "请在设置中允许应用访问{name}，以便拍摄头像。",
+  "@permissionContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "goToSettings": "去设置",
+  "selectGenerationModel": "选择话题生成模型",
+  "pickImageFailed": "选择图片失败",
+  "textTranslation": "文本翻译",
+  "selectLanguage": "选择语言",
+  "sourceText": "原文",
+  "targetText": "译文",
+  "enterTextToTranslate": "在此输入要翻译的文本...",
+  "translateButton": "翻译",
+  "compareMode": "双语对照",
+  "enableCompare": "开启双语对照",
+  "disableCompare": "关闭双语对照",
+  "translationPlaceholder": "翻译结果将显示在这里",
+  "sessionDetails": "会话详情",
+  "selectOrNewTopic": "请选择或新建一个话题",
+  "startNewChat": "开启新对话",
+  "edit": "编辑",
+  "add": "添加",
+  "enabled": "已启用",
+  "disabled": "已禁用",
+  "loading": "加载中",
+  "error": "错误",
+  "success": "成功",
+  "failed": "失败",
+  
+  "settings": "设置",
+  "modelProvider": "模型提供",
+  "chatSettings": "对话设置",
+  "displaySettings": "界面设置",
+  "dataSettings": "数据设置",
+  "usageStats": "数据统计",
+  
+  "providerName": "供应商名称",
+  "currentProvider": "当前供应商",
+  "selectProvider": "选择供应商",
+  "addProvider": "添加供应商",
+  "deleteProvider": "删除供应商",
+  "deleteProviderConfirm": "确定要删除此供应商配置吗？此操作无法撤销。",
+  "renameProvider": "重命名供应商",
+  "enterProviderName": "请输入供应商名称",
+  "notConfigured": "未配置",
+  "noModelSelected": "未选择模型",
+  
+  "enabledStatus": "启用状态",
+  "availableModels": "可用模型",
+  "refreshList": "刷新列表",
+  "fetchModelList": "获取模型列表",
+  "noModelsData": "暂无模型数据，请配置后点击获取",
+  "noModelsFetch": "暂无模型，请点击右上角获取",
+  
+  "modelConfig": "配置",
+  "configureModelParams": "为该模型配置专属参数",
+  "paramsHigherPriority": "这些参数优先级高于全局设置",
+  "noCustomParams": "暂无自定义参数",
+  "addCustomParam": "添加自定义参数",
+  "editParam": "编辑参数",
+  "paramKey": "参数名 (Key)",
+  "paramValue": "值 (Value)",
+  "paramType": "类型",
+  "typeText": "文本",
+  "typeNumber": "数字",
+  "typeBoolean": "布尔值",
+  "typeJson": "JSON",
+  "formatError": "格式错误",
+  
+  "smartTopicGeneration": "智能话题生成",
+  "selectTopicModel": "选择话题生成模型",
+  "noModelFallback": "未选择模型将回退到默认截断逻辑",
+  
+  "userName": "用户名称",
+  "userAvatar": "用户头像",
+  "aiName": "AI 名称",
+  "aiAvatar": "AI 头像",
+  "selectImage": "选择图片",
+  "cropAvatar": "裁剪头像",
+  
+  "themeAndUiComingSoon": "主题和 UI 样式设置 (即将推出)",
+  "language": "语言",
+  "languageChinese": "中文 (简体)",
+  "languageEnglish": "English",
+  
+  "exportData": "导出数据",
+  "importData": "导入数据",
+  "clearAllData": "清除所有数据",
+  
+  "totalCalls": "总调用",
+  "modelCallDistribution": "模型调用分布",
+  "clearStats": "清除统计数据",
+  "clearStatsConfirm": "确定要清除所有使用统计吗？此操作无法撤销。",
+  "clearData": "清除数据",
+  "clearDataConfirm": "确定要清除所有统计数据吗？",
+  "noUsageData": "暂无使用数据",
+  "callsCount": "{count} 次调用",
+  "@callsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "successCount": "{count} 成功",
+  "@successCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "failureCount": "{count} 失败",
+  "@failureCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  
+  "mobileSettings": "移动端设置",
+  "mobileSettingsHint": "请使用顶部导航栏的设置按钮访问完整设置页面",
+  
+  "user": "用户",
+  "translation": "翻译",
+  "theme": "主题",
+  "model": "模型",
+  "stats": "统计",
+  "about": "关于",
+  
+  "aboutAurora": "关于 Aurora",
+  "crossPlatformLlmClient": "一个跨平台 LLM 客户端",
+  "githubProject": "GitHub 项目",
+  
+  "takePhoto": "拍照",
+  "selectFromGallery": "从相册选择",
+  "selectFile": "选择文件",
+  
+  "stopGenerating": "停止生成",
+  "regenerate": "重新生成",
+  "copyCode": "复制代码",
+  "codeCopied": "代码已复制",
+  "contentCopied": "内容已复制",
+  
+  "thinking": "思考中",
+  "thinkingProcess": "思考过程",
+  "expandThinking": "展开思考过程",
+  "collapseThinking": "收起思考过程",
+  
+  "searchWeb": "搜索网页",
+  "searchResults": "搜索结果",
+  
+  "imageGenerated": "图片已生成",
+  "saveImage": "保存图片",
+  "imageSaved": "图片已保存",
+  "imageSaveFailed": "图片保存失败",
+  
+  "today": "今天",
+  "yesterday": "昨天",
+  "last7Days": "最近 7 天",
+  "last30Days": "最近 30 天",
+  "earlier": "更早",
+  
+  "deleteChat": "删除对话",
+  "deleteChatConfirm": "确定要删除此对话吗？",
+  "pinChat": "置顶对话",
+  "unpinChat": "取消置顶",
+  
+  "noMessages": "暂无消息",
+  "typeMessage": "输入消息...",
+  
+  "editApiKey": "编辑 API Key",
+  "editBaseUrl": "编辑 API Base URL",
+  
+  "sourceLanguage": "源语言",
+  "targetLanguage": "目标语言",
+  "autoDetect": "自动检测",
+  "english": "英语",
+  "japanese": "日语",
+  "korean": "韩语",
+  "simplifiedChinese": "简体中文",
+  "traditionalChinese": "繁体中文",
+  "russian": "俄语",
+  "french": "法语",
+  "german": "德语",
+  
+  "streamOutput": "流式输出",
+  "enableSearch": "启用搜索",
+  "searchEngine": "搜索引擎",
+  
+  "clearContext": "清空上下文",
+  "clearContextConfirm": "确定要清空当前对话的历史记录吗？此操作不可撤销。",
+  "streamEnabled": "已开启流式传输",
+  "streamDisabled": "已关闭流式传输",
+  "searchEnabled": "已开启联网搜索",
+  "searchDisabled": "已关闭联网搜索",
+  "desktopInputHint": "随便输入点什么吧 (Enter 换行，Ctrl + Enter 发送)",
+  "mobileInputHint": "随便输入点什么吧"
+}

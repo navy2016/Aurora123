@@ -731,10 +731,8 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     if (lastId != null && state.sessions.any((s) => s.sessionId == lastId)) {
       _ref.read(selectedHistorySessionIdProvider.notifier).state = lastId;
     } else {
-      // If no valid last session, maybe create new or select first?
-      // Default is null or 'new_chat' logic handled by UI.
-      // If we want "Immediate New Chat" logic even on first launch:
-      // await startNewSession();
+      // Default to new_chat on first run or if last session invalid
+      _ref.read(selectedHistorySessionIdProvider.notifier).state = 'new_chat';
     }
   }
 

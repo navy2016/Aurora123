@@ -5,6 +5,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:crop_image/crop_image.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:path_provider/path_provider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class AvatarCropper {
   static Future<String?> cropImage(BuildContext context, String path) async {
@@ -13,14 +14,14 @@ class AvatarCropper {
         sourcePath: path,
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: '裁剪头像',
+            toolbarTitle: AppLocalizations.of(context)!.cropAvatar,
             toolbarColor: Theme.of(context).primaryColor,
             toolbarWidgetColor: Colors.white,
             initAspectRatio: CropAspectRatioPreset.square,
             lockAspectRatio: true,
           ),
           IOSUiSettings(
-            title: '裁剪头像',
+            title: AppLocalizations.of(context)!.cropAvatar,
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
             aspectRatioPickerButtonHidden: true,
@@ -57,8 +58,9 @@ class _DesktopCropDialogState extends State<_DesktopCropDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return fluent.ContentDialog(
-      title: const Text('裁剪头像'),
+      title: Text(l10n.cropAvatar),
       content: Container(
         width: 500,
         height: 400,
@@ -80,13 +82,13 @@ class _DesktopCropDialogState extends State<_DesktopCropDialog> {
       actions: [
         fluent.Button(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(l10n.cancel),
         ),
         fluent.FilledButton(
           onPressed: _processing ? null : _save,
           child: _processing 
               ? const SizedBox(width: 16, height: 16, child: fluent.ProgressRing(strokeWidth: 2)) 
-              : const Text('确定'),
+              : Text(l10n.confirm),
         ),
       ],
     );
