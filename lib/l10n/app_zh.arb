@@ -90,7 +90,7 @@
   "translationPlaceholder": "翻译结果将显示在这里",
   "sessionDetails": "会话详情",
   "selectOrNewTopic": "请选择或新建一个话题",
-  "startNewChat": "开启新对话",
+  "startNewChat": "新对话",
   "edit": "编辑",
   "add": "添加",
   "enabled": "已启用",
@@ -269,5 +269,12 @@
   "searchEnabled": "已开启联网搜索",
   "searchDisabled": "已关闭联网搜索",
   "desktopInputHint": "随便输入点什么吧 (Enter 换行，Ctrl + Enter 发送)",
-  "mobileInputHint": "随便输入点什么吧"
+  "mobileInputHint": "随便输入点什么吧",
+  "topics": "话题分组",
+  "createTopic": "新建分组",
+  "editTopic": "编辑分组",
+  "deleteTopic": "删除分组",
+  "deleteTopicConfirm": "确定要删除此分组吗？该分组下的会话将移至默认分组。",
+  "topicNamePlaceholder": "分组名称",
+  "allChats": "所有"
 }

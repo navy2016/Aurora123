@@ -2268,43 +2268,48 @@ const AppSettingsEntitySchema = CollectionSchema(
       name: r'lastSessionId',
       type: IsarType.string,
     ),
-    r'llmAvatar': PropertySchema(
+    r'lastTopicId': PropertySchema(
       id: 7,
+      name: r'lastTopicId',
+      type: IsarType.string,
+    ),
+    r'llmAvatar': PropertySchema(
+      id: 8,
       name: r'llmAvatar',
       type: IsarType.string,
     ),
     r'llmName': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'llmName',
       type: IsarType.string,
     ),
     r'searchEngine': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'searchEngine',
       type: IsarType.string,
     ),
     r'selectedModel': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'selectedModel',
       type: IsarType.string,
     ),
     r'themeMode': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'topicGenerationModel': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'topicGenerationModel',
       type: IsarType.string,
     ),
     r'userAvatar': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'userAvatar',
       type: IsarType.string,
     ),
     r'userName': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'userName',
       type: IsarType.string,
     )
@@ -2340,6 +2345,12 @@ int _appSettingsEntityEstimateSize(
   bytesCount += 3 + object.language.length * 3;
   {
     final value = object.lastSessionId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.lastTopicId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -2388,14 +2399,15 @@ void _appSettingsEntitySerialize(
   writer.writeBool(offsets[4], object.isStreamEnabled);
   writer.writeString(offsets[5], object.language);
   writer.writeString(offsets[6], object.lastSessionId);
-  writer.writeString(offsets[7], object.llmAvatar);
-  writer.writeString(offsets[8], object.llmName);
-  writer.writeString(offsets[9], object.searchEngine);
-  writer.writeString(offsets[10], object.selectedModel);
-  writer.writeString(offsets[11], object.themeMode);
-  writer.writeString(offsets[12], object.topicGenerationModel);
-  writer.writeString(offsets[13], object.userAvatar);
-  writer.writeString(offsets[14], object.userName);
+  writer.writeString(offsets[7], object.lastTopicId);
+  writer.writeString(offsets[8], object.llmAvatar);
+  writer.writeString(offsets[9], object.llmName);
+  writer.writeString(offsets[10], object.searchEngine);
+  writer.writeString(offsets[11], object.selectedModel);
+  writer.writeString(offsets[12], object.themeMode);
+  writer.writeString(offsets[13], object.topicGenerationModel);
+  writer.writeString(offsets[14], object.userAvatar);
+  writer.writeString(offsets[15], object.userName);
 }
 
 AppSettingsEntity _appSettingsEntityDeserialize(
@@ -2413,14 +2425,15 @@ AppSettingsEntity _appSettingsEntityDeserialize(
   object.isStreamEnabled = reader.readBool(offsets[4]);
   object.language = reader.readString(offsets[5]);
   object.lastSessionId = reader.readStringOrNull(offsets[6]);
-  object.llmAvatar = reader.readStringOrNull(offsets[7]);
-  object.llmName = reader.readString(offsets[8]);
-  object.searchEngine = reader.readString(offsets[9]);
-  object.selectedModel = reader.readStringOrNull(offsets[10]);
-  object.themeMode = reader.readString(offsets[11]);
-  object.topicGenerationModel = reader.readStringOrNull(offsets[12]);
-  object.userAvatar = reader.readStringOrNull(offsets[13]);
-  object.userName = reader.readString(offsets[14]);
+  object.lastTopicId = reader.readStringOrNull(offsets[7]);
+  object.llmAvatar = reader.readStringOrNull(offsets[8]);
+  object.llmName = reader.readString(offsets[9]);
+  object.searchEngine = reader.readString(offsets[10]);
+  object.selectedModel = reader.readStringOrNull(offsets[11]);
+  object.themeMode = reader.readString(offsets[12]);
+  object.topicGenerationModel = reader.readStringOrNull(offsets[13]);
+  object.userAvatar = reader.readStringOrNull(offsets[14]);
+  object.userName = reader.readString(offsets[15]);
   return object;
 }
 
@@ -2448,18 +2461,20 @@ P _appSettingsEntityDeserializeProp<P>(
     case 7:
       return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 9:
       return (reader.readString(offset)) as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
-    case 11:
       return (reader.readString(offset)) as P;
-    case 12:
+    case 11:
       return (reader.readStringOrNull(offset)) as P;
+    case 12:
+      return (reader.readString(offset)) as P;
     case 13:
       return (reader.readStringOrNull(offset)) as P;
     case 14:
+      return (reader.readStringOrNull(offset)) as P;
+    case 15:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -3296,6 +3311,160 @@ extension AppSettingsEntityQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'lastSessionId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastTopicId',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastTopicId',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastTopicId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastTopicId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastTopicId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastTopicId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'lastTopicId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'lastTopicId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'lastTopicId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'lastTopicId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastTopicId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      lastTopicIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'lastTopicId',
         value: '',
       ));
     });
@@ -4555,6 +4724,20 @@ extension AppSettingsEntityQuerySortBy
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByLastTopicId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastTopicId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByLastTopicIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastTopicId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
       sortByLlmAvatar() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'llmAvatar', Sort.asc);
@@ -4767,6 +4950,20 @@ extension AppSettingsEntityQuerySortThenBy
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByLastTopicId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastTopicId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByLastTopicIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastTopicId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
       thenByLlmAvatar() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'llmAvatar', Sort.asc);
@@ -4933,6 +5130,13 @@ extension AppSettingsEntityQueryWhereDistinct
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByLastTopicId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastTopicId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
       distinctByLlmAvatar({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'llmAvatar', caseSensitive: caseSensitive);
@@ -5044,6 +5248,13 @@ extension AppSettingsEntityQueryProperty
       lastSessionIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lastSessionId');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, String?, QQueryOperations>
+      lastTopicIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastTopicId');
     });
   }
 

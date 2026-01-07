@@ -36,6 +36,11 @@ const SessionEntitySchema = CollectionSchema(
       id: 3,
       name: r'title',
       type: IsarType.string,
+    ),
+    r'topicId': PropertySchema(
+      id: 4,
+      name: r'topicId',
+      type: IsarType.long,
     )
   },
   estimateSize: _sessionEntityEstimateSize,
@@ -93,6 +98,7 @@ void _sessionEntitySerialize(
   writer.writeString(offsets[1], object.sessionId);
   writer.writeString(offsets[2], object.snippet);
   writer.writeString(offsets[3], object.title);
+  writer.writeLong(offsets[4], object.topicId);
 }
 
 SessionEntity _sessionEntityDeserialize(
@@ -107,6 +113,7 @@ SessionEntity _sessionEntityDeserialize(
   object.sessionId = reader.readString(offsets[1]);
   object.snippet = reader.readStringOrNull(offsets[2]);
   object.title = reader.readString(offsets[3]);
+  object.topicId = reader.readLongOrNull(offsets[4]);
   return object;
 }
 
@@ -125,6 +132,8 @@ P _sessionEntityDeserializeProp<P>(
       return (reader.readStringOrNull(offset)) as P;
     case 3:
       return (reader.readString(offset)) as P;
+    case 4:
+      return (reader.readLongOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -861,6 +870,80 @@ extension SessionEntityQueryFilter
       ));
     });
   }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      topicIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'topicId',
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      topicIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'topicId',
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      topicIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'topicId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      topicIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'topicId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      topicIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'topicId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      topicIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'topicId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension SessionEntityQueryObject
@@ -919,6 +1002,18 @@ extension SessionEntityQuerySortBy
   QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> sortByTitleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> sortByTopicId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'topicId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> sortByTopicIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'topicId', Sort.desc);
     });
   }
 }
@@ -987,6 +1082,18 @@ extension SessionEntityQuerySortThenBy
       return query.addSortBy(r'title', Sort.desc);
     });
   }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> thenByTopicId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'topicId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> thenByTopicIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'topicId', Sort.desc);
+    });
+  }
 }
 
 extension SessionEntityQueryWhereDistinct
@@ -1016,6 +1123,12 @@ extension SessionEntityQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'title', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QDistinct> distinctByTopicId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'topicId');
     });
   }
 }
@@ -1050,6 +1163,12 @@ extension SessionEntityQueryProperty
   QueryBuilder<SessionEntity, String, QQueryOperations> titleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'title');
+    });
+  }
+
+  QueryBuilder<SessionEntity, int?, QQueryOperations> topicIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'topicId');
     });
   }
 }

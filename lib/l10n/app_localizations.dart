@@ -461,7 +461,7 @@ abstract class AppLocalizations {
   /// No description provided for @startNewChat.
   ///
   /// In zh, this message translates to:
-  /// **'开启新对话'**
+  /// **'新对话'**
   String get startNewChat;
 
   /// No description provided for @edit.
@@ -1243,6 +1243,48 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'随便输入点什么吧'**
   String get mobileInputHint;
+
+  /// No description provided for @topics.
+  ///
+  /// In zh, this message translates to:
+  /// **'话题分组'**
+  String get topics;
+
+  /// No description provided for @createTopic.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建分组'**
+  String get createTopic;
+
+  /// No description provided for @editTopic.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑分组'**
+  String get editTopic;
+
+  /// No description provided for @deleteTopic.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除分组'**
+  String get deleteTopic;
+
+  /// No description provided for @deleteTopicConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除此分组吗？该分组下的会话将移至默认分组。'**
+  String get deleteTopicConfirm;
+
+  /// No description provided for @topicNamePlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'分组名称'**
+  String get topicNamePlaceholder;
+
+  /// No description provided for @allChats.
+  ///
+  /// In zh, this message translates to:
+  /// **'所有'**
+  String get allChats;
 }
 
 class _AppLocalizationsDelegate

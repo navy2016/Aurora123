@@ -5,6 +5,7 @@ import 'package:isar/isar.dart';
 import '../../settings/data/settings_storage.dart';
 import 'message_entity.dart';
 import 'session_entity.dart';
+import 'topic_entity.dart';
 import '../domain/message.dart';
 
 /// Deletes local attachment files for given paths.
@@ -233,15 +234,62 @@ class ChatStorage {
     });
   }
 
-  Future<String> createSession({required String title, String? uuid}) async {
+  Future<String> createSession({required String title, String? uuid, int? topicId}) async {
     final session = SessionEntity()
       ..sessionId = uuid ?? DateTime.now().millisecondsSinceEpoch.toString()
       ..title = title
-      ..lastMessageTime = DateTime.now();
+      ..lastMessageTime = DateTime.now()
+      ..topicId = topicId;
     await _isar.writeTxn(() async {
       await _isar.sessionEntitys.put(session);
     });
     return session.sessionId;
+  }
+  
+  // Topic CRUD
+  
+  Future<void> createTopic(String name) async {
+    final topic = TopicEntity()
+      ..name = name
+      ..createdAt = DateTime.now();
+    await _isar.writeTxn(() async {
+      await _isar.topicEntitys.put(topic);
+    });
+  }
+  
+  Future<void> updateTopic(int id, String name) async {
+    await _isar.writeTxn(() async {
+      final topic = await _isar.topicEntitys.get(id);
+      if (topic != null) {
+        topic.name = name;
+        await _isar.topicEntitys.put(topic);
+      }
+    });
+  }
+  
+  Future<void> deleteTopic(int id) async {
+    await _isar.writeTxn(() async {
+      // First, dissociate sessions from this topic
+      final sessions = await _isar.sessionEntitys
+        .filter()
+        .topicIdEqualTo(id)
+        .findAll();
+        
+      for (final session in sessions) {
+        session.topicId = null;
+        await _isar.sessionEntitys.put(session);
+      }
+      
+      // Then delete the topic
+      await _isar.topicEntitys.delete(id);
+    });
+  }
+  
+  Future<List<TopicEntity>> getAllTopics() async {
+    return await _isar.topicEntitys
+      .where()
+      .sortByCreatedAt() // or sortByName()
+      .findAll();
   }
 
   Future<List<SessionEntity>> loadSessions() async {

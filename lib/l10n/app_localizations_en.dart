@@ -199,7 +199,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectOrNewTopic => 'Please select or start a new topic';
 
   @override
-  String get startNewChat => 'Start New Chat';
+  String get startNewChat => 'New Chat';
 
   @override
   String get edit => 'Edit';
@@ -607,4 +607,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mobileInputHint => 'Type something...';
+
+  @override
+  String get topics => 'Topic Groups';
+
+  @override
+  String get createTopic => 'New Group';
+
+  @override
+  String get editTopic => 'Edit Group';
+
+  @override
+  String get deleteTopic => 'Delete Group';
+
+  @override
+  String get deleteTopicConfirm =>
+      'Delete this group? Sessions will be moved to the default group.';
+
+  @override
+  String get topicNamePlaceholder => 'Group Name';
+
+  @override
+  String get allChats => 'All';
 }

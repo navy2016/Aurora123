@@ -6,6 +6,7 @@ import '../chat_provider.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import '../../../settings/presentation/usage_stats_view.dart';
 import '../../../history/presentation/history_content.dart';
+import '../widgets/topic_dropdown.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 
 class MobileNavigationDrawer extends ConsumerWidget {
@@ -69,32 +70,54 @@ class MobileNavigationDrawer extends ConsumerWidget {
                 ],
               ),
             ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: TopicDropdown(isMobile: true),
+            ),
+            const SizedBox(height: 4),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: InkWell(
-                onTap: () {
+              padding: const EdgeInsets.symmetric(horizontal: 12), // Match TopicDropdown padding
+              child: fluent.HoverButton(
+                onPressed: () {
                   onNewChat();
                   Navigator.pop(context);
                 },
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.add_circle_outline, size: 20, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 10),
-                      Text(AppLocalizations.of(context)!.newChat,
-                          style: TextStyle(
-                              fontSize: 15,
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ),
+                builder: (context, states) {
+                  final theme = fluent.FluentTheme.of(context);
+                  final isHovering = states.isHovered;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isHovering 
+                          ? theme.resources.subtleFillColorSecondary 
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isHovering 
+                            ? theme.resources.surfaceStrokeColorDefault
+                            : Colors.transparent,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(fluent.FluentIcons.add, 
+                            size: 14, 
+                            color: theme.accentColor),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context)!.startNewChat, 
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: theme.typography.body?.color,
+                                fontWeight: FontWeight.w500)),
+                        const Spacer(),
+                        if (isHovering)
+                           Icon(fluent.FluentIcons.chevron_right, size: 10, color: theme.resources.textFillColorSecondary),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 4),

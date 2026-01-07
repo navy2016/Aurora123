@@ -197,7 +197,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectOrNewTopic => '请选择或新建一个话题';
 
   @override
-  String get startNewChat => '开启新对话';
+  String get startNewChat => '新对话';
 
   @override
   String get edit => '编辑';
@@ -596,4 +596,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mobileInputHint => '随便输入点什么吧';
+
+  @override
+  String get topics => '话题分组';
+
+  @override
+  String get createTopic => '新建分组';
+
+  @override
+  String get editTopic => '编辑分组';
+
+  @override
+  String get deleteTopic => '删除分组';
+
+  @override
+  String get deleteTopicConfirm => '确定要删除此分组吗？该分组下的会话将移至默认分组。';
+
+  @override
+  String get topicNamePlaceholder => '分组名称';
+
+  @override
+  String get allChats => '所有';
 }

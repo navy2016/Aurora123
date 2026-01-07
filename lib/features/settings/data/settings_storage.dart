@@ -7,6 +7,7 @@ import 'provider_config_entity.dart';
 import 'usage_stats_entity.dart';
 import '../../chat/data/message_entity.dart';
 import '../../chat/data/session_entity.dart';
+import '../../chat/data/topic_entity.dart';
 
 class SettingsStorage {
   late Isar _isar;
@@ -20,6 +21,7 @@ class SettingsStorage {
         MessageEntitySchema,
         SessionEntitySchema,
         UsageStatsEntitySchema,
+        TopicEntitySchema,
       ],
       directory: dir.path,
     );
@@ -59,6 +61,7 @@ class SettingsStorage {
     bool? enableSmartTopic,
     String? topicGenerationModel,
     String? lastSessionId,
+    String? lastTopicId,
     String? language,
   }) async {
     final existing = await loadAppSettings();
@@ -77,6 +80,7 @@ class SettingsStorage {
       ..enableSmartTopic = enableSmartTopic ?? existing?.enableSmartTopic ?? true
       ..topicGenerationModel = topicGenerationModel ?? existing?.topicGenerationModel
       ..lastSessionId = lastSessionId ?? existing?.lastSessionId
+      ..lastTopicId = lastTopicId ?? existing?.lastTopicId
       ..language = language ?? existing?.language ?? 'zh';
     
     await _isar.writeTxn(() async {
@@ -208,6 +212,31 @@ class SettingsStorage {
   Future<void> clearUsageStats() async {
     await _isar.writeTxn(() async {
       await _isar.usageStatsEntitys.clear();
+    });
+  }
+  Future<void> saveLastTopicId(String? topicId) async {
+    final existing = await loadAppSettings();
+    if (existing == null) return;
+    final settings = AppSettingsEntity()
+      ..activeProviderId = existing.activeProviderId
+      ..selectedModel = existing.selectedModel
+      ..availableModels = existing.availableModels
+      ..userName = existing.userName
+      ..userAvatar = existing.userAvatar
+      ..llmName = existing.llmName
+      ..llmAvatar = existing.llmAvatar
+      ..themeMode = existing.themeMode
+      ..isStreamEnabled = existing.isStreamEnabled
+      ..isSearchEnabled = existing.isSearchEnabled
+      ..searchEngine = existing.searchEngine
+      ..enableSmartTopic = existing.enableSmartTopic
+      ..topicGenerationModel = existing.topicGenerationModel
+      ..lastSessionId = existing.lastSessionId
+      ..lastTopicId = topicId
+      ..language = existing.language;
+    await _isar.writeTxn(() async {
+      await _isar.appSettingsEntitys.clear();
+      await _isar.appSettingsEntitys.put(settings);
     });
   }
 }

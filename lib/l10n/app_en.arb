@@ -90,7 +90,7 @@
   "translationPlaceholder": "Translation result will appear here",
   "sessionDetails": "Session Details",
   "selectOrNewTopic": "Please select or start a new topic",
-  "startNewChat": "Start New Chat",
+  "startNewChat": "New Chat",
   "edit": "Edit",
   "add": "Add",
   "enabled": "Enabled",
@@ -269,5 +269,12 @@
   "searchEnabled": "Web Search Enabled",
   "searchDisabled": "Web Search Disabled",
   "desktopInputHint": "Type something... (Enter for new line, Ctrl + Enter to send)",
-  "mobileInputHint": "Type something..."
+  "mobileInputHint": "Type something...",
+  "topics": "Topic Groups",
+  "createTopic": "New Group",
+  "editTopic": "Edit Group",
+  "deleteTopic": "Delete Group",
+  "deleteTopicConfirm": "Delete this group? Sessions will be moved to the default group.",
+  "topicNamePlaceholder": "Group Name",
+  "allChats": "All"
 }

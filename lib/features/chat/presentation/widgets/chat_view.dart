@@ -725,7 +725,8 @@ class ChatViewState extends ConsumerState<ChatView> {
                     ),
                   ),
                 )
-                : CustomScrollView(
+                : SelectionArea(
+                    child: CustomScrollView(
                     controller: _scrollController,
                     reverse: true,
                     slivers: [
@@ -822,6 +823,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ],
                   ),
+                  ), // Close SelectionArea
           ),
         ),
         if (_attachments.isNotEmpty)
@@ -1806,8 +1808,63 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                       height: 1.5,
                                       color: theme.typography.body!.color,
                                     ),
+                                    h1: TextStyle(
+                                      fontSize: Platform.isWindows ? 28 : 20,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.4,
+                                      color: theme.typography.body!.color,
+                                    ),
+                                    h2: TextStyle(
+                                      fontSize: Platform.isWindows ? 24 : 18,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.4,
+                                      color: theme.typography.body!.color,
+                                    ),
+                                    h3: TextStyle(
+                                      fontSize: Platform.isWindows ? 20 : 16,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.4,
+                                      color: theme.typography.body!.color,
+                                    ),
+                                    h4: TextStyle(
+                                      fontSize: Platform.isWindows ? 18 : 15,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.4,
+                                      color: theme.typography.body!.color,
+                                    ),
+                                    h5: TextStyle(
+                                      fontSize: Platform.isWindows ? 16 : 14,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.4,
+                                      color: theme.typography.body!.color,
+                                    ),
+                                    h6: TextStyle(
+                                      fontSize: Platform.isWindows ? 14 : 13,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.4,
+                                      color: theme.typography.body!.color,
+                                    ),
                                     code: TextStyle(
                                       backgroundColor: theme.micaBackgroundColor,
+                                      color: theme.typography.body!.color,
+                                      fontSize: Platform.isWindows ? 13 : 12,
+                                    ),
+                                    tableBody: TextStyle(
+                                      fontSize: Platform.isWindows ? 14 : 12,
+                                      color: theme.typography.body!.color,
+                                    ),
+                                    tableHead: TextStyle(
+                                      fontSize: Platform.isWindows ? 14 : 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.typography.body!.color,
+                                    ),
+                                    blockquote: TextStyle(
+                                      fontSize: Platform.isWindows ? 14 : 13,
+                                      color: theme.typography.body!.color?.withOpacity(0.8),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    listBullet: TextStyle(
+                                      fontSize: 14,
                                       color: theme.typography.body!.color,
                                     ),
                                   ),
@@ -2641,10 +2698,75 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble> with 
                     color: theme.typography.body!.color,
                     fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
                   ),
+                  h1: TextStyle(
+                    fontSize: Platform.isWindows ? 28 : 20,
+                    fontWeight: FontWeight.bold,
+                    height: 1.4,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  h2: TextStyle(
+                    fontSize: Platform.isWindows ? 24 : 18,
+                    fontWeight: FontWeight.bold,
+                    height: 1.4,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  h3: TextStyle(
+                    fontSize: Platform.isWindows ? 20 : 16,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  h4: TextStyle(
+                    fontSize: Platform.isWindows ? 18 : 15,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  h5: TextStyle(
+                    fontSize: Platform.isWindows ? 16 : 14,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  h6: TextStyle(
+                    fontSize: Platform.isWindows ? 14 : 13,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
                   code: TextStyle(
                     backgroundColor: theme.micaBackgroundColor,
                     color: theme.typography.body!.color,
+                    fontSize: Platform.isWindows ? 13 : 12,
                     fontFamily: Platform.isWindows ? 'Consolas' : null, 
+                  ),
+                  tableBody: TextStyle(
+                    fontSize: Platform.isWindows ? 14 : 12,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  tableHead: TextStyle(
+                    fontSize: Platform.isWindows ? 14 : 12,
+                    fontWeight: FontWeight.bold,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  blockquote: TextStyle(
+                    fontSize: Platform.isWindows ? 14 : 13,
+                    color: theme.typography.body!.color?.withOpacity(0.8),
+                    fontStyle: FontStyle.italic,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
+                  ),
+                  listBullet: TextStyle(
+                    fontSize: 14,
+                    color: theme.typography.body!.color,
+                    fontFamily: Platform.isWindows ? 'Microsoft YaHei' : null,
                   ),
                 ),
             ),

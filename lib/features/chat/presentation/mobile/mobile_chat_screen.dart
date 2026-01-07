@@ -30,6 +30,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   String _lastSessionId = 'new_chat';
 
   DateTime? _lastPopTime;
+  double? _dragStartX;
 
   @override
   void initState() {
@@ -137,6 +138,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
           Scaffold(
             key: _scaffoldKey,
             backgroundColor: Colors.transparent, // Let gradient show through
+            drawerEdgeDragWidth: MediaQuery.of(context).size.width * 0.25, // Wider edge (25% of screen)
             drawer: MobileNavigationDrawer(
               sessionsState: sessionsState,
               selectedSessionId: selectedSessionId,

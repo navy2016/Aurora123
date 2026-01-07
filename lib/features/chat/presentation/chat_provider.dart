@@ -11,6 +11,7 @@ import '../data/session_entity.dart';
 import 'package:aurora/shared/services/tool_manager.dart'; // Import ToolManager
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:uuid/uuid.dart';
+import 'topic_provider.dart';
 
 enum SearchEngine { duckduckgo, google, bing }
 
@@ -185,8 +186,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // Session handling
     if (text != null && (_sessionId == 'chat' || _sessionId == 'new_chat')) {
       final title = text.length > 15 ? '${text.substring(0, 15)}...' : text;
-      final realId = await _storage.createSession(title: title);
-      debugPrint('Created new session: $realId with title: $title');
+      // Use selected topic if available
+      final topicId = _ref.read(selectedTopicIdProvider);
+      final realId = await _storage.createSession(title: title, topicId: topicId);
+      debugPrint('Created new session: $realId with title: $title, topicId: $topicId');
       if (_sessionId == 'new_chat' && onSessionCreated != null) {
         onSessionCreated!(realId);
       }
@@ -749,10 +752,15 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     // 3. Preload all session messages for instant switching
     _storage.preloadAllSessions(); // Fire and forget - don't await to avoid blocking UI
     
-    // 4. Restore last session
+    // 4. Restore last session and topic
     final settings = await _ref.read(settingsStorageProvider).loadAppSettings();
     final lastId = settings?.lastSessionId;
-    
+    final lastTopicId = settings?.lastTopicId; // provider_config_entity change reflects here
+
+    if (lastTopicId != null) {
+      _ref.read(selectedTopicIdProvider.notifier).state = int.tryParse(lastTopicId);
+    }
+
     if (lastId != null && state.sessions.any((s) => s.sessionId == lastId)) {
       _ref.read(selectedHistorySessionIdProvider.notifier).state = lastId;
     } else {
@@ -811,7 +819,8 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
       }
     }
     
-    final id = await _storage.createSession(title: 'New Chat');
+    final topicId = _ref.read(selectedTopicIdProvider);
+    final id = await _storage.createSession(title: 'New Chat', topicId: topicId);
     await loadSessions();
     _ref.read(selectedHistorySessionIdProvider.notifier).state = id;
   }

@@ -35,5 +35,6 @@ class AppSettingsEntity {
   bool enableSmartTopic = true;
   String? topicGenerationModel;
   String? lastSessionId;
+  String? lastTopicId;
   String language = 'zh';
 }

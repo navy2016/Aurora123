@@ -29,7 +29,7 @@ void main() async {
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
-      await windowManager.setMinimumSize(const Size(800, 600));
+      await windowManager.setMinimumSize(const Size(900, 600));
     });
     WindowsInjector.instance.injectKeyData();
   } else if (Platform.isAndroid) {

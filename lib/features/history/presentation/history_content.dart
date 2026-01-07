@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../chat/presentation/chat_provider.dart';
+import '../../chat/presentation/topic_provider.dart';
 import '../../chat/presentation/widgets/chat_view.dart';
+import '../../chat/presentation/widgets/topic_dropdown.dart';
+import '../../settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 
 class HistoryContent extends ConsumerStatefulWidget {
@@ -47,43 +50,63 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
     final sessionsState = ref.watch(sessionsProvider);
 
     if (selectedSessionId != null && selectedSessionId != '') {
-      return Column(
-        children: [
-          Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              border: Border(
-                  bottom: BorderSide(
-                      color: fluent.FluentTheme.of(context)
-                          .resources
-                          .dividerStrokeColorDefault)),
-              color: fluent.FluentTheme.of(context)
-                  .navigationPaneTheme
-                  .backgroundColor,
+      return GestureDetector(
+        onHorizontalDragStart: (details) {
+          // Store start X position to distinguish from system back gesture
+          // If needed, use a state variable or closure variable. 
+          // Since _buildMobileLayout is a method, we can't easily persist state across frames without class state.
+          // However, we can check details in onHorizontalDragUpdate/End if we track it.
+          // Let's use a simpler approach: check primaryVelocity in onHorizontalDragEnd, 
+          // but we can't know start position there easily without state.
+          // We'll rely on the class member _dragStartX if we added it, or simple logic.
+        },
+        // We'll implement a custom detector or use a closure variable if valid within build scope (not persistent).
+        // Actually, let's just check the update/end details.
+        // A better way without class state change:
+        onHorizontalDragEnd: (details) {
+          // Simple right swipe detection
+          if (details.primaryVelocity! > 500) {
+             Scaffold.of(context).openDrawer();
+          }
+        },
+        child: Column(
+          children: [
+            Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                border: Border(
+                    bottom: BorderSide(
+                        color: fluent.FluentTheme.of(context)
+                            .resources
+                            .dividerStrokeColorDefault)),
+                color: fluent.FluentTheme.of(context)
+                    .navigationPaneTheme
+                    .backgroundColor,
+              ),
+              child: Row(
+                children: [
+                  fluent.IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () async {
+                      final currentId = ref.read(selectedHistorySessionIdProvider);
+                      if (currentId != null) {
+                        await ref.read(sessionsProvider.notifier).cleanupSessionIfEmpty(currentId);
+                      }
+                      ref
+                          .read(selectedHistorySessionIdProvider.notifier)
+                          .state = null;
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Text(l10n.sessionDetails,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                fluent.IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () async {
-                    final currentId = ref.read(selectedHistorySessionIdProvider);
-                    if (currentId != null) {
-                      await ref.read(sessionsProvider.notifier).cleanupSessionIfEmpty(currentId);
-                    }
-                    ref
-                        .read(selectedHistorySessionIdProvider.notifier)
-                        .state = null;
-                  },
-                ),
-                const SizedBox(width: 8),
-                Text(l10n.sessionDetails,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-          Expanded(child: ChatView(sessionId: selectedSessionId)),
-        ],
+            Expanded(child: ChatView(sessionId: selectedSessionId)),
+          ],
+        ),
       );
     } else {
       return _SessionList(
@@ -173,52 +196,79 @@ class _SessionList extends ConsumerWidget {
     final manager = ref.watch(chatSessionManagerProvider);
     // Watch trigger to rebuild when any session state changes
     ref.watch(chatStateUpdateTriggerProvider);
+    // Persistence Listeners
+    ref.listen(selectedTopicIdProvider, (_, next) {
+      final storage = ref.read(settingsStorageProvider);
+      storage.saveLastTopicId(next?.toString());
+    });
+
+    ref.listen(selectedHistorySessionIdProvider, (_, next) {
+      if (next != null) {
+        final storage = ref.read(settingsStorageProvider);
+        storage.saveLastSessionId(next);
+      }
+    });
+
+    final selectedTopicId = ref.watch(selectedTopicIdProvider);
     final l10n = AppLocalizations.of(context)!;
+    
+    // Filter sessions by topic
+    final filteredSessions = sessionsState.sessions.where((s) {
+      if (selectedTopicId == null) return true; 
+      return s.topicId == selectedTopicId;
+    }).toList();
     
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-          child: fluent.HoverButton(
-            onPressed: () {
-              ref.read(sessionsProvider.notifier).startNewSession();
-            },
-            builder: (context, states) {
-              final theme = fluent.FluentTheme.of(context);
-              final isHovering = states.isHovered;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isHovering 
-                      ? theme.resources.subtleFillColorSecondary 
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: isHovering 
-                        ? theme.resources.surfaceStrokeColorDefault
-                        : Colors.transparent, // Only show border on hover
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(fluent.FluentIcons.add, 
-                        size: 14, 
-                        color: theme.accentColor),
-                    const SizedBox(width: 12),
-                    Text(l10n.startNewChat, 
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: theme.typography.body?.color,
-                            fontWeight: FontWeight.w500)),
-                    const Spacer(),
-                    if (isHovering)
-                       Icon(fluent.FluentIcons.chevron_right, size: 10, color: theme.resources.textFillColorSecondary),
-                  ],
-                ),
-              );
-            },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TopicDropdown(isMobile: isMobile),
+              const SizedBox(height: 4),
+              fluent.HoverButton(
+                onPressed: () {
+                  ref.read(sessionsProvider.notifier).startNewSession();
+                },
+                builder: (context, states) {
+                  final theme = fluent.FluentTheme.of(context);
+                  final isHovering = states.isHovered;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isHovering 
+                          ? theme.resources.subtleFillColorSecondary 
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isHovering 
+                            ? theme.resources.surfaceStrokeColorDefault
+                            : Colors.transparent, // Only show border on hover
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(fluent.FluentIcons.add, 
+                            size: 14, 
+                            color: theme.accentColor),
+                        const SizedBox(width: 12),
+                        Text(l10n.startNewChat, 
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: theme.typography.body?.color,
+                                fontWeight: FontWeight.w500)),
+                        const Spacer(),
+                        if (isHovering)
+                           Icon(fluent.FluentIcons.chevron_right, size: 10, color: theme.resources.textFillColorSecondary),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
         // Removed Divider
@@ -239,9 +289,9 @@ class _SessionList extends ConsumerWidget {
                   onReorder: (oldIndex, newIndex) {
                     ref.read(sessionsProvider.notifier).reorderSession(oldIndex, newIndex);
                   },
-                  itemCount: sessionsState.sessions.length,
+                  itemCount: filteredSessions.length,
                   itemBuilder: (context, index) {
-                    final session = sessionsState.sessions[index];
+                    final session = filteredSessions[index];
                     final isSelected = session.sessionId == selectedSessionId;
                     
                     // Get session state for status indicator
@@ -407,8 +457,11 @@ class SessionListWidget extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
     final searchQuery = ref.watch(sessionSearchQueryProvider).toLowerCase();
+    final selectedTopicId = ref.watch(selectedTopicIdProvider);
     final filteredSessions = sessionsState.sessions.where((s) {
-      return s.title.toLowerCase().contains(searchQuery);
+      final matchesSearch = s.title.toLowerCase().contains(searchQuery);
+      final matchesTopic = selectedTopicId == null || s.topicId == selectedTopicId;
+      return matchesSearch && matchesTopic;
     }).toList();
 
     return ReorderableListView.builder(
