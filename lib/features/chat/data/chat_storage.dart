@@ -58,7 +58,8 @@ class ChatStorage {
       ..reasoningDurationSeconds = message.reasoningDurationSeconds
       ..sessionId = sessionId
       ..role = message.role
-      ..toolCallId = message.toolCallId;
+      ..toolCallId = message.toolCallId
+      ..tokenCount = message.tokenCount;
       
     if (message.toolCalls != null) {
       entity.toolCallsJson = jsonEncode(message.toolCalls!.map((tc) => tc.toJson()).toList());
@@ -66,11 +67,21 @@ class ChatStorage {
 
     await _isar.writeTxn(() async {
       await _isar.messageEntitys.put(entity);
+      
+      // Update session total tokens
+      if (message.tokenCount != null && message.tokenCount! > 0) {
+         final session = await _isar.sessionEntitys.getBySessionId(sessionId);
+         if (session != null) {
+           session.totalTokens += message.tokenCount!;
+           await _isar.sessionEntitys.put(session);
+         }
+      }
     });
     
-    // Update cache
+    // Update cache with the CORRECT database ID (not the original UUID)
     if (_messagesCache.containsKey(sessionId)) {
-      _messagesCache[sessionId]!.add(message);
+      final cachedMessage = message.copyWith(id: entity.id.toString());
+      _messagesCache[sessionId]!.add(cachedMessage);
     }
     
     // Return the DB-assigned ID
@@ -97,7 +108,8 @@ class ChatStorage {
               ..reasoningDurationSeconds = m.reasoningDurationSeconds
               ..sessionId = sessionId
               ..role = m.role
-              ..toolCallId = m.toolCallId;
+              ..toolCallId = m.toolCallId
+              ..tokenCount = m.tokenCount;
             if (m.toolCalls != null) {
               e.toolCallsJson = jsonEncode(m.toolCalls!.map((tc) => tc.toJson()).toList());
             }
@@ -167,6 +179,7 @@ class ChatStorage {
               role: e.role,
               toolCallId: e.toolCallId,
               toolCalls: toolCalls,
+              tokenCount: e.tokenCount,
             );
         })
         .toList();
@@ -196,6 +209,17 @@ class ChatStorage {
     }
     
     await _isar.writeTxn(() async {
+      // Update session total tokens before deleting
+      if (entity != null && entity.tokenCount != null && entity.tokenCount! > 0) {
+         final session = await _isar.sessionEntitys
+             .filter()
+             .sessionIdEqualTo(entity.sessionId!)
+             .findFirst();
+         if (session != null) {
+           session.totalTokens = (session.totalTokens - entity.tokenCount!).clamp(0, 999999999);
+           await _isar.sessionEntitys.put(session);
+         }
+      }
       await _isar.messageEntitys.delete(intId);
     });
   }
@@ -220,6 +244,26 @@ class ChatStorage {
         } else {
             existing.toolCallsJson = null;
         }
+        
+        // Handle token count update if changed (though usually tokens don't change on edit?)
+        // If editing an AI message, tokens might change if re-parsed? 
+        // For now, assume edit doesn't change tokens unless explicitly provided.
+        // If we want to support token updates on edit:
+        if (message.tokenCount != null && message.tokenCount != existing.tokenCount) {
+             final diff = (message.tokenCount ?? 0) - (existing.tokenCount ?? 0);
+             if (diff != 0) {
+               final session = await _isar.sessionEntitys
+                   .filter()
+                   .sessionIdEqualTo(existing.sessionId!)
+                   .findFirst();
+               if (session != null) {
+                 session.totalTokens = (session.totalTokens + diff).clamp(0, 999999999);
+                 await _isar.sessionEntitys.put(session);
+               }
+             }
+             existing.tokenCount = message.tokenCount;
+        }
+
         await _isar.messageEntitys.put(existing);
       }
     });
@@ -231,6 +275,16 @@ class ChatStorage {
           .filter()
           .sessionIdEqualTo(sessionId)
           .deleteAll();
+      
+      // Reset session total tokens
+      final session = await _isar.sessionEntitys
+          .filter()
+          .sessionIdEqualTo(sessionId)
+          .findFirst();
+      if (session != null) {
+        session.totalTokens = 0;
+        await _isar.sessionEntitys.put(session);
+      }
     });
   }
 

@@ -41,6 +41,11 @@ const SessionEntitySchema = CollectionSchema(
       id: 4,
       name: r'topicId',
       type: IsarType.long,
+    ),
+    r'totalTokens': PropertySchema(
+      id: 5,
+      name: r'totalTokens',
+      type: IsarType.long,
     )
   },
   estimateSize: _sessionEntityEstimateSize,
@@ -99,6 +104,7 @@ void _sessionEntitySerialize(
   writer.writeString(offsets[2], object.snippet);
   writer.writeString(offsets[3], object.title);
   writer.writeLong(offsets[4], object.topicId);
+  writer.writeLong(offsets[5], object.totalTokens);
 }
 
 SessionEntity _sessionEntityDeserialize(
@@ -114,6 +120,7 @@ SessionEntity _sessionEntityDeserialize(
   object.snippet = reader.readStringOrNull(offsets[2]);
   object.title = reader.readString(offsets[3]);
   object.topicId = reader.readLongOrNull(offsets[4]);
+  object.totalTokens = reader.readLong(offsets[5]);
   return object;
 }
 
@@ -134,6 +141,8 @@ P _sessionEntityDeserializeProp<P>(
       return (reader.readString(offset)) as P;
     case 4:
       return (reader.readLongOrNull(offset)) as P;
+    case 5:
+      return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -944,6 +953,62 @@ extension SessionEntityQueryFilter
       ));
     });
   }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      totalTokensEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'totalTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      totalTokensGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'totalTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      totalTokensLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'totalTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      totalTokensBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'totalTokens',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension SessionEntityQueryObject
@@ -1014,6 +1079,19 @@ extension SessionEntityQuerySortBy
   QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> sortByTopicIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'topicId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> sortByTotalTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalTokens', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
+      sortByTotalTokensDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalTokens', Sort.desc);
     });
   }
 }
@@ -1094,6 +1172,19 @@ extension SessionEntityQuerySortThenBy
       return query.addSortBy(r'topicId', Sort.desc);
     });
   }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> thenByTotalTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalTokens', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
+      thenByTotalTokensDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalTokens', Sort.desc);
+    });
+  }
 }
 
 extension SessionEntityQueryWhereDistinct
@@ -1129,6 +1220,13 @@ extension SessionEntityQueryWhereDistinct
   QueryBuilder<SessionEntity, SessionEntity, QDistinct> distinctByTopicId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'topicId');
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QDistinct>
+      distinctByTotalTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'totalTokens');
     });
   }
 }
@@ -1169,6 +1267,12 @@ extension SessionEntityQueryProperty
   QueryBuilder<SessionEntity, int?, QQueryOperations> topicIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'topicId');
+    });
+  }
+
+  QueryBuilder<SessionEntity, int, QQueryOperations> totalTokensProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'totalTokens');
     });
   }
 }

@@ -123,6 +123,7 @@ class OpenAILLMService implements LLMService {
         'model': model,
         'messages': apiMessages,
         'stream': true,
+        'stream_options': {'include_usage': true},
       };
       if (tools != null) {
         requestData['tools'] = tools;
@@ -312,6 +313,15 @@ You MUST cite your sources using the format `[index](link)`.
             final json = jsonDecode(data);
              // Log every chunk sanitized
             _logResponse(json);
+
+            // Check for usage
+            if (json['usage'] != null) {
+              final usage = json['usage'];
+              final int? totalTokens = usage['total_tokens'];
+              if (totalTokens != null) {
+                yield LLMResponseChunk(usage: totalTokens);
+              }
+            }
 
             final choices = json['choices'] as List;
             if (choices.isNotEmpty) {
@@ -791,6 +801,7 @@ You MUST cite your sources using the format `[index](link)`.
         'model': model,
         'messages': apiMessages,
         'stream': false,
+        'stream_options': {'include_usage': true},
       };
       if (tools != null) {
         requestData['tools'] = tools;
@@ -899,6 +910,11 @@ You MUST cite your sources using the format `[index](link)`.
       // Log response
       _logResponse(data);
 
+      int? usage;
+      if (data['usage'] != null) {
+        usage = data['usage']['total_tokens'];
+      }
+
       final choices = data['choices'] as List;
       if (choices.isNotEmpty) {
         final message = choices[0]['message'];
@@ -906,10 +922,10 @@ You MUST cite your sources using the format `[index](link)`.
         // Handle deepseek reasoning (often in reasoning_content)
         final String? reasoning = (message['reasoning_content'] ?? message['reasoning'])?.toString();
         
-        List<ToolCall>? toolCalls;
+        List<ToolCallChunk>? toolCalls;
         if (message['tool_calls'] != null) {
           toolCalls = (message['tool_calls'] as List).map((tc) {
-            return ToolCall(
+            return ToolCallChunk(
               id: tc['id'],
               type: tc['type'],
               name: tc['function']['name'],
@@ -945,7 +961,7 @@ You MUST cite your sources using the format `[index](link)`.
           }
         }
         
-        return LLMResponseChunk(content: content, reasoning: reasoning, images: images, toolCalls: toolCalls != null ? toolCalls.map((tc) => ToolCallChunk.fromToolCall(tc)).toList() : null);
+        return LLMResponseChunk(content: content, reasoning: reasoning, images: images, toolCalls: toolCalls, usage: usage);
       }
       return const LLMResponseChunk(content: '');
     } on DioException catch (e) {

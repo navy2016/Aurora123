@@ -228,10 +228,12 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
             
             // Re-calculate title dynamically
             String dynamicTitle = sessionTitle; // Default/Fallback
+            int totalTokens = 0;
             if (sessionId != 'new_chat' && sessionsState.sessions.isNotEmpty) {
                final sessionMatch = sessionsState.sessions.where((s) => s.sessionId == sessionId);
                if (sessionMatch.isNotEmpty) {
                  dynamicTitle = sessionMatch.first.title;
+                 totalTokens = sessionMatch.first.totalTokens;
                }
             }
 
@@ -248,15 +250,38 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                         Text(
-                          dynamicTitle,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                         Row(
+                           children: [
+                             Flexible(
+                               child: Text(
+                                 dynamicTitle,
+                                 style: TextStyle(
+                                   fontSize: 18,
+                                   fontWeight: FontWeight.w600,
+                                   color: Theme.of(context).textTheme.bodyLarge?.color,
+                                 ),
+                                 overflow: TextOverflow.ellipsis,
+                               ),
+                             ),
+                             if (totalTokens > 0) ...[
+                               const SizedBox(width: 8),
+                               Container(
+                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                 decoration: BoxDecoration(
+                                   color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                   borderRadius: BorderRadius.circular(8),
+                                 ),
+                                 child: Text(
+                                   '$totalTokens tokens',
+                                   style: TextStyle(
+                                     fontSize: 11,
+                                     color: Theme.of(context).primaryColor,
+                                   ),
+                                 ),
+                               ),
+                             ],
+                           ],
+                         ),
                         Row(
                           children: [
                             Flexible(

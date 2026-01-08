@@ -19,4 +19,5 @@ class MessageEntity {
   String? role;
   String? toolCallId;
   String? toolCallsJson;
+  int? tokenCount;
 }

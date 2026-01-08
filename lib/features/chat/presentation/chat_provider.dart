@@ -224,12 +224,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final content = apiContent ?? text;
       final userMessage = Message.user(content, attachments: attachments);
       
-      // Save user message
-      await _storage.saveMessage(userMessage, _sessionId);
+      // Save user message and get database ID
+      final dbId = await _storage.saveMessage(userMessage, _sessionId);
       
-      // Force UI update to show user message immediately
+      // Force UI update with the CORRECT database ID (not UUID)
+      final userMessageWithDbId = userMessage.copyWith(id: dbId);
       state = state.copyWith(
-        messages: [...state.messages, userMessage],
+        messages: [...state.messages, userMessageWithDbId],
       );
     }
     
@@ -324,6 +325,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
               model: aiMsg.model,
               provider: aiMsg.provider,
               reasoningDurationSeconds: duration,
+              tokenCount: chunk.usage ?? aiMsg.tokenCount,
               // Merge tool calls
               toolCalls: _mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
             );
@@ -407,6 +409,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
               images: response.images,
               model: aiMsg.model,
               provider: aiMsg.provider,
+              tokenCount: response.usage,
               toolCalls: response.toolCalls?.map((tc) => ToolCall(id: tc.id ?? '', type: tc.type ?? 'function', name: tc.name ?? '', arguments: tc.arguments ?? '')).toList()
             );
             
@@ -476,6 +479,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           // Commit updated IDs to state
           if (mounted && _currentGenerationId == myGenerationId) {
             state = state.copyWith(messages: updatedMessages, isLoading: false, hasUnreadResponse: true);
+            // Refresh sessions to update token count in sidebar
+            _ref.read(sessionsProvider.notifier).loadSessions();
           }
         } else {
           // Generation complete, mark as unread

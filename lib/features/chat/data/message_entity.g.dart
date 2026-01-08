@@ -72,13 +72,18 @@ const MessageEntitySchema = CollectionSchema(
       name: r'timestamp',
       type: IsarType.dateTime,
     ),
-    r'toolCallId': PropertySchema(
+    r'tokenCount': PropertySchema(
       id: 11,
+      name: r'tokenCount',
+      type: IsarType.long,
+    ),
+    r'toolCallId': PropertySchema(
+      id: 12,
       name: r'toolCallId',
       type: IsarType.string,
     ),
     r'toolCallsJson': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'toolCallsJson',
       type: IsarType.string,
     )
@@ -207,8 +212,9 @@ void _messageEntitySerialize(
   writer.writeString(offsets[8], object.role);
   writer.writeString(offsets[9], object.sessionId);
   writer.writeDateTime(offsets[10], object.timestamp);
-  writer.writeString(offsets[11], object.toolCallId);
-  writer.writeString(offsets[12], object.toolCallsJson);
+  writer.writeLong(offsets[11], object.tokenCount);
+  writer.writeString(offsets[12], object.toolCallId);
+  writer.writeString(offsets[13], object.toolCallsJson);
 }
 
 MessageEntity _messageEntityDeserialize(
@@ -230,8 +236,9 @@ MessageEntity _messageEntityDeserialize(
   object.role = reader.readStringOrNull(offsets[8]);
   object.sessionId = reader.readStringOrNull(offsets[9]);
   object.timestamp = reader.readDateTime(offsets[10]);
-  object.toolCallId = reader.readStringOrNull(offsets[11]);
-  object.toolCallsJson = reader.readStringOrNull(offsets[12]);
+  object.tokenCount = reader.readLongOrNull(offsets[11]);
+  object.toolCallId = reader.readStringOrNull(offsets[12]);
+  object.toolCallsJson = reader.readStringOrNull(offsets[13]);
   return object;
 }
 
@@ -265,8 +272,10 @@ P _messageEntityDeserializeProp<P>(
     case 10:
       return (reader.readDateTime(offset)) as P;
     case 11:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 12:
+      return (reader.readStringOrNull(offset)) as P;
+    case 13:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -2097,6 +2106,80 @@ extension MessageEntityQueryFilter
   }
 
   QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      tokenCountIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'tokenCount',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      tokenCountIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'tokenCount',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      tokenCountEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'tokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      tokenCountGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'tokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      tokenCountLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'tokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      tokenCountBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'tokenCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
       toolCallIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -2528,6 +2611,19 @@ extension MessageEntityQuerySortBy
     });
   }
 
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy> sortByTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      sortByTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tokenCount', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy> sortByToolCallId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'toolCallId', Sort.asc);
@@ -2685,6 +2781,19 @@ extension MessageEntityQuerySortThenBy
     });
   }
 
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy> thenByTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      thenByTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tokenCount', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy> thenByToolCallId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'toolCallId', Sort.asc);
@@ -2790,6 +2899,12 @@ extension MessageEntityQueryWhereDistinct
     });
   }
 
+  QueryBuilder<MessageEntity, MessageEntity, QDistinct> distinctByTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'tokenCount');
+    });
+  }
+
   QueryBuilder<MessageEntity, MessageEntity, QDistinct> distinctByToolCallId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2880,6 +2995,12 @@ extension MessageEntityQueryProperty
   QueryBuilder<MessageEntity, DateTime, QQueryOperations> timestampProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'timestamp');
+    });
+  }
+
+  QueryBuilder<MessageEntity, int?, QQueryOperations> tokenCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'tokenCount');
     });
   }
 

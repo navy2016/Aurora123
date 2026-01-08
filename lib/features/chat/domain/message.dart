@@ -54,6 +54,7 @@ class Message {
   final String? model;
   final String? provider;
   final double? reasoningDurationSeconds;
+  final int? tokenCount;
   
   // New fields for Function Calling
   final List<ToolCall>? toolCalls;
@@ -73,6 +74,7 @@ class Message {
     this.reasoningDurationSeconds,
     this.toolCalls,
     this.toolCallId,
+    this.tokenCount,
     String? role,
   }) : role = role ?? (isUser ? 'user' : (toolCallId != null ? 'tool' : 'assistant'));
 
@@ -92,7 +94,9 @@ class Message {
       List<String> images = const [],
       String? model,
       String? provider,
+
       double? reasoningDurationSeconds,
+      int? tokenCount,
       List<ToolCall>? toolCalls}) {
     return Message(
       id: const Uuid().v4(),
@@ -104,6 +108,7 @@ class Message {
       model: model,
       provider: provider,
       reasoningDurationSeconds: reasoningDurationSeconds,
+      tokenCount: tokenCount,
       toolCalls: toolCalls,
       role: 'assistant',
     );
@@ -134,6 +139,7 @@ class Message {
     List<ToolCall>? toolCalls,
     String? toolCallId,
     String? role,
+    int? tokenCount,
   }) {
     return Message(
       id: id ?? this.id,
@@ -149,6 +155,7 @@ class Message {
       toolCalls: toolCalls ?? this.toolCalls,
       toolCallId: toolCallId ?? this.toolCallId,
       role: role ?? this.role,
+      tokenCount: tokenCount ?? this.tokenCount,
     );
   }
 }

@@ -415,8 +415,9 @@ class _SessionItemState extends State<_SessionItem> {
                           ),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 2),
-                      Text(DateFormat('MM/dd HH:mm')
-                          .format(widget.session.lastMessageTime),
+                      Text(
+                          DateFormat('MM/dd HH:mm').format(widget.session.lastMessageTime) +
+                          (widget.session.totalTokens > 0 ? ' • ${widget.session.totalTokens} tokens' : ''),
                           style: TextStyle(
                               fontSize: 10,
                               color: theme.resources.textFillColorSecondary
@@ -498,7 +499,8 @@ class SessionListWidget extends ConsumerWidget {
                 title: Text(session.title,
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: Text(
-                  DateFormat('MM/dd HH:mm').format(session.lastMessageTime),
+                  DateFormat('MM/dd HH:mm').format(session.lastMessageTime) +
+                  (session.totalTokens > 0 ? ' • ${session.totalTokens} tokens' : ''),
                   style: const TextStyle(fontSize: 12),
                 ),
                 trailing: IconButton(

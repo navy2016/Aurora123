@@ -728,6 +728,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                 : SelectionArea(
                     child: CustomScrollView(
                     controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                     reverse: true,
                     slivers: [
                       SliverFillRemaining(
@@ -1907,7 +1908,24 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     .toList(),
                               ),
                             ],
-                          ],
+                          // Token Count
+                          if (!isUser && message.tokenCount != null && message.tokenCount! > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${message.tokenCount} tokens',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: theme.typography.body?.color?.withOpacity(0.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                         ),
                       ),
                     ),
@@ -2788,6 +2806,29 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble> with 
                        imageUrl: img,
                      ))
                  .toList(),
+           ),
+         ),
+       );
+     }
+     
+
+
+     // Token Count
+     if (message.tokenCount != null && message.tokenCount! > 0) {
+       parts.add(
+         Padding(
+           padding: const EdgeInsets.only(top: 4.0),
+           child: Row(
+             mainAxisSize: MainAxisSize.min,
+             children: [
+               Text(
+                 '${message.tokenCount} tokens',
+                 style: TextStyle(
+                   fontSize: 10,
+                   color: theme.typography.body!.color!.withOpacity(0.5),
+                 ),
+               ),
+             ],
            ),
          ),
        );

@@ -14,4 +14,6 @@ class SessionEntity {
   // We store the ID directly. Isar Links<T> are also an option, 
   // but a simple ID is often easier for lightweight relations.
   int? topicId; 
+
+  int totalTokens = 0;
 }
