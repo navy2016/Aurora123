@@ -617,4 +617,31 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get allChats => '所有';
+
+  @override
+  String get thinkingConfig => '思考配置';
+
+  @override
+  String get enableThinking => '启用思考';
+
+  @override
+  String get thinkingBudget => '思考预算';
+
+  @override
+  String get thinkingBudgetHint => '输入数字 (如 1024) 或级别 (如 low, high)';
+
+  @override
+  String get transmissionMode => '传输模式';
+
+  @override
+  String get modeAuto => '自动智能';
+
+  @override
+  String get modeExtraBody => 'Extra Body (Google)';
+
+  @override
+  String get modeReasoningEffort => 'Reasoning Effort (OpenAI)';
+
+  @override
+  String get providers => '服务商';
 }

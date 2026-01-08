@@ -23,6 +23,47 @@ class OpenAILLMService implements LLMService {
       'User-Agent': 'Aurora/1.0 (Flutter; Dio)',
     },
   ));
+
+  dynamic _sanitizeForLog(dynamic data) {
+    if (data is Map) {
+      return data.map((k, v) {
+        if (k == 'b64_json' && v is String && v.length > 200) {
+          return MapEntry(k, '${v.substring(0, 50)}...[TRUNCATED ${v.length} chars]');
+        }
+        if (k == 'url' && v is String && v.startsWith('data:') && v.length > 200) {
+          return MapEntry(k, '${v.substring(0, 50)}...[TRUNCATED ${v.length} chars]');
+        }
+        return MapEntry(k, _sanitizeForLog(v));
+      });
+    } else if (data is List) {
+      return data.map((i) => _sanitizeForLog(i)).toList();
+    } else if (data is String) {
+      if (data.startsWith('data:') && data.length > 200) {
+         return '${data.substring(0, 50)}...[TRUNCATED ${data.length} chars]';
+      }
+    }
+    return data;
+  }
+
+  void _logRequest(String url, Map<String, dynamic> data) {
+    try {
+      final sanitized = _sanitizeForLog(data);
+      print('🔵 [LLM REQUEST] URL: $url');
+      print('🔵 [LLM REQUEST] PAYLOAD: ${jsonEncode(sanitized)}');
+    } catch (e) {
+      print('🔴 [LLM REQUEST LOG ERROR]: $e');
+    }
+  }
+
+  void _logResponse(dynamic data) {
+    try {
+      final sanitized = _sanitizeForLog(data);
+       print('🟢 [LLM RESPONSE]: ${jsonEncode(sanitized)}');
+    } catch (e) {
+      print('🔴 [LLM RESPONSE LOG ERROR]: $e');
+    }
+  }
+
   @override
   Stream<LLMResponseChunk> streamResponse(List<Message> messages,
       {List<String>? attachments,
@@ -47,7 +88,6 @@ class OpenAILLMService implements LLMService {
       // Early debug: Log message count and structure
       for (int i = 0; i < apiMessages.length; i++) {
         final msg = apiMessages[i];
-        final role = msg['role'];
         final content = msg['content'];
         if (content is List) {
           for (final part in content) {
@@ -55,7 +95,6 @@ class OpenAILLMService implements LLMService {
               print('  - type: ${part['type']}');
             }
           }
-        } else if (content is String) {
         }
       }
       
@@ -135,22 +174,110 @@ You MUST cite your sources using the format `[index](link)`.
       }
       requestData.addAll(provider.customParameters);
       if (provider.modelSettings.containsKey(model)) {
-        requestData.addAll(provider.modelSettings[model]!);
-      }
-      
-      // Debug: Log message structure
-      for (int i = 0; i < apiMessages.length; i++) {
-        final msg = apiMessages[i];
-        final content = msg['content'];
-        if (content is List) {
-          for (final part in content) {
-            if (part is Map) {
-              print('  - type: ${part['type']}, hasImageUrl: ${part['image_url'] != null}');
+        // Apply thinking configuration if enabled
+        final modelParams = provider.modelSettings[model]!;
+        final thinkingEnabled = modelParams['_aurora_thinking_enabled'] == true;
+        if (thinkingEnabled) {
+          final thinkingValue = modelParams['_aurora_thinking_value']?.toString() ?? '';
+          var thinkingMode = modelParams['_aurora_thinking_mode']?.toString() ?? 'auto';
+          
+          // Smart Auto: Detect based on model name
+          if (thinkingMode == 'auto') {
+            // Gemini 3 uses reasoning_effort (CPA handles thinkingLevel conversion)
+            // Gemini 2.5 uses extra_body with thinking_budget
+            final isGemini3 = RegExp(r'gemini[_-]?3[_-]', caseSensitive: false).hasMatch(model);
+            if (isGemini3) {
+              thinkingMode = 'reasoning_effort';
+            } else if (model.toLowerCase().contains('gemini')) {
+              thinkingMode = 'extra_body';
+            } else {
+              thinkingMode = 'reasoning_effort';
             }
           }
-        } else {
+          
+          // Apply thinking config based on mode
+          if (thinkingValue.isNotEmpty) {
+            if (thinkingMode == 'extra_body') {
+              // Google / Cherry Studio format: extra_body.google.thinking_config
+              // Gemini 3 uses thinkingLevel (string), Gemini 2.5 uses thinkingBudget (number)
+              final isGemini3 = RegExp(r'gemini[_-]?3[_-]', caseSensitive: false).hasMatch(model);
+              final int? budgetInt = int.tryParse(thinkingValue);
+              
+              if (isGemini3) {
+                // Gemini 3: Use thinkingLevel
+                String thinkingLevel;
+                if (budgetInt != null) {
+                  // Convert numeric budget to level for Gemini 3
+                  if (budgetInt <= 512) {
+                    thinkingLevel = 'minimal';
+                  } else if (budgetInt <= 1024) {
+                    thinkingLevel = 'low';
+                  } else if (budgetInt <= 8192) {
+                    thinkingLevel = 'medium';
+                  } else {
+                    thinkingLevel = 'high';
+                  }
+                } else {
+                  // Already a level string
+                  thinkingLevel = thinkingValue.toLowerCase();
+                }
+                requestData['extra_body'] = {
+                  'google': {
+                    'thinking_config': {
+                      'thinkingLevel': thinkingLevel,
+                      'includeThoughts': true,
+                    }
+                  }
+                };
+              } else {
+                // Gemini 2.5 and others: Use thinkingBudget
+                requestData['extra_body'] = {
+                  'google': {
+                    'thinking_config': {
+                      if (budgetInt != null) 'thinking_budget': budgetInt,
+                      if (budgetInt != null) 'include_thoughts': true,
+                      // For string values like 'low', 'high', 'medium'
+                      if (budgetInt == null) 'thinkingLevel': thinkingValue,
+                      if (budgetInt == null) 'includeThoughts': true,
+                    }
+                  }
+                };
+              }
+            } else if (thinkingMode == 'reasoning_effort') {
+              // OpenAI standard format - CPA will convert to thinkingLevel for Gemini 3
+              // For Gemini 3, convert numeric budget to level string
+              final isGemini3ForEffort = RegExp(r'gemini[_-]?3[_-]', caseSensitive: false).hasMatch(model);
+              final int? budgetInt = int.tryParse(thinkingValue);
+              
+              if (isGemini3ForEffort && budgetInt != null) {
+                // Convert numeric budget to level for Gemini 3
+                String level;
+                if (budgetInt <= 512) {
+                  level = 'minimal';
+                } else if (budgetInt <= 1024) {
+                  level = 'low';
+                } else if (budgetInt <= 8192) {
+                  level = 'medium';
+                } else {
+                  level = 'high';
+                }
+                requestData['reasoning_effort'] = level;
+              } else {
+                requestData['reasoning_effort'] = thinkingValue;
+              }
+            }
+          }
         }
+        
+        // Add model settings, filtering out _aurora_ prefixed keys
+        final filteredParams = Map<String, dynamic>.fromEntries(
+          modelParams.entries.where((e) => !e.key.startsWith('_aurora_'))
+        );
+        requestData.addAll(filteredParams);
       }
+      
+      // Use new log method
+      _logRequest('${baseUrl}chat/completions', requestData);
       
       final response = await _dio.post(
         '${baseUrl}chat/completions',
@@ -176,11 +303,16 @@ You MUST cite your sources using the format `[index](link)`.
           if (line.isEmpty) continue;
           if (!line.startsWith('data: ')) continue;
           final data = line.substring(6).trim();
-          if (data == '[DONE]') return;
-          if (data.contains('"images"') && data.length > 1000) {
+          if (data == '[DONE]') {
+            print('🟢 [LLM RESPONSE STREAM]: [DONE]');
+            return;
           }
+          
           try {
             final json = jsonDecode(data);
+             // Log every chunk sanitized
+            _logResponse(json);
+
             final choices = json['choices'] as List;
             if (choices.isNotEmpty) {
               final delta = choices[0]['delta'];
@@ -205,8 +337,6 @@ You MUST cite your sources using the format `[index](link)`.
                      if (function != null) {
                        final String? name = function['name'];
                        final String? arguments = function['arguments'];
-                       if (name != null || arguments != null) {
-                       }
                        yield LLMResponseChunk(
                          toolCalls: [
                            ToolCallChunk(
@@ -267,42 +397,38 @@ You MUST cite your sources using the format `[index](link)`.
                   } else if (delta['images'] != null &&
                       delta['images'] is List) {
                     final images = delta['images'] as List;
-                    if (images.isNotEmpty) {
-                      final imgData = images[0];
-                      print(
-                          'DEBUG: imgData type=${imgData.runtimeType}, value=${imgData.toString().substring(0, imgData.toString().length > 100 ? 100 : imgData.toString().length)}...');
+                    final List<String> parsedImages = [];
+                    
+                    for (final imgData in images) {
                       if (imgData is String) {
                         if (imgData.startsWith('http')) {
-                          imageUrl = imgData;
+                          parsedImages.add(imgData);
                         } else if (imgData.startsWith('data:image')) {
-                          imageUrl = imgData;
+                          parsedImages.add(imgData);
                         } else {
-                          imageUrl = 'data:image/png;base64,$imgData';
+                          parsedImages.add('data:image/png;base64,$imgData');
                         }
                       } else if (imgData is Map) {
-                        print(
-                            'DEBUG: imgData is Map, keys=${imgData.keys.toList()}');
                         if (imgData['url'] != null) {
                           final url = imgData['url'].toString();
-                          imageUrl =
+                          parsedImages.add(
                               url.startsWith('http') || url.startsWith('data:')
                                   ? url
-                                  : 'data:image/png;base64,$url';
+                                  : 'data:image/png;base64,$url');
                         } else if (imgData['data'] != null) {
-                          imageUrl = 'data:image/png;base64,${imgData['data']}';
+                          parsedImages.add('data:image/png;base64,${imgData['data']}');
                         } else if (imgData['image_url'] != null) {
-                          print(
-                              'DEBUG: Found image_url field, type=${imgData['image_url'].runtimeType}');
                           final imgUrlObj = imgData['image_url'];
                           if (imgUrlObj is Map && imgUrlObj['url'] != null) {
-                            imageUrl = imgUrlObj['url'].toString();
-                            print(
-                                'DEBUG: Extracted imageUrl (first 50 chars): ${imageUrl!.substring(0, imageUrl!.length > 50 ? 50 : imageUrl!.length)}');
+                             parsedImages.add(imgUrlObj['url'].toString());
                           } else if (imgUrlObj is String) {
-                            imageUrl = imgUrlObj;
+                             parsedImages.add(imgUrlObj);
                           }
                         }
                       }
+                    }
+                    if (parsedImages.isNotEmpty) {
+                       yield LLMResponseChunk(content: '', images: parsedImages);
                     }
                   }
                 }
@@ -323,6 +449,7 @@ You MUST cite your sources using the format `[index](link)`.
               }
             }
           } catch (e) {
+            print('LLM Stream Parse Error: $e');
           }
         }
       }
@@ -335,10 +462,15 @@ You MUST cite your sources using the format `[index](link)`.
       try {
         if (e.response?.data != null) {
           final responseData = e.response?.data;
+          // Log error response
+          print('🔴 [LLM ERROR RESPONSE]: $responseData');
+
           if (responseData is ResponseBody) {
             final stream = responseData.stream;
             final bytes = await stream.fold<List<int>>([], (prev, chunk) => prev..addAll(chunk));
             final errorBody = utf8.decode(bytes);
+            print('🔴 [LLM ERROR BODY]: $errorBody');
+
             // Try to parse as JSON for better error message
             try {
               final json = jsonDecode(errorBody);
@@ -492,10 +624,6 @@ You MUST cite your sources using the format `[index](link)`.
         // For multi-turn editing, only use the LAST image (final/larger one, not draft)
         if (m.images.isNotEmpty) {
           final lastImage = m.images.last;
-          // Debug: Log image URL format
-          if (lastImage.startsWith('data:')) {
-          }
-          
           // Only add if it's a valid data URL
           if (lastImage.startsWith('data:')) {
             // For assistant messages, add thought_signature to bypass Gemini's validation
@@ -516,7 +644,6 @@ You MUST cite your sources using the format `[index](link)`.
                 },
               });
             }
-          } else {
           }
         }
         return {
@@ -683,8 +810,79 @@ You MUST cite your sources using the format `[index](link)`.
       }
       requestData.addAll(provider.customParameters);
       if (provider.modelSettings.containsKey(model)) {
-        requestData.addAll(provider.modelSettings[model]!);
+        // Apply thinking configuration if enabled
+        final modelParams = provider.modelSettings[model]!;
+        final thinkingEnabled = modelParams['_aurora_thinking_enabled'] == true;
+        if (thinkingEnabled) {
+          final thinkingValue = modelParams['_aurora_thinking_value']?.toString() ?? '';
+          var thinkingMode = modelParams['_aurora_thinking_mode']?.toString() ?? 'auto';
+          
+          // Smart Auto: Detect based on model name
+          if (thinkingMode == 'auto') {
+            // Gemini 3 uses reasoning_effort (CPA handles thinkingLevel conversion)
+            // Gemini 2.5 uses extra_body with thinking_budget
+            final isGemini3 = RegExp(r'gemini[_-]?3[_-]', caseSensitive: false).hasMatch(model);
+            if (isGemini3) {
+              thinkingMode = 'reasoning_effort';
+            } else if (model.toLowerCase().contains('gemini')) {
+              thinkingMode = 'extra_body';
+            } else {
+              thinkingMode = 'reasoning_effort';
+            }
+          }
+          
+          // Apply thinking config based on mode
+          if (thinkingValue.isNotEmpty) {
+            if (thinkingMode == 'extra_body') {
+              // Google / Cherry Studio format: extra_body.google.thinking_config
+              // Only for Gemini 2.5 and other models that use numeric budgets
+              final int? budgetInt = int.tryParse(thinkingValue);
+              requestData['extra_body'] = {
+                'google': {
+                  'thinking_config': {
+                    if (budgetInt != null) 'thinking_budget': budgetInt,
+                    if (budgetInt != null) 'include_thoughts': true,
+                    // For string values like 'low', 'high', 'medium'
+                    if (budgetInt == null) 'thinkingLevel': thinkingValue,
+                    if (budgetInt == null) 'includeThoughts': true,
+                  }
+                }
+              };
+            } else if (thinkingMode == 'reasoning_effort') {
+              // OpenAI standard format - CPA will convert to thinkingLevel for Gemini 3
+              // For Gemini 3, convert numeric budget to level string
+              final isGemini3ForEffort = RegExp(r'gemini[_-]?3[_-]', caseSensitive: false).hasMatch(model);
+              final int? budgetInt = int.tryParse(thinkingValue);
+              
+              if (isGemini3ForEffort && budgetInt != null) {
+                // Convert numeric budget to level for Gemini 3
+                String level;
+                if (budgetInt <= 512) {
+                  level = 'minimal';
+                } else if (budgetInt <= 1024) {
+                  level = 'low';
+                } else if (budgetInt <= 8192) {
+                  level = 'medium';
+                } else {
+                  level = 'high';
+                }
+                requestData['reasoning_effort'] = level;
+              } else {
+                requestData['reasoning_effort'] = thinkingValue;
+              }
+            }
+          }
+        }
+        
+        // Add model settings, filtering out _aurora_ prefixed keys
+        final filteredParams = Map<String, dynamic>.fromEntries(
+          modelParams.entries.where((e) => !e.key.startsWith('_aurora_'))
+        );
+        requestData.addAll(filteredParams);
       }
+
+      // Use new log method
+      _logRequest('${baseUrl}chat/completions', requestData);
 
       final response = await _dio.post(
         '${baseUrl}chat/completions',
@@ -698,6 +896,9 @@ You MUST cite your sources using the format `[index](link)`.
       );
 
       final data = response.data;
+      // Log response
+      _logResponse(data);
+
       final choices = data['choices'] as List;
       if (choices.isNotEmpty) {
         final message = choices[0]['message'];
@@ -755,6 +956,9 @@ You MUST cite your sources using the format `[index](link)`.
       try {
         if (e.response?.data != null) {
           final data = e.response?.data;
+          // Log error response
+          print('🔴 [LLM ERROR RESPONSE]: $data');
+
           if (data is Map) {
             final error = data['error'];
             if (error is Map && error['message'] != null) {
@@ -805,7 +1009,7 @@ You MUST cite your sources using the format `[index](link)`.
               errorMsg = 'Network Error: ${e.message}';
           }
         }
-      } catch (_) {
+      } catch (readError) {
         errorMsg = 'HTTP $statusCode: ${e.message}';
       }
       

@@ -629,4 +629,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allChats => 'All';
+
+  @override
+  String get thinkingConfig => 'Thinking Config';
+
+  @override
+  String get enableThinking => 'Enable Thinking';
+
+  @override
+  String get thinkingBudget => 'Thinking Budget';
+
+  @override
+  String get thinkingBudgetHint =>
+      'Enter number (e.g. 1024) or level (e.g. low, high)';
+
+  @override
+  String get transmissionMode => 'Transmission Mode';
+
+  @override
+  String get modeAuto => 'Smart Auto';
+
+  @override
+  String get modeExtraBody => 'Extra Body (Google)';
+
+  @override
+  String get modeReasoningEffort => 'Reasoning Effort (OpenAI)';
+
+  @override
+  String get providers => 'Providers';
 }

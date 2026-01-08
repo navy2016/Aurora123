@@ -276,5 +276,15 @@
   "deleteTopic": "删除分组",
   "deleteTopicConfirm": "确定要删除此分组吗？该分组下的会话将移至默认分组。",
   "topicNamePlaceholder": "分组名称",
-  "allChats": "所有"
+  "allChats": "所有",
+  
+  "thinkingConfig": "思考配置",
+  "enableThinking": "启用思考",
+  "thinkingBudget": "思考预算",
+  "thinkingBudgetHint": "输入数字 (如 1024) 或级别 (如 low, high)",
+  "transmissionMode": "传输模式",
+  "modeAuto": "自动智能",
+  "modeExtraBody": "Extra Body (Google)",
+  "modeReasoningEffort": "Reasoning Effort (OpenAI)",
+  "providers": "服务商"
 }

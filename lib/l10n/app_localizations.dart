@@ -1285,6 +1285,60 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'所有'**
   String get allChats;
+
+  /// No description provided for @thinkingConfig.
+  ///
+  /// In zh, this message translates to:
+  /// **'思考配置'**
+  String get thinkingConfig;
+
+  /// No description provided for @enableThinking.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用思考'**
+  String get enableThinking;
+
+  /// No description provided for @thinkingBudget.
+  ///
+  /// In zh, this message translates to:
+  /// **'思考预算'**
+  String get thinkingBudget;
+
+  /// No description provided for @thinkingBudgetHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入数字 (如 1024) 或级别 (如 low, high)'**
+  String get thinkingBudgetHint;
+
+  /// No description provided for @transmissionMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'传输模式'**
+  String get transmissionMode;
+
+  /// No description provided for @modeAuto.
+  ///
+  /// In zh, this message translates to:
+  /// **'自动智能'**
+  String get modeAuto;
+
+  /// No description provided for @modeExtraBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'Extra Body (Google)'**
+  String get modeExtraBody;
+
+  /// No description provided for @modeReasoningEffort.
+  ///
+  /// In zh, this message translates to:
+  /// **'Reasoning Effort (OpenAI)'**
+  String get modeReasoningEffort;
+
+  /// No description provided for @providers.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务商'**
+  String get providers;
 }
 
 class _AppLocalizationsDelegate

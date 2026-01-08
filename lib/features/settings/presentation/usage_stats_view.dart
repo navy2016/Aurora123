@@ -92,7 +92,7 @@ class UsageStatsView extends ConsumerWidget {
                       // List Visualization
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.only(left: 16, top: 16, bottom: 16, right: 24),
                           decoration: BoxDecoration(
                             color: theme.cardColor,
                             borderRadius: BorderRadius.circular(8),
@@ -306,7 +306,7 @@ class _ModelStatsList extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.only(top: 8, bottom: 8, right: isMobile ? 0 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

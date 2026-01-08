@@ -276,5 +276,15 @@
   "deleteTopic": "Delete Group",
   "deleteTopicConfirm": "Delete this group? Sessions will be moved to the default group.",
   "topicNamePlaceholder": "Group Name",
-  "allChats": "All"
+  "allChats": "All",
+  
+  "thinkingConfig": "Thinking Config",
+  "enableThinking": "Enable Thinking",
+  "thinkingBudget": "Thinking Budget",
+  "thinkingBudgetHint": "Enter number (e.g. 1024) or level (e.g. low, high)",
+  "transmissionMode": "Transmission Mode",
+  "modeAuto": "Smart Auto",
+  "modeExtraBody": "Extra Body (Google)",
+  "modeReasoningEffort": "Reasoning Effort (OpenAI)",
+  "providers": "Providers"
 }
