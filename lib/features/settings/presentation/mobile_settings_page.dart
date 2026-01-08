@@ -100,33 +100,29 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                     }
                   },
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.availableModels,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                _SectionHeader(
+                  title: l10n.availableModels,
+                  icon: Icons.format_list_bulleted,
+                  trailing: SizedBox(
+                    height: 32,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        visualDensity: VisualDensity.compact,
+                        textStyle: const TextStyle(fontSize: 12),
                       ),
-                      OutlinedButton(
-                        onPressed: settingsState.isLoadingModels
-                            ? null
-                            : () {
-                                ref
-                                    .read(settingsProvider.notifier)
-                                    .fetchModels();
-                              },
-                        child: settingsState.isLoadingModels
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : Text(l10n.fetchModelList),
-                      ),
-                    ],
+                      onPressed: settingsState.isLoadingModels
+                          ? null
+                          : () {
+                              ref.read(settingsProvider.notifier).fetchModels();
+                            },
+                      child: settingsState.isLoadingModels
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : Text(l10n.fetchModelList),
+                    ),
                   ),
                 ),
               ],
@@ -470,7 +466,12 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
-  const _SectionHeader({required this.title, required this.icon});
+  final Widget? trailing;
+  const _SectionHeader({
+    required this.title,
+    required this.icon,
+    this.trailing,
+  });
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -487,6 +488,10 @@ class _SectionHeader extends StatelessWidget {
               color: Theme.of(context).primaryColor,
             ),
           ),
+          if (trailing != null) ...[
+            const Spacer(),
+            trailing!,
+          ],
         ],
       ),
     );
@@ -509,6 +514,7 @@ class _ModelConfigDialog extends StatefulWidget {
 
 class _ModelConfigDialogState extends State<_ModelConfigDialog> {
   late Map<String, dynamic> _settings;
+  
   @override
   void initState() {
     super.initState();
@@ -543,10 +549,76 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
     );
   }
 
+  Widget _buildThinkingConfig(AppLocalizations l10n) {
+    final thinkingEnabled = _settings['_aurora_thinking_enabled'] == true;
+    final thinkingValue = _settings['_aurora_thinking_value']?.toString() ?? '';
+    final thinkingMode = _settings['_aurora_thinking_mode']?.toString() ?? 'auto';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.thinkingConfig,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(l10n.enableThinking, 
+              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          value: thinkingEnabled,
+          onChanged: (v) => _saveParameter(null, '_aurora_thinking_enabled', v),
+        ),
+        if (thinkingEnabled) ...[
+          Padding(
+            padding: const EdgeInsets.only(left: 0, bottom: 12, top: 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ThinkingBudgetInput(
+                  initialValue: thinkingValue,
+                  labelText: l10n.thinkingBudget,
+                  hintText: l10n.thinkingBudgetHint,
+                  onChanged: (v) => _saveParameter(null, '_aurora_thinking_value', v),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: thinkingMode,
+                  decoration: InputDecoration(
+                    labelText: l10n.transmissionMode,
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                        value: 'auto', child: Text(l10n.modeAuto)),
+                    DropdownMenuItem(
+                        value: 'extra_body', child: Text(l10n.modeExtraBody)),
+                    DropdownMenuItem(
+                        value: 'reasoning_effort',
+                        child: Text(l10n.modeReasoningEffort)),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) {
+                      _saveParameter(null, '_aurora_thinking_mode', v);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
+    
+    // Filter out _aurora_ keys for the generic list
+    final displayKeys = _settings.keys.where((k) => !k.startsWith('_aurora_')).toList();
+
     return AlertDialog(
       backgroundColor: isDark ? const Color(0xFF202020) : Colors.white,
       surfaceTintColor: Colors.transparent,
@@ -565,7 +637,8 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_settings.isEmpty)
+            _buildThinkingConfig(l10n),
+            if (displayKeys.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Center(
@@ -576,9 +649,9 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: _settings.length,
+                  itemCount: displayKeys.length,
                   itemBuilder: (context, index) {
-                    final key = _settings.keys.elementAt(index);
+                    final key = displayKeys[index];
                     final value = _settings[key];
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -611,6 +684,87 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
           child: Text(l10n.done),
         ),
       ],
+    );
+  }
+}
+
+class _ThinkingBudgetInput extends StatefulWidget {
+  final String initialValue;
+  final String labelText;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+
+  const _ThinkingBudgetInput({
+    required this.initialValue,
+    required this.labelText,
+    required this.hintText,
+    required this.onChanged,
+  });
+
+  @override
+  State<_ThinkingBudgetInput> createState() => _ThinkingBudgetInputState();
+}
+
+class _ThinkingBudgetInputState extends State<_ThinkingBudgetInput> {
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+  String _lastSavedValue = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+    _focusNode = FocusNode();
+    _lastSavedValue = widget.initialValue;
+    
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        _saveValue();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(_ThinkingBudgetInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialValue != _lastSavedValue && 
+        widget.initialValue != _controller.text) {
+      _controller.text = widget.initialValue;
+      _lastSavedValue = widget.initialValue;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_controller.text != _lastSavedValue) {
+      widget.onChanged(_controller.text);
+    }
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _saveValue() {
+    if (_controller.text != _lastSavedValue) {
+      _lastSavedValue = _controller.text;
+      widget.onChanged(_controller.text);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      focusNode: _focusNode,
+      decoration: InputDecoration(
+        labelText: widget.labelText,
+        hintText: widget.hintText,
+        border: const OutlineInputBorder(),
+        isDense: true,
+      ),
+      keyboardType: TextInputType.number,
+      onSubmitted: (_) => _saveValue(),
+      onEditingComplete: _saveValue,
     );
   }
 }
