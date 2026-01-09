@@ -214,6 +214,7 @@ class ChatViewState extends ConsumerState<ChatView> {
     }
   }
   bool _hasRestoredPosition = false;
+  bool _wasLoading = false;
   ChatNotifier? _notifier;
   
   @override
@@ -542,6 +543,20 @@ class ChatViewState extends ConsumerState<ChatView> {
     
     // Attempt to restore scroll position if needed
     _restoreScrollPosition();
+
+    // Auto-scroll on loading start (e.g. Retry)
+    if (isLoading && !_wasLoading && chatState.isAutoScrollEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+    _wasLoading = isLoading;
     
     // Mark as read if displaying unread content
     if (hasUnreadResponse) {

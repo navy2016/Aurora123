@@ -45,12 +45,17 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
           color: theme.navigationPaneTheme.backgroundColor,
           child: Row(
             children: [
-              const SizedBox(width: 8),
-              fluent.IconButton(
-                icon: const fluent.Icon(fluent.FluentIcons.global_nav_button, size: 16),
-                onPressed: () {
-                   ref.read(isSidebarExpandedProvider.notifier).update((state) => !state);
-                },
+              SizedBox(
+                width: 50,
+                height: 32,
+                child: Center(
+                  child: fluent.IconButton(
+                    icon: const fluent.Icon(fluent.FluentIcons.global_nav_button, size: 16),
+                    onPressed: () {
+                       ref.read(isSidebarExpandedProvider.notifier).update((state) => !state);
+                    },
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               const ModelSelector(isWindows: true),
@@ -104,7 +109,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                                   builder: (context, states) {
                                     return Container(
                                       height: 40,
-                                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: isSelected 
                                           ? theme.accentColor.withOpacity(0.1)
@@ -149,7 +154,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                                   builder: (context, states) {
                                     return Container(
                                       height: 40,
-                                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: isSelected 
                                           ? theme.accentColor.withOpacity(0.1)
@@ -161,7 +166,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                                           SizedBox(
                                             width: 40,
                                             child: Center(
-                                              child: fluent.Icon(item.icon, size: 18, color: isSelected ? theme.accentColor : null),
+                                              child: fluent.Icon(item.icon, size: 20, color: isSelected ? theme.accentColor : null),
                                             ),
                                           ),
                                           Expanded(
@@ -196,7 +201,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                                     builder: (context, states) {
                                       return Container(
                                         height: 40,
-                                        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                        margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                         decoration: BoxDecoration(
                                           color: states.isHovering ? theme.resources.subtleFillColorSecondary : Colors.transparent,
                                           borderRadius: BorderRadius.circular(6),
@@ -206,7 +211,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                                             SizedBox(
                                               width: 40,
                                               child: Center(
-                                                child: fluent.Icon(icon, size: 18, color: theme.typography.body?.color),
+                                                child: fluent.Icon(icon, size: 20, color: theme.typography.body?.color),
                                               ),
                                             ),
                                             Expanded(

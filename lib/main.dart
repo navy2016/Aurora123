@@ -175,13 +175,36 @@ class MyApp extends ConsumerWidget {
         ),
       ),
       builder: (context, child) {
-        final brightness = fluent.FluentTheme.of(context).brightness;
+        final fluentTheme = fluent.FluentTheme.of(context);
+        final brightness = fluentTheme.brightness;
+        final accentColor = fluentTheme.accentColor;
+        
+        // Convert Fluent accent color to Material Color
+        // This is an approximation as Fluent colors work differently
+        final materialPrimary = Color(accentColor.normal.value);
+        
         return Theme(
           data: ThemeData(
             fontFamily: fontFamily,
             brightness: brightness == fluent.Brightness.dark ? Brightness.dark : Brightness.light,
+            primaryColor: materialPrimary,
+            scaffoldBackgroundColor: fluentTheme.scaffoldBackgroundColor,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: materialPrimary,
+              brightness: brightness == fluent.Brightness.dark ? Brightness.dark : Brightness.light,
+              primary: materialPrimary,
+            ),
             appBarTheme: AppBarTheme(
               backgroundColor: Colors.transparent,
+              elevation: 0,
+              iconTheme: IconThemeData(
+                color: brightness == fluent.Brightness.dark ? Colors.white : Colors.black,
+              ),
+              titleTextStyle: TextStyle(
+                color: brightness == fluent.Brightness.dark ? Colors.white : Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+              ),
               systemOverlayStyle: SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
                 statusBarIconBrightness: brightness == fluent.Brightness.dark 
@@ -192,6 +215,7 @@ class MyApp extends ConsumerWidget {
                     : Brightness.light,
               ),
             ),
+            useMaterial3: true,
           ),
           child: ScaffoldMessenger(
             child: child ?? const SizedBox.shrink(),

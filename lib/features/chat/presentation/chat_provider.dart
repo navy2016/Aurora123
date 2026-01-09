@@ -612,7 +612,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     final oldMessages = state.messages;
     // Update state to show pruned history immediately and loading
-    state = state.copyWith(messages: historyToKeep, isLoading: true, error: null);
+    state = state.copyWith(messages: historyToKeep, isLoading: true, error: null, isAutoScrollEnabled: true);
     
     // Delete valid pruned messages from database
     final idsToDelete =
