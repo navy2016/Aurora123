@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'dart:io'; // Added
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:device_info_plus/device_info_plus.dart'; // Added
 import '../../settings/presentation/settings_provider.dart';
 import '../../settings/presentation/usage_stats_provider.dart';
 import 'package:aurora/shared/services/openai_llm_service.dart';
@@ -28,10 +30,11 @@ class ChatState {
   final bool isAutoScrollEnabled;
   final bool isStreaming;
   final String? currentStreamContent;
-  final String? currentStreamReasoning; // New: Stream reasoning
-  final double? currentReasoningTimer; // New: Timer for live reasoning
-  final bool isStreamEnabled; // New: Stream toggle state
-  final bool isLoadingHistory; // New: Flag for initial history load
+  final String? currentStreamReasoning;
+  final double? currentReasoningTimer;
+  final bool isStreamEnabled;
+  final bool isLoadingHistory;
+  final String? activePresetName; // New field
 
   const ChatState({
     this.messages = const [],
@@ -43,8 +46,9 @@ class ChatState {
     this.currentStreamContent,
     this.currentStreamReasoning,
     this.currentReasoningTimer,
-    this.isStreamEnabled = true, // Default to true
+    this.isStreamEnabled = true,
     this.isLoadingHistory = false,
+    this.activePresetName,
   });
 
   ChatState copyWith({
@@ -59,6 +63,7 @@ class ChatState {
     double? currentReasoningTimer,
     bool? isStreamEnabled,
     bool? isLoadingHistory,
+    Object? activePresetName = _sentinel,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
@@ -72,9 +77,13 @@ class ChatState {
       currentReasoningTimer: currentReasoningTimer ?? this.currentReasoningTimer,
       isStreamEnabled: isStreamEnabled ?? this.isStreamEnabled,
       isLoadingHistory: isLoadingHistory ?? this.isLoadingHistory,
+      activePresetName: activePresetName == _sentinel ? this.activePresetName : activePresetName as String?,
     );
   }
 }
+
+// Sentinel object for copyWith null handling
+const Object _sentinel = Object();
 
 class ChatNotifier extends StateNotifier<ChatState> {
   final Ref _ref;
@@ -165,8 +174,29 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(isLoadingHistory: true);
     final messages = await _storage.loadHistory(_sessionId);
     if (!mounted) return;
+    
+    // 尝试从系统消息中恢复预设名称
+    String? restoredPresetName;
+    final systemMsg = messages.where((m) => m.role == 'system').firstOrNull;
+    if (systemMsg != null) {
+      // 尝试匹配已保存的预设
+      final presets = _ref.read(settingsProvider).presets;
+      // 简化匹配：如果系统消息存在，尝试从 lastPresetId 恢复名称
+      final appSettings = await _ref.read(settingsStorageProvider).loadAppSettings();
+      if (appSettings?.lastPresetId != null) {
+        final match = presets.where((p) => p.id == appSettings!.lastPresetId);
+        if (match.isNotEmpty) {
+          restoredPresetName = match.first.name;
+        }
+      }
+    }
+    
     // When loading history, we assume it's read unless told otherwise (could persist unread state in DB later)
-    state = state.copyWith(messages: messages, isLoadingHistory: false);
+    state = state.copyWith(
+      messages: messages, 
+      isLoadingHistory: false,
+      activePresetName: restoredPresetName,
+    );
   }
 
   Future<String> sendMessage(String? text,
@@ -636,6 +666,67 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   void toggleSearch() {
     _ref.read(settingsProvider.notifier).toggleSearchEnabled();
+  }
+
+  Future<void> updateSystemPrompt(String template, [String? presetName]) async {
+    final settingsState = _ref.read(settingsProvider);
+    final user = settingsState.userName;
+    final system = Platform.operatingSystem;
+    final lang = settingsState.language;
+    
+    // 使用简单的 Platform 信息代替 DeviceInfoPlugin 以避免卡顿
+    // DeviceInfoPlugin 首次调用需初始化，会导致卡顿
+    String deviceName = Platform.localHostname;
+
+    String prompt = template
+        .replaceAll('{time}', DateTime.now().toString())
+        .replaceAll('{user_name}', user)
+        .replaceAll('{system}', system)
+        .replaceAll('{device}', deviceName)
+        .replaceAll('{language}', lang);
+
+    final messages = List<Message>.from(state.messages);
+    
+    // Check if system message exists (index 0 usually) or find it
+    final index = messages.indexWhere((m) => m.role == 'system');
+    
+    if (index != -1) {
+      // Update existing
+      final oldMsg = messages[index];
+      final newMsg = oldMsg.copyWith(content: prompt);
+      messages[index] = newMsg;
+      await _storage.updateMessage(newMsg);
+    } else {
+      // Insert new at start
+      final newMsg = Message(
+        id: const Uuid().v4(),
+        role: 'system',
+        content: prompt,
+        timestamp: DateTime.now(),
+        isUser: false,
+      );
+      messages.insert(0, newMsg);
+      await _storage.saveMessage(newMsg, _sessionId);
+    }
+    
+    // Update state activePresetName
+    state = state.copyWith(
+       messages: messages,
+       activePresetName: presetName,
+    );
+    
+    // 持久化最后使用的预设 ID
+    if (presetName != null) {
+      // 查找对应预设的 ID
+      final presets = settingsState.presets;
+      final match = presets.where((p) => p.name == presetName);
+      if (match.isNotEmpty) {
+        await _ref.read(settingsProvider.notifier).setLastPresetId(match.first.id);
+      }
+    } else {
+      // 如果没有预设名称（即选择了默认/空），清除最后使用的预设 ID
+      await _ref.read(settingsProvider.notifier).setLastPresetId(null);
+    }
   }
 
   void setSearchEngine(SearchEngine engine) {

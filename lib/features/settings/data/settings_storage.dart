@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+import 'chat_preset_entity.dart'; // Added
 import 'provider_config_entity.dart';
 import 'usage_stats_entity.dart';
 import '../../chat/data/message_entity.dart';
@@ -22,6 +23,7 @@ class SettingsStorage {
         SessionEntitySchema,
         UsageStatsEntitySchema,
         TopicEntitySchema,
+        ChatPresetEntitySchema, // Added
       ],
       directory: dir.path,
     );
@@ -81,7 +83,8 @@ class SettingsStorage {
       ..topicGenerationModel = topicGenerationModel ?? existing?.topicGenerationModel
       ..lastSessionId = lastSessionId ?? existing?.lastSessionId
       ..lastTopicId = lastTopicId ?? existing?.lastTopicId
-      ..language = language ?? existing?.language ?? 'zh';
+      ..language = language ?? existing?.language ?? 'zh'
+      ..lastPresetId = existing?.lastPresetId;
     
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
@@ -108,7 +111,8 @@ class SettingsStorage {
       ..topicGenerationModel = existing.topicGenerationModel
       ..lastSessionId = sessionId
       ..lastTopicId = existing.lastTopicId
-      ..language = existing.language;
+      ..language = existing.language
+      ..lastPresetId = existing.lastPresetId;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -141,9 +145,9 @@ class SettingsStorage {
       ..searchEngine = existing.searchEngine
       ..enableSmartTopic = existing.enableSmartTopic
       ..topicGenerationModel = existing.topicGenerationModel
-      ..lastSessionId = existing.lastSessionId
       ..lastTopicId = existing.lastTopicId
-      ..language = existing.language;
+      ..language = existing.language
+      ..lastPresetId = existing.lastPresetId;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -234,9 +238,56 @@ class SettingsStorage {
       ..searchEngine = existing.searchEngine
       ..enableSmartTopic = existing.enableSmartTopic
       ..topicGenerationModel = existing.topicGenerationModel
-      ..lastSessionId = existing.lastSessionId
       ..lastTopicId = topicId
-      ..language = existing.language;
+      ..language = existing.language
+      ..lastPresetId = existing.lastPresetId;
+    await _isar.writeTxn(() async {
+      await _isar.appSettingsEntitys.clear();
+      await _isar.appSettingsEntitys.put(settings);
+    });
+  }
+
+  // Chat Preset Methods
+  Future<void> saveChatPreset(ChatPresetEntity preset) async {
+    await _isar.writeTxn(() async {
+      await _isar.chatPresetEntitys.put(preset);
+    });
+  }
+
+  Future<void> deleteChatPreset(String presetId) async {
+    await _isar.writeTxn(() async {
+      await _isar.chatPresetEntitys
+          .filter()
+          .presetIdEqualTo(presetId)
+          .deleteAll();
+    });
+  }
+
+  Future<List<ChatPresetEntity>> loadChatPresets() async {
+    return await _isar.chatPresetEntitys.where().findAll();
+  }
+
+  Future<void> saveLastPresetId(String? presetId) async {
+    final existing = await loadAppSettings();
+    if (existing == null) return;
+    final settings = AppSettingsEntity()
+      ..activeProviderId = existing.activeProviderId
+      ..selectedModel = existing.selectedModel
+      ..availableModels = existing.availableModels
+      ..userName = existing.userName
+      ..userAvatar = existing.userAvatar
+      ..llmName = existing.llmName
+      ..llmAvatar = existing.llmAvatar
+      ..themeMode = existing.themeMode
+      ..isStreamEnabled = existing.isStreamEnabled
+      ..isSearchEnabled = existing.isSearchEnabled
+      ..searchEngine = existing.searchEngine
+      ..enableSmartTopic = existing.enableSmartTopic
+      ..topicGenerationModel = existing.topicGenerationModel
+      ..lastSessionId = existing.lastSessionId
+      ..lastTopicId = existing.lastTopicId
+      ..language = existing.language
+      ..lastPresetId = presetId;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);

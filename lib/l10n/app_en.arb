@@ -286,5 +286,19 @@
   "modeAuto": "Smart Auto",
   "modeExtraBody": "Extra Body (Google)",
   "modeReasoningEffort": "Reasoning Effort (OpenAI)",
-  "providers": "Providers"
+  "providers": "Providers",
+  
+  "promptPresets": "Prompt Presets",
+  "defaultPreset": "Default",
+  "newPreset": "New Custom Preset",
+  "editPreset": "Edit Preset",
+  "managePresets": "Manage Presets",
+  "presetName": "Preset Name",
+  "presetDescription": "Description (Optional)",
+  "systemPrompt": "System Prompt",
+  "savePreset": "Save Preset",
+  "selectPresetHint": "Select a preset to edit or create a new one.",
+  "presetNamePlaceholder": "e.g., Python Expert",
+  "presetDescriptionPlaceholder": "Optional description...",
+  "systemPromptPlaceholder": "Enter system prompt here..."
 }

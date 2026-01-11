@@ -657,4 +657,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get providers => 'Providers';
+
+  @override
+  String get promptPresets => 'Prompt Presets';
+
+  @override
+  String get defaultPreset => 'Default';
+
+  @override
+  String get newPreset => 'New Custom Preset';
+
+  @override
+  String get editPreset => 'Edit Preset';
+
+  @override
+  String get managePresets => 'Manage Presets';
+
+  @override
+  String get presetName => 'Preset Name';
+
+  @override
+  String get presetDescription => 'Description (Optional)';
+
+  @override
+  String get systemPrompt => 'System Prompt';
+
+  @override
+  String get savePreset => 'Save Preset';
+
+  @override
+  String get selectPresetHint => 'Select a preset to edit or create a new one.';
+
+  @override
+  String get presetNamePlaceholder => 'e.g., Python Expert';
+
+  @override
+  String get presetDescriptionPlaceholder => 'Optional description...';
+
+  @override
+  String get systemPromptPlaceholder => 'Enter system prompt here...';
 }

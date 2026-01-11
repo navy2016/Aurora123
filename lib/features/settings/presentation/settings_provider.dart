@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../data/settings_storage.dart';
 import '../data/provider_config_entity.dart';
+import '../domain/chat_preset.dart'; // Added
+import '../data/chat_preset_entity.dart'; // Added
 
 class ProviderConfig {
   final String id;
@@ -69,6 +71,9 @@ class SettingsState {
   final bool enableSmartTopic;
   final String? topicGenerationModel;
   final String language;
+  final List<ChatPreset> presets; // Added
+  final String? lastPresetId; // 记录最后使用的预设 ID
+
   SettingsState({
     required this.providers,
     required this.activeProviderId,
@@ -86,6 +91,8 @@ class SettingsState {
     this.enableSmartTopic = true,
     this.topicGenerationModel,
     this.language = 'zh',
+    this.presets = const [], // Added
+    this.lastPresetId, // Added
   });
   ProviderConfig get activeProvider =>
       providers.firstWhere((p) => p.id == activeProviderId);
@@ -111,6 +118,8 @@ class SettingsState {
     bool? enableSmartTopic,
     String? topicGenerationModel,
     String? language,
+    List<ChatPreset>? presets,
+    Object? lastPresetId = _settingsSentinel,
   }) {
     return SettingsState(
       providers: providers ?? this.providers,
@@ -129,9 +138,14 @@ class SettingsState {
       enableSmartTopic: enableSmartTopic ?? this.enableSmartTopic,
       topicGenerationModel: topicGenerationModel ?? this.topicGenerationModel,
       language: language ?? this.language,
+      presets: presets ?? this.presets,
+      lastPresetId: lastPresetId == _settingsSentinel ? this.lastPresetId : lastPresetId as String?,
     );
   }
 }
+
+// Sentinel for SettingsState copyWith null handling
+const Object _settingsSentinel = Object();
 
 class SettingsNotifier extends StateNotifier<SettingsState> {
   final SettingsStorage _storage;
@@ -166,7 +180,11 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           enableSmartTopic: enableSmartTopic,
           topicGenerationModel: topicGenerationModel,
           language: language,
-        ));
+          presets: [],
+        )) {
+    // Initial Load
+    loadPresets();
+  }
   void viewProvider(String id) {
     if (state.viewingProviderId != id) {
       state = state.copyWith(viewingProviderId: id, error: null);
@@ -429,6 +447,65 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       language: lang,
     );
   }
+
+  // Preset Management
+  Future<void> loadPresets() async {
+    final entities = await _storage.loadChatPresets();
+    final presets = entities.map((e) => ChatPreset(
+      id: e.presetId,
+      name: e.name,
+      description: e.description ?? '',
+      systemPrompt: e.systemPrompt,
+    )).toList();
+    
+    // 同时读取 lastPresetId
+    final appSettings = await _storage.loadAppSettings();
+    final lastPresetId = appSettings?.lastPresetId;
+    
+    state = state.copyWith(presets: presets, lastPresetId: lastPresetId);
+  }
+
+  Future<void> addPreset(ChatPreset preset) async {
+    final entity = ChatPresetEntity()
+      ..presetId = preset.id
+      ..name = preset.name
+      ..description = preset.description
+      ..systemPrompt = preset.systemPrompt;
+    await _storage.saveChatPreset(entity);
+    await loadPresets();
+  }
+
+  Future<void> updatePreset(ChatPreset preset) async {
+    final entity = ChatPresetEntity()
+      ..presetId = preset.id
+      ..name = preset.name
+      ..description = preset.description
+      ..systemPrompt = preset.systemPrompt;
+      
+    // Note: Isar update by ID requires finding the existing Id (int) or using put with same Index.
+    // Since presetId is unique index with replace=true, put() should handle it.
+    // However, the internal Isar Id (int) might be different unless we reuse the object or look it up.
+    // Ideally we should look up the internal ID to avoid creating new internal IDs if that matters,
+    // but with replace=true on index, it *should* replace the record.
+    // Let's verify: Isar docs say unique index replace will replace the object.
+    
+    // To be safe and cleaner with Isar's strict typing on internal ID:
+    // If we just create a new ChatPresetEntity, Isar might assign a new auto-increment ID
+    // and replace the old one due to index collision? Yes.
+    
+    await _storage.saveChatPreset(entity);
+    await loadPresets();
+  }
+
+  Future<void> deletePreset(String id) async {
+    await _storage.deleteChatPreset(id);
+    await loadPresets();
+  }
+
+  Future<void> setLastPresetId(String? id) async {
+    state = state.copyWith(lastPresetId: id);
+    await _storage.saveLastPresetId(id);
+  }
 }
 
 final settingsStorageProvider = Provider<SettingsStorage>((ref) {
@@ -443,3 +520,5 @@ final settingsProvider =
 final settingsInitialStateProvider = Provider<SettingsState>((ref) {
   throw UnimplementedError();
 });
+
+final settingsPageIndexProvider = StateProvider<int>((ref) => 0);

@@ -164,7 +164,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
                        color: fluent.Colors.yellow, size: 14),
                    const SizedBox(width: 8),
                    Container(
-                     constraints: const BoxConstraints(maxWidth: 160),
+                     width: 200, // Fixed width
                      child: fluent.Text(
                        selected ?? AppLocalizations.of(context)!.selectModel,
                        style: const TextStyle(fontWeight: FontWeight.w500),

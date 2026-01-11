@@ -138,7 +138,7 @@ class MobileNavigationDrawer extends ConsumerWidget {
                   onSessionDeleted: (sessionId) {
                     ref.read(sessionsProvider.notifier).deleteSession(sessionId);
                     if (sessionId == selectedSessionId) {
-                      ref.read(selectedHistorySessionIdProvider.notifier).state = 'new_chat';
+                      ref.read(selectedHistorySessionIdProvider.notifier).state = null;
                     }
                   },
                 ),

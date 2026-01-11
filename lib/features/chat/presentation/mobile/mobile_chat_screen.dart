@@ -5,12 +5,14 @@ import '../chat_provider.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import '../../../history/presentation/history_content.dart';
 import '../widgets/chat_view.dart';
+import '../widgets/mobile_preset_selector.dart'; // Added
 import '../../../settings/presentation/mobile_settings_page.dart';
 import '../../../settings/presentation/mobile_user_page.dart';
 import '../mobile_translation_page.dart';
 import '../widgets/cached_page_stack.dart';
 import 'mobile_navigation_drawer.dart';
 import '../../../../shared/widgets/custom_toast.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class MobileChatScreen extends ConsumerStatefulWidget {
   const MobileChatScreen({super.key});
@@ -105,7 +107,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     final sessionsState = ref.watch(sessionsProvider);
     
     // Determine title for App Bar (only relevant if showing Session)
-    String sessionTitle = '新对话';
+    String sessionTitle = AppLocalizations.of(context)!.startNewChat;
     if (selectedSessionId != null &&
         selectedSessionId != 'new_chat' &&
         sessionsState.sessions.isNotEmpty) {
@@ -305,6 +307,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
           },
         ),
         actions: [
+          if (sessionId != 'new_chat')
+            MobilePresetSelector(sessionId: sessionId),
           IconButton(
             icon: const Icon(Icons.add_circle_outline, size: 26),
             tooltip: '新对话',

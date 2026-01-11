@@ -644,4 +644,43 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get providers => '服务商';
+
+  @override
+  String get promptPresets => 'Prompt 预设';
+
+  @override
+  String get defaultPreset => '默认';
+
+  @override
+  String get newPreset => '新建自定义预设';
+
+  @override
+  String get editPreset => '编辑预设';
+
+  @override
+  String get managePresets => '管理预设';
+
+  @override
+  String get presetName => '预设名称';
+
+  @override
+  String get presetDescription => '描述 (可选)';
+
+  @override
+  String get systemPrompt => '系统提示词';
+
+  @override
+  String get savePreset => '保存预设';
+
+  @override
+  String get selectPresetHint => '选择左侧预设进行编辑，或新建预设。';
+
+  @override
+  String get presetNamePlaceholder => '例如：Python 专家';
+
+  @override
+  String get presetDescriptionPlaceholder => '可选描述...';
+
+  @override
+  String get systemPromptPlaceholder => '在此输入系统提示词...';
 }

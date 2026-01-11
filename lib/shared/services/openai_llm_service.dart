@@ -677,7 +677,7 @@ You MUST cite your sources using the format `[index](link)`.
       // If no attachments and no model-generated images, return simple message
       if (!hasAttachments && !hasImages) {
         result.add({
-          'role': m.isUser ? 'user' : 'assistant',
+          'role': m.role,
           'content': m.content,
         });
         continue;
@@ -751,7 +751,7 @@ You MUST cite your sources using the format `[index](link)`.
           }
         }
         result.add({
-          'role': m.isUser ? 'user' : 'assistant',
+          'role': m.role,
           'content': contentList,
         });
       }

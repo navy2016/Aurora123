@@ -9,6 +9,7 @@ import '../../../history/presentation/history_content.dart';
 import '../widgets/translation_content.dart';
 import '../widgets/window_buttons.dart';
 import '../widgets/model_selector.dart';
+import '../widgets/preset_selector.dart'; // Added
 import '../widgets/fade_indexed_stack.dart';
 import '../chat_provider.dart';
 
@@ -38,6 +39,15 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
       (icon: fluent.FluentIcons.settings, label: l10n.settings, body: const SettingsContent()),
     ];
 
+    String currentSessionId;
+    if (selectedIndex == 0) {
+      currentSessionId = ref.watch(selectedHistorySessionIdProvider) ?? '';
+    } else if (selectedIndex == 1) {
+      currentSessionId = 'translation';
+    } else {
+      currentSessionId = ''; // Settings
+    }
+
     return Column(
       children: [
         Container(
@@ -59,6 +69,10 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
               ),
               const SizedBox(width: 12),
               const ModelSelector(isWindows: true),
+              if (currentSessionId.isNotEmpty && currentSessionId != 'translation') ...[
+                const SizedBox(width: 8),
+                PresetSelector(sessionId: currentSessionId),
+              ],
               Expanded(child: DragToMoveArea(child: Container(color: Colors.transparent))),
               const WindowButtons(),
             ],

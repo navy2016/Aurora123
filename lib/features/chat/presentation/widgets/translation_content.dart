@@ -255,7 +255,7 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
     required ValueChanged<String?> onChanged,
   }) {
     return SizedBox(
-      width: 100, // Reduced width
+      width: 200, // 进一步增加宽度以容纳 "Simplified Chinese"
       child: fluent.ComboBox<String>(
         value: value,
         items: items.map((e) => fluent.ComboBoxItem(child: Text(_getDisplayLanguage(context, e), style: const TextStyle(fontSize: 13)), value: e)).toList(),

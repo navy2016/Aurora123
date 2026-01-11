@@ -7,6 +7,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'settings_provider.dart';
 import 'usage_stats_view.dart';
+import 'preset_settings_page.dart'; // Added
 import '../../../shared/utils/avatar_cropper.dart';
 
 class SettingsContent extends ConsumerStatefulWidget {
@@ -23,7 +24,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _llmNameController = TextEditingController();
-  int _settingsPageIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -68,12 +69,17 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
     final settingsState = ref.watch(settingsProvider);
     final viewingProvider = settingsState.viewingProvider;
     _updateControllers(viewingProvider);
+    
+    // Watch global page index
+    final settingsPageIndex = ref.watch(settingsPageIndexProvider);
+
     if (Platform.isWindows) {
       final theme = fluent.FluentTheme.of(context);
       final l10n = AppLocalizations.of(context)!;
       final settingsPages = [
         (icon: fluent.FluentIcons.cloud_download, label: l10n.modelProvider),
         (icon: fluent.FluentIcons.chat, label: l10n.chatSettings),
+        (icon: fluent.FluentIcons.edit, label: l10n.promptPresets),
         (icon: fluent.FluentIcons.color, label: l10n.displaySettings),
         (icon: fluent.FluentIcons.database, label: l10n.dataSettings),
         (icon: fluent.FluentIcons.analytics_view, label: l10n.usageStats),
@@ -95,10 +101,10 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                   ...settingsPages.asMap().entries.map((entry) {
                     final index = entry.key;
                     final page = entry.value;
-                    final isSelected = _settingsPageIndex == index;
+                    final isSelected = settingsPageIndex == index;
                     return fluent.HoverButton(
                       onPressed: () =>
-                          setState(() => _settingsPageIndex = index),
+                          ref.read(settingsPageIndexProvider.notifier).state = index,
                       builder: (context, states) {
                         return Container(
                           height: 40,
@@ -142,10 +148,11 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
             child: Container(
               color: theme.scaffoldBackgroundColor,
               child: IndexedStack(
-                index: _settingsPageIndex,
+                index: settingsPageIndex,
                 children: [
                   _buildProviderSettings(settingsState, viewingProvider),
                   _buildChatSettings(settingsState),
+                  const PresetSettingsPage(), // Added
                   _buildDisplaySettings(),
                   _buildDataSettings(),
                   const UsageStatsView(),

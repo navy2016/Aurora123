@@ -1339,6 +1339,84 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'服务商'**
   String get providers;
+
+  /// No description provided for @promptPresets.
+  ///
+  /// In zh, this message translates to:
+  /// **'Prompt 预设'**
+  String get promptPresets;
+
+  /// No description provided for @defaultPreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认'**
+  String get defaultPreset;
+
+  /// No description provided for @newPreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建自定义预设'**
+  String get newPreset;
+
+  /// No description provided for @editPreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑预设'**
+  String get editPreset;
+
+  /// No description provided for @managePresets.
+  ///
+  /// In zh, this message translates to:
+  /// **'管理预设'**
+  String get managePresets;
+
+  /// No description provided for @presetName.
+  ///
+  /// In zh, this message translates to:
+  /// **'预设名称'**
+  String get presetName;
+
+  /// No description provided for @presetDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'描述 (可选)'**
+  String get presetDescription;
+
+  /// No description provided for @systemPrompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统提示词'**
+  String get systemPrompt;
+
+  /// No description provided for @savePreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存预设'**
+  String get savePreset;
+
+  /// No description provided for @selectPresetHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择左侧预设进行编辑，或新建预设。'**
+  String get selectPresetHint;
+
+  /// No description provided for @presetNamePlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'例如：Python 专家'**
+  String get presetNamePlaceholder;
+
+  /// No description provided for @presetDescriptionPlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'可选描述...'**
+  String get presetDescriptionPlaceholder;
+
+  /// No description provided for @systemPromptPlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'在此输入系统提示词...'**
+  String get systemPromptPlaceholder;
 }
 
 class _AppLocalizationsDelegate

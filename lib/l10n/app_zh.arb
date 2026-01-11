@@ -286,5 +286,19 @@
   "modeAuto": "自动智能",
   "modeExtraBody": "Extra Body (Google)",
   "modeReasoningEffort": "Reasoning Effort (OpenAI)",
-  "providers": "服务商"
+  "providers": "服务商",
+  
+  "promptPresets": "Prompt 预设",
+  "defaultPreset": "默认",
+  "newPreset": "新建自定义预设",
+  "editPreset": "编辑预设",
+  "managePresets": "管理预设",
+  "presetName": "预设名称",
+  "presetDescription": "描述 (可选)",
+  "systemPrompt": "系统提示词",
+  "savePreset": "保存预设",
+  "selectPresetHint": "选择左侧预设进行编辑，或新建预设。",
+  "presetNamePlaceholder": "例如：Python 专家",
+  "presetDescriptionPlaceholder": "可选描述...",
+  "systemPromptPlaceholder": "在此输入系统提示词..."
 }

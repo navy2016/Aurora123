@@ -535,6 +535,7 @@ class ChatViewState extends ConsumerState<ChatView> {
     // messages is [Oldest -> Newest]. Iterate from Oldest to Newest to build groups.
     for (int i = 0; i < messages.length; i++) {
        final msg = messages[i];
+       if (msg.role == 'system') continue; // Hide system messages
        
        if (msg.isUser) {
           // Close valid group if any
