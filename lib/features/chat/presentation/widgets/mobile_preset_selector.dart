@@ -13,9 +13,16 @@ class MobilePresetSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch for updates to trigger rebuild when _loadHistory finishes
+    ref.watch(chatStateUpdateTriggerProvider);
+    
     final settings = ref.watch(settingsProvider);
     final presets = settings.presets;
     final l10n = AppLocalizations.of(context)!;
+    
+    // Get current session's active preset
+    final chatState = ref.watch(chatSessionManagerProvider).getOrCreate(sessionId).currentState;
+    String? activePresetName = chatState.activePresetName;
 
     return PopupMenuButton<String>(
       icon: const Icon(Icons.tune), // Or another suitable icon like bookmark/dataset. Tune implies settings/presets.

@@ -22,28 +22,33 @@ const SessionEntitySchema = CollectionSchema(
       name: r'lastMessageTime',
       type: IsarType.dateTime,
     ),
-    r'sessionId': PropertySchema(
+    r'presetId': PropertySchema(
       id: 1,
+      name: r'presetId',
+      type: IsarType.string,
+    ),
+    r'sessionId': PropertySchema(
+      id: 2,
       name: r'sessionId',
       type: IsarType.string,
     ),
     r'snippet': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'snippet',
       type: IsarType.string,
     ),
     r'title': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'title',
       type: IsarType.string,
     ),
     r'topicId': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'topicId',
       type: IsarType.long,
     ),
     r'totalTokens': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'totalTokens',
       type: IsarType.long,
     )
@@ -82,6 +87,12 @@ int _sessionEntityEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.presetId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.sessionId.length * 3;
   {
     final value = object.snippet;
@@ -100,11 +111,12 @@ void _sessionEntitySerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.lastMessageTime);
-  writer.writeString(offsets[1], object.sessionId);
-  writer.writeString(offsets[2], object.snippet);
-  writer.writeString(offsets[3], object.title);
-  writer.writeLong(offsets[4], object.topicId);
-  writer.writeLong(offsets[5], object.totalTokens);
+  writer.writeString(offsets[1], object.presetId);
+  writer.writeString(offsets[2], object.sessionId);
+  writer.writeString(offsets[3], object.snippet);
+  writer.writeString(offsets[4], object.title);
+  writer.writeLong(offsets[5], object.topicId);
+  writer.writeLong(offsets[6], object.totalTokens);
 }
 
 SessionEntity _sessionEntityDeserialize(
@@ -116,11 +128,12 @@ SessionEntity _sessionEntityDeserialize(
   final object = SessionEntity();
   object.id = id;
   object.lastMessageTime = reader.readDateTime(offsets[0]);
-  object.sessionId = reader.readString(offsets[1]);
-  object.snippet = reader.readStringOrNull(offsets[2]);
-  object.title = reader.readString(offsets[3]);
-  object.topicId = reader.readLongOrNull(offsets[4]);
-  object.totalTokens = reader.readLong(offsets[5]);
+  object.presetId = reader.readStringOrNull(offsets[1]);
+  object.sessionId = reader.readString(offsets[2]);
+  object.snippet = reader.readStringOrNull(offsets[3]);
+  object.title = reader.readString(offsets[4]);
+  object.topicId = reader.readLongOrNull(offsets[5]);
+  object.totalTokens = reader.readLong(offsets[6]);
   return object;
 }
 
@@ -134,14 +147,16 @@ P _sessionEntityDeserializeProp<P>(
     case 0:
       return (reader.readDateTime(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
-    case 2:
       return (reader.readStringOrNull(offset)) as P;
-    case 3:
+    case 2:
       return (reader.readString(offset)) as P;
+    case 3:
+      return (reader.readStringOrNull(offset)) as P;
     case 4:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 5:
+      return (reader.readLongOrNull(offset)) as P;
+    case 6:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -450,6 +465,160 @@ extension SessionEntityQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'presetId',
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'presetId',
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'presetId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'presetId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'presetId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'presetId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'presetId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'presetId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'presetId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'presetId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'presetId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      presetIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'presetId',
+        value: '',
       ));
     });
   }
@@ -1033,6 +1202,19 @@ extension SessionEntityQuerySortBy
     });
   }
 
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> sortByPresetId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'presetId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
+      sortByPresetIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'presetId', Sort.desc);
+    });
+  }
+
   QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> sortBySessionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sessionId', Sort.asc);
@@ -1124,6 +1306,19 @@ extension SessionEntityQuerySortThenBy
     });
   }
 
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> thenByPresetId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'presetId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
+      thenByPresetIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'presetId', Sort.desc);
+    });
+  }
+
   QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> thenBySessionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sessionId', Sort.asc);
@@ -1196,6 +1391,13 @@ extension SessionEntityQueryWhereDistinct
     });
   }
 
+  QueryBuilder<SessionEntity, SessionEntity, QDistinct> distinctByPresetId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'presetId', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<SessionEntity, SessionEntity, QDistinct> distinctBySessionId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1243,6 +1445,12 @@ extension SessionEntityQueryProperty
       lastMessageTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lastMessageTime');
+    });
+  }
+
+  QueryBuilder<SessionEntity, String?, QQueryOperations> presetIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'presetId');
     });
   }
 

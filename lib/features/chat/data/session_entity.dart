@@ -15,5 +15,8 @@ class SessionEntity {
   // but a simple ID is often easier for lightweight relations.
   int? topicId; 
 
+  String? presetId; // ID of the preset used for this session
+
+
   int totalTokens = 0;
 }

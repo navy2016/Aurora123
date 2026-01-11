@@ -176,23 +176,37 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final messages = await _storage.loadHistory(_sessionId);
     if (!mounted) return;
     
-    // 尝试从系统消息中恢复预设名称
+    // 尝试恢复预设
     String? restoredPresetName;
-    final systemMsg = messages.where((m) => m.role == 'system').firstOrNull;
-    if (systemMsg != null) {
-      // 尝试匹配已保存的预设
-      final presets = _ref.read(settingsProvider).presets;
-      // 简化匹配：如果系统消息存在，尝试从 lastPresetId 恢复名称
-      final appSettings = await _ref.read(settingsStorageProvider).loadAppSettings();
-      if (appSettings?.lastPresetId != null) {
-        final match = presets.where((p) => p.id == appSettings!.lastPresetId);
+    
+    // 1. 优先尝试从 SessionEntity 恢复 presetId
+    final session = await _storage.getSession(_sessionId);
+    if (session?.presetId != null) {
+      if (session!.presetId!.isEmpty) {
+        // 空字符串表示用户明确选择了默认预设
+        restoredPresetName = null;
+      } else {
+        final presets = _ref.read(settingsProvider).presets;
+        final match = presets.where((p) => p.id == session.presetId);
         if (match.isNotEmpty) {
           restoredPresetName = match.first.name;
         }
       }
+    } else {
+      // 2. 如果没有 presetId (旧数据)，尝试从系统消息中恢复
+      final systemMsg = messages.where((m) => m.role == 'system').firstOrNull;
+      if (systemMsg != null) {
+        final presets = _ref.read(settingsProvider).presets;
+        final appSettings = await _ref.read(settingsStorageProvider).loadAppSettings();
+        if (appSettings?.lastPresetId != null) {
+          final match = presets.where((p) => p.id == appSettings!.lastPresetId);
+          if (match.isNotEmpty) {
+             restoredPresetName = match.first.name;
+          }
+        }
+      }
     }
     
-    // When loading history, we assume it's read unless told otherwise (could persist unread state in DB later)
     state = state.copyWith(
       messages: messages, 
       isLoadingHistory: false,
@@ -219,8 +233,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final title = text.length > 15 ? '${text.substring(0, 15)}...' : text;
       // Use selected topic if available
       final topicId = _ref.read(selectedTopicIdProvider);
-      final realId = await _storage.createSession(title: title, topicId: topicId);
-      debugPrint('Created new session: $realId with title: $title, topicId: $topicId');
+      // Get current preset ID to save with session
+      final currentPresetId = _ref.read(settingsProvider).lastPresetId;
+      final realId = await _storage.createSession(title: title, topicId: topicId, presetId: currentPresetId);
       if (_sessionId == 'new_chat' && onSessionCreated != null) {
         onSessionCreated!(realId);
       }
@@ -727,16 +742,24 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
     
     // 持久化最后使用的预设 ID
+    debugPrint('[PresetSave] updateSystemPrompt called with presetName: $presetName, sessionId: $_sessionId');
     if (presetName != null) {
       // 查找对应预设的 ID
       final presets = settingsState.presets;
       final match = presets.where((p) => p.name == presetName);
       if (match.isNotEmpty) {
-        await _ref.read(settingsProvider.notifier).setLastPresetId(match.first.id);
+        final newPresetId = match.first.id;
+        await _ref.read(settingsProvider.notifier).setLastPresetId(newPresetId);
+        if (_sessionId != 'chat' && _sessionId != 'new_chat') {
+           await _storage.updateSessionPreset(_sessionId, newPresetId);
+        }
       }
     } else {
-      // 如果没有预设名称（即选择了默认/空），清除最后使用的预设 ID
+      // 如果没有预设名称（即选择了默认/空），使用空字符串表示明确选择了默认
       await _ref.read(settingsProvider.notifier).setLastPresetId(null);
+      if (_sessionId != 'chat' && _sessionId != 'new_chat') {
+         await _storage.updateSessionPreset(_sessionId, '');
+      }
     }
   }
 

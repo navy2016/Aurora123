@@ -288,12 +288,13 @@ class ChatStorage {
     });
   }
 
-  Future<String> createSession({required String title, String? uuid, int? topicId}) async {
+  Future<String> createSession({required String title, String? uuid, int? topicId, String? presetId}) async {
     final session = SessionEntity()
       ..sessionId = uuid ?? DateTime.now().millisecondsSinceEpoch.toString()
       ..title = title
       ..lastMessageTime = DateTime.now()
-      ..topicId = topicId;
+      ..topicId = topicId
+      ..presetId = presetId;
     await _isar.writeTxn(() async {
       await _isar.sessionEntitys.put(session);
     });
@@ -353,6 +354,13 @@ class ChatStorage {
         .findAll();
   }
 
+  Future<SessionEntity?> getSession(String sessionId) async {
+    return await _isar.sessionEntitys
+        .filter()
+        .sessionIdEqualTo(sessionId)
+        .findFirst();
+  }
+
   Future<void> deleteSession(String sessionId) async {
     // Fetch all messages for the session to get attachments before deleting
     final messages = await _isar.messageEntitys
@@ -390,6 +398,19 @@ class ChatStorage {
           .findFirst();
       if (session != null) {
         session.title = newTitle;
+        await _isar.sessionEntitys.put(session);
+      }
+    });
+  }
+
+  Future<void> updateSessionPreset(String sessionId, String? presetId) async {
+    await _isar.writeTxn(() async {
+      final session = await _isar.sessionEntitys
+          .filter()
+          .sessionIdEqualTo(sessionId)
+          .findFirst();
+      if (session != null) {
+        session.presetId = presetId;
         await _isar.sessionEntitys.put(session);
       }
     });

@@ -148,9 +148,12 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
     final theme = fluent.FluentTheme.of(context);
     final l10n = AppLocalizations.of(context)!;
     
-    // Watch for active preset name
-    final chatState = ref.watch(chatSessionManagerProvider).getState(widget.sessionId);
-    String? activePresetName = chatState?.activePresetName;
+    // Watch for updates to trigger rebuild when _loadHistory finishes
+    ref.watch(chatStateUpdateTriggerProvider);
+    
+    // Use getOrCreate to ensure notifier exists and _loadHistory is called
+    final chatState = ref.watch(chatSessionManagerProvider).getOrCreate(widget.sessionId).currentState;
+    String? activePresetName = chatState.activePresetName;
     
     // 如果 ChatState 中没有 activePresetName，直接从 SettingsState.lastPresetId 获取
     if (activePresetName == null) {
