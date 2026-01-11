@@ -897,8 +897,9 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     if (lastId != null && state.sessions.any((s) => s.sessionId == lastId)) {
       _ref.read(selectedHistorySessionIdProvider.notifier).state = lastId;
     } else {
-      // Default to new_chat on first run or if last session invalid
-      _ref.read(selectedHistorySessionIdProvider.notifier).state = 'new_chat';
+      // If no valid last session, create a new one automatically
+      // This ensures mobile users always have a proper session with preset selector
+      await startNewSession();
     }
   }
 
