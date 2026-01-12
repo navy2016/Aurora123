@@ -1,4 +1,5 @@
 import 'package:aurora/features/chat/domain/message.dart';
+import 'package:dio/dio.dart';
 
 class LLMResponseChunk {
   final String? content;
@@ -13,7 +14,7 @@ class LLMResponseChunk {
 
 abstract class LLMService {
   Stream<LLMResponseChunk> streamResponse(List<Message> messages,
-      {List<String>? attachments, List<Map<String, dynamic>>? tools});
+      {List<String>? attachments, List<Map<String, dynamic>>? tools, CancelToken? cancelToken});
   Future<LLMResponseChunk> getResponse(List<Message> messages,
-      {List<String>? attachments, List<Map<String, dynamic>>? tools});
+      {List<String>? attachments, List<Map<String, dynamic>>? tools, CancelToken? cancelToken});
 }

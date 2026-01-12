@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:io'; // Added
+import 'package:dio/dio.dart'; // For CancelToken
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_info_plus/device_info_plus.dart'; // Added
@@ -93,6 +94,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final void Function(String newId)? onSessionCreated;
   final void Function()? onStateChanged;
   String _currentGenerationId = '';
+  CancelToken? _currentCancelToken; // For canceling HTTP requests
   double? _savedScrollOffset;
   
   // Per-session listeners for targeted rebuilds
@@ -157,6 +159,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
   
   void abortGeneration() {
     _currentGenerationId = ''; // Invalidate current generation
+    _currentCancelToken?.cancel('User aborted generation'); // Cancel HTTP request
+    _currentCancelToken = null;
     state = state.copyWith(isLoading: false);
   }
   
@@ -227,6 +231,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
     
     final myGenerationId = const Uuid().v4();
     _currentGenerationId = myGenerationId;
+    
+    // Create a new CancelToken for this request
+    _currentCancelToken?.cancel(); // Cancel any previous pending request
+    _currentCancelToken = CancelToken();
     
     // Session handling
     if (text != null && (_sessionId == 'chat' || _sessionId == 'new_chat')) {
@@ -331,6 +339,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
             messagesForApi,
             attachments: attachments,
             tools: tools,
+            cancelToken: _currentCancelToken,
           );
           
           DateTime? reasoningStartTime;
@@ -441,7 +450,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           final response = await llmService.getResponse(
             messagesForApi, 
             attachments: attachments,
-            tools: tools
+            tools: tools,
+            cancelToken: _currentCancelToken,
           );
           
           if (_currentGenerationId == myGenerationId && mounted) {

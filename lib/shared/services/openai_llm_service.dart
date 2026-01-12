@@ -155,7 +155,8 @@ class OpenAILLMService implements LLMService {
   Stream<LLMResponseChunk> streamResponse(List<Message> messages,
       {List<String>? attachments,
       List<Map<String, dynamic>>? tools,
-      String? toolChoice}) async* {
+      String? toolChoice,
+      CancelToken? cancelToken}) async* {
     final provider = _settings.activeProvider;
     final model = _settings.selectedModel ?? 'gpt-3.5-turbo';
     final apiKey = provider.apiKey;
@@ -378,6 +379,7 @@ You MUST cite your sources using the format `[index](link)`.
           responseType: ResponseType.stream,
         ),
         data: requestData,
+        cancelToken: cancelToken,
       );
       final stream = response.data.stream as Stream<List<int>>;
       String lineBuffer = '';
@@ -552,6 +554,11 @@ You MUST cite your sources using the format `[index](link)`.
         }
       }
     } on DioException catch (e) {
+      // Handle request cancellation gracefully
+      if (e.type == DioExceptionType.cancel) {
+        print('🔵 [LLM REQUEST CANCELLED]');
+        return; // Exit stream gracefully
+      }
       // Rethrow to let caller handle and record as failure
       final statusCode = e.response?.statusCode;
       String errorMsg = 'HTTP Error';
@@ -793,7 +800,8 @@ You MUST cite your sources using the format `[index](link)`.
   Future<LLMResponseChunk> getResponse(List<Message> messages,
       {List<String>? attachments,
       List<Map<String, dynamic>>? tools,
-      String? toolChoice}) async {
+      String? toolChoice,
+      CancelToken? cancelToken}) async {
     final provider = _settings.activeProvider;
     final model = _settings.selectedModel ?? 'gpt-3.5-turbo';
     final apiKey = provider.apiKey;
@@ -937,6 +945,7 @@ You MUST cite your sources using the format `[index](link)`.
           },
         ),
         data: requestData,
+        cancelToken: cancelToken,
       );
 
       final data = response.data;
@@ -998,6 +1007,11 @@ You MUST cite your sources using the format `[index](link)`.
       }
       return const LLMResponseChunk(content: '');
     } on DioException catch (e) {
+      // Handle request cancellation gracefully
+      if (e.type == DioExceptionType.cancel) {
+        print('🔵 [LLM REQUEST CANCELLED]');
+        return const LLMResponseChunk(content: ''); // Return empty response on cancel
+      }
       // Rethrow to let caller handle and record as failure
       final statusCode = e.response?.statusCode;
       String errorMsg = 'HTTP Error';
