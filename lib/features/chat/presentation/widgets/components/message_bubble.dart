@@ -415,38 +415,64 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                                   LogicalKeyboardKey.keyV,
                                                   control: true): _handlePaste,
                                             },
-                                            child: fluent.TextBox(
-                                              controller: _editController,
-                                              focusNode: _focusNode,
-                                              maxLines: null,
-                                              minLines: 1,
-                                              placeholder: '编辑消息...',
-                                              decoration: const fluent
-                                                  .WidgetStatePropertyAll(
-                                                  fluent.BoxDecoration(
-                                                color: Colors.transparent,
-                                                border: Border.fromBorderSide(
-                                                    BorderSide.none),
-                                              )),
-                                              highlightColor:
-                                                  fluent.Colors.transparent,
-                                              unfocusedColor:
-                                                  fluent.Colors.transparent,
-                                              foregroundDecoration: const fluent
-                                                  .WidgetStatePropertyAll(
-                                                  fluent.BoxDecoration(
-                                                border: Border.fromBorderSide(
-                                                    BorderSide.none),
-                                              )),
-                                              style: TextStyle(
-                                                  fontSize: 14,
-                                                  height: 1.5,
-                                                  color: theme
-                                                      .typography.body?.color),
-                                              cursorColor: theme.accentColor,
-                                              textInputAction:
-                                                  TextInputAction.send,
-                                              onSubmitted: (_) => _saveEdit(),
+                                            child: Focus(
+                                              onKeyEvent: (node, event) {
+                                                if (event is! KeyDownEvent) {
+                                                  return KeyEventResult.ignored;
+                                                }
+                                                if (event.logicalKey ==
+                                                    LogicalKeyboardKey.enter) {
+                                                  if (HardwareKeyboard
+                                                      .instance.isShiftPressed) {
+                                                    // Shift+Enter: Insert newline
+                                                    return KeyEventResult
+                                                        .ignored;
+                                                  } else {
+                                                    // Enter: Save edit (and regenerate if user)
+                                                    _saveEdit();
+                                                    if (widget.message.isUser) {
+                                                        ref.read(historyChatProvider).regenerateResponse(widget.message.id);
+                                                    }
+                                                    return KeyEventResult
+                                                        .handled;
+                                                  }
+                                                }
+                                                return KeyEventResult.ignored;
+                                              },
+                                              child: fluent.TextBox(
+                                                controller: _editController,
+                                                focusNode: _focusNode,
+                                                maxLines: null,
+                                                minLines: 1,
+                                                placeholder: '编辑消息...',
+                                                decoration: const fluent
+                                                    .WidgetStatePropertyAll(
+                                                    fluent.BoxDecoration(
+                                                  color: Colors.transparent,
+                                                  border: Border.fromBorderSide(
+                                                      BorderSide.none),
+                                                )),
+                                                highlightColor:
+                                                    fluent.Colors.transparent,
+                                                unfocusedColor:
+                                                    fluent.Colors.transparent,
+                                                foregroundDecoration: const fluent
+                                                    .WidgetStatePropertyAll(
+                                                    fluent.BoxDecoration(
+                                                  border: Border.fromBorderSide(
+                                                      BorderSide.none),
+                                                )),
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    height: 1.5,
+                                                    color: theme
+                                                        .typography.body?.color),
+                                                cursorColor: theme.accentColor,
+                                                textInputAction:
+                                                    TextInputAction.send,
+                                                // onSubmitted removed as we handle it in Focus manually now for finer control
+                                                // onSubmitted: (_) => _saveEdit(), 
+                                              ),
                                             ),
                                           ),
                                           if (_newAttachments.isNotEmpty)
