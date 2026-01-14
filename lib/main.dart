@@ -72,6 +72,7 @@ void main() async {
       return ProviderConfig(
         id: e.providerId,
         name: e.name,
+        color: e.color,
         apiKey: e.apiKey,
         baseUrl: e.baseUrl,
         isCustom: e.isCustom,
@@ -161,12 +162,12 @@ class MyApp extends ConsumerWidget {
       ],
       theme: fluent.FluentThemeData(
         fontFamily: fontFamily,
-        accentColor: fluent.Colors.blue,
+        accentColor: fluent.Colors.teal,
         brightness: fluent.Brightness.light,
         scaffoldBackgroundColor: fluent.Colors.white,
         cardColor: fluent.Colors.white,
-        navigationPaneTheme: fluent.NavigationPaneThemeData(
-          backgroundColor: fluent.Colors.grey[20],
+        navigationPaneTheme: const fluent.NavigationPaneThemeData(
+          backgroundColor: Colors.transparent,
         ),
       ),
       builder: (context, child) {
@@ -223,7 +224,7 @@ class MyApp extends ConsumerWidget {
       },
       darkTheme: fluent.FluentThemeData(
         fontFamily: fontFamily,
-        accentColor: fluent.Colors.blue,
+        accentColor: fluent.Colors.teal,
         brightness: fluent.Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF202020),
         cardColor: const Color(0xFF2D2D2D),

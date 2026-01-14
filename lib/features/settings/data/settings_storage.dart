@@ -45,7 +45,8 @@ class SettingsStorage {
   }
 
   Future<List<ProviderConfigEntity>> loadProviders() async {
-    return await _isar.providerConfigEntitys.where().findAll();
+    final providers = await _isar.providerConfigEntitys.where().findAll();
+    return providers;
   }
 
   Future<void> saveAppSettings({

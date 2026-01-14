@@ -224,11 +224,16 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                                       0xFF000000);
                                 }
                                 return Container(
-                                  color: isSelected
-                                      ? (itemColor?.withOpacity(0.3) ??
-                                          theme.accentColor.withOpacity(0.1))
-                                      : (itemColor?.withOpacity(0.1) ??
-                                          Colors.transparent),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                    color: isSelected
+                                        ? (itemColor?.withOpacity(0.3) ??
+                                            theme.accentColor.withOpacity(0.1))
+                                        : (itemColor?.withOpacity(0.1) ??
+                                            Colors.transparent),
+                                  ),
                                   child: fluent.ListTile(
                                     title: Text(
                                       model.displayName,

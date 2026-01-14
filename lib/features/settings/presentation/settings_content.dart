@@ -83,84 +83,100 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
         (icon: fluent.FluentIcons.database, label: l10n.dataSettings),
         (icon: fluent.FluentIcons.analytics_view, label: l10n.usageStats),
       ];
-      return Row(
-        children: [
-          SizedBox(
-            width: 180,
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.navigationPaneTheme.backgroundColor,
-                border: Border(
-                    right: BorderSide(
-                        color: theme.resources.dividerStrokeColorDefault)),
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  ...settingsPages.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final page = entry.value;
-                    final isSelected = settingsPageIndex == index;
-                    return fluent.HoverButton(
-                      onPressed: () => ref
-                          .read(settingsPageIndexProvider.notifier)
-                          .state = index,
-                      builder: (context, states) {
-                        return Container(
-                          height: 40,
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? theme.accentColor.withOpacity(0.1)
-                                : states.isHovering
-                                    ? theme.resources.subtleFillColorSecondary
-                                    : Colors.transparent,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            children: [
-                              const SizedBox(width: 12),
-                              fluent.Icon(page.icon,
-                                  size: 16,
-                                  color: isSelected ? theme.accentColor : null),
-                              const SizedBox(width: 12),
-                              Text(
-                                page.label,
-                                style: TextStyle(
-                                  color: isSelected ? theme.accentColor : null,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
+      return Container(
+        color: Colors.transparent,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 180,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.transparent,
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    ...settingsPages.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final page = entry.value;
+                      final isSelected = settingsPageIndex == index;
+                      return fluent.HoverButton(
+                        onPressed: () => ref
+                            .read(settingsPageIndexProvider.notifier)
+                            .state = index,
+                        builder: (context, states) {
+                          return Container(
+                            height: 40,
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? theme.accentColor.withOpacity(0.1)
+                                  : states.isHovering
+                                      ? theme.resources.subtleFillColorSecondary
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 12),
+                                fluent.Icon(page.icon,
+                                    size: 16,
+                                    color:
+                                        isSelected ? theme.accentColor : null),
+                                const SizedBox(width: 12),
+                                Text(
+                                  page.label,
+                                  style: TextStyle(
+                                    color:
+                                        isSelected ? theme.accentColor : null,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  }),
-                ],
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: Container(
-              color: theme.scaffoldBackgroundColor,
-              child: IndexedStack(
-                index: settingsPageIndex,
-                children: [
-                  _buildProviderSettings(settingsState, viewingProvider),
-                  _buildChatSettings(settingsState),
-                  const PresetSettingsPage(),
-                  _buildDisplaySettings(),
-                  _buildDataSettings(),
-                  const UsageStatsView(),
-                ],
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(top: 8, right: 8, bottom: 8),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: IndexedStack(
+                    index: settingsPageIndex,
+                    children: [
+                      _buildProviderSettings(settingsState, viewingProvider),
+                      _buildChatSettings(settingsState),
+                      const PresetSettingsPage(),
+                      _buildDisplaySettings(),
+                      _buildDataSettings(),
+                      const UsageStatsView(),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     } else {
       return Scaffold(
@@ -185,6 +201,61 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
         ),
       );
     }
+  }
+
+  Widget _buildStyledTextBox({
+    required TextEditingController controller,
+    String? placeholder,
+    ValueChanged<String>? onChanged,
+  }) {
+    final theme = fluent.FluentTheme.of(context);
+    return fluent.TextBox(
+      controller: controller,
+      placeholder: placeholder,
+      onChanged: onChanged,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: WidgetStateProperty.all(BoxDecoration(
+        color: theme.brightness.isDark
+            ? const Color(0xFF3C3C3C)
+            : const Color(0xFFF3F3F3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.resources.controlStrokeColorDefault ??
+              Colors.grey.withOpacity(0.3),
+        ),
+      )),
+      highlightColor: Colors.transparent,
+      unfocusedColor: Colors.transparent,
+      cursorColor: theme.accentColor,
+    );
+  }
+
+  Widget _buildStyledPasswordBox({
+    required TextEditingController controller,
+    String? placeholder,
+    ValueChanged<String>? onChanged,
+  }) {
+    final theme = fluent.FluentTheme.of(context);
+    return fluent.PasswordBox(
+      controller: controller,
+      placeholder: placeholder,
+      onChanged: onChanged,
+      revealMode: fluent.PasswordRevealMode.peek,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: WidgetStateProperty.all(BoxDecoration(
+        color: theme.brightness.isDark
+            ? const Color(0xFF3C3C3C)
+            : const Color(0xFFF3F3F3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.resources.controlStrokeColorDefault ??
+              Colors.grey.withOpacity(0.3),
+        ),
+      )),
+      highlightColor: Colors.transparent,
+      unfocusedColor: Colors.transparent,
+      cursorColor: theme.accentColor,
+    );
   }
 
   Widget _buildProviderSettings(
@@ -308,7 +379,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                   children: [
                     fluent.InfoLabel(
                       label: l10n.providerName,
-                      child: fluent.TextBox(
+                      child: _buildStyledTextBox(
                         controller: _nameController,
                         placeholder: 'My Provider',
                         onChanged: (value) {
@@ -326,18 +397,19 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: _colorController.text.isNotEmpty
-                                  ? Color(int.tryParse(_colorController.text
+                              color: (viewingProvider.color != null &&
+                                      viewingProvider.color!.isNotEmpty)
+                                  ? Color(int.tryParse(viewingProvider.color!
                                           .replaceFirst('#', '0xFF')) ??
                                       0xFF000000)
                                   : Colors.transparent,
                               border: Border.all(color: fluent.Colors.grey),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: fluent.TextBox(
+                            child: _buildStyledTextBox(
                               controller: _colorController,
                               placeholder: '#FF0000',
                               onChanged: (value) {
@@ -354,10 +426,9 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                     const SizedBox(height: 16),
                     fluent.InfoLabel(
                       label: 'API Key',
-                      child: fluent.PasswordBox(
+                      child: _buildStyledPasswordBox(
                         controller: _apiKeyController,
                         placeholder: 'sk-xxxxxxxx',
-                        revealMode: fluent.PasswordRevealMode.peek,
                         onChanged: (value) {
                           ref.read(settingsProvider.notifier).updateProvider(
                               id: viewingProvider.id, apiKey: value);
@@ -367,7 +438,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                     const SizedBox(height: 16),
                     fluent.InfoLabel(
                       label: 'API Base URL',
-                      child: fluent.TextBox(
+                      child: _buildStyledTextBox(
                         controller: _baseUrlController,
                         placeholder: 'https://api.openai.com/v1',
                         onChanged: (value) {
@@ -405,21 +476,48 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                                 .typography
                                 .subtitle),
                         const SizedBox(width: 16),
-                        Container(
-                          child: fluent.Button(
-                            onPressed: settingsState.isLoadingModels
-                                ? null
-                                : () => ref
-                                    .read(settingsProvider.notifier)
-                                    .fetchModels(),
-                            child: settingsState.isLoadingModels
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: fluent.ProgressRing())
-                                : fluent.Text(l10n.refreshList,
-                                    overflow: TextOverflow.ellipsis),
+                        fluent.Button(
+                          style: fluent.ButtonStyle(
+                            padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6)),
+                            backgroundColor: WidgetStateProperty.all(
+                                fluent.FluentTheme.of(context)
+                                    .accentColor
+                                    .withOpacity(0.1)),
+                            shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide.none)),
                           ),
+                          onPressed: settingsState.isLoadingModels
+                              ? null
+                              : () => ref
+                                  .read(settingsProvider.notifier)
+                                  .fetchModels(),
+                          child: settingsState.isLoadingModels
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: fluent.ProgressRing())
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(fluent.FluentIcons.refresh,
+                                        size: 14,
+                                        color: fluent.FluentTheme.of(context)
+                                            .accentColor),
+                                    const SizedBox(width: 8),
+                                    fluent.Text(
+                                      l10n.refreshList,
+                                      style: TextStyle(
+                                        color: fluent.FluentTheme.of(context)
+                                            .accentColor,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                         ),
                       ],
                     ),
@@ -600,7 +698,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           const SizedBox(height: 24),
           fluent.InfoLabel(
             label: l10n.userName,
-            child: fluent.TextBox(
+            child: _buildStyledTextBox(
               placeholder: 'User',
               controller: _userNameController,
               onChanged: (value) {
@@ -676,7 +774,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           const SizedBox(height: 24),
           fluent.InfoLabel(
             label: l10n.aiName,
-            child: fluent.TextBox(
+            child: _buildStyledTextBox(
               placeholder: 'Assistant',
               controller: _llmNameController,
               onChanged: (value) {

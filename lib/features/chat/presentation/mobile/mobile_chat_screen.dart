@@ -111,7 +111,10 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFE0F7FA), Color(0xFFF1F8E9)],
+                    colors: [
+                      Color(0xFFE0F7FA), // Cyan 50
+                      Color(0xFFF1F8E9), // Light Green 50
+                    ],
                   ),
                 ),
               ),
