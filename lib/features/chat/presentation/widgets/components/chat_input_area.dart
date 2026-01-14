@@ -573,7 +573,7 @@ class MobileChatInputArea extends ConsumerWidget {
                   child: Icon(
                     fluent.FluentIcons.attach,
                     color: Theme.of(context).colorScheme.outline,
-                    size: 26,
+                    size: 18,
                   ),
                 ),
               ),
@@ -607,7 +607,7 @@ class MobileChatInputArea extends ConsumerWidget {
                   child: Icon(
                     fluent.FluentIcons.broom,
                     color: Theme.of(context).colorScheme.outline,
-                    size: 24,
+                    size: 18,
                   ),
                 ),
               ),
@@ -628,7 +628,7 @@ class MobileChatInputArea extends ConsumerWidget {
                     color: settings.isStreamEnabled
                         ? Theme.of(context).colorScheme.primary
                         : Colors.grey,
-                    size: 24,
+                    size: 18,
                   ),
                 ),
               ),
@@ -650,21 +650,21 @@ class MobileChatInputArea extends ConsumerWidget {
                     color: settings.isSearchEnabled
                         ? Theme.of(context).colorScheme.primary
                         : Colors.grey,
-                    size: 24,
+                    size: 18,
                   ),
                 ),
               ),
               const Spacer(),
               if (isLoading)
                 IconButton(
-                  icon: const Icon(fluent.FluentIcons.stop, color: Colors.red),
+                  icon: const Icon(fluent.FluentIcons.stop, color: Colors.red, size: 18),
                   onPressed: () =>
                       ref.read(historyChatProvider).abortGeneration(),
                 )
               else
                 IconButton(
                   icon: Icon(fluent.FluentIcons.send,
-                      color: Theme.of(context).colorScheme.primary),
+                      color: Theme.of(context).colorScheme.primary, size: 18),
                   onPressed: onSend,
                 ),
             ],
