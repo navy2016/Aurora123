@@ -50,7 +50,7 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
     widget.controller.addListener(_onTextChanged);
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 100),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
@@ -80,8 +80,12 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
   void _onTextChanged() {
     if (_overlayEntry != null && _triggerIndex != null) {
       // If the trigger character is gone or changed, close the overlay
+      // Also close if cursor moves before or onto the trigger (e.g. deletion)
+      // OR if cursor moves past the trigger (typing any char after @)
       if (widget.controller.text.length <= _triggerIndex! ||
-          widget.controller.text[_triggerIndex!] != '@') {
+          widget.controller.text[_triggerIndex!] != '@' ||
+          widget.controller.selection.baseOffset <= _triggerIndex! ||
+          widget.controller.selection.baseOffset > _triggerIndex! + 1) {
         _animateClose();
       }
     }
@@ -97,7 +101,7 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
 
   Future<void> _animateClose() async {
     if (_overlayEntry == null) return;
-    await _animationController.reverse();
+    _animationController.reverse(); // Don't await - let animation play while overlay is removed
     _removeOverlay();
   }
 
@@ -133,15 +137,12 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
       BuildContext context, List<String> models, String currentModel) {
     if (_overlayEntry != null) return;
 
-    // Capture where the '@' is. Assuming current selection is just after '@'.
-    // If not valid, fallback to current selection end.
-    if (widget.controller.selection.isValid &&
-        widget.controller.selection.baseOffset > 0) {
-      _triggerIndex = widget.controller.selection.baseOffset - 1;
+    // Capture where the '@' WILL BE inserted (key event fires before character is typed)
+    // Current cursor position is where @ will appear
+    if (widget.controller.selection.isValid) {
+      _triggerIndex = widget.controller.selection.baseOffset;
     } else {
-      // Should not happen if triggered by key press correctly, but safe guard
-      _triggerIndex = widget.controller.text.length - 1;
-      if (_triggerIndex! < 0) _triggerIndex = 0;
+      _triggerIndex = widget.controller.text.length;
     }
 
     _filteredModels = List.from(models);
@@ -291,7 +292,8 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
             link: _layerLink,
             child: Focus(
               onKeyEvent: (node, event) {
-                if (event is! KeyDownEvent) return KeyEventResult.ignored;
+                // Allow both KeyDownEvent and KeyRepeatEvent for continuous scrolling
+                if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
                 
                 final isControl = HardwareKeyboard.instance.isControlPressed;
                 final isShift = HardwareKeyboard.instance.isShiftPressed;
@@ -299,16 +301,22 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                 // Handle Overlay Navigation
                 if (_overlayEntry != null) {
                   if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                    // Cycle to first item if at the end
                     if (_selectedIndex < _filteredModels.length - 1) {
                       _selectedIndex++;
-                      _updateOverlay();
+                    } else {
+                      _selectedIndex = 0;
                     }
+                    _updateOverlay();
                     return KeyEventResult.handled;
                   } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                    // Cycle to last item if at the beginning
                     if (_selectedIndex > 0) {
                       _selectedIndex--;
-                      _updateOverlay();
+                    } else {
+                      _selectedIndex = _filteredModels.length - 1;
                     }
+                    _updateOverlay();
                     return KeyEventResult.handled;
                   } else if (event.logicalKey == LogicalKeyboardKey.enter) {
                     _selectModel(_filteredModels[_selectedIndex]);
@@ -316,6 +324,11 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                   } else if (event.logicalKey == LogicalKeyboardKey.escape) {
                     _removeOverlay();
                     return KeyEventResult.handled;
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+                             event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                    // Close overlay when cursor moves horizontally
+                    _animateClose();
+                    return KeyEventResult.ignored; // Let the text field handle cursor movement
                   }
                 }
 
@@ -333,10 +346,14 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
 
                 // Handle '@' trigger
                 if (isShift && event.logicalKey == LogicalKeyboardKey.digit2) {
-                   // Using addPostFrameCallback to ensure the character is input first (if we wanted to filter later)
-                   // But here we want to trigger on the key press.
-                   // Note: TextField will still receive the '@' character.
-                   if (_overlayEntry == null && models.isNotEmpty) {
+                   if (_overlayEntry != null) {
+                     // If overlay is already open, update trigger index synchronously
+                     // Current cursor position is where the new @ will be inserted
+                     if (widget.controller.selection.isValid) {
+                       _triggerIndex = widget.controller.selection.baseOffset;
+                     }
+                   } else if (models.isNotEmpty) {
+                     // Show model selector for the first '@'
                      _showModelSelector(context, models, settings.selectedModel ?? '');
                    }
                 }
