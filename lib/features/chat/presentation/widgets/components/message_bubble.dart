@@ -635,7 +635,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     selectable: false,
                                     softLineBreak: true,
                                     builders: {
-                                      'pre': CodeBlockBuilder(
+                                      'code': CodeBlockBuilder(
                                         isDarkMode:
                                             theme.brightness == Brightness.dark,
                                       ),
@@ -693,7 +693,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                             : 'monospace',
                                       ),
                                       codeblockDecoration:
-                                          const BoxDecoration(),
+                                          const BoxDecoration(color: Colors.transparent),
                                       codeblockPadding: EdgeInsets.zero,
                                       tableBody: TextStyle(
                                         fontSize: Platform.isWindows ? 14 : 12,

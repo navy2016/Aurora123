@@ -17,11 +17,21 @@ class CodeBlockBuilder extends MarkdownElementBuilder {
         language = className.substring('language-'.length);
       }
     }
-    return _CodeBlockWithCopyButton(
-      code: codeContent,
-      language: language,
-      isDarkMode: isDarkMode,
-    );
+
+    // Check if it's a code block or inline code
+    // Code blocks usually have a language class or contain newlines
+    final isCodeBlock = language != null || codeContent.contains('\n');
+
+    if (isCodeBlock) {
+      return _CodeBlockWithCopyButton(
+        code: codeContent,
+        language: language,
+        isDarkMode: isDarkMode,
+      );
+    }
+    
+    // Return null for inline code to let flutter_markdown handle it with default styling
+    return null; 
   }
 }
 
