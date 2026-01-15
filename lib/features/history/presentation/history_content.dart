@@ -111,7 +111,7 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
     final selectedSessionId = ref.watch(selectedHistorySessionIdProvider);
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      color: fluent.FluentTheme.of(context).navigationPaneTheme.backgroundColor,
+      color: Colors.transparent,
       child: Row(
         children: [
           RepaintBoundary(
@@ -127,9 +127,7 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
                   child: Container(
                     width: 250,
                     decoration: BoxDecoration(
-                      color: fluent.FluentTheme.of(context)
-                          .navigationPaneTheme
-                          .backgroundColor,
+                      color: Colors.transparent,
                     ),
                     child: _SessionList(
                       sessionsState: sessionsState,
@@ -149,7 +147,7 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -361,7 +359,7 @@ class _SessionItemState extends State<_SessionItem> {
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? theme.accentColor.withOpacity(0.1)
+                ? theme.accentColor.withValues(alpha: 0.1)
                 : (_isHovering
                     ? theme.resources.subtleFillColorSecondary
                     : Colors.transparent),
@@ -469,7 +467,7 @@ class SessionListWidget extends ConsumerWidget {
                 selectedTileColor: Theme.of(context)
                     .colorScheme
                     .primaryContainer
-                    .withOpacity(0.5),
+                    .withValues(alpha: 0.5),
                 leading: Stack(
                   clipBehavior: Clip.none,
                   children: [
