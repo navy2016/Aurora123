@@ -265,6 +265,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       } else {}
       bool continueGeneration = true;
       int turns = 0;
+      DateTime? firstContentTime;
       while (continueGeneration &&
           turns < 3 &&
           _currentGenerationId == myGenerationId &&
@@ -283,6 +284,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
             if (_currentGenerationId != myGenerationId || !mounted) break;
             if (chunk.reasoning != null && chunk.reasoning!.isNotEmpty) {
               reasoningStartTime ??= DateTime.now();
+              firstContentTime ??= DateTime.now();
             }
             double? duration = aiMsg.reasoningDurationSeconds;
             if (duration == null &&
@@ -292,6 +294,25 @@ class ChatNotifier extends StateNotifier<ChatState> {
               duration =
                   DateTime.now().difference(reasoningStartTime).inMilliseconds /
                       1000.0;
+            }
+            // Track first content token time
+            if (firstContentTime == null) {
+              final hasContent = chunk.content != null;
+              final hasReasoning = chunk.reasoning != null;
+              final hasImages = chunk.images.isNotEmpty;
+              final hasToolCalls =
+                  chunk.toolCalls != null && chunk.toolCalls!.isNotEmpty;
+              
+              /*
+              print('DEBUG: chunk received. hasContent=$hasContent, '
+                  'hasReasoning=$hasReasoning, hasImages=$hasImages, '
+                  'content="${chunk.content}", reasoning="${chunk.reasoning}"');
+              */
+
+              if (hasContent || hasReasoning || hasImages || hasToolCalls) {
+                // print('DEBUG: FirstToken captured!');
+                firstContentTime = DateTime.now();
+              }
             }
             aiMsg = Message(
               id: aiMsg.id,
@@ -406,6 +427,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
       }
       if (_currentGenerationId == myGenerationId) {
         final messages = state.messages;
+        // Calculate timing metrics before saving
+        final durationMs = DateTime.now().difference(startTime).inMilliseconds;
+        final firstTokenMs = firstContentTime != null
+            ? firstContentTime.difference(startTime).inMilliseconds
+            : null;
         if (messages.length > startSaveIndex) {
           final unsaved = messages.sublist(startSaveIndex);
           final updatedMessages = List<Message>.from(state.messages);
@@ -413,7 +439,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
             if (_currentGenerationId != myGenerationId) {
               break;
             }
-            final m = unsaved[i];
+            var m = unsaved[i];
+            // Add timing metrics to the last non-tool AI message
+            if (!m.isUser && m.role != 'tool' && i == unsaved.length - 1) {
+              m = m.copyWith(
+                firstTokenMs: firstTokenMs,
+                durationMs: durationMs,
+              );
+            }
             final dbId = await _storage.saveMessage(m, _sessionId);
             final stateIndex = startSaveIndex + i;
             if (stateIndex < updatedMessages.length) {
@@ -432,9 +465,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
             state = state.copyWith(isLoading: false, hasUnreadResponse: true);
         }
         if (currentModel != null && currentModel.isNotEmpty) {
-          final duration = DateTime.now().difference(startTime).inMilliseconds;
+          final tokenCount = aiMsg.tokenCount ?? 0;
           _ref.read(usageStatsProvider.notifier).incrementUsage(currentModel,
-              success: true, durationMs: duration);
+              success: true,
+              durationMs: durationMs,
+              firstTokenMs: firstTokenMs ?? 0,
+              tokenCount: tokenCount);
         }
       }
     } catch (e, stack) {

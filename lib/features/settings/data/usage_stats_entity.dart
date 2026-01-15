@@ -10,4 +10,7 @@ class UsageStatsEntity {
   int failureCount = 0;
   int totalDurationMs = 0;
   int validDurationCount = 0;
+  int totalFirstTokenMs = 0;
+  int validFirstTokenCount = 0;
+  int totalTokenCount = 0;
 }

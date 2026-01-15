@@ -406,6 +406,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String averageFirstToken(String duration) {
+    return 'FirstToken: $duration秒';
+  }
+
+  @override
+  String totalTokensCount(int count) {
+    return '累计: $count Tokens';
+  }
+
+  @override
+  String tokensPerSecond(String tps) {
+    return 'Token/s: $tps';
+  }
+
+  @override
   String get mobileSettings => '移动端设置';
 
   @override

@@ -333,7 +333,10 @@ class _ModelStatsList extends StatelessWidget {
                 int failure,
                 int success,
                 int totalDurationMs,
-                int validDurationCount
+                int validDurationCount,
+                int totalFirstTokenMs,
+                int validFirstTokenCount,
+                int totalTokenCount
               })>
           entry,
       int maxTotal) {
@@ -429,18 +432,47 @@ class _ModelStatsList extends StatelessWidget {
                       style:
                           const TextStyle(fontSize: 10, color: Colors.green)),
                 if (stats.success > 0 && stats.failure > 0)
-                  Text(' · ',
+                  Text(' | ',
                       style: TextStyle(fontSize: 10, color: subTextColor)),
                 if (stats.failure > 0)
                   Text(l10n.failureCount(stats.failure),
                       style: const TextStyle(fontSize: 10, color: Colors.red)),
                 if (stats.validDurationCount > 0) ...[
-                  Text(' · ',
+                  Text(' | ',
                       style: TextStyle(fontSize: 10, color: subTextColor)),
                   Text(
                     l10n.averageDuration((stats.totalDurationMs /
                             stats.validDurationCount /
                             1000)
+                        .toStringAsFixed(2)),
+                    style: TextStyle(fontSize: 10, color: subTextColor),
+                  ),
+                ],
+                if (stats.validFirstTokenCount > 0) ...[
+                  Text(' | ',
+                      style: TextStyle(fontSize: 10, color: subTextColor)),
+                  Text(
+                    l10n.averageFirstToken((stats.totalFirstTokenMs /
+                            stats.validFirstTokenCount /
+                            1000)
+                        .toStringAsFixed(2)),
+                    style: TextStyle(fontSize: 10, color: subTextColor),
+                  ),
+                ],
+                if (stats.totalTokenCount > 0) ...[
+                  Text(' | ',
+                      style: TextStyle(fontSize: 10, color: subTextColor)),
+                  Text(
+                    l10n.totalTokensCount(stats.totalTokenCount),
+                    style: TextStyle(fontSize: 10, color: subTextColor),
+                  ),
+                ],
+                if (stats.totalTokenCount > 0 && stats.totalDurationMs > 0) ...[
+                  Text(' | ',
+                      style: TextStyle(fontSize: 10, color: subTextColor)),
+                  Text(
+                    l10n.tokensPerSecond((stats.totalTokenCount /
+                            (stats.totalDurationMs / 1000))
                         .toStringAsFixed(2)),
                     style: TextStyle(fontSize: 10, color: subTextColor),
                   ),

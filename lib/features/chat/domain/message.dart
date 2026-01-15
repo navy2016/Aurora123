@@ -55,6 +55,8 @@ class Message {
   final List<ToolCall>? toolCalls;
   final String? toolCallId;
   final String role;
+  final int? firstTokenMs;
+  final int? durationMs;
   const Message({
     required this.id,
     required this.content,
@@ -69,6 +71,8 @@ class Message {
     this.toolCalls,
     this.toolCallId,
     this.tokenCount,
+    this.firstTokenMs,
+    this.durationMs,
     String? role,
   }) : role = role ??
             (isUser ? 'user' : (toolCallId != null ? 'tool' : 'assistant'));
@@ -130,6 +134,8 @@ class Message {
     String? toolCallId,
     String? role,
     int? tokenCount,
+    int? firstTokenMs,
+    int? durationMs,
   }) {
     return Message(
       id: id ?? this.id,
@@ -147,6 +153,8 @@ class Message {
       toolCallId: toolCallId ?? this.toolCallId,
       role: role ?? this.role,
       tokenCount: tokenCount ?? this.tokenCount,
+      firstTokenMs: firstTokenMs ?? this.firstTokenMs,
+      durationMs: durationMs ?? this.durationMs,
     );
   }
 }

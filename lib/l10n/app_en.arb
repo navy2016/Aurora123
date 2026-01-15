@@ -191,6 +191,24 @@
       "duration": {"type": "String"}
     }
   },
+  "averageFirstToken": "FirstToken: {duration}s",
+  "@averageFirstToken": {
+    "placeholders": {
+      "duration": {"type": "String"}
+    }
+  },
+  "totalTokensCount": "Total: {count} Tokens",
+  "@totalTokensCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "tokensPerSecond": "Token/s: {tps}",
+  "@tokensPerSecond": {
+    "placeholders": {
+      "tps": {"type": "String"}
+    }
+  },
   
   "mobileSettings": "Mobile Settings",
   "mobileSettingsHint": "Please use the settings button in the top navigation bar to access full settings",

@@ -37,9 +37,24 @@ const UsageStatsEntitySchema = CollectionSchema(
       name: r'totalDurationMs',
       type: IsarType.long,
     ),
-    r'validDurationCount': PropertySchema(
+    r'totalFirstTokenMs': PropertySchema(
       id: 4,
+      name: r'totalFirstTokenMs',
+      type: IsarType.long,
+    ),
+    r'totalTokenCount': PropertySchema(
+      id: 5,
+      name: r'totalTokenCount',
+      type: IsarType.long,
+    ),
+    r'validDurationCount': PropertySchema(
+      id: 6,
       name: r'validDurationCount',
+      type: IsarType.long,
+    ),
+    r'validFirstTokenCount': PropertySchema(
+      id: 7,
+      name: r'validFirstTokenCount',
       type: IsarType.long,
     )
   },
@@ -91,7 +106,10 @@ void _usageStatsEntitySerialize(
   writer.writeString(offsets[1], object.modelName);
   writer.writeLong(offsets[2], object.successCount);
   writer.writeLong(offsets[3], object.totalDurationMs);
-  writer.writeLong(offsets[4], object.validDurationCount);
+  writer.writeLong(offsets[4], object.totalFirstTokenMs);
+  writer.writeLong(offsets[5], object.totalTokenCount);
+  writer.writeLong(offsets[6], object.validDurationCount);
+  writer.writeLong(offsets[7], object.validFirstTokenCount);
 }
 
 UsageStatsEntity _usageStatsEntityDeserialize(
@@ -106,7 +124,10 @@ UsageStatsEntity _usageStatsEntityDeserialize(
   object.modelName = reader.readString(offsets[1]);
   object.successCount = reader.readLong(offsets[2]);
   object.totalDurationMs = reader.readLong(offsets[3]);
-  object.validDurationCount = reader.readLong(offsets[4]);
+  object.totalFirstTokenMs = reader.readLong(offsets[4]);
+  object.totalTokenCount = reader.readLong(offsets[5]);
+  object.validDurationCount = reader.readLong(offsets[6]);
+  object.validFirstTokenCount = reader.readLong(offsets[7]);
   return object;
 }
 
@@ -126,6 +147,12 @@ P _usageStatsEntityDeserializeProp<P>(
     case 3:
       return (reader.readLong(offset)) as P;
     case 4:
+      return (reader.readLong(offset)) as P;
+    case 5:
+      return (reader.readLong(offset)) as P;
+    case 6:
+      return (reader.readLong(offset)) as P;
+    case 7:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -688,6 +715,118 @@ extension UsageStatsEntityQueryFilter
   }
 
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalFirstTokenMsEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'totalFirstTokenMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalFirstTokenMsGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'totalFirstTokenMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalFirstTokenMsLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'totalFirstTokenMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalFirstTokenMsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'totalFirstTokenMs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalTokenCountEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'totalTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalTokenCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'totalTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalTokenCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'totalTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      totalTokenCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'totalTokenCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
       validDurationCountEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -735,6 +874,62 @@ extension UsageStatsEntityQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'validDurationCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      validFirstTokenCountEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'validFirstTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      validFirstTokenCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'validFirstTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      validFirstTokenCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'validFirstTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      validFirstTokenCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'validFirstTokenCount',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -809,6 +1004,34 @@ extension UsageStatsEntityQuerySortBy
   }
 
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByTotalFirstTokenMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalFirstTokenMs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByTotalFirstTokenMsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalFirstTokenMs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByTotalTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalTokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByTotalTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalTokenCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
       sortByValidDurationCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'validDurationCount', Sort.asc);
@@ -819,6 +1042,20 @@ extension UsageStatsEntityQuerySortBy
       sortByValidDurationCountDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'validDurationCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByValidFirstTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'validFirstTokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByValidFirstTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'validFirstTokenCount', Sort.desc);
     });
   }
 }
@@ -895,6 +1132,34 @@ extension UsageStatsEntityQuerySortThenBy
   }
 
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByTotalFirstTokenMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalFirstTokenMs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByTotalFirstTokenMsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalFirstTokenMs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByTotalTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalTokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByTotalTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalTokenCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
       thenByValidDurationCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'validDurationCount', Sort.asc);
@@ -905,6 +1170,20 @@ extension UsageStatsEntityQuerySortThenBy
       thenByValidDurationCountDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'validDurationCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByValidFirstTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'validFirstTokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByValidFirstTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'validFirstTokenCount', Sort.desc);
     });
   }
 }
@@ -940,9 +1219,30 @@ extension UsageStatsEntityQueryWhereDistinct
   }
 
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
+      distinctByTotalFirstTokenMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'totalFirstTokenMs');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
+      distinctByTotalTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'totalTokenCount');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
       distinctByValidDurationCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'validDurationCount');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
+      distinctByValidFirstTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'validFirstTokenCount');
     });
   }
 }
@@ -981,9 +1281,30 @@ extension UsageStatsEntityQueryProperty
   }
 
   QueryBuilder<UsageStatsEntity, int, QQueryOperations>
+      totalFirstTokenMsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'totalFirstTokenMs');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, int, QQueryOperations>
+      totalTokenCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'totalTokenCount');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, int, QQueryOperations>
       validDurationCountProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'validDurationCount');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, int, QQueryOperations>
+      validFirstTokenCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'validFirstTokenCount');
     });
   }
 }

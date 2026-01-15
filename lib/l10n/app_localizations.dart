@@ -860,6 +860,24 @@ abstract class AppLocalizations {
   /// **'平均: {duration}秒'**
   String averageDuration(String duration);
 
+  /// No description provided for @averageFirstToken.
+  ///
+  /// In zh, this message translates to:
+  /// **'FirstToken: {duration}秒'**
+  String averageFirstToken(String duration);
+
+  /// No description provided for @totalTokensCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'累计: {count} Tokens'**
+  String totalTokensCount(int count);
+
+  /// No description provided for @tokensPerSecond.
+  ///
+  /// In zh, this message translates to:
+  /// **'Token/s: {tps}'**
+  String tokensPerSecond(String tps);
+
   /// No description provided for @mobileSettings.
   ///
   /// In zh, this message translates to:

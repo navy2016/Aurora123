@@ -20,4 +20,6 @@ class MessageEntity {
   String? toolCallId;
   String? toolCallsJson;
   int? tokenCount;
+  int? firstTokenMs;
+  int? durationMs;
 }

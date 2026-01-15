@@ -694,13 +694,53 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        '${message.tokenCount} tokens',
+                                        '${message.tokenCount} Tokens',
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: theme.typography.body?.color
                                               ?.withOpacity(0.5),
                                         ),
                                       ),
+                                      if (message.firstTokenMs != null &&
+                                          message.firstTokenMs! > 0) ...[
+                                        Text(
+                                          ' | ',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: theme.typography.body?.color
+                                                ?.withOpacity(0.5),
+                                          ),
+                                        ),
+                                        Text(
+                                          'FirstToken: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: theme.typography.body?.color
+                                                ?.withOpacity(0.5),
+                                          ),
+                                        ),
+                                      ],
+                                      if (message.durationMs != null &&
+                                          message.durationMs! > 0 &&
+                                          message.tokenCount != null &&
+                                          message.tokenCount! > 0) ...[
+                                        Text(
+                                          ' | ',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: theme.typography.body?.color
+                                                ?.withOpacity(0.5),
+                                          ),
+                                        ),
+                                        Text(
+                                          'Token/s: ${(message.tokenCount! / (message.durationMs! / 1000)).toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: theme.typography.body?.color
+                                                ?.withOpacity(0.5),
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),

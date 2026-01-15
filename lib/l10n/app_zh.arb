@@ -191,6 +191,24 @@
       "duration": {"type": "String"}
     }
   },
+  "averageFirstToken": "FirstToken: {duration}秒",
+  "@averageFirstToken": {
+    "placeholders": {
+      "duration": {"type": "String"}
+    }
+  },
+  "totalTokensCount": "累计: {count} Tokens",
+  "@totalTokensCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "tokensPerSecond": "Token/s: {tps}",
+  "@tokensPerSecond": {
+    "placeholders": {
+      "tps": {"type": "String"}
+    }
+  },
   
   "mobileSettings": "移动端设置",
   "mobileSettingsHint": "请使用顶部导航栏的设置按钮访问完整设置页面",

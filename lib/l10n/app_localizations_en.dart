@@ -414,6 +414,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String averageFirstToken(String duration) {
+    return 'FirstToken: ${duration}s';
+  }
+
+  @override
+  String totalTokensCount(int count) {
+    return 'Total: $count Tokens';
+  }
+
+  @override
+  String tokensPerSecond(String tps) {
+    return 'Token/s: $tps';
+  }
+
+  @override
   String get mobileSettings => 'Mobile Settings';
 
   @override

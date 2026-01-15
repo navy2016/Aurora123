@@ -181,7 +181,10 @@ class SettingsStorage {
   }
 
   Future<void> incrementUsage(String modelName,
-      {bool success = true, int durationMs = 0}) async {
+      {bool success = true,
+      int durationMs = 0,
+      int firstTokenMs = 0,
+      int tokenCount = 0}) async {
     await _isar.writeTxn(() async {
       var existing = await _isar.usageStatsEntitys
           .filter()
@@ -193,7 +196,10 @@ class SettingsStorage {
           ..successCount = success ? 1 : 0
           ..failureCount = success ? 0 : 1
           ..totalDurationMs = durationMs > 0 ? durationMs : 0
-          ..validDurationCount = durationMs > 0 ? 1 : 0;
+          ..validDurationCount = durationMs > 0 ? 1 : 0
+          ..totalFirstTokenMs = firstTokenMs > 0 ? firstTokenMs : 0
+          ..validFirstTokenCount = firstTokenMs > 0 ? 1 : 0
+          ..totalTokenCount = tokenCount;
       } else {
         if (success) {
           existing.successCount++;
@@ -204,6 +210,11 @@ class SettingsStorage {
           existing.totalDurationMs += durationMs;
           existing.validDurationCount++;
         }
+        if (firstTokenMs > 0) {
+          existing.totalFirstTokenMs += firstTokenMs;
+          existing.validFirstTokenCount++;
+        }
+        existing.totalTokenCount += tokenCount;
       }
       await _isar.usageStatsEntitys.put(existing);
     });

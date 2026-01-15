@@ -53,7 +53,9 @@ class ChatStorage {
       ..sessionId = sessionId
       ..role = message.role
       ..toolCallId = message.toolCallId
-      ..tokenCount = message.tokenCount;
+      ..tokenCount = message.tokenCount
+      ..firstTokenMs = message.firstTokenMs
+      ..durationMs = message.durationMs;
     if (message.toolCalls != null) {
       entity.toolCallsJson =
           jsonEncode(message.toolCalls!.map((tc) => tc.toJson()).toList());
@@ -95,7 +97,9 @@ class ChatStorage {
           ..sessionId = sessionId
           ..role = m.role
           ..toolCallId = m.toolCallId
-          ..tokenCount = m.tokenCount;
+          ..tokenCount = m.tokenCount
+          ..firstTokenMs = m.firstTokenMs
+          ..durationMs = m.durationMs;
         if (m.toolCalls != null) {
           e.toolCallsJson =
               jsonEncode(m.toolCalls!.map((tc) => tc.toJson()).toList());
@@ -157,6 +161,8 @@ class ChatStorage {
         toolCallId: e.toolCallId,
         toolCalls: toolCalls,
         tokenCount: e.tokenCount,
+        firstTokenMs: e.firstTokenMs,
+        durationMs: e.durationMs,
       );
     }).toList();
   }
