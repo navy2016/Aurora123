@@ -172,13 +172,11 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                fluent.Icon(fluent.FluentIcons.text_document, size: 14),
-                const SizedBox(width: 8),
                 Container(
                   constraints: const BoxConstraints(maxWidth: 160),
                   child: fluent.Text(
                     activePresetName ?? l10n.defaultPreset,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

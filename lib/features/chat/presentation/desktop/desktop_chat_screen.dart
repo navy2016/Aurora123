@@ -114,14 +114,14 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         curve: Curves.easeOut,
-                        width: isExpanded ? 200 : 50,
+                        width: isExpanded ? 120 : 50,
                         child: ClipRect(
                           child: OverflowBox(
-                            minWidth: 200,
-                            maxWidth: 200,
+                            minWidth: 120,
+                            maxWidth: 120,
                             alignment: Alignment.centerLeft,
                             child: Container(
-                              width: 200,
+                              width: 120,
                               decoration: const BoxDecoration(
                                 color: Colors.transparent,
                               ),
@@ -169,20 +169,27 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                                           margin: const EdgeInsets.symmetric(
                                               horizontal: 5, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? theme.accentColor
-                                                    .withOpacity(0.1)
-                                                : states.isHovering
-                                                    ? theme.resources
-                                                        .subtleFillColorSecondary
-                                                    : Colors.transparent,
+                                            color: states.isHovering
+                                                ? theme.resources
+                                                    .subtleFillColorSecondary
+                                                : Colors.transparent,
                                             borderRadius:
                                                 BorderRadius.circular(6),
                                           ),
                                           child: Row(
                                             children: [
-                                              SizedBox(
+                                              Container(
                                                 width: 40,
+                                                height: 36,
+                                                margin: const EdgeInsets.all(2),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? theme.accentColor
+                                                          .withOpacity(0.1)
+                                                      : Colors.transparent,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
                                                 child: Center(
                                                   child: fluent.Icon(item.icon,
                                                       size: 20,
@@ -232,20 +239,27 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> {
                                           margin: const EdgeInsets.symmetric(
                                               horizontal: 5, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? theme.accentColor
-                                                    .withOpacity(0.1)
-                                                : states.isHovering
-                                                    ? theme.resources
-                                                        .subtleFillColorSecondary
-                                                    : Colors.transparent,
+                                            color: states.isHovering
+                                                ? theme.resources
+                                                    .subtleFillColorSecondary
+                                                : Colors.transparent,
                                             borderRadius:
                                                 BorderRadius.circular(6),
                                           ),
                                           child: Row(
                                             children: [
-                                              SizedBox(
+                                              Container(
                                                 width: 40,
+                                                height: 36,
+                                                margin: const EdgeInsets.all(2),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? theme.accentColor
+                                                          .withOpacity(0.1)
+                                                      : Colors.transparent,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
                                                 child: Center(
                                                   child: fluent.Icon(item.icon,
                                                       size: 20,

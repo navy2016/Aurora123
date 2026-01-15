@@ -143,15 +143,8 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
             child: Container(
               margin: const EdgeInsets.only(top: 8, right: 8, bottom: 8),
               decoration: BoxDecoration(
-                color: fluent.FluentTheme.of(context).cardColor,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),

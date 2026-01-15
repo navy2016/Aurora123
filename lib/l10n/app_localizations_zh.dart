@@ -161,7 +161,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pickImageFailed => '选择图片失败';
 
   @override
-  String get textTranslation => '文本翻译';
+  String get textTranslation => '翻译';
 
   @override
   String get selectLanguage => '选择语言';

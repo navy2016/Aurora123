@@ -78,7 +78,7 @@
   "goToSettings": "去设置",
   "selectGenerationModel": "选择话题生成模型",
   "pickImageFailed": "选择图片失败",
-  "textTranslation": "文本翻译",
+  "textTranslation": "翻译",
   "selectLanguage": "选择语言",
   "sourceText": "原文",
   "targetText": "译文",

@@ -389,7 +389,7 @@ abstract class AppLocalizations {
   /// No description provided for @textTranslation.
   ///
   /// In zh, this message translates to:
-  /// **'文本翻译'**
+  /// **'翻译'**
   String get textTranslation;
 
   /// No description provided for @selectLanguage.

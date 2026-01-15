@@ -176,7 +176,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
                       activeProvider.name.toUpperCase(),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: fluent.Colors.grey,
+                        color: theme.typography.caption?.color,
                         fontSize: 10,
                       ),
                     ),
