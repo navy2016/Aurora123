@@ -7,12 +7,12 @@ A cross-platform LLM chat client built with Flutter.
 ## Preview
 
 <p align="center">
-  <img src="docs/images/9ef25c4a-8e45-4b0a-9453-4b85b11a8b26.png" width="45%" />
-  <img src="docs/images/677b50b6-3211-456a-b624-47b6199a5c2b.png" width="45%" />
+  <img src="docs/images/bb1491f9-9585-4fac-bd3a-2189d99ea3fe.png" width="45%" />
+  <img src="docs/images/03eeee76-5137-434e-b7d0-96cec51fb60f.png" width="45%" />
 </p>
 <p align="center">
-  <img src="docs/images/148492afc6c30047a11846f997aa0a49.jpg" width="45%" />
-  <img src="docs/images/63196fec13f5fa7687c3797b646e2dcb.jpg" width="45%" />
+  <img src="docs/images/Screenshot_20260116-005207.jpg" width="22%" />
+  <img src="docs/images/Screenshot_20260116-005223.jpg" width="22%" />
 </p>
 
 ## Platforms
@@ -29,7 +29,10 @@ A cross-platform LLM chat client built with Flutter.
 *   **Attachments**: Supports image uploads and analysis.
 *   **Rendering**: Full Markdown support with syntax highlighting and LaTeX math.
 *   **Session Management**: Auto-generates topics for conversations; easy history management.
-*   **Interface**: Dark/Light mode, custom avatars, and streamed responses.
+*   **Interface**: Dark/Light mode, Fluent Design with Mica effect, custom avatars, and streamed responses.
+*   **Translation**: Built-in text translation feature powered by LLM.
+*   **Preset System**: Customizable prompt presets for different conversation scenarios.
+*   **Usage Statistics**: Track token usage, first token time, and response metrics.
 
 ## License
 
