@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../selectable_markdown/selectable_markdown.dart';
+import '../selectable_markdown/animated_streaming_markdown.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import '../../chat_provider.dart';
 import '../../../domain/message.dart';
@@ -372,7 +373,7 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
     if (message.content.isNotEmpty) {
       parts.add(fluent.FluentTheme(
         data: theme,
-        child: SelectableMarkdown(
+        child: AnimatedStreamingMarkdown(
           data: message.content,
           isDark: theme.brightness == Brightness.dark,
           textColor: theme.typography.body!.color!,
