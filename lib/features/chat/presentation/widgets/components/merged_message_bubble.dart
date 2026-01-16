@@ -11,6 +11,7 @@ import '../chat_image_bubble.dart';
 import '../reasoning_display.dart';
 import 'chat_utils.dart';
 import 'tool_output.dart';
+import '../../../../settings/presentation/settings_provider.dart';
 
 
 class MergedMessageBubble extends ConsumerStatefulWidget {
@@ -110,17 +111,43 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Container(
-              margin: const EdgeInsets.only(top: 2),
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: theme.accentColor,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(fluent.FluentIcons.robot,
-                  color: Colors.white, size: 16),
-            ),
+            Builder(builder: (context) {
+              final settingsState = ref.watch(settingsProvider);
+              final avatarPath = settingsState.llmAvatar;
+              if (avatarPath != null && avatarPath.isNotEmpty) {
+                return ClipOval(
+                  child: SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Image.file(
+                      File(avatarPath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: theme.accentColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(fluent.FluentIcons.robot,
+                            color: Colors.white, size: 16),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return Container(
+                margin: const EdgeInsets.only(top: 2),
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.accentColor,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(fluent.FluentIcons.robot,
+                    color: Colors.white, size: 16),
+              );
+            }),
             const SizedBox(width: 8),
             Flexible(
               child: Column(

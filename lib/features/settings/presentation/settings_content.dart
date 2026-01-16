@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'settings_provider.dart';
 import 'usage_stats_view.dart';
@@ -750,9 +751,17 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                       final croppedPath =
                           await AvatarCropper.cropImage(context, result.path);
                       if (croppedPath != null) {
+                        final appDir = await getApplicationDocumentsDirectory();
+                        final avatarDir = Directory('${appDir.path}${Platform.pathSeparator}avatars');
+                        if (!await avatarDir.exists()) {
+                          await avatarDir.create(recursive: true);
+                        }
+                        final fileName = 'avatar_user_${DateTime.now().millisecondsSinceEpoch}.png';
+                        final persistentPath = '${avatarDir.path}${Platform.pathSeparator}$fileName';
+                        await File(croppedPath).copy(persistentPath);
                         ref
                             .read(settingsProvider.notifier)
-                            .setChatDisplaySettings(userAvatar: croppedPath);
+                            .setChatDisplaySettings(userAvatar: persistentPath);
                       }
                     }
                   },
@@ -825,9 +834,17 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                       final croppedPath =
                           await AvatarCropper.cropImage(context, result.path);
                       if (croppedPath != null) {
+                        final appDir = await getApplicationDocumentsDirectory();
+                        final avatarDir = Directory('${appDir.path}${Platform.pathSeparator}avatars');
+                        if (!await avatarDir.exists()) {
+                          await avatarDir.create(recursive: true);
+                        }
+                        final fileName = 'avatar_llm_${DateTime.now().millisecondsSinceEpoch}.png';
+                        final persistentPath = '${avatarDir.path}${Platform.pathSeparator}$fileName';
+                        await File(croppedPath).copy(persistentPath);
                         ref
                             .read(settingsProvider.notifier)
-                            .setChatDisplaySettings(llmAvatar: croppedPath);
+                            .setChatDisplaySettings(llmAvatar: persistentPath);
                       }
                     }
                   },

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../shared/utils/avatar_cropper.dart';
 import 'settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
@@ -292,14 +293,23 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
       if (image != null) {
         final croppedPath = await AvatarCropper.cropImage(context, image.path);
         if (croppedPath != null) {
+          final appDir = await getApplicationDocumentsDirectory();
+          final avatarDir = Directory('${appDir.path}${Platform.pathSeparator}avatars');
+          if (!await avatarDir.exists()) {
+            await avatarDir.create(recursive: true);
+          }
+          final fileName = 'avatar_${isUser ? "user" : "llm"}_${DateTime.now().millisecondsSinceEpoch}.png';
+          final persistentPath = '${avatarDir.path}${Platform.pathSeparator}$fileName';
+          await File(croppedPath).copy(persistentPath);
+
           if (isUser) {
             ref
                 .read(settingsProvider.notifier)
-                .setChatDisplaySettings(userAvatar: croppedPath);
+                .setChatDisplaySettings(userAvatar: persistentPath);
           } else {
             ref
                 .read(settingsProvider.notifier)
-                .setChatDisplaySettings(llmAvatar: croppedPath);
+                .setChatDisplaySettings(llmAvatar: persistentPath);
           }
         }
       }
