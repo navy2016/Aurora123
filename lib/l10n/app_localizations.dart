@@ -1669,6 +1669,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'背景风格'**
   String get backgroundStyle;
+
+  /// No description provided for @renameSession.
+  ///
+  /// In zh, this message translates to:
+  /// **'重命名'**
+  String get renameSession;
+
+  /// No description provided for @renameSessionHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入新名称'**
+  String get renameSessionHint;
 }
 
 class _AppLocalizationsDelegate

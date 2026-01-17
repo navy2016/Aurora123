@@ -830,4 +830,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backgroundStyle => 'Background Style';
+
+  @override
+  String get renameSession => 'Rename';
+
+  @override
+  String get renameSessionHint => 'Enter new name';
 }

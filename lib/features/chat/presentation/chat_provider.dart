@@ -1006,6 +1006,11 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     }
   }
 
+  Future<void> renameSession(String id, String newTitle) async {
+    await _storage.updateSessionTitle(id, newTitle);
+    await loadSessions();
+  }
+
   Future<void> deleteSession(String id) async {
     await _storage.deleteSession(id);
     await loadSessions();

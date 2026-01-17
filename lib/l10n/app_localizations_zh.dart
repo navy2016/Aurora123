@@ -817,4 +817,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backgroundStyle => '背景风格';
+
+  @override
+  String get renameSession => '重命名';
+
+  @override
+  String get renameSessionHint => '输入新名称';
 }

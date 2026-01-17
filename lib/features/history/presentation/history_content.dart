@@ -300,6 +300,11 @@ class _SessionList extends ConsumerWidget {
                               .read(selectedHistorySessionIdProvider.notifier)
                               .state = session.sessionId;
                         },
+                        onRename: (newTitle) {
+                          ref
+                              .read(sessionsProvider.notifier)
+                              .renameSession(session.sessionId, newTitle);
+                        },
                         onDelete: () {
                           ref
                               .read(sessionsProvider.notifier)
@@ -326,12 +331,14 @@ class _SessionItem extends StatefulWidget {
   final Color? statusColor;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final void Function(String newTitle) onRename;
   const _SessionItem({
     required this.session,
     required this.isSelected,
     required this.statusColor,
     required this.onTap,
     required this.onDelete,
+    required this.onRename,
   });
   @override
   State<_SessionItem> createState() => _SessionItemState();
@@ -339,6 +346,60 @@ class _SessionItem extends StatefulWidget {
 
 class _SessionItemState extends State<_SessionItem> {
   bool _isHovering = false;
+  bool _isRenaming = false;
+  late TextEditingController _renameController;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _renameController = TextEditingController();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    _renameController.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus && _isRenaming) {
+      _confirmRename();
+    }
+  }
+
+  void _startRenaming() {
+    setState(() {
+      _isRenaming = true;
+      _renameController.text = widget.session.title;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  void _confirmRename() {
+    if (!mounted) return;
+    final newTitle = _renameController.text.trim();
+    if (newTitle.isNotEmpty && newTitle != widget.session.title) {
+      widget.onRename(newTitle);
+    }
+    setState(() {
+      _isRenaming = false;
+    });
+  }
+
+  void _cancelRenaming() {
+    if (!mounted) return;
+    setState(() {
+      _isRenaming = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = fluent.FluentTheme.of(context);
@@ -378,34 +439,58 @@ class _SessionItemState extends State<_SessionItem> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.session.title,
-                          style: TextStyle(
-                            fontWeight: widget.isSelected
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                            fontSize: 13,
+                      if (_isRenaming)
+                        SizedBox(
+                          height: 24,
+                          child: fluent.TextBox(
+                            controller: _renameController,
+                            focusNode: _focusNode,
+                            style: const TextStyle(fontSize: 13),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: WidgetStateProperty.all(BoxDecoration(
+                              color: theme.resources.controlFillColorDefault,
+                              border: Border.all(color: theme.accentColor),
+                              borderRadius: BorderRadius.circular(4),
+                            )),
+                            onSubmitted: (_) => _confirmRename(),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
+                        )
+                      else
+                        Text(widget.session.title,
+                            style: TextStyle(
+                              fontWeight: widget.isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 2),
-                      Text(
-                          DateFormat('MM/dd HH:mm')
-                                  .format(widget.session.lastMessageTime) +
-                              (widget.session.totalTokens > 0
-                                  ? ' • ${widget.session.totalTokens} tokens'
-                                  : ''),
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: theme.resources.textFillColorSecondary)),
+                      if (!_isRenaming)
+                        Text(
+                            DateFormat('MM/dd HH:mm')
+                                    .format(widget.session.lastMessageTime) +
+                                (widget.session.totalTokens > 0
+                                    ? ' • ${widget.session.totalTokens} tokens'
+                                    : ''),
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: theme.resources.textFillColorSecondary)),
                     ],
                   ),
                 ),
-                if (widget.isSelected || _isHovering)
+                if ((widget.isSelected || _isHovering) && !_isRenaming) ...[
+                  fluent.IconButton(
+                    icon: const fluent.Icon(fluent.FluentIcons.edit, size: 14),
+                    onPressed: _startRenaming,
+                  ),
                   fluent.IconButton(
                     icon:
                         const fluent.Icon(fluent.FluentIcons.delete, size: 14),
                     onPressed: widget.onDelete,
                   ),
+                ],
               ],
             ),
           ),

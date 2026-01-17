@@ -372,5 +372,7 @@
   "themeDark": "Dark",
   "themeSystem": "System",
   "accentColor": "Accent Color",
-  "backgroundStyle": "Background Style"
+  "backgroundStyle": "Background Style",
+  "renameSession": "Rename",
+  "renameSessionHint": "Enter new name"
 }
