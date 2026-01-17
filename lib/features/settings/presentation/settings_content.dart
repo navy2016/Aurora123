@@ -917,32 +917,32 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           ),
           const SizedBox(height: 24),
           fluent.InfoLabel(
-            label: '主题模式',
+            label: l10n.themeMode,
             child: Row(
               children: [
                 fluent.RadioButton(
                   checked: settingsState.themeMode == 'light',
                   onChanged: (_) => ref.read(settingsProvider.notifier).setThemeMode('light'),
-                  content: const Text('浅色'),
+                  content: Text(l10n.themeLight),
                 ),
                 const SizedBox(width: 16),
                 fluent.RadioButton(
                   checked: settingsState.themeMode == 'dark',
                   onChanged: (_) => ref.read(settingsProvider.notifier).setThemeMode('dark'),
-                  content: const Text('深色'),
+                  content: Text(l10n.themeDark),
                 ),
                 const SizedBox(width: 16),
                 fluent.RadioButton(
                   checked: settingsState.themeMode == 'system',
                   onChanged: (_) => ref.read(settingsProvider.notifier).setThemeMode('system'),
-                  content: const Text('跟随系统'),
+                  content: Text(l10n.themeSystem),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
           fluent.InfoLabel(
-            label: '强调色',
+            label: l10n.accentColor,
             child: Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -989,7 +989,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           ),
           const SizedBox(height: 24),
           fluent.InfoLabel(
-            label: '背景风格',
+            label: l10n.backgroundStyle,
             child: Wrap(
               spacing: 12,
               runSpacing: 12,

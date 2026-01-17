@@ -1633,6 +1633,42 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'樱花'**
   String get bgBlossom;
+
+  /// No description provided for @themeMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'主题模式'**
+  String get themeMode;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In zh, this message translates to:
+  /// **'浅色'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In zh, this message translates to:
+  /// **'深色'**
+  String get themeDark;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随系统'**
+  String get themeSystem;
+
+  /// No description provided for @accentColor.
+  ///
+  /// In zh, this message translates to:
+  /// **'强调色'**
+  String get accentColor;
+
+  /// No description provided for @backgroundStyle.
+  ///
+  /// In zh, this message translates to:
+  /// **'背景风格'**
+  String get backgroundStyle;
 }
 
 class _AppLocalizationsDelegate

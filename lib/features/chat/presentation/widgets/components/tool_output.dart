@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BuildToolOutput extends StatefulWidget {
   final String content;
@@ -137,7 +138,12 @@ class _BuildToolOutputState extends State<BuildToolOutput> {
                       return InkWell(
                         onTap: () async {
                           final link = item['link'] as String?;
-                          if (link != null) {}
+                          if (link != null && link.isNotEmpty) {
+                            final uri = Uri.tryParse(link);
+                            if (uri != null) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          }
                         },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(

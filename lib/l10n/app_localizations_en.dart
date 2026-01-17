@@ -812,4 +812,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bgBlossom => 'Blossom';
+
+  @override
+  String get themeMode => 'Theme Mode';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get accentColor => 'Accent Color';
+
+  @override
+  String get backgroundStyle => 'Background Style';
 }

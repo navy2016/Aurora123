@@ -799,4 +799,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get bgBlossom => '樱花';
+
+  @override
+  String get themeMode => '主题模式';
+
+  @override
+  String get themeLight => '浅色';
+
+  @override
+  String get themeDark => '深色';
+
+  @override
+  String get themeSystem => '跟随系统';
+
+  @override
+  String get accentColor => '强调色';
+
+  @override
+  String get backgroundStyle => '背景风格';
 }

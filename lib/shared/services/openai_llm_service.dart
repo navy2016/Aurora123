@@ -192,40 +192,29 @@ class OpenAILLMService implements LLMService {
         'stream': true,
         'stream_options': {'include_usage': true},
       };
-      if (tools != null) {
-        requestData['tools'] = tools;
-        if (toolChoice != null) {
-          requestData['tool_choice'] = toolChoice;
-        }
+      // Text-based search: inject search instructions into system prompt instead of using tools
+      if (tools != null && tools.isNotEmpty) {
         final sysIdx = apiMessages.indexWhere((m) => m['role'] == 'system');
         if (sysIdx != -1) {
           final oldContent = apiMessages[sysIdx]['content'];
           final searchGuide = '''
-## Web Search Tool Usage Guide (`search_web`)
+## Web Search Capability
+You have access to web search. When you need to search for current information, output a search tag in this exact format:
+<search>your search query here</search>
+
 ### When to Use
-Activate the search tool in these scenarios:
-1. **Latest Information**: Queries about current events, news, weather, or sports scores.
-2. **Fact Checking**: Verification of claims or data.
-3. **Specific Knowledge**: Technical documentation, API references, or niche topics not in your training data.
-**Region Note**: Prefer using `region: "us-en"` for high-quality, uncensored results, even for Chinese queries. Only use `zh-cn` if local Chinese news is explicitly required.
-### Citation Rules (STRICT)
-You MUST cite your sources using the format `[index](link)`.
-- **Immediate Placement**: Citations must be placed *immediately* after the relevant sentence or clause, before the period if possible.
-- **No Summary List**: Do NOT include a "References" or "Sources" section at the end of your response.
-- **Multiple Sources**: If a fact is supported by multiple sources, list them together: `[1](link1) [2](link2)`.
-### Response Guidelines
-- **Synthesize**: Combine information from multiple results into a coherent narrative. Don't just list them.
-- **Objectivity**: Report facts as found. If sources conflict, explicitly state the discrepancy.
-- **Completeness**: If search results are insufficient, honestly state what is missing rather than hallucinating.
-### Example
-✅ Correct:
-> "Stable Diffusion 3 was released in early 2024[1](https://stability.ai), featuring improved text handling[2](https://techcrunch.com)."
-❌ Incorrect:
-> "Stable Diffusion 3 was released in early 2024 and has better text."
-> Sources:
-> 1. https:
+Use search for:
+1. **Latest Information**: Current events, news, weather, sports scores
+2. **Fact Checking**: Verification of claims or data
+3. **Specific Knowledge**: Technical documentation or niche topics not in your training data
+
+### Important Rules
+- Output ONLY ONE <search> tag per response when you need to search
+- After outputting the search tag, STOP your response and wait for results
+- Do NOT make up search results - wait for real data
+- When you receive search results, cite sources using `[index](link)` format immediately after the relevant fact
 ''';
-          if (!oldContent.toString().contains('Web Search Tool Usage Guide')) {
+          if (!oldContent.toString().contains('Web Search Capability')) {
             apiMessages[sysIdx]['content'] = '$oldContent\n\n$searchGuide';
           }
         }
@@ -358,38 +347,18 @@ You MUST cite your sources using the format `[index](link)`.
                   yield LLMResponseChunk(usage: totalTokens);
                 }
               }
-              final choices = json['choices'] as List;
+              final choicesRaw = json['choices'];
+              if (choicesRaw == null) continue;
+              final choices = choicesRaw as List;
               if (choices.isNotEmpty) {
                 final delta = choices[0]['delta'];
                 if (delta != null) {
+                  final finishReason = choices[0]['finish_reason'];
                   final String? content = delta['content'];
                   final String? reasoning =
                       delta['reasoning_content'] ?? delta['reasoning'];
-                  if (content != null || reasoning != null) {
-                    yield LLMResponseChunk(
-                        content: content, reasoning: reasoning);
-                  }
                   final toolCalls = delta['tool_calls'];
-                  if (toolCalls != null && toolCalls is List) {
-                    for (final toolCall in toolCalls) {
-                      final int? index = toolCall['index'];
-                      final String? id = toolCall['id'];
-                      final String? type = toolCall['type'];
-                      final Map? function = toolCall['function'];
-                      if (function != null) {
-                        final String? name = function['name'];
-                        final String? arguments = function['arguments'];
-                        yield LLMResponseChunk(toolCalls: [
-                          ToolCallChunk(
-                              index: index,
-                              id: id,
-                              type: type,
-                              name: name,
-                              arguments: arguments)
-                        ]);
-                      }
-                    }
-                  }
+
                   String? imageUrl;
                   if (choices[0]['b64_json'] != null) {
                     imageUrl =
@@ -469,8 +438,8 @@ You MUST cite your sources using the format `[index](link)`.
                         }
                       }
                       if (parsedImages.isNotEmpty) {
-                        yield LLMResponseChunk(
-                            content: '', images: parsedImages);
+                        // Use first image for simplified logic
+                        imageUrl = parsedImages.first;
                       }
                     }
                   }
@@ -480,13 +449,54 @@ You MUST cite your sources using the format `[index](link)`.
                       if (item is Map && item['type'] == 'image_url') {
                         final url = item['image_url']?['url'];
                         if (url != null) {
-                          yield LLMResponseChunk(content: '', images: [url]);
+                           imageUrl = url;
+                           break;
                         }
                       }
                     }
                   }
+
                   if (imageUrl != null) {
-                    yield LLMResponseChunk(content: '', images: [imageUrl]);
+                    yield LLMResponseChunk(
+                        content: '',
+                        images: [imageUrl],
+                        finishReason: finishReason);
+                  } else if (content != null ||
+                      reasoning != null ||
+                      (toolCalls != null && toolCalls is List) ||
+                      finishReason != null) {
+                    // Yield chunk if we have content, reasoning, tools, OR a finish reason
+                    List<ToolCallChunk>? parsedToolCalls;
+                    if (toolCalls != null && toolCalls is List) {
+                      try {
+                        parsedToolCalls = (toolCalls as List).map((toolCall) {
+                          final int? index = toolCall['index'];
+                          final String? id = toolCall['id'];
+                          final String? type = toolCall['type'];
+                          final Map? function = toolCall['function'];
+                          String? name;
+                          String? arguments;
+                          if (function != null) {
+                            name = function['name'];
+                            arguments = function['arguments'];
+                          }
+                          return ToolCallChunk(
+                              index: index,
+                              id: id,
+                              type: type,
+                              name: name,
+                              arguments: arguments);
+                        }).toList().cast<ToolCallChunk>();
+                      } catch (e) {
+                        print('Tool call parse error: $e');
+                        parsedToolCalls = null;
+                      }
+                    }
+                    yield LLMResponseChunk(
+                        content: content,
+                        reasoning: reasoning,
+                        toolCalls: parsedToolCalls,
+                        finishReason: finishReason);
                   }
                 }
               }

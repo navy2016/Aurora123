@@ -265,16 +265,44 @@ class MarkdownGenerator {
       // Post-process specific tags
       if (tag == 'a') {
         final href = node.attributes['href'] ?? '';
-        return [
-          TextSpan(
+        // Check if link text is a citation number (pure digits)
+        final linkText = node.textContent.trim();
+        final isCitationNumber = RegExp(r'^\d+$').hasMatch(linkText);
+        
+        final tapRecognizer = TapGestureRecognizer()
+          ..onTap = () {
+            final uri = Uri.tryParse(href);
+            if (uri != null) {
+              launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          };
+        
+        if (isCitationNumber) {
+          // Wrap citation numbers in brackets: "5" -> "[5]"
+          // Use text directly for proper tap recognition
+          return [
+            TextSpan(
+              text: '[$linkText]',
+              style: style?.copyWith(
+                fontSize: (style.fontSize ?? baseFontSize) * 0.75, // Slightly smaller
+                decoration: TextDecoration.none, // Remove underline
+                fontWeight: FontWeight.w500,
+                color: isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2), // Better blue
+                // Lift it slightly visually (not actual superscript but helps)
+                height: 1.0, 
+              ),
+              recognizer: tapRecognizer,
+            ),
+          ];
+        } else {
+          return [
+            TextSpan(
               children: childrenSpans,
               style: style,
-              recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  final uri = Uri.tryParse(href);
-                  if (uri != null) launchUrl(uri);
-                })
-        ];
+              recognizer: tapRecognizer,
+            )
+          ];
+        }
       } else if (tag == 'p') {
         // Return children. Top level loop adds spacing.
         // If nested deeply, might need check.

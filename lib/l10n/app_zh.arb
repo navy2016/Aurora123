@@ -366,5 +366,11 @@
   "bgMidnight": "午夜",
   "bgDawn": "晨曦",
   "bgNeon": "霓虹",
-  "bgBlossom": "樱花"
+  "bgBlossom": "樱花",
+  "themeMode": "主题模式",
+  "themeLight": "浅色",
+  "themeDark": "深色",
+  "themeSystem": "跟随系统",
+  "accentColor": "强调色",
+  "backgroundStyle": "背景风格"
 }

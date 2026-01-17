@@ -316,6 +316,30 @@ class ChatNotifier extends StateNotifier<ChatState> {
                 firstContentTime = DateTime.now();
               }
             }
+            if (chunk.finishReason == 'malformed_function_call') {
+               aiMsg = Message(
+                id: aiMsg.id,
+                content: aiMsg.content + (chunk.content ?? '') + '\n\n> ⚠️ **System Error**: The AI backend returned a "malformed_function_call" error. This usually means the model tried to call a tool but failed to generate a valid request format. Please try again or switch models.',
+                reasoningContent: (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
+                isUser: false,
+                timestamp: aiMsg.timestamp,
+                attachments: aiMsg.attachments,
+                images: [...aiMsg.images, ...chunk.images],
+                model: aiMsg.model,
+                provider: aiMsg.provider,
+                reasoningDurationSeconds: duration,
+                tokenCount: chunk.usage ?? aiMsg.tokenCount,
+                toolCalls: _mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
+              );
+              final newMessages = List<Message>.from(state.messages);
+              if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
+                newMessages.removeLast();
+              }
+              newMessages.add(aiMsg);
+              if (mounted) state = state.copyWith(messages: newMessages);
+              continueGeneration = false;
+              break; 
+            }
             aiMsg = Message(
               id: aiMsg.id,
               content: aiMsg.content + (chunk.content ?? ''),
@@ -352,7 +376,56 @@ class ChatNotifier extends StateNotifier<ChatState> {
             newMessages.add(aiMsg);
             if (mounted) state = state.copyWith(messages: newMessages);
           }
-          if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
+          // Check for text-based search pattern: <search>query</search>
+          final searchPattern = RegExp(r'<search>(.*?)</search>', dotAll: true);
+          final searchMatch = searchPattern.firstMatch(aiMsg.content);
+          if (searchMatch != null) {
+            final searchQuery = searchMatch.group(1)?.trim() ?? '';
+            if (searchQuery.isNotEmpty) {
+              continueGeneration = true;
+              // Remove the <search> tag from displayed content
+              final cleanedContent = aiMsg.content.replaceAll(searchPattern, '').trim();
+              aiMsg = aiMsg.copyWith(content: cleanedContent);
+              final newMessages = List<Message>.from(state.messages);
+              if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
+                newMessages.removeLast();
+              }
+              newMessages.add(aiMsg);
+              if (mounted) state = state.copyWith(messages: newMessages);
+              
+              // Execute search
+              String searchResult;
+              try {
+                searchResult = await toolManager.executeTool('SearchWeb', {'query': searchQuery},
+                    preferredEngine: settings.searchEngine);
+              } catch (e) {
+                searchResult = jsonEncode({'error': e.toString()});
+              }
+              
+              // Create a tool call ID for display purposes
+              final toolCallId = 'search_${const Uuid().v4().substring(0, 8)}';
+              
+              // Display search results to user as tool message
+              final toolMsg = Message.tool(searchResult, toolCallId: toolCallId);
+              state = state.copyWith(messages: [...state.messages, toolMsg]);
+              
+              // Add assistant message and search result to API messages
+              messagesForApi.add(aiMsg.copyWith(content: '<search>$searchQuery</search>'));
+              messagesForApi.add(Message(
+                id: const Uuid().v4(),
+                role: 'user',
+                content: '## Search Results for "$searchQuery"\n$searchResult\n\nPlease synthesize the above search results and provide a comprehensive answer. Cite sources using [index](link) format.',
+                timestamp: DateTime.now(),
+                isUser: false,
+              ));
+              
+              // Create new AI message for final response
+              aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
+              state = state.copyWith(messages: [...state.messages, aiMsg]);
+            }
+          }
+          // Legacy JSON-based tool calls (fallback)
+          else if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
             continueGeneration = true;
             messagesForApi.add(aiMsg);
             for (final tc in aiMsg.toolCalls!) {
@@ -404,7 +477,46 @@ class ChatNotifier extends StateNotifier<ChatState> {
             }
             newMessages.add(aiMsg);
             state = state.copyWith(messages: newMessages);
-            if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
+            // Check for text-based search pattern in non-streaming mode
+            final searchPattern = RegExp(r'<search>(.*?)</search>', dotAll: true);
+            final searchMatch = searchPattern.firstMatch(aiMsg.content);
+            if (searchMatch != null) {
+              final searchQuery = searchMatch.group(1)?.trim() ?? '';
+              if (searchQuery.isNotEmpty) {
+                continueGeneration = true;
+                final cleanedContent = aiMsg.content.replaceAll(searchPattern, '').trim();
+                aiMsg = aiMsg.copyWith(content: cleanedContent);
+                
+                String searchResult;
+                try {
+                  searchResult = await toolManager.executeTool('SearchWeb', {'query': searchQuery},
+                      preferredEngine: settings.searchEngine);
+                } catch (e) {
+                  searchResult = jsonEncode({'error': e.toString()});
+                }
+                
+                // Create a tool call ID for display purposes
+                final toolCallId = 'search_${const Uuid().v4().substring(0, 8)}';
+                
+                // Display search results to user as tool message
+                final toolMsg = Message.tool(searchResult, toolCallId: toolCallId);
+                state = state.copyWith(messages: [...state.messages, toolMsg]);
+                
+                messagesForApi.add(aiMsg.copyWith(content: '<search>$searchQuery</search>'));
+                messagesForApi.add(Message(
+                  id: const Uuid().v4(),
+                  role: 'user',
+                  content: '## Search Results for "$searchQuery"\n$searchResult\n\nPlease synthesize the above search results and provide a comprehensive answer. Cite sources using [index](link) format.',
+                  timestamp: DateTime.now(),
+                  isUser: false,
+                ));
+                
+                aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
+                state = state.copyWith(messages: [...state.messages, aiMsg]);
+              }
+            }
+            // Legacy JSON-based tool calls (fallback for non-streaming)
+            else if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
               continueGeneration = true;
               messagesForApi.add(aiMsg);
               for (final tc in aiMsg.toolCalls!) {
@@ -425,6 +537,61 @@ class ChatNotifier extends StateNotifier<ChatState> {
               state = state.copyWith(messages: [...state.messages, aiMsg]);
             }
           }
+        }
+      }
+      // If we hit the turn limit and AI message is empty or still has search tag, force a final response
+      if (_currentGenerationId == myGenerationId && 
+          mounted && 
+          turns >= 3 && 
+          (aiMsg.content.isEmpty || aiMsg.content.contains('<search>'))) {
+        // Remove search tag from content if present
+        final cleanedContent = aiMsg.content.replaceAll(RegExp(r'<search>.*?</search>', dotAll: true), '').trim();
+        aiMsg = aiMsg.copyWith(content: cleanedContent);
+        
+        // Add instruction to synthesize without further search
+        messagesForApi.add(Message(
+          id: const Uuid().v4(),
+          role: 'user',
+          content: '请根据已有的搜索结果直接给出答案，不要再进行搜索。如果搜索结果不足，请如实说明。',
+          timestamp: DateTime.now(),
+          isUser: false,
+        ));
+        
+        // Make one final request without search capability
+        aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
+        final newMessages = List<Message>.from(state.messages);
+        // Remove empty messages at the end
+        while (newMessages.isNotEmpty && !newMessages.last.isUser && newMessages.last.content.isEmpty) {
+          newMessages.removeLast();
+        }
+        newMessages.add(aiMsg);
+        state = state.copyWith(messages: newMessages);
+        
+        // Final generation without tools
+        final finalStream = llmService.streamResponse(
+          messagesForApi,
+          attachments: attachments,
+          tools: null, // No tools for final response
+          cancelToken: _currentCancelToken,
+        );
+        await for (final chunk in finalStream) {
+          if (_currentGenerationId != myGenerationId || !mounted) break;
+          aiMsg = Message(
+            id: aiMsg.id,
+            content: aiMsg.content + (chunk.content ?? ''),
+            reasoningContent: (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
+            isUser: false,
+            timestamp: aiMsg.timestamp,
+            model: aiMsg.model,
+            provider: aiMsg.provider,
+            tokenCount: chunk.usage ?? aiMsg.tokenCount,
+          );
+          final updateMessages = List<Message>.from(state.messages);
+          if (updateMessages.isNotEmpty && updateMessages.last.id == aiMsg.id) {
+            updateMessages.removeLast();
+          }
+          updateMessages.add(aiMsg);
+          if (mounted) state = state.copyWith(messages: updateMessages);
         }
       }
       if (_currentGenerationId == myGenerationId) {

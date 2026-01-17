@@ -366,5 +366,11 @@
   "bgMidnight": "Midnight",
   "bgDawn": "Dawn",
   "bgNeon": "Neon",
-  "bgBlossom": "Blossom"
+  "bgBlossom": "Blossom",
+  "themeMode": "Theme Mode",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeSystem": "System",
+  "accentColor": "Accent Color",
+  "backgroundStyle": "Background Style"
 }

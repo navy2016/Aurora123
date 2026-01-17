@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
@@ -184,9 +185,7 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (!_isEditing) ...[
-                          ...messages.expand((msg) {
-                            return _buildMessageParts(msg, theme);
-                          }),
+                          ..._buildMergedContent(messages, theme, lastMsg),
                           if (widget.isGenerating &&
                               lastMsg.role != 'tool' &&
                               lastMsg.content.isEmpty &&
@@ -345,76 +344,170 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
     );
   }
 
-  List<Widget> _buildMessageParts(
-      Message message, fluent.FluentThemeData theme) {
-    if (message.role == 'tool') {
-      return [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: BuildToolOutput(content: message.content),
-        )
-      ];
-    }
+  /// Build merged content: aggregate all reasoning, all tool outputs, then all text content
+  List<Widget> _buildMergedContent(
+      List<Message> messages, fluent.FluentThemeData theme, Message lastMsg) {
     final parts = <Widget>[];
-    if (message.reasoningContent != null &&
-        message.reasoningContent!.isNotEmpty) {
+
+    // 1. Aggregate all reasoning content
+    final allReasoning = StringBuffer();
+    double totalReasoningDuration = 0;
+    DateTime? firstReasoningTimestamp;
+    bool hasActiveReasoning = false;
+
+    for (final msg in messages) {
+      if (msg.reasoningContent != null && msg.reasoningContent!.isNotEmpty) {
+        if (allReasoning.isNotEmpty) {
+          allReasoning.write('\n\n');
+        }
+        allReasoning.write(msg.reasoningContent!);
+        totalReasoningDuration += msg.reasoningDurationSeconds ?? 0;
+        firstReasoningTimestamp ??= msg.timestamp;
+        if (widget.isGenerating && msg == lastMsg) {
+          hasActiveReasoning = true;
+        }
+      }
+    }
+
+    if (allReasoning.isNotEmpty) {
       parts.add(Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
         child: ReasoningDisplay(
-          content: message.reasoningContent!,
+          content: allReasoning.toString(),
           isWindows: Platform.isWindows,
-          isRunning:
-              widget.isGenerating && message == widget.group.messages.last,
-          duration: message.reasoningDurationSeconds,
-          startTime: message.timestamp,
+          isRunning: hasActiveReasoning,
+          duration: totalReasoningDuration > 0 ? totalReasoningDuration : null,
+          startTime: firstReasoningTimestamp,
         ),
       ));
     }
-    if (message.content.isNotEmpty) {
-      parts.add(fluent.FluentTheme(
-        data: theme,
-        child: AnimatedStreamingMarkdown(
-          data: message.content,
-          isDark: theme.brightness == Brightness.dark,
-          textColor: theme.typography.body!.color!,
-        ),
+
+    // 2. Aggregate all tool outputs (search results)
+    final List<Map<String, dynamic>> allResults = [];
+    String? firstErrorMessage;
+    for (final msg in messages) {
+      if (msg.role == 'tool') {
+        try {
+          final data = jsonDecode(msg.content) as Map<String, dynamic>?;
+          if (data != null) {
+            if (data['results'] is List) {
+              final results = data['results'] as List;
+              for (final r in results) {
+                if (r is Map<String, dynamic>) {
+                  allResults.add(r);
+                }
+              }
+            } else if (data['error'] != null || data['message'] != null) {
+              // Capture error/message from failed tool calls
+              firstErrorMessage ??= data['error']?.toString() ?? data['message']?.toString();
+            }
+          }
+        } catch (_) {
+          // If parsing fails, skip this tool output
+        }
+      }
+    }
+
+    if (allResults.isNotEmpty) {
+      // Create merged tool output JSON
+      final mergedJson = jsonEncode({'results': allResults});
+      parts.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: BuildToolOutput(content: mergedJson),
+      ));
+    } else if (firstErrorMessage != null) {
+      // Show error message if no results but there was an error
+      parts.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: BuildToolOutput(content: jsonEncode({'message': firstErrorMessage})),
       ));
     }
-    if (message.images.isNotEmpty) {
-      parts.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: message.images
-                .map((img) => ChatImageBubble(
-                      key: ValueKey(img.hashCode),
-                      imageUrl: img,
-                    ))
-                .toList(),
+
+    // 3. Render text content and images for non-tool messages
+    for (final message in messages) {
+      if (message.role == 'tool') continue;
+
+      if (message.content.isNotEmpty) {
+        parts.add(fluent.FluentTheme(
+          data: theme,
+          child: AnimatedStreamingMarkdown(
+            data: message.content,
+            isDark: theme.brightness == Brightness.dark,
+            textColor: theme.typography.body!.color!,
           ),
-        ),
-      );
-    }
-    // Don't show timestamp footer while the message is still generating
-    final isCurrentlyGenerating = widget.isGenerating && message == widget.group.messages.last;
-    if (!isCurrentlyGenerating) {
-      parts.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 4.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (message.tokenCount != null && message.tokenCount! > 0) ...[
-                Text(
-                  '${message.tokenCount} Tokens',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: theme.typography.body!.color!.withOpacity(0.5),
+        ));
+      }
+
+      if (message.images.isNotEmpty) {
+        parts.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: message.images
+                  .map((img) => ChatImageBubble(
+                        key: ValueKey(img.hashCode),
+                        imageUrl: img,
+                      ))
+                  .toList(),
+            ),
+          ),
+        );
+      }
+
+      // Timestamp footer (only for the last non-tool message, and not while generating)
+      final isCurrentlyGenerating = widget.isGenerating && message == lastMsg;
+      if (!isCurrentlyGenerating && message == messages.where((m) => m.role != 'tool').lastOrNull) {
+        parts.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (message.tokenCount != null && message.tokenCount! > 0) ...[
+                  Text(
+                    '${message.tokenCount} Tokens',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: theme.typography.body!.color!.withOpacity(0.5),
+                    ),
                   ),
-                ),
-                if (message.firstTokenMs != null && message.firstTokenMs! > 0) ...[
+                  if (message.firstTokenMs != null && message.firstTokenMs! > 0) ...[
+                    Text(
+                      ' | ',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.typography.body!.color!.withOpacity(0.5),
+                      ),
+                    ),
+                    Text(
+                      'FirstToken: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.typography.body!.color!.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
+                  if (message.durationMs != null &&
+                      message.durationMs! > 0 &&
+                      message.tokenCount != null &&
+                      message.tokenCount! > 0) ...[
+                    Text(
+                      ' | ',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.typography.body!.color!.withOpacity(0.5),
+                      ),
+                    ),
+                    Text(
+                      'Token/s: ${(message.tokenCount! / (message.durationMs! / 1000)).toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.typography.body!.color!.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
                   Text(
                     ' | ',
                     style: TextStyle(
@@ -422,53 +515,21 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                       color: theme.typography.body!.color!.withOpacity(0.5),
                     ),
                   ),
-                  Text(
-                    'FirstToken: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: theme.typography.body!.color!.withOpacity(0.5),
-                    ),
-                  ),
-                ],
-                if (message.durationMs != null &&
-                    message.durationMs! > 0 &&
-                    message.tokenCount != null &&
-                    message.tokenCount! > 0) ...[
-                  Text(
-                    ' | ',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: theme.typography.body!.color!.withOpacity(0.5),
-                    ),
-                  ),
-                  Text(
-                    'Token/s: ${(message.tokenCount! / (message.durationMs! / 1000)).toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: theme.typography.body!.color!.withOpacity(0.5),
-                    ),
-                  ),
                 ],
                 Text(
-                  ' | ',
+                  '${message.timestamp.month}/${message.timestamp.day} ${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
                   style: TextStyle(
                     fontSize: 10,
                     color: theme.typography.body!.color!.withOpacity(0.5),
                   ),
                 ),
               ],
-              Text(
-                '${message.timestamp.month}/${message.timestamp.day} ${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: theme.typography.body!.color!.withOpacity(0.5),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
+
     return parts;
   }
 }

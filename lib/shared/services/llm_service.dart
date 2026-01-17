@@ -7,12 +7,14 @@ class LLMResponseChunk {
   final List<String> images;
   final List<ToolCallChunk>? toolCalls;
   final int? usage;
+  final String? finishReason;
   const LLMResponseChunk(
       {this.content,
       this.reasoning,
       this.images = const [],
       this.toolCalls,
-      this.usage});
+      this.usage,
+      this.finishReason});
 }
 
 abstract class LLMService {
