@@ -755,4 +755,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cumulativeToken => 'Total Tokens';
+
+  @override
+  String get bgDefault => 'Default';
+
+  @override
+  String get bgPureBlack => 'Pure Black';
+
+  @override
+  String get bgWarm => 'Warm';
+
+  @override
+  String get bgCool => 'Cool';
+
+  @override
+  String get bgRose => 'Rose';
+
+  @override
+  String get bgLavender => 'Lavender';
+
+  @override
+  String get bgMint => 'Mint';
+
+  @override
+  String get bgSky => 'Sky';
+
+  @override
+  String get bgGray => 'Gray';
+
+  @override
+  String get bgSunset => 'Sunset';
+
+  @override
+  String get bgOcean => 'Ocean';
+
+  @override
+  String get bgForest => 'Forest';
+
+  @override
+  String get bgDream => 'Dream';
+
+  @override
+  String get bgAurora => 'Aurora';
+
+  @override
+  String get bgVolcano => 'Volcano';
+
+  @override
+  String get bgMidnight => 'Midnight';
+
+  @override
+  String get bgDawn => 'Dawn';
+
+  @override
+  String get bgNeon => 'Neon';
+
+  @override
+  String get bgBlossom => 'Blossom';
 }

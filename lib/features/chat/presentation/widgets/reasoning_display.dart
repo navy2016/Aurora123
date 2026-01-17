@@ -181,7 +181,7 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 8),
-                      Text(
+                      SelectableText(
                         widget.content,
                         style: TextStyle(
                           fontSize: 13,
@@ -189,6 +189,9 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
                           fontFamily: widget.isWindows ? 'Consolas' : null,
                           color: isDark ? Colors.white60 : Colors.black54,
                         ),
+                        selectionControls: widget.isWindows 
+                            ? fluent.fluentTextSelectionControls 
+                            : null,
                       ),
                     ],
                   ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -79,6 +80,8 @@ class SettingsState {
   final String language;
   final List<ChatPreset> presets;
   final String? lastPresetId;
+  final String themeColor;
+  final String backgroundColor;
   SettingsState({
     required this.providers,
     required this.activeProviderId,
@@ -98,6 +101,8 @@ class SettingsState {
     this.language = 'zh',
     this.presets = const [],
     this.lastPresetId,
+    this.themeColor = 'teal',
+    this.backgroundColor = 'default',
   });
   ProviderConfig get activeProvider =>
       providers.firstWhere((p) => p.id == activeProviderId);
@@ -125,6 +130,8 @@ class SettingsState {
     String? language,
     List<ChatPreset>? presets,
     Object? lastPresetId = _settingsSentinel,
+    String? themeColor,
+    String? backgroundColor,
   }) {
     return SettingsState(
       providers: providers ?? this.providers,
@@ -147,6 +154,8 @@ class SettingsState {
       lastPresetId: lastPresetId == _settingsSentinel
           ? this.lastPresetId
           : lastPresetId as String?,
+      themeColor: themeColor ?? this.themeColor,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
     );
   }
 }
@@ -170,6 +179,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     bool enableSmartTopic = true,
     String? topicGenerationModel,
     String language = 'zh',
+    String themeColor = 'teal',
+    String backgroundColor = 'default',
   })  : _storage = storage,
         super(SettingsState(
           providers: initialProviders,
@@ -187,6 +198,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           topicGenerationModel: topicGenerationModel,
           language: language,
           presets: [],
+          themeColor: themeColor,
+          backgroundColor: backgroundColor,
         )) {
     loadPresets();
   }
@@ -510,6 +523,22 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   Future<void> setLastPresetId(String? id) async {
     state = state.copyWith(lastPresetId: id);
     await _storage.saveLastPresetId(id);
+  }
+
+  Future<void> setThemeColor(String color) async {
+    state = state.copyWith(themeColor: color);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      themeColor: color,
+    );
+  }
+
+  Future<void> setBackgroundColor(String color) async {
+    state = state.copyWith(backgroundColor: color);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      backgroundColor: color,
+    );
   }
 }
 

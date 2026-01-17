@@ -397,21 +397,58 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
         ),
       );
     }
-    parts.add(
-      Padding(
-        padding: const EdgeInsets.only(top: 4.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (message.tokenCount != null && message.tokenCount! > 0) ...[
-              Text(
-                '${message.tokenCount} Tokens',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: theme.typography.body!.color!.withOpacity(0.5),
+    // Don't show timestamp footer while the message is still generating
+    final isCurrentlyGenerating = widget.isGenerating && message == widget.group.messages.last;
+    if (!isCurrentlyGenerating) {
+      parts.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (message.tokenCount != null && message.tokenCount! > 0) ...[
+                Text(
+                  '${message.tokenCount} Tokens',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: theme.typography.body!.color!.withOpacity(0.5),
+                  ),
                 ),
-              ),
-              if (message.firstTokenMs != null && message.firstTokenMs! > 0) ...[
+                if (message.firstTokenMs != null && message.firstTokenMs! > 0) ...[
+                  Text(
+                    ' | ',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: theme.typography.body!.color!.withOpacity(0.5),
+                    ),
+                  ),
+                  Text(
+                    'FirstToken: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: theme.typography.body!.color!.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+                if (message.durationMs != null &&
+                    message.durationMs! > 0 &&
+                    message.tokenCount != null &&
+                    message.tokenCount! > 0) ...[
+                  Text(
+                    ' | ',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: theme.typography.body!.color!.withOpacity(0.5),
+                    ),
+                  ),
+                  Text(
+                    'Token/s: ${(message.tokenCount! / (message.durationMs! / 1000)).toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: theme.typography.body!.color!.withOpacity(0.5),
+                    ),
+                  ),
+                ],
                 Text(
                   ' | ',
                   style: TextStyle(
@@ -419,52 +456,19 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                     color: theme.typography.body!.color!.withOpacity(0.5),
                   ),
                 ),
-                Text(
-                  'FirstToken: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: theme.typography.body!.color!.withOpacity(0.5),
-                  ),
-                ),
-              ],
-              if (message.durationMs != null &&
-                  message.durationMs! > 0 &&
-                  message.tokenCount != null &&
-                  message.tokenCount! > 0) ...[
-                Text(
-                  ' | ',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: theme.typography.body!.color!.withOpacity(0.5),
-                  ),
-                ),
-                Text(
-                  'Token/s: ${(message.tokenCount! / (message.durationMs! / 1000)).toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: theme.typography.body!.color!.withOpacity(0.5),
-                  ),
-                ),
               ],
               Text(
-                ' | ',
+                '${message.timestamp.month}/${message.timestamp.day} ${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
                 style: TextStyle(
                   fontSize: 10,
                   color: theme.typography.body!.color!.withOpacity(0.5),
                 ),
               ),
             ],
-            Text(
-              '${message.timestamp.month}/${message.timestamp.day} ${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(
-                fontSize: 10,
-                color: theme.typography.body!.color!.withOpacity(0.5),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
+      );
+    }
     return parts;
   }
 }

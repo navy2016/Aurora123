@@ -742,4 +742,61 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cumulativeToken => '累计Token';
+
+  @override
+  String get bgDefault => '默认';
+
+  @override
+  String get bgPureBlack => '纯黑';
+
+  @override
+  String get bgWarm => '暖色';
+
+  @override
+  String get bgCool => '冷色';
+
+  @override
+  String get bgRose => '玫瑰';
+
+  @override
+  String get bgLavender => '薰衣草';
+
+  @override
+  String get bgMint => '薄荷';
+
+  @override
+  String get bgSky => '天空';
+
+  @override
+  String get bgGray => '高级灰';
+
+  @override
+  String get bgSunset => '日落';
+
+  @override
+  String get bgOcean => '海洋';
+
+  @override
+  String get bgForest => '森林';
+
+  @override
+  String get bgDream => '梦境';
+
+  @override
+  String get bgAurora => '极光';
+
+  @override
+  String get bgVolcano => '火山';
+
+  @override
+  String get bgMidnight => '午夜';
+
+  @override
+  String get bgDawn => '晨曦';
+
+  @override
+  String get bgNeon => '霓虹';
+
+  @override
+  String get bgBlossom => '樱花';
 }

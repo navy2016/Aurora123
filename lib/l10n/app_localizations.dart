@@ -1519,6 +1519,120 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'累计Token'**
   String get cumulativeToken;
+
+  /// No description provided for @bgDefault.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认'**
+  String get bgDefault;
+
+  /// No description provided for @bgPureBlack.
+  ///
+  /// In zh, this message translates to:
+  /// **'纯黑'**
+  String get bgPureBlack;
+
+  /// No description provided for @bgWarm.
+  ///
+  /// In zh, this message translates to:
+  /// **'暖色'**
+  String get bgWarm;
+
+  /// No description provided for @bgCool.
+  ///
+  /// In zh, this message translates to:
+  /// **'冷色'**
+  String get bgCool;
+
+  /// No description provided for @bgRose.
+  ///
+  /// In zh, this message translates to:
+  /// **'玫瑰'**
+  String get bgRose;
+
+  /// No description provided for @bgLavender.
+  ///
+  /// In zh, this message translates to:
+  /// **'薰衣草'**
+  String get bgLavender;
+
+  /// No description provided for @bgMint.
+  ///
+  /// In zh, this message translates to:
+  /// **'薄荷'**
+  String get bgMint;
+
+  /// No description provided for @bgSky.
+  ///
+  /// In zh, this message translates to:
+  /// **'天空'**
+  String get bgSky;
+
+  /// No description provided for @bgGray.
+  ///
+  /// In zh, this message translates to:
+  /// **'高级灰'**
+  String get bgGray;
+
+  /// No description provided for @bgSunset.
+  ///
+  /// In zh, this message translates to:
+  /// **'日落'**
+  String get bgSunset;
+
+  /// No description provided for @bgOcean.
+  ///
+  /// In zh, this message translates to:
+  /// **'海洋'**
+  String get bgOcean;
+
+  /// No description provided for @bgForest.
+  ///
+  /// In zh, this message translates to:
+  /// **'森林'**
+  String get bgForest;
+
+  /// No description provided for @bgDream.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境'**
+  String get bgDream;
+
+  /// No description provided for @bgAurora.
+  ///
+  /// In zh, this message translates to:
+  /// **'极光'**
+  String get bgAurora;
+
+  /// No description provided for @bgVolcano.
+  ///
+  /// In zh, this message translates to:
+  /// **'火山'**
+  String get bgVolcano;
+
+  /// No description provided for @bgMidnight.
+  ///
+  /// In zh, this message translates to:
+  /// **'午夜'**
+  String get bgMidnight;
+
+  /// No description provided for @bgDawn.
+  ///
+  /// In zh, this message translates to:
+  /// **'晨曦'**
+  String get bgDawn;
+
+  /// No description provided for @bgNeon.
+  ///
+  /// In zh, this message translates to:
+  /// **'霓虹'**
+  String get bgNeon;
+
+  /// No description provided for @bgBlossom.
+  ///
+  /// In zh, this message translates to:
+  /// **'樱花'**
+  String get bgBlossom;
 }
 
 class _AppLocalizationsDelegate

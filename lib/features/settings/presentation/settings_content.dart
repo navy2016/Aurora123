@@ -873,6 +873,19 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
   Widget _buildDisplaySettings() {
     final l10n = AppLocalizations.of(context)!;
     final settingsState = ref.watch(settingsProvider);
+    final theme = fluent.FluentTheme.of(context);
+
+    final colors = [
+      ('Teal', 'teal', fluent.Colors.teal),
+      ('Blue', 'blue', fluent.Colors.blue),
+      ('Red', 'red', fluent.Colors.red),
+      ('Orange', 'orange', fluent.Colors.orange),
+      ('Green', 'green', fluent.Colors.green),
+      ('Purple', 'purple', fluent.Colors.purple),
+      ('Magenta', 'magenta', fluent.Colors.magenta),
+      ('Yellow', 'yellow', fluent.Colors.yellow),
+    ];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -903,15 +916,148 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
             ),
           ),
           const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              border: Border.all(color: fluent.Colors.grey.withOpacity(0.2)),
-              borderRadius: BorderRadius.circular(4),
+          fluent.InfoLabel(
+            label: '主题模式',
+            child: Row(
+              children: [
+                fluent.RadioButton(
+                  checked: settingsState.themeMode == 'light',
+                  onChanged: (_) => ref.read(settingsProvider.notifier).setThemeMode('light'),
+                  content: const Text('浅色'),
+                ),
+                const SizedBox(width: 16),
+                fluent.RadioButton(
+                  checked: settingsState.themeMode == 'dark',
+                  onChanged: (_) => ref.read(settingsProvider.notifier).setThemeMode('dark'),
+                  content: const Text('深色'),
+                ),
+                const SizedBox(width: 16),
+                fluent.RadioButton(
+                  checked: settingsState.themeMode == 'system',
+                  onChanged: (_) => ref.read(settingsProvider.notifier).setThemeMode('system'),
+                  content: const Text('跟随系统'),
+                ),
+              ],
             ),
-            child: Center(
-                child: Text(l10n.themeAndUiComingSoon,
-                    style: const TextStyle(color: Colors.grey))),
+          ),
+          const SizedBox(height: 24),
+          fluent.InfoLabel(
+            label: '强调色',
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: colors.map((c) {
+                final isSelected = settingsState.themeColor == c.$2;
+                return fluent.Tooltip(
+                  message: c.$1,
+                  child: GestureDetector(
+                    onTap: () {
+                      ref.read(settingsProvider.notifier).setThemeColor(c.$2);
+                    },
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: c.$3,
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color: theme.typography.body!.color!,
+                                width: 2,
+                              )
+                            : null,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: isSelected
+                          ? Icon(fluent.FluentIcons.check_mark,
+                              size: 16,
+                              color: c.$2 == 'yellow'
+                                  ? Colors.black
+                                  : Colors.white)
+                          : null,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 24),
+          fluent.InfoLabel(
+            label: '背景风格',
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                (l10n.bgDefault, 'default', [const Color(0xFF2B2B2B)], [const Color(0xFFE0F7FA), const Color(0xFFF1F8E9)]),
+                (l10n.bgPureBlack, 'pure_black', [const Color(0xFF000000)], [const Color(0xFFFFFFFF)]),
+                (l10n.bgWarm, 'warm', [const Color(0xFF1E1C1A), const Color(0xFF2E241E)], [const Color(0xFFFFF8F0), const Color(0xFFFFEBD6)]),
+                (l10n.bgCool, 'cool', [const Color(0xFF1A1C1E), const Color(0xFF1E252E)], [const Color(0xFFF0F8FF), const Color(0xFFD6EAFF)]),
+                (l10n.bgRose, 'rose', [const Color(0xFF2D1A1E), const Color(0xFF3B1E26)], [const Color(0xFFFFF0F5), const Color(0xFFFFD6E4)]),
+                (l10n.bgLavender, 'lavender', [const Color(0xFF1F1A2D), const Color(0xFF261E3B)], [const Color(0xFFF3E5F5), const Color(0xFFE6D6FF)]),
+                (l10n.bgMint, 'mint', [const Color(0xFF1A2D24), const Color(0xFF1E3B2E)], [const Color(0xFFE0F2F1), const Color(0xFFC2E8DC)]),
+                (l10n.bgSky, 'sky', [const Color(0xFF1A202D), const Color(0xFF1E263B)], [const Color(0xFFE1F5FE), const Color(0xFFC7E6FF)]),
+                (l10n.bgGray, 'gray', [const Color(0xFF1E1E1E), const Color(0xFF2C2C2C)], [const Color(0xFFF5F5F5), const Color(0xFFE0E0E0)]),
+                (l10n.bgSunset, 'sunset', [const Color(0xFF1A0B0E), const Color(0xFF4A1F28)], [const Color(0xFFFFF3E0), const Color(0xFFFFCCBC)]),
+                (l10n.bgOcean, 'ocean', [const Color(0xFF05101A), const Color(0xFF0D2B42)], [const Color(0xFFE1F5FE), const Color(0xFF81D4FA)]),
+                (l10n.bgForest, 'forest', [const Color(0xFF051408), const Color(0xFF0E3316)], [const Color(0xFFE8F5E9), const Color(0xFFA5D6A7)]),
+                (l10n.bgDream, 'dream', [const Color(0xFF120817), const Color(0xFF261233)], [const Color(0xFFF3E5F5), const Color(0xFFBBDEFB)]),
+                (l10n.bgAurora, 'aurora', [const Color(0xFF051715), const Color(0xFF181533)], [const Color(0xFFE0F2F1), const Color(0xFFD1C4E9)]),
+                (l10n.bgVolcano, 'volcano', [const Color(0xFF1F0808), const Color(0xFF3E1212)], [const Color(0xFFFFEBEE), const Color(0xFFFFCCBC)]),
+                (l10n.bgMidnight, 'midnight', [const Color(0xFF020205), const Color(0xFF141426)], [const Color(0xFFECEFF1), const Color(0xFF90A4AE)]),
+                (l10n.bgDawn, 'dawn', [const Color(0xFF141005), const Color(0xFF33260D)], [const Color(0xFFFFF8E1), const Color(0xFFFFE082)]),
+                (l10n.bgNeon, 'neon', [const Color(0xFF08181A), const Color(0xFF240C21)], [const Color(0xFFE0F7FA), const Color(0xFFE1BEE7)]),
+                (l10n.bgBlossom, 'blossom', [const Color(0xFF1F050B), const Color(0xFF3D0F19)], [const Color(0xFFFCE4EC), const Color(0xFFF8BBD0)]),
+              ].map((c) {
+                final isSelected = settingsState.backgroundColor == c.$2;
+                final isDark = theme.brightness == fluent.Brightness.dark;
+                final colors = isDark ? c.$3 : c.$4;
+                
+                return fluent.Tooltip(
+                  message: c.$1,
+                  child: GestureDetector(
+                    onTap: () {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setBackgroundColor(c.$2);
+                    },
+                    child: Container(
+                      width: 48,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: colors.length == 1 ? colors.first : null,
+                        gradient: colors.length > 1
+                            ? LinearGradient(
+                                colors: colors,
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                        borderRadius: BorderRadius.circular(4),
+                        border: isSelected
+                            ? Border.all(
+                                color: theme.accentColor,
+                                width: 2,
+                              )
+                            : Border.all(
+                                color: fluent.Colors.grey.withOpacity(0.3),
+                              ),
+                      ),
+                      child: isSelected
+                          ? Icon(fluent.FluentIcons.check_mark,
+                              size: 16,
+                              color: isDark ? Colors.white : Colors.black)
+                          : null,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ],
       ),

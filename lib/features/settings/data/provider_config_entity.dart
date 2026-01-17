@@ -39,4 +39,6 @@ class AppSettingsEntity {
   String? lastTopicId;
   String language = 'zh';
   String? lastPresetId;
+  String? themeColor;
+  String? backgroundColor;
 }

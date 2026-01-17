@@ -352,7 +352,7 @@ class _SessionItemState extends State<_SessionItem> {
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? theme.accentColor.withValues(alpha: 0.1)
+                ? theme.accentColor.normal.withOpacity(0.15)
                 : (_isHovering
                     ? theme.resources.subtleFillColorSecondary
                     : Colors.transparent),
