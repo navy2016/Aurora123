@@ -10,6 +10,8 @@ import 'dart:convert';
 /// Generates a list of widgets from markdown text.
 /// Continuous inline/block text is merged into SelectableText.rich,
 /// while code blocks, tables, and images break the flow.
+import 'package:flutter_math_fork/flutter_math.dart';
+
 class MarkdownGenerator {
   final bool isDark;
   final Color textColor;
@@ -27,7 +29,12 @@ class MarkdownGenerator {
     final document = md.Document(
       extensionSet: md.ExtensionSet.gitHubWeb,
       encodeHtml: false,
-      inlineSyntaxes: [CjkBoldSyntax()],
+      blockSyntaxes: [const LatexBlockSyntax()],
+      inlineSyntaxes: [
+        CjkBoldSyntax(), 
+        CjkSuffixBoldSyntax(),
+        LatexInlineSyntax()
+      ],
     );
     final nodes = document.parseLines(preprocessedText.split('\n'));
 
@@ -139,15 +146,20 @@ class MarkdownGenerator {
           }
         }
       } else {
-        // Inside code block: keep as is, just re-add the backticks we split by
-        buffer.write('```$segment```');
+        // Inside code block: keep as is, just re-add the backticks we split by.
+        // We remove trailing whitespace (indentation) from the segment 
+        // to ensure the closing backticks appear at the start of the line.
+        // This prevents issues where indented closing fences (e.g. inside lists)
+        // are treated as content because they don't match the unindented opening fence.
+        final cleanSegment = segment.replaceFirst(RegExp(r'[ \t]+$'), '');
+        buffer.write('```$cleanSegment```');
       }
     }
     return buffer.toString();
   }
 
   bool _isHardBarrier(String tag) {
-    return tag == 'pre' || tag == 'table' || tag == 'img' || tag == 'hr';
+    return tag == 'pre' || tag == 'table' || tag == 'img' || tag == 'hr' || tag == 'latex';
   }
 
   bool _isBlockElement(String tag) {
@@ -184,7 +196,16 @@ class MarkdownGenerator {
         // If this list is nested (indent > 0), ensure we start on a new line?
         // Handled by parent li processing generally.
 
-        int listIndex = 0;
+        // For ordered lists, respect the 'start' attribute if present
+        int startIndex = 0;
+        if (tag == 'ol') {
+          final startAttr = node.attributes['start'];
+          if (startAttr != null) {
+            startIndex = (int.tryParse(startAttr) ?? 1) - 1; // Convert to 0-indexed
+          }
+        }
+
+        int listIndex = startIndex;
         for (final child in node.children ?? []) {
           if (child is md.Element && child.tag == 'li') {
             // Pass context to li
@@ -275,6 +296,46 @@ class MarkdownGenerator {
                   fontSize: (baseFontSize - 1), // Slightly smaller for code
                 ),
               ),
+            ),
+          )
+        ];
+      }
+
+      if (tag == 'latex') {
+        final latex = node.textContent;
+        final isBold = context.currentStyle?.fontWeight == FontWeight.bold;
+        final displayLatex = isBold ? '\\boldsymbol{$latex}' : latex;
+        
+        // Use WidgetSpan for inline math
+        return [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Render the math
+                Math.tex(
+                  displayLatex,
+                  textStyle: (context.currentStyle ?? const TextStyle()).copyWith(
+                    // Ensure color is respected if not overridden by latex
+                    color: textColor, 
+                    fontSize: baseFontSize,
+                  ),
+                ),
+                // Invisible text overlay for selection/copying
+                // We use a small font size text that contains the source. 
+                // Positioned.fill ensures it covers the area for selection hit-testing.
+                Semantics(
+                  label: latex,
+                  child: Opacity(
+                    opacity: 0.0,
+                    child: Text(
+                      latex,
+                      style: const TextStyle(color: Colors.transparent, fontSize: 1),
+                    ),
+                  ),
+                ),
+              ],
             ),
           )
         ];
@@ -459,9 +520,21 @@ class MarkdownGenerator {
         return _buildImage(element, index);
       case 'hr':
         return const Divider(height: 24, thickness: 1);
+      case 'latex':
+        return _buildLatex(element, index);
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildLatex(md.Element element, int index) {
+    final latex = element.textContent;
+    return _LatexBlock(
+      key: ValueKey('latex_$index'),
+      latex: latex,
+      textColor: textColor,
+      baseFontSize: baseFontSize,
+    );
   }
 
   Widget _buildCodeBlock(md.Element element, int index) {
@@ -960,5 +1033,142 @@ class CjkBoldSyntax extends md.InlineSyntax {
     parser.addNode(element);
 
     return true;
+  }
+}
+
+class LatexBlockSyntax extends md.BlockSyntax {
+  const LatexBlockSyntax();
+
+  @override
+  RegExp get pattern => RegExp(r'^(\$\$)', multiLine: true);
+
+  @override
+  md.Node parse(md.BlockParser parser) {
+    // The current line strictly matches the pattern (starts with $$)
+    final line = parser.current.content;
+
+    // Check for single line: $$ content $$
+    // We want to avoid matching just "$$" as single line empty block if it's meant to be start of multiline.
+    if (line.trim().length > 2 && line.trim().endsWith(r'$$')) {
+      final content = line.trim().substring(2, line.trim().length - 2);
+      parser.advance();
+      return md.Element('latex', [md.Text(content)]);
+    }
+
+    // Multiline
+    final childLines = <String>[];
+    parser.advance(); // consume opening $$
+
+    while (!parser.isDone) {
+      final currentLine = parser.current.content;
+      if (currentLine.trim().startsWith(r'$$')) {
+        parser.advance(); // consume closing $$
+        break;
+      }
+      childLines.add(currentLine);
+      parser.advance();
+    }
+
+    return md.Element('latex', [md.Text(childLines.join('\n'))]);
+  }
+}
+
+class LatexInlineSyntax extends md.InlineSyntax {
+  // Match single $ but not double $$.
+  // Be careful not to match currency like $100.
+  // Usually math requires $...$ with no space after first $ and no space before last $.
+  // Regex: \$[^$]+\$
+  // To avoid matching $100, checking for non-digit might be too aggressive.
+  // Standard latex in markdown often uses: (?<!\\)\$((?:\\.|[^\\$])*?)(?<!\\)\$
+  
+  LatexInlineSyntax() : super(r'(?<!\\)\$((?:\\.|[^\\$])*?)(?<!\\)\$');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    // If the match is empty or just $, ignore? 
+    // The regex captures the content in group 1.
+    
+    final content = match[1]!;
+    // Avoid empty
+    if (content.trim().isEmpty) return false;
+    
+    final element = md.Element('latex', [md.Text(content)]);
+    parser.addNode(element);
+    return true;
+  }
+}
+
+/// Matches `**content**` when followed immediately by a CJK character or punctuation.
+/// This fixes cases where standard markdown fails to recognize the closing `**` because
+/// the following CJK character is treated as a word character (making `**` left-flanking).
+class CjkSuffixBoldSyntax extends md.InlineSyntax {
+  CjkSuffixBoldSyntax() : super(r'\*\*(.+?)\*\*(?=[\u4e00-\u9fff\uff00-\uffef])');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final innerContent = match[1]!;
+    final innerParser = md.InlineParser(innerContent, parser.document);
+    final children = innerParser.parse();
+    final element = md.Element('strong', children);
+    parser.addNode(element);
+    return true;
+  }
+}
+
+
+class _LatexBlock extends StatefulWidget {
+  final String latex;
+  final Color textColor;
+  final double baseFontSize;
+
+  const _LatexBlock({
+    super.key,
+    required this.latex,
+    required this.textColor,
+    required this.baseFontSize,
+  });
+
+  @override
+  State<_LatexBlock> createState() => _LatexBlockState();
+}
+
+class _LatexBlockState extends State<_LatexBlock> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          width: constraints.maxWidth,
+          alignment: Alignment.center,
+          child: Scrollbar(
+            controller: _controller,
+            thumbVisibility: true,
+            // Add padding to prevent overlap. On desktop scrollbars are usually overlay, so we need extra padding.
+            child: SingleChildScrollView(
+              controller: _controller,
+              scrollDirection: Axis.horizontal,
+              // Add bottom padding for scrollbar (usually ~10-12px is enough if overlay, but let's be safe with 16)
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 16),
+              child: Math.tex(
+                widget.latex,
+                textStyle: TextStyle(
+                  fontSize: widget.baseFontSize + 2,
+                  color: widget.textColor,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

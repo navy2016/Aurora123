@@ -49,6 +49,20 @@ class SettingsStorage {
 
   Future<List<ProviderConfigEntity>> loadProviders() async {
     final providers = await _isar.providerConfigEntitys.where().findAll();
+    final order = await loadProviderOrder();
+    if (order.isEmpty) return providers;
+    
+    // Sort providers based on order list
+    final Map<String, int> orderMap = {
+      for (var i = 0; i < order.length; i++) order[i]: i
+    };
+    
+    providers.sort((a, b) {
+      final indexA = orderMap[a.providerId] ?? 9999;
+      final indexB = orderMap[b.providerId] ?? 9999;
+      return indexA.compareTo(indexB);
+    });
+    
     return providers;
   }
 
@@ -187,6 +201,30 @@ class SettingsStorage {
   Future<void> saveSessionOrder(List<String> order) async {
     try {
       final file = await _orderFile;
+      await file.writeAsString(jsonEncode(order));
+    } catch (e) {}
+  }
+
+  Future<File> get _providerOrderFile async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/provider_order.json');
+  }
+
+  Future<List<String>> loadProviderOrder() async {
+    try {
+      final file = await _providerOrderFile;
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final List<dynamic> json = jsonDecode(content);
+        return json.cast<String>();
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  Future<void> saveProviderOrder(List<String> order) async {
+    try {
+      final file = await _providerOrderFile;
       await file.writeAsString(jsonEncode(order));
     } catch (e) {}
   }

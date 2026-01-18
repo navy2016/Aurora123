@@ -261,6 +261,47 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
     );
   }
 
+  void _showRenameDialog(BuildContext context, ProviderConfig provider) {
+    final controller = TextEditingController(text: provider.name);
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return fluent.ContentDialog(
+          title: Text(l10n.renameProvider),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              fluent.TextBox(
+                controller: controller,
+                placeholder: 'Provider Name', // Fallback or add l10n.enterProviderName if available
+              ),
+            ],
+          ),
+          actions: [
+            fluent.Button(
+              child: Text(l10n.cancel),
+              onPressed: () => Navigator.pop(context),
+            ),
+            fluent.FilledButton(
+              child: Text(l10n.save),
+              onPressed: () {
+                if (controller.text.isNotEmpty) {
+                  ref.read(settingsProvider.notifier).updateProvider(
+                        id: provider.id,
+                        name: controller.text,
+                      );
+                }
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildProviderSettings(
       SettingsState settingsState, ProviderConfig viewingProvider) {
     final l10n = AppLocalizations.of(context)!;
@@ -285,71 +326,95 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                         fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
               Expanded(
-                child: fluent.ListView.builder(
+                child: ReorderableListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
+                  buildDefaultDragHandles: false,
+                  onReorder: (oldIndex, newIndex) {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .reorderProviders(oldIndex, newIndex);
+                  },
                   itemCount: settingsState.providers.length,
                   itemBuilder: (context, index) {
                     final provider = settingsState.providers[index];
                     final isSelected =
                         provider.id == settingsState.viewingProviderId;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 2),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? fluent.FluentTheme.of(context)
-                                .accentColor
-                                .withOpacity(0.1)
-                            : null,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: fluent.ListTile(
-                        title: Text(
-                          provider.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: isSelected
-                                ? fluent.FluentTheme.of(context).accentColor
-                                : null,
-                            fontWeight: isSelected ? FontWeight.w600 : null,
-                          ),
+                    return ReorderableDelayedDragStartListener(
+                      key: ValueKey(provider.id),
+                      index: index,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 2),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? fluent.FluentTheme.of(context)
+                                  .accentColor
+                                  .withOpacity(0.1)
+                              : null,
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        onPressed: () {
-                          ref
-                              .read(settingsProvider.notifier)
-                              .viewProvider(provider.id);
-                        },
-                        trailing: fluent.IconButton(
-                          icon: Icon(fluent.FluentIcons.delete,
-                              size: 12,
-                              color: fluent.FluentTheme.of(context)
-                                  .resources
-                                  .textFillColorSecondary),
+                        child: fluent.ListTile(
+                          title: Text(
+                            provider.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? fluent.FluentTheme.of(context).accentColor
+                                  : null,
+                              fontWeight: isSelected ? FontWeight.w600 : null,
+                            ),
+                          ),
                           onPressed: () {
-                            showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return fluent.ContentDialog(
-                                    title: Text(l10n.deleteProvider),
-                                    content: Text(l10n.deleteProviderConfirm),
-                                    actions: [
-                                      fluent.Button(
-                                        child: Text(l10n.cancel),
-                                        onPressed: () => Navigator.pop(context),
-                                      ),
-                                      fluent.FilledButton(
-                                        child: Text(l10n.delete),
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          ref
-                                              .read(settingsProvider.notifier)
-                                              .deleteProvider(provider.id);
-                                        },
-                                      ),
-                                    ],
-                                  );
-                                });
+                            ref
+                                .read(settingsProvider.notifier)
+                                .viewProvider(provider.id);
                           },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              fluent.IconButton(
+                                icon: Icon(fluent.FluentIcons.edit,
+                                    size: 12,
+                                    color: fluent.FluentTheme.of(context)
+                                        .resources
+                                        .textFillColorSecondary),
+                                onPressed: () => _showRenameDialog(context, provider),
+                              ),
+                              const SizedBox(width: 4),
+                              fluent.IconButton(
+                                icon: Icon(fluent.FluentIcons.delete,
+                                    size: 12,
+                                    color: fluent.FluentTheme.of(context)
+                                        .resources
+                                        .textFillColorSecondary),
+                                onPressed: () {
+                                  showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return fluent.ContentDialog(
+                                          title: Text(l10n.deleteProvider),
+                                          content: Text(l10n.deleteProviderConfirm),
+                                          actions: [
+                                            fluent.Button(
+                                              child: Text(l10n.cancel),
+                                              onPressed: () => Navigator.pop(context),
+                                            ),
+                                            fluent.FilledButton(
+                                              child: Text(l10n.delete),
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                                ref
+                                                    .read(settingsProvider.notifier)
+                                                    .deleteProvider(provider.id);
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      });
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -380,18 +445,8 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    fluent.InfoLabel(
-                      label: l10n.providerName,
-                      child: _buildStyledTextBox(
-                        controller: _nameController,
-                        placeholder: 'My Provider',
-                        onChanged: (value) {
-                          ref.read(settingsProvider.notifier).updateProvider(
-                              id: viewingProvider.id, name: value);
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    // Provider name edit removed
+
                     fluent.InfoLabel(
                       label: 'Color (Hex)',
                       child: Row(
@@ -573,6 +628,22 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                                       Expanded(
                                           child: Text(model,
                                               overflow: TextOverflow.ellipsis)),
+                                      fluent.IconButton(
+                                        icon: Icon(
+                                            viewingProvider.isModelEnabled(model)
+                                                ? fluent.FluentIcons.accept
+                                                : fluent.FluentIcons.blocked,
+                                            size: 14,
+                                            color: viewingProvider
+                                                    .isModelEnabled(model)
+                                                ? fluent.Colors.green
+                                                : fluent.Colors.red),
+                                        onPressed: () => ref
+                                            .read(settingsProvider.notifier)
+                                            .toggleModelDisabled(
+                                                viewingProvider.id, model),
+                                      ),
+                                      const SizedBox(width: 8),
                                       fluent.IconButton(
                                         icon: const fluent.Icon(
                                             fluent.FluentIcons.settings,

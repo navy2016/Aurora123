@@ -96,6 +96,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
 
       // Add models
       for (final model in provider.models) {
+        if (!provider.isModelEnabled(model)) continue;
         final isSelected =
             activeProvider.id == provider.id && selected == model;
         items.add(ColoredDropdownItem(
@@ -202,6 +203,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
                   fontWeight: FontWeight.bold, color: Colors.grey)),
         ));
         for (final model in provider.models) {
+          if (!provider.isModelEnabled(model)) continue;
           items.add(PopupMenuItem<String>(
             value: '${provider.id}|$model',
             height: 32,

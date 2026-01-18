@@ -59,6 +59,15 @@ class ProviderConfig {
       isEnabled: isEnabled ?? this.isEnabled,
     );
   }
+  bool isModelEnabled(String modelId) {
+    if (modelSettings.containsKey(modelId)) {
+      final settings = modelSettings[modelId]!;
+      if (settings['_aurora_model_disabled'] == true) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 class SettingsState {
@@ -349,6 +358,35 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     if (newActiveId != id) {
       await selectProvider(newActiveId);
     }
+  }
+
+  Future<void> reorderProviders(int oldIndex, int newIndex) async {
+    if (state.providers.length <= 1) return;
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final items = List<ProviderConfig>.from(state.providers);
+    final item = items.removeAt(oldIndex);
+    items.insert(newIndex, item);
+    
+    state = state.copyWith(providers: items);
+    
+    final orderIds = items.map((p) => p.id).toList();
+    await _storage.saveProviderOrder(orderIds);
+  }
+
+  Future<void> toggleModelDisabled(String providerId, String modelId) async {
+    final provider = state.providers.firstWhere((p) => p.id == providerId);
+    final currentSettings = provider.modelSettings[modelId] ?? {};
+    final isDisabled = currentSettings['_aurora_model_disabled'] == true;
+    
+    final newSettings = Map<String, dynamic>.from(currentSettings);
+    newSettings['_aurora_model_disabled'] = !isDisabled;
+    
+    final newModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+    newModelSettings[modelId] = newSettings;
+    
+    await updateProvider(id: providerId, modelSettings: newModelSettings);
   }
 
   Future<void> fetchModels() async {

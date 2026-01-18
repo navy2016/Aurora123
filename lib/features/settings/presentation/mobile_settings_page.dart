@@ -165,13 +165,31 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                 return ListTile(
                   leading: const Icon(Icons.account_tree_outlined),
                   title: Text(model),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.settings_outlined),
-                    onPressed: () =>
-                        _showModelConfigDialog(context, activeProvider, model),
-                  ),
-                );
-              },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            activeProvider.isModelEnabled(model)
+                                ? Icons.check_circle
+                                : Icons.cancel,
+                            color: activeProvider.isModelEnabled(model)
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                          onPressed: () => ref
+                              .read(settingsProvider.notifier)
+                              .toggleModelDisabled(activeProvider.id, model),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.settings_outlined),
+                          onPressed: () => _showModelConfigDialog(
+                              context, activeProvider, model),
+                        ),
+                      ],
+                    ),
+                  );
+                },
             )
           else if (activeProvider != null)
             SliverToBoxAdapter(
@@ -578,111 +596,130 @@ class _ModelConfigDialog extends StatefulWidget {
 }
 
 class _ModelConfigDialogState extends State<_ModelConfigDialog> {
-  late Map<String, dynamic> _settings;
+  late Map<String, dynamic> _modelSettings;
+  
+  // Thinking config temporary state
+  bool _thinkingEnabled = false;
+  String _thinkingBudget = '';
+  String _thinkingMode = 'auto';
+
   @override
   void initState() {
     super.initState();
-    _settings = Map.from(widget.initialSettings);
+    _loadSettings();
   }
 
-  void _saveParameter(String? oldKey, String newKey, dynamic value) {
-    setState(() {
-      if (oldKey != null && oldKey != newKey) {
-        _settings.remove(oldKey);
+  void _loadSettings() {
+    _modelSettings = Map<String, dynamic>.from(widget.initialSettings);
+
+    final thinkingConfig = _modelSettings['_aurora_thinking_config'];
+    // Check for new structure first
+    if (thinkingConfig != null && thinkingConfig is Map) {
+      _thinkingEnabled = thinkingConfig['enabled'] == true;
+      _thinkingBudget = thinkingConfig['budget']?.toString() ?? '';
+      _thinkingMode = thinkingConfig['mode']?.toString() ?? 'auto';
+    } else {
+      // Fallback/Migration for old structure if present
+      // Old keys: _aurora_thinking_enabled, _aurora_thinking_value, _aurora_thinking_mode
+      if (_modelSettings.containsKey('_aurora_thinking_enabled')) {
+        _thinkingEnabled = _modelSettings['_aurora_thinking_enabled'] == true;
+        _thinkingBudget = _modelSettings['_aurora_thinking_value']?.toString() ?? '';
+        _thinkingMode = _modelSettings['_aurora_thinking_mode']?.toString() ?? 'auto';
+        
+        // Clean up old keys immediately from local copy so they don't persist
+        _modelSettings.remove('_aurora_thinking_enabled');
+        _modelSettings.remove('_aurora_thinking_value');
+        _modelSettings.remove('_aurora_thinking_mode');
+      } else {
+        _thinkingEnabled = false;
+        _thinkingBudget = '';
+        _thinkingMode = 'auto';
       }
-      _settings[newKey] = value;
-    });
-    widget.onSave(_settings);
+    }
   }
 
-  void _removeParameter(String key) {
+  void _saveSettings({
+    bool? thinkingEnabled,
+    String? thinkingBudget,
+    String? thinkingMode,
+    Map<String, dynamic>? customParams,
+  }) {
+    // Update local state
+    if (thinkingEnabled != null) _thinkingEnabled = thinkingEnabled;
+    if (thinkingBudget != null) _thinkingBudget = thinkingBudget;
+    if (thinkingMode != null) _thinkingMode = thinkingMode;
+
+    // Construct new settings map
+    final newSettings = Map<String, dynamic>.from(_modelSettings);
+    
+    // Handle Thinking Config
+    if (_thinkingEnabled) {
+      newSettings['_aurora_thinking_config'] = {
+        'enabled': true,
+        'budget': _thinkingBudget,
+        'mode': _thinkingMode,
+      };
+    } else {
+      newSettings.remove('_aurora_thinking_config');
+    }
+
+    // Handle Custom Params
+    if (customParams != null) {
+      // Remove all non-internal keys (those not starting with _aurora_)
+      newSettings.removeWhere((key, _) => !key.startsWith('_aurora_'));
+      // Add new custom params
+      newSettings.addAll(customParams);
+    }
+
     setState(() {
-      _settings.remove(key);
+      _modelSettings = newSettings;
     });
-    widget.onSave(_settings);
+
+    widget.onSave(newSettings);
   }
 
-  void _showEditDialog([String? key, dynamic value]) {
-    showDialog(
+
+
+  Future<void> _showEditDialog([String? key, dynamic value]) async {
+     await showDialog(
       context: context,
       builder: (ctx) => _ParameterConfigDialog(
         initialKey: key,
         initialValue: value,
-        onSave: (newKey, newValue) => _saveParameter(key, newKey, newValue),
+        onSave: (newKey, newValue) {
+          final currentParams = Map<String, dynamic>.fromEntries(
+            _modelSettings.entries.where((e) => !e.key.startsWith('_aurora_'))
+          );
+          
+          if (key != null && key != newKey) {
+            currentParams.remove(key);
+          }
+          currentParams[newKey] = newValue;
+          _saveSettings(customParams: currentParams);
+        },
       ),
     );
   }
 
-  Widget _buildThinkingConfig(AppLocalizations l10n) {
-    final thinkingEnabled = _settings['_aurora_thinking_enabled'] == true;
-    final thinkingValue = _settings['_aurora_thinking_value']?.toString() ?? '';
-    final thinkingMode =
-        _settings['_aurora_thinking_mode']?.toString() ?? 'auto';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(l10n.thinkingConfig,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: Text(l10n.enableThinking,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-          value: thinkingEnabled,
-          onChanged: (v) => _saveParameter(null, '_aurora_thinking_enabled', v),
-        ),
-        if (thinkingEnabled) ...[
-          Padding(
-            padding: const EdgeInsets.only(left: 0, bottom: 12, top: 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _ThinkingBudgetInput(
-                  initialValue: thinkingValue,
-                  labelText: l10n.thinkingBudget,
-                  hintText: l10n.thinkingBudgetHint,
-                  onChanged: (v) =>
-                      _saveParameter(null, '_aurora_thinking_value', v),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: thinkingMode,
-                  decoration: InputDecoration(
-                    labelText: l10n.transmissionMode,
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 12),
-                  ),
-                  items: [
-                    DropdownMenuItem(value: 'auto', child: Text(l10n.modeAuto)),
-                    DropdownMenuItem(
-                        value: 'extra_body', child: Text(l10n.modeExtraBody)),
-                    DropdownMenuItem(
-                        value: 'reasoning_effort',
-                        child: Text(l10n.modeReasoningEffort)),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) {
-                      _saveParameter(null, '_aurora_thinking_mode', v);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          const Divider(),
-        ],
-      ],
+  void _removeParam(String key) {
+    final currentParams = Map<String, dynamic>.fromEntries(
+      _modelSettings.entries.where((e) => !e.key.startsWith('_aurora_'))
     );
+    currentParams.remove(key);
+    _saveSettings(customParams: currentParams);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
-    final displayKeys =
-        _settings.keys.where((k) => !k.startsWith('_aurora_')).toList();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Extract custom params for display (exclude _aurora_ keys)
+    final customParams = Map<String, dynamic>.fromEntries(
+      _modelSettings.entries.where((e) => !e.key.startsWith('_aurora_'))
+    );
+
     return AlertDialog(
       backgroundColor: isDark ? const Color(0xFF202020) : Colors.white,
       surfaceTintColor: Colors.transparent,
@@ -690,57 +727,118 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(widget.modelName,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           Text(l10n.modelConfig,
-              style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         ],
       ),
       content: SizedBox(
         width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildThinkingConfig(l10n),
-            if (displayKeys.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                    child: Text(l10n.noCustomParams,
-                        style: const TextStyle(color: Colors.grey))),
-              )
-            else
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: displayKeys.length,
-                  itemBuilder: (context, index) {
-                    final key = displayKeys[index];
-                    final value = _settings[key];
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(key,
-                          style: const TextStyle(fontWeight: FontWeight.w500)),
-                      subtitle: Text('$value',
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      onTap: () => _showEditDialog(key, value),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20),
-                        onPressed: () => _removeParameter(key),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Thinking Configuration Card
+              _buildSectionCard(
+                context,
+                title: l10n.thinkingConfig,
+                icon: Icons.lightbulb_outline,
+                headerAction: Switch(
+                  value: _thinkingEnabled,
+                  onChanged: (v) => _saveSettings(thinkingEnabled: v),
+                ),
+                child: _thinkingEnabled ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: TextEditingController(text: _thinkingBudget)
+                        ..selection = TextSelection.collapsed(offset: _thinkingBudget.length),
+                      decoration: InputDecoration(
+                        labelText: l10n.thinkingBudget,
+                        hintText: l10n.thinkingBudgetHint,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
                       ),
-                    );
-                  },
+                      onChanged: (v) => _saveSettings(thinkingBudget: v),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _thinkingMode,
+                      decoration: InputDecoration(
+                        labelText: l10n.transmissionMode,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: [
+                        DropdownMenuItem(value: 'auto', child: Text(l10n.modeAuto)),
+                        DropdownMenuItem(value: 'extra_body', child: Text(l10n.modeExtraBody)),
+                        DropdownMenuItem(value: 'reasoning_effort', child: Text(l10n.modeReasoningEffort)),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) _saveSettings(thinkingMode: v);
+                      },
+                    ),
+                  ],
+                ) : null,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Custom Parameters Card
+              _buildSectionCard(
+                context,
+                title: l10n.configureModelParams, // Or l10n.customParameters if available
+                subtitle: l10n.paramsHigherPriority,
+                icon: Icons.settings_outlined,
+                headerAction: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () => _showEditDialog(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    if (customParams.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.tune, size: 32, color: Colors.grey),
+                            const SizedBox(height: 8),
+                            Text(
+                              l10n.noCustomParams,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              child: Text(l10n.addCustomParam),
+                               onPressed: () => _showEditDialog(),
+                            )
+                          ],
+                        ),
+                      )
+                    else
+                      ...customParams.entries.map((e) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: _buildParamItem(e.key, e.value, theme),
+                        );
+                      }),
+                  ],
                 ),
               ),
-            const Divider(),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.add_circle_outline),
-              title: Text(l10n.addCustomParam),
-              onTap: () => _showEditDialog(),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [
@@ -751,84 +849,130 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
       ],
     );
   }
-}
 
-class _ThinkingBudgetInput extends StatefulWidget {
-  final String initialValue;
-  final String labelText;
-  final String hintText;
-  final ValueChanged<String> onChanged;
-  const _ThinkingBudgetInput({
-    required this.initialValue,
-    required this.labelText,
-    required this.hintText,
-    required this.onChanged,
-  });
-  @override
-  State<_ThinkingBudgetInput> createState() => _ThinkingBudgetInputState();
-}
-
-class _ThinkingBudgetInputState extends State<_ThinkingBudgetInput> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-  String _lastSavedValue = '';
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-    _focusNode = FocusNode();
-    _lastSavedValue = widget.initialValue;
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
-        _saveValue();
-      }
-    });
-  }
-
-  @override
-  void didUpdateWidget(_ThinkingBudgetInput oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.initialValue != _lastSavedValue &&
-        widget.initialValue != _controller.text) {
-      _controller.text = widget.initialValue;
-      _lastSavedValue = widget.initialValue;
-    }
-  }
-
-  @override
-  void dispose() {
-    if (_controller.text != _lastSavedValue) {
-      widget.onChanged(_controller.text);
-    }
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _saveValue() {
-    if (_controller.text != _lastSavedValue) {
-      _lastSavedValue = _controller.text;
-      widget.onChanged(_controller.text);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: _controller,
-      focusNode: _focusNode,
-      decoration: InputDecoration(
-        labelText: widget.labelText,
-        hintText: widget.hintText,
-        border: const OutlineInputBorder(),
-        isDense: true,
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required String title,
+    String? subtitle,
+    required IconData icon,
+    Widget? headerAction,
+    Widget? child,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      keyboardType: TextInputType.number,
-      onSubmitted: (_) => _saveValue(),
-      onEditingComplete: _saveValue,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: theme.primaryColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    if (subtitle != null)
+                      Text(subtitle, style: TextStyle(
+                        fontSize: 11, 
+                        color: theme.textTheme.bodySmall?.color
+                      )),
+                  ],
+                ),
+              ),
+              if (headerAction != null) headerAction,
+            ],
+          ),
+          if (child != null) child,
+        ],
+      ),
     );
   }
+
+  Widget _buildParamItem(String key, dynamic value, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              key, 
+              style: TextStyle(
+                fontFamily: 'monospace', 
+                fontSize: 12, 
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSecondaryContainer
+              )
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right, size: 14, color: Colors.grey),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _formatValue(value),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: theme.textTheme.bodySmall?.color, fontFamily: 'monospace', fontSize: 13),
+            ),
+          ),
+          InkWell(
+            onTap: () => _showEditDialog(key, value),
+            child: const Padding(
+              padding: EdgeInsets.all(4.0),
+              child: Icon(Icons.edit, size: 16),
+            ),
+          ),
+          InkWell(
+            onTap: () => _removeParam(key),
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: Icon(Icons.delete_outline, size: 16, color: Colors.red.withOpacity(0.8)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatValue(dynamic value) {
+    if (value is String) return '"$value"';
+    return jsonEncode(value);
+  }
 }
+
+
 
 class _ParameterConfigDialog extends StatefulWidget {
   final String? initialKey;
