@@ -377,5 +377,9 @@
   "renameSessionHint": "输入新名称",
   "providerColor": "颜色 (Hex)",
   "apiKeyPlaceholder": "sk-xxxxxxxx",
-  "baseUrlPlaceholder": "https://api.openai.com/v1"
+  "baseUrlPlaceholder": "https://api.openai.com/v1",
+  "apiKeys": "API Keys",
+  "addApiKey": "添加 Key",
+  "autoRotateKeys": "自动轮询",
+  "editApiKey": "编辑 API Key"
 }

@@ -1141,8 +1141,103 @@ class _LatexBlockState extends State<_LatexBlock> {
     super.dispose();
   }
 
+  /// Check if the latex contains an aligned-type environment
+  bool _hasAlignedEnvironment(String latex) {
+    return RegExp(r'\\begin\{(aligned|align\*?|eqnarray\*?|gather\*?|cases)\}')
+        .hasMatch(latex);
+  }
+
+  /// Extract lines from aligned environment, preserving structure
+  List<String> _extractAlignedLines(String latex) {
+    // Match the environment content
+    final alignedRegex = RegExp(
+      r'\\begin\{(aligned|align\*?|eqnarray\*?|gather\*?|cases)\}([\s\S]*?)\\end\{\1\}',
+      multiLine: true,
+    );
+    
+    final match = alignedRegex.firstMatch(latex);
+    if (match == null) return [latex];
+    
+    final envType = match.group(1);
+    final content = match.group(2) ?? '';
+    
+    // For 'cases' environment, handle differently
+    if (envType == 'cases') {
+      // cases uses & to separate condition from value
+      // We'll render the whole thing as-is but strip the environment wrapper
+      // and use array syntax instead
+      final lines = content.split(r'\\')
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .toList();
+      return lines.map((line) {
+        // Replace & with proper spacing
+        return line.replaceAll('&', r'\quad ');
+      }).toList();
+    }
+    
+    // Split by \\ (line breaks) - handle both \\ and \\[spacing]
+    final lines = content.split(RegExp(r'\\\\(\[.*?\])?'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    
+    // Process each line - remove alignment markers and clean up
+    return lines.map((line) {
+      // Remove & alignment markers but preserve the math
+      // & usually appears before = or at alignment points
+      // Replace with space to maintain readability
+      return line.replaceAll('&', ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    }).toList();
+  }
+
+  Widget _buildMathLine(String latex, {bool isLast = false}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
+      child: Math.tex(
+        latex,
+        textStyle: TextStyle(
+          fontSize: widget.baseFontSize + 2,
+          color: widget.textColor,
+        ),
+        onErrorFallback: (error) {
+          // Fallback for individual line - just show the line as text
+          return Text(
+            latex,
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: widget.baseFontSize,
+              color: widget.textColor.withOpacity(0.8),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Check if this is an aligned environment
+    if (_hasAlignedEnvironment(widget.latex)) {
+      final lines = _extractAlignedLines(widget.latex);
+      
+      if (lines.isEmpty) {
+        return const SizedBox.shrink();
+      }
+      
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: lines.asMap().entries.map((entry) {
+            return _buildMathLine(entry.value, isLast: entry.key == lines.length - 1);
+          }).toList(),
+        ),
+      );
+    }
+    
+    // Regular single-line or simple latex
     return LayoutBuilder(
       builder: (context, constraints) {
         return Container(
@@ -1152,11 +1247,9 @@ class _LatexBlockState extends State<_LatexBlock> {
           child: Scrollbar(
             controller: _controller,
             thumbVisibility: true,
-            // Add padding to prevent overlap. On desktop scrollbars are usually overlay, so we need extra padding.
             child: SingleChildScrollView(
               controller: _controller,
               scrollDirection: Axis.horizontal,
-              // Add bottom padding for scrollbar (usually ~10-12px is enough if overlay, but let's be safe with 16)
               padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 16),
               child: Math.tex(
                 widget.latex,
@@ -1164,6 +1257,16 @@ class _LatexBlockState extends State<_LatexBlock> {
                   fontSize: widget.baseFontSize + 2,
                   color: widget.textColor,
                 ),
+                onErrorFallback: (error) {
+                  return Text(
+                    widget.latex,
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: widget.baseFontSize,
+                      color: widget.textColor,
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -1172,3 +1275,4 @@ class _LatexBlockState extends State<_LatexBlock> {
     );
   }
 }
+

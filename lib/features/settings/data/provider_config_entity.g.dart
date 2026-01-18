@@ -23,58 +23,73 @@ const ProviderConfigEntitySchema = CollectionSchema(
       name: r'apiKey',
       type: IsarType.string,
     ),
-    r'baseUrl': PropertySchema(
+    r'apiKeys': PropertySchema(
       id: 1,
+      name: r'apiKeys',
+      type: IsarType.stringList,
+    ),
+    r'autoRotateKeys': PropertySchema(
+      id: 2,
+      name: r'autoRotateKeys',
+      type: IsarType.bool,
+    ),
+    r'baseUrl': PropertySchema(
+      id: 3,
       name: r'baseUrl',
       type: IsarType.string,
     ),
     r'color': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'color',
       type: IsarType.string,
     ),
+    r'currentKeyIndex': PropertySchema(
+      id: 5,
+      name: r'currentKeyIndex',
+      type: IsarType.long,
+    ),
     r'customParametersJson': PropertySchema(
-      id: 3,
+      id: 6,
       name: r'customParametersJson',
       type: IsarType.string,
     ),
     r'isActive': PropertySchema(
-      id: 4,
+      id: 7,
       name: r'isActive',
       type: IsarType.bool,
     ),
     r'isCustom': PropertySchema(
-      id: 5,
+      id: 8,
       name: r'isCustom',
       type: IsarType.bool,
     ),
     r'isEnabled': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'isEnabled',
       type: IsarType.bool,
     ),
     r'lastSelectedModel': PropertySchema(
-      id: 7,
+      id: 10,
       name: r'lastSelectedModel',
       type: IsarType.string,
     ),
     r'modelSettingsJson': PropertySchema(
-      id: 8,
+      id: 11,
       name: r'modelSettingsJson',
       type: IsarType.string,
     ),
     r'name': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'name',
       type: IsarType.string,
     ),
     r'providerId': PropertySchema(
-      id: 10,
+      id: 13,
       name: r'providerId',
       type: IsarType.string,
     ),
     r'savedModels': PropertySchema(
-      id: 11,
+      id: 14,
       name: r'savedModels',
       type: IsarType.stringList,
     )
@@ -114,6 +129,13 @@ int _providerConfigEntityEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.apiKey.length * 3;
+  bytesCount += 3 + object.apiKeys.length * 3;
+  {
+    for (var i = 0; i < object.apiKeys.length; i++) {
+      final value = object.apiKeys[i];
+      bytesCount += value.length * 3;
+    }
+  }
   bytesCount += 3 + object.baseUrl.length * 3;
   {
     final value = object.color;
@@ -158,17 +180,20 @@ void _providerConfigEntitySerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.apiKey);
-  writer.writeString(offsets[1], object.baseUrl);
-  writer.writeString(offsets[2], object.color);
-  writer.writeString(offsets[3], object.customParametersJson);
-  writer.writeBool(offsets[4], object.isActive);
-  writer.writeBool(offsets[5], object.isCustom);
-  writer.writeBool(offsets[6], object.isEnabled);
-  writer.writeString(offsets[7], object.lastSelectedModel);
-  writer.writeString(offsets[8], object.modelSettingsJson);
-  writer.writeString(offsets[9], object.name);
-  writer.writeString(offsets[10], object.providerId);
-  writer.writeStringList(offsets[11], object.savedModels);
+  writer.writeStringList(offsets[1], object.apiKeys);
+  writer.writeBool(offsets[2], object.autoRotateKeys);
+  writer.writeString(offsets[3], object.baseUrl);
+  writer.writeString(offsets[4], object.color);
+  writer.writeLong(offsets[5], object.currentKeyIndex);
+  writer.writeString(offsets[6], object.customParametersJson);
+  writer.writeBool(offsets[7], object.isActive);
+  writer.writeBool(offsets[8], object.isCustom);
+  writer.writeBool(offsets[9], object.isEnabled);
+  writer.writeString(offsets[10], object.lastSelectedModel);
+  writer.writeString(offsets[11], object.modelSettingsJson);
+  writer.writeString(offsets[12], object.name);
+  writer.writeString(offsets[13], object.providerId);
+  writer.writeStringList(offsets[14], object.savedModels);
 }
 
 ProviderConfigEntity _providerConfigEntityDeserialize(
@@ -179,18 +204,21 @@ ProviderConfigEntity _providerConfigEntityDeserialize(
 ) {
   final object = ProviderConfigEntity();
   object.apiKey = reader.readString(offsets[0]);
-  object.baseUrl = reader.readString(offsets[1]);
-  object.color = reader.readStringOrNull(offsets[2]);
-  object.customParametersJson = reader.readStringOrNull(offsets[3]);
+  object.apiKeys = reader.readStringList(offsets[1]) ?? [];
+  object.autoRotateKeys = reader.readBool(offsets[2]);
+  object.baseUrl = reader.readString(offsets[3]);
+  object.color = reader.readStringOrNull(offsets[4]);
+  object.currentKeyIndex = reader.readLong(offsets[5]);
+  object.customParametersJson = reader.readStringOrNull(offsets[6]);
   object.id = id;
-  object.isActive = reader.readBool(offsets[4]);
-  object.isCustom = reader.readBool(offsets[5]);
-  object.isEnabled = reader.readBool(offsets[6]);
-  object.lastSelectedModel = reader.readStringOrNull(offsets[7]);
-  object.modelSettingsJson = reader.readStringOrNull(offsets[8]);
-  object.name = reader.readString(offsets[9]);
-  object.providerId = reader.readString(offsets[10]);
-  object.savedModels = reader.readStringList(offsets[11]) ?? [];
+  object.isActive = reader.readBool(offsets[7]);
+  object.isCustom = reader.readBool(offsets[8]);
+  object.isEnabled = reader.readBool(offsets[9]);
+  object.lastSelectedModel = reader.readStringOrNull(offsets[10]);
+  object.modelSettingsJson = reader.readStringOrNull(offsets[11]);
+  object.name = reader.readString(offsets[12]);
+  object.providerId = reader.readString(offsets[13]);
+  object.savedModels = reader.readStringList(offsets[14]) ?? [];
   return object;
 }
 
@@ -204,26 +232,32 @@ P _providerConfigEntityDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     case 2:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 3:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 6:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 8:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 9:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 10:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 11:
+      return (reader.readStringOrNull(offset)) as P;
+    case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
+      return (reader.readString(offset)) as P;
+    case 14:
       return (reader.readStringList(offset) ?? []) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -568,6 +602,243 @@ extension ProviderConfigEntityQueryFilter on QueryBuilder<ProviderConfigEntity,
   }
 
   QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'apiKeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'apiKeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'apiKeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'apiKeys',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'apiKeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'apiKeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+          QAfterFilterCondition>
+      apiKeysElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'apiKeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+          QAfterFilterCondition>
+      apiKeysElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'apiKeys',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'apiKeys',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'apiKeys',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'apiKeys',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'apiKeys',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'apiKeys',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'apiKeys',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'apiKeys',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> apiKeysLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'apiKeys',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> autoRotateKeysEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'autoRotateKeys',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
       QAfterFilterCondition> baseUrlEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -857,6 +1128,62 @@ extension ProviderConfigEntityQueryFilter on QueryBuilder<ProviderConfigEntity,
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'color',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> currentKeyIndexEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currentKeyIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> currentKeyIndexGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'currentKeyIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> currentKeyIndexLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'currentKeyIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity,
+      QAfterFilterCondition> currentKeyIndexBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'currentKeyIndex',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -1942,6 +2269,20 @@ extension ProviderConfigEntityQuerySortBy
   }
 
   QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
+      sortByAutoRotateKeys() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoRotateKeys', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
+      sortByAutoRotateKeysDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoRotateKeys', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
       sortByBaseUrl() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'baseUrl', Sort.asc);
@@ -1966,6 +2307,20 @@ extension ProviderConfigEntityQuerySortBy
       sortByColorDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'color', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
+      sortByCurrentKeyIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentKeyIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
+      sortByCurrentKeyIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentKeyIndex', Sort.desc);
     });
   }
 
@@ -2099,6 +2454,20 @@ extension ProviderConfigEntityQuerySortThenBy
   }
 
   QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
+      thenByAutoRotateKeys() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoRotateKeys', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
+      thenByAutoRotateKeysDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoRotateKeys', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
       thenByBaseUrl() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'baseUrl', Sort.asc);
@@ -2123,6 +2492,20 @@ extension ProviderConfigEntityQuerySortThenBy
       thenByColorDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'color', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
+      thenByCurrentKeyIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentKeyIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QAfterSortBy>
+      thenByCurrentKeyIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentKeyIndex', Sort.desc);
     });
   }
 
@@ -2263,6 +2646,20 @@ extension ProviderConfigEntityQueryWhereDistinct
   }
 
   QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QDistinct>
+      distinctByApiKeys() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'apiKeys');
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QDistinct>
+      distinctByAutoRotateKeys() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'autoRotateKeys');
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QDistinct>
       distinctByBaseUrl({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'baseUrl', caseSensitive: caseSensitive);
@@ -2273,6 +2670,13 @@ extension ProviderConfigEntityQueryWhereDistinct
       distinctByColor({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'color', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, ProviderConfigEntity, QDistinct>
+      distinctByCurrentKeyIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'currentKeyIndex');
     });
   }
 
@@ -2358,6 +2762,20 @@ extension ProviderConfigEntityQueryProperty on QueryBuilder<
     });
   }
 
+  QueryBuilder<ProviderConfigEntity, List<String>, QQueryOperations>
+      apiKeysProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'apiKeys');
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, bool, QQueryOperations>
+      autoRotateKeysProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'autoRotateKeys');
+    });
+  }
+
   QueryBuilder<ProviderConfigEntity, String, QQueryOperations>
       baseUrlProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -2369,6 +2787,13 @@ extension ProviderConfigEntityQueryProperty on QueryBuilder<
       colorProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'color');
+    });
+  }
+
+  QueryBuilder<ProviderConfigEntity, int, QQueryOperations>
+      currentKeyIndexProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'currentKeyIndex');
     });
   }
 

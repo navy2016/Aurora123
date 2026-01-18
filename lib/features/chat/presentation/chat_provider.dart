@@ -641,6 +641,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
               firstTokenMs: firstTokenMs ?? 0,
               tokenCount: tokenCount);
         }
+        
+        // Auto-rotate API key after successful request if enabled
+        final activeProvider = settings.activeProvider;
+        if (activeProvider.autoRotateKeys && activeProvider.apiKeys.length > 1) {
+          _ref.read(settingsProvider.notifier).rotateApiKey(activeProvider.id);
+        }
       }
     } catch (e, stack) {
       if (_currentGenerationId == myGenerationId && mounted) {
@@ -674,6 +680,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
           _ref.read(usageStatsProvider.notifier).incrementUsage(currentModel,
               success: false, durationMs: duration, errorType: errorType);
+          
+          // Rotate API key on auth/rate-limit errors if multiple keys available
+          if (e is AppException) {
+            final shouldRotate = errorType == AppErrorType.unauthorized ||
+                errorType == AppErrorType.rateLimit;
+            if (shouldRotate) {
+              final provider = _ref.read(settingsProvider).activeProvider;
+              if (provider.apiKeys.length > 1) {
+                _ref.read(settingsProvider.notifier).rotateApiKey(provider.id);
+              }
+            }
+          }
         }
       }
     } finally {

@@ -1699,6 +1699,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'https://api.openai.com/v1'**
   String get baseUrlPlaceholder;
+
+  /// No description provided for @apiKeys.
+  ///
+  /// In zh, this message translates to:
+  /// **'API Keys'**
+  String get apiKeys;
+
+  /// No description provided for @addApiKey.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加 Key'**
+  String get addApiKey;
+
+  /// No description provided for @autoRotateKeys.
+  ///
+  /// In zh, this message translates to:
+  /// **'自动轮询'**
+  String get autoRotateKeys;
 }
 
 class _AppLocalizationsDelegate

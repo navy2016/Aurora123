@@ -377,5 +377,9 @@
   "renameSessionHint": "Enter new name",
   "providerColor": "Color (Hex)",
   "apiKeyPlaceholder": "sk-xxxxxxxx",
-  "baseUrlPlaceholder": "https://api.openai.com/v1"
+  "baseUrlPlaceholder": "https://api.openai.com/v1",
+  "apiKeys": "API Keys",
+  "addApiKey": "Add Key",
+  "autoRotateKeys": "Auto Rotate",
+  "editApiKey": "Edit API Key"
 }

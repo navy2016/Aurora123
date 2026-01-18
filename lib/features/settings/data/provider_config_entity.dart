@@ -8,7 +8,11 @@ class ProviderConfigEntity {
   late String providerId;
   late String name;
   String? color;
-  late String apiKey;
+  @Deprecated('Use apiKeys instead. Kept for migration.')
+  String apiKey = '';
+  List<String> apiKeys = [];
+  int currentKeyIndex = 0;
+  bool autoRotateKeys = false;
   late String baseUrl;
   bool isCustom = false;
   String? customParametersJson;

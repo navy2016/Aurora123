@@ -69,11 +69,18 @@ void main() async {
           }
         } catch (_) {}
       }
+      // Migrate from legacy apiKey to apiKeys if needed
+      List<String> apiKeys = e.apiKeys;
+      if (apiKeys.isEmpty && e.apiKey.isNotEmpty) {
+        apiKeys = [e.apiKey];
+      }
       return ProviderConfig(
         id: e.providerId,
         name: e.name,
         color: e.color,
-        apiKey: e.apiKey,
+        apiKeys: apiKeys,
+        currentKeyIndex: e.currentKeyIndex,
+        autoRotateKeys: e.autoRotateKeys,
         baseUrl: e.baseUrl,
         isCustom: e.isCustom,
         customParameters: customParams,

@@ -395,10 +395,20 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
           ),
           TextButton(
             onPressed: () {
-              ref.read(settingsProvider.notifier).updateProvider(
-                    id: provider.id,
-                    apiKey: _apiKeyController.text,
+              final newKey = _apiKeyController.text.trim();
+              if (newKey.isNotEmpty) {
+                if (provider.apiKeys.isEmpty) {
+                  // Add as first key
+                  ref.read(settingsProvider.notifier).addApiKey(provider.id, newKey);
+                } else {
+                  // Update the current key
+                  ref.read(settingsProvider.notifier).updateApiKeyAtIndex(
+                    provider.id, 
+                    provider.safeCurrentKeyIndex, 
+                    newKey,
                   );
+                }
+              }
               Navigator.pop(ctx);
             },
             child: Text(l10n.save),

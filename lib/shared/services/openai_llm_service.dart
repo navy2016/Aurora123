@@ -219,7 +219,13 @@ Use search for:
           }
         }
       }
-      requestData.addAll(provider.customParameters);
+      // Filter out sensitive/invalid fields from customParameters before adding to request
+      final safeCustomParams = Map<String, dynamic>.from(provider.customParameters)
+        ..remove('api_keys')
+        ..remove('apiKeys')
+        ..remove('api_key')
+        ..remove('apiKey');
+      requestData.addAll(safeCustomParams);
       if (provider.modelSettings.containsKey(model)) {
         final modelParams = provider.modelSettings[model]!;
         final thinkingEnabled = modelParams['_aurora_thinking_enabled'] == true;

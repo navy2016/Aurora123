@@ -13,7 +13,9 @@ class ProviderConfig {
   final String id;
   final String name;
   final String? color;
-  final String apiKey;
+  final List<String> apiKeys;
+  final int currentKeyIndex;
+  final bool autoRotateKeys;
   final String baseUrl;
   final bool isCustom;
   final Map<String, dynamic> customParameters;
@@ -21,11 +23,27 @@ class ProviderConfig {
   final List<String> models;
   final String? selectedModel;
   final bool isEnabled;
+  
+  /// Returns the current API key based on currentKeyIndex (with bounds checking)
+  String get apiKey {
+    if (apiKeys.isEmpty) return '';
+    final safeIndex = currentKeyIndex.clamp(0, apiKeys.length - 1);
+    return apiKeys[safeIndex];
+  }
+  
+  /// Returns a safe current key index (clamped to valid range)
+  int get safeCurrentKeyIndex {
+    if (apiKeys.isEmpty) return 0;
+    return currentKeyIndex.clamp(0, apiKeys.length - 1);
+  }
+  
   ProviderConfig({
     required this.id,
     required this.name,
     this.color,
-    this.apiKey = '',
+    this.apiKeys = const [],
+    this.currentKeyIndex = 0,
+    this.autoRotateKeys = false,
     this.baseUrl = 'https://api.openai.com/v1',
     this.isCustom = false,
     this.customParameters = const {},
@@ -34,10 +52,13 @@ class ProviderConfig {
     this.selectedModel,
     this.isEnabled = true,
   });
+  
   ProviderConfig copyWith({
     String? name,
     String? color,
-    String? apiKey,
+    List<String>? apiKeys,
+    int? currentKeyIndex,
+    bool? autoRotateKeys,
     String? baseUrl,
     Map<String, dynamic>? customParameters,
     Map<String, Map<String, dynamic>>? modelSettings,
@@ -49,7 +70,9 @@ class ProviderConfig {
       id: id,
       name: name ?? this.name,
       color: color ?? this.color,
-      apiKey: apiKey ?? this.apiKey,
+      apiKeys: apiKeys ?? this.apiKeys,
+      currentKeyIndex: currentKeyIndex ?? this.currentKeyIndex,
+      autoRotateKeys: autoRotateKeys ?? this.autoRotateKeys,
       baseUrl: baseUrl ?? this.baseUrl,
       isCustom: isCustom,
       customParameters: customParameters ?? this.customParameters,
@@ -59,6 +82,7 @@ class ProviderConfig {
       isEnabled: isEnabled ?? this.isEnabled,
     );
   }
+  
   bool isModelEnabled(String modelId) {
     if (modelSettings.containsKey(modelId)) {
       final settings = modelSettings[modelId]!;
@@ -249,7 +273,9 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     required String id,
     String? name,
     String? color,
-    String? apiKey,
+    List<String>? apiKeys,
+    int? currentKeyIndex,
+    bool? autoRotateKeys,
     String? baseUrl,
     Map<String, dynamic>? customParameters,
     Map<String, Map<String, dynamic>>? modelSettings,
@@ -262,7 +288,9 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
         return p.copyWith(
           name: name,
           color: color,
-          apiKey: apiKey,
+          apiKeys: apiKeys,
+          currentKeyIndex: currentKeyIndex,
+          autoRotateKeys: autoRotateKeys,
           baseUrl: baseUrl,
           customParameters: customParameters,
           modelSettings: modelSettings,
@@ -279,7 +307,9 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       ..providerId = updatedProvider.id
       ..name = updatedProvider.name
       ..color = updatedProvider.color
-      ..apiKey = updatedProvider.apiKey
+      ..apiKeys = updatedProvider.apiKeys
+      ..currentKeyIndex = updatedProvider.currentKeyIndex
+      ..autoRotateKeys = updatedProvider.autoRotateKeys
       ..baseUrl = updatedProvider.baseUrl
       ..isCustom = updatedProvider.isCustom
       ..customParametersJson = jsonEncode(updatedProvider.customParameters)
@@ -387,6 +417,57 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     newModelSettings[modelId] = newSettings;
     
     await updateProvider(id: providerId, modelSettings: newModelSettings);
+  }
+
+  // ==================== API Key Management Methods ====================
+  
+  /// Add a new API key to a provider
+  Future<void> addApiKey(String providerId, String key) async {
+    if (key.trim().isEmpty) return;
+    final provider = state.providers.firstWhere((p) => p.id == providerId);
+    final newKeys = [...provider.apiKeys, key.trim()];
+    await updateProvider(id: providerId, apiKeys: newKeys);
+  }
+
+  /// Remove an API key at the specified index
+  Future<void> removeApiKey(String providerId, int index) async {
+    final provider = state.providers.firstWhere((p) => p.id == providerId);
+    if (index < 0 || index >= provider.apiKeys.length) return;
+    final newKeys = List<String>.from(provider.apiKeys)..removeAt(index);
+    int newIndex = provider.currentKeyIndex;
+    if (newIndex >= newKeys.length) {
+      newIndex = newKeys.isEmpty ? 0 : newKeys.length - 1;
+    }
+    await updateProvider(id: providerId, apiKeys: newKeys, currentKeyIndex: newIndex);
+  }
+
+  /// Update an API key at the specified index
+  Future<void> updateApiKeyAtIndex(String providerId, int index, String key) async {
+    final provider = state.providers.firstWhere((p) => p.id == providerId);
+    if (index < 0 || index >= provider.apiKeys.length) return;
+    final newKeys = List<String>.from(provider.apiKeys);
+    newKeys[index] = key;
+    await updateProvider(id: providerId, apiKeys: newKeys);
+  }
+
+  /// Set the current active key index
+  Future<void> setCurrentKeyIndex(String providerId, int index) async {
+    final provider = state.providers.firstWhere((p) => p.id == providerId);
+    if (index < 0 || index >= provider.apiKeys.length) return;
+    await updateProvider(id: providerId, currentKeyIndex: index);
+  }
+
+  /// Rotate to the next API key
+  Future<void> rotateApiKey(String providerId) async {
+    final provider = state.providers.firstWhere((p) => p.id == providerId);
+    if (provider.apiKeys.length <= 1) return;
+    final nextIndex = (provider.currentKeyIndex + 1) % provider.apiKeys.length;
+    await updateProvider(id: providerId, currentKeyIndex: nextIndex);
+  }
+
+  /// Set auto-rotate keys option
+  Future<void> setAutoRotateKeys(String providerId, bool enabled) async {
+    await updateProvider(id: providerId, autoRotateKeys: enabled);
   }
 
   Future<void> fetchModels() async {

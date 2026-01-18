@@ -832,4 +832,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get baseUrlPlaceholder => 'https://api.openai.com/v1';
+
+  @override
+  String get apiKeys => 'API Keys';
+
+  @override
+  String get addApiKey => '添加 Key';
+
+  @override
+  String get autoRotateKeys => '自动轮询';
 }

@@ -845,4 +845,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get baseUrlPlaceholder => 'https://api.openai.com/v1';
+
+  @override
+  String get apiKeys => 'API Keys';
+
+  @override
+  String get addApiKey => 'Add Key';
+
+  @override
+  String get autoRotateKeys => 'Auto Rotate';
 }
