@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_selector/file_selector.dart';
 import 'settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 class MobileSettingsPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
@@ -141,6 +142,16 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                     }
                   },
                 ),
+                ListTile(
+                  leading: const Icon(Icons.settings_applications),
+                  title: Text(l10n.globalConfig), // Use localized Global Config string
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                     if (activeProvider != null) {
+                        _showGlobalConfigDialog(context, activeProvider);
+                     }
+                  },
+                ),
                 _SectionHeader(
                   title: l10n.availableModels,
                   icon: Icons.format_list_bulleted,
@@ -246,7 +257,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                               : null,
                         ),
                         title: Text(p.name),
-                        subtitle: Text(p.selectedModel ?? l10n.noModelSelected),
+
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -339,6 +350,21 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                 modelSettings: updatedModelSettings,
               );
         },
+      ),
+    );
+  }
+
+  void _showGlobalConfigDialog(
+      BuildContext context, ProviderConfig provider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => _GlobalConfigBottomSheet(
+        provider: provider,
       ),
     );
   }
@@ -1519,6 +1545,613 @@ class _ApiKeyListItemState extends State<_ApiKeyListItem> {
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline, color: Colors.red),
         onPressed: widget.onDelete,
+      ),
+    );
+  }
+}
+
+class _GlobalConfigBottomSheet extends ConsumerStatefulWidget {
+  final ProviderConfig provider;
+  const _GlobalConfigBottomSheet({required this.provider});
+  @override
+  ConsumerState<_GlobalConfigBottomSheet> createState() =>
+      _GlobalConfigBottomSheetState();
+}
+
+class _GlobalConfigBottomSheetState
+    extends ConsumerState<_GlobalConfigBottomSheet> {
+  late bool _thinkingEnabled;
+  late String _thinkingBudget;
+  late String _thinkingMode;
+  late String _temperature;
+  late String _maxTokens;
+  late String _contextLength;
+  late Map<String, dynamic> _customParams;
+  late List<String> _excludedModels;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  void _loadSettings() {
+    final settings = widget.provider.globalSettings;
+    // Thinking
+    final thinking = settings['_aurora_thinking_config'];
+    if (thinking != null && thinking is Map) {
+      _thinkingEnabled = thinking['enabled'] == true;
+      _thinkingBudget = thinking['budget']?.toString() ?? '';
+      _thinkingMode = thinking['mode']?.toString() ?? 'auto';
+    } else {
+      _thinkingEnabled = false;
+      _thinkingBudget = '';
+      _thinkingMode = 'auto';
+    }
+
+    // Generation
+    final gen = settings['_aurora_generation_config'];
+    if (gen != null && gen is Map) {
+      _temperature = gen['temperature']?.toString() ?? '';
+      _maxTokens = gen['max_tokens']?.toString() ?? '';
+      _contextLength = gen['context_length']?.toString() ?? '';
+    } else {
+      _temperature = '';
+      _maxTokens = '';
+      _contextLength = '';
+    }
+
+    // Excluded Models
+    _excludedModels = List<String>.from(widget.provider.globalExcludeModels);
+
+    // Custom Params
+    _customParams = Map<String, dynamic>.fromEntries(
+        settings.entries.where((e) => !e.key.startsWith('_aurora_')));
+  }
+
+  void _saveSettings({
+    bool? thinkingEnabled,
+    String? thinkingBudget,
+    String? thinkingMode,
+    String? temperature,
+    String? maxTokens,
+    String? contextLength,
+  }) {
+    setState(() {
+      if (thinkingEnabled != null) _thinkingEnabled = thinkingEnabled;
+      if (thinkingBudget != null) _thinkingBudget = thinkingBudget;
+      if (thinkingMode != null) _thinkingMode = thinkingMode;
+      if (temperature != null) _temperature = temperature;
+      if (maxTokens != null) _maxTokens = maxTokens;
+      if (contextLength != null) _contextLength = contextLength;
+    });
+    _persist();
+  }
+
+  void _saveCustomParams(Map<String, dynamic> newParams) {
+    setState(() {
+      _customParams = newParams;
+    });
+    _persist();
+  }
+
+  void _saveExclusions(List<String> newExclusions) {
+    setState(() {
+      _excludedModels = newExclusions;
+    });
+    ref.read(settingsProvider.notifier).updateProvider(
+          id: widget.provider.id,
+          globalExcludeModels: _excludedModels,
+        );
+  }
+
+  void _persist() {
+    final Map<String, dynamic> newGlobalSettings = {};
+    if (_thinkingEnabled ||
+        _thinkingBudget.isNotEmpty ||
+        _thinkingMode != 'auto') {
+      newGlobalSettings['_aurora_thinking_config'] = {
+        'enabled': _thinkingEnabled,
+        'budget': int.tryParse(_thinkingBudget),
+        'mode': _thinkingMode,
+      };
+    }
+    if (_temperature.isNotEmpty ||
+        _maxTokens.isNotEmpty ||
+        _contextLength.isNotEmpty) {
+      newGlobalSettings['_aurora_generation_config'] = {
+        if (_temperature.isNotEmpty) 'temperature': _temperature,
+        if (_maxTokens.isNotEmpty) 'max_tokens': _maxTokens,
+        if (_contextLength.isNotEmpty) 'context_length': _contextLength,
+      };
+    }
+    newGlobalSettings.addAll(_customParams);
+
+    ref.read(settingsProvider.notifier).updateProvider(
+          id: widget.provider.id,
+          globalSettings: newGlobalSettings,
+        );
+  }
+
+  Future<void> _showExclusionPicker() async {
+    final result = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _ExclusionPicker(
+        allModels: widget.provider.models,
+        excludedModels: _excludedModels,
+      ),
+    );
+    if (result != null) {
+      _saveExclusions(result);
+    }
+  }
+
+  void _showEditDialog([String? key, dynamic value]) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _ParameterConfigDialog(
+        initialKey: key,
+        initialValue: value,
+        onSave: (k, v) {
+          final newParams = Map<String, dynamic>.from(_customParams);
+          if (key != null && key != k) {
+            newParams.remove(key);
+          }
+          newParams[k] = v;
+          _saveCustomParams(newParams);
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
+  void _removeParam(String key) {
+    final newParams = Map<String, dynamic>.from(_customParams);
+    newParams.remove(key);
+    _saveCustomParams(newParams);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    // Reuse helper methods from MobileSettingsPage if possible?
+    // They are private to MobileSettingsPage. I need to duplicate _buildSectionCard and _buildParamItem.
+    // Or make them static/public. Duplication is safer for now to avoid refactoring MobileSettingsPage massively.
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.85,
+      child: Column(
+        children: [
+          // Drag Handle
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[400],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.globalConfig,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(widget.provider.name,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Excluded Models Card
+                  _buildSectionCard(
+                    context,
+                    title: l10n.excludedModels,
+                    subtitle: '${_excludedModels.length} models excluded',
+                    icon: Icons.block,
+                    headerAction: IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: _showExclusionPicker,
+                    ),
+                    child: _excludedModels.isNotEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: _excludedModels
+                                  .map((m) =>
+                                      Chip(label: Text(m, style: const TextStyle(fontSize: 10))))
+                                  .toList(),
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Thinking Configuration Card
+                  _buildSectionCard(
+                    context,
+                    title: l10n.thinkingConfig,
+                    icon: Icons.lightbulb_outline,
+                    headerAction: Switch(
+                      value: _thinkingEnabled,
+                      onChanged: (v) => _saveSettings(thinkingEnabled: v),
+                    ),
+                    child: _thinkingEnabled
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 16),
+                              const Divider(),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: TextEditingController(
+                                    text: _thinkingBudget)
+                                  ..selection = TextSelection.collapsed(
+                                      offset: _thinkingBudget.length),
+                                decoration: InputDecoration(
+                                  labelText: l10n.thinkingBudget,
+                                  hintText: l10n.thinkingBudgetHint,
+                                  border: const OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                onChanged: (v) =>
+                                    _saveSettings(thinkingBudget: v),
+                              ),
+                              const SizedBox(height: 12),
+                              DropdownButtonFormField<String>(
+                                value: _thinkingMode,
+                                decoration: InputDecoration(
+                                  labelText: l10n.transmissionMode,
+                                  border: const OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                items: [
+                                  DropdownMenuItem(
+                                      value: 'auto', child: Text(l10n.modeAuto)),
+                                  DropdownMenuItem(
+                                      value: 'extra_body',
+                                      child: Text(l10n.modeExtraBody)),
+                                  DropdownMenuItem(
+                                      value: 'reasoning_effort',
+                                      child: Text(l10n.modeReasoningEffort)),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) _saveSettings(thinkingMode: v);
+                                },
+                              ),
+                            ],
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Generation Configuration Card
+                  _buildSectionCard(
+                    context,
+                    title: l10n.generationConfig,
+                    icon: Icons.settings,
+                    headerAction: null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller:
+                              TextEditingController(text: _temperature)
+                                ..selection = TextSelection.collapsed(
+                                    offset: _temperature.length),
+                          decoration: InputDecoration(
+                            labelText: l10n.temperature,
+                            hintText: l10n.temperatureHint,
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: (v) => _saveSettings(temperature: v),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: TextEditingController(text: _maxTokens)
+                            ..selection = TextSelection.collapsed(
+                                offset: _maxTokens.length),
+                          decoration: InputDecoration(
+                            labelText: l10n.maxTokens,
+                            hintText: l10n.maxTokensHint,
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: (v) => _saveSettings(maxTokens: v),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: TextEditingController(text: _contextLength)
+                            ..selection = TextSelection.collapsed(
+                                offset: _contextLength.length),
+                          decoration: InputDecoration(
+                            labelText: l10n.contextLength,
+                            hintText: l10n.contextLengthHint,
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: (v) => _saveSettings(contextLength: v),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Custom Parameters Card
+                  _buildSectionCard(
+                    context,
+                    title: l10n.customParams,
+                    subtitle: l10n.paramsHigherPriority,
+                    icon: Icons.edit,
+                    headerAction: null,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        if (_customParams.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color: Colors.grey.withOpacity(0.3)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.tune,
+                                    size: 32, color: Colors.grey),
+                                const SizedBox(height: 8),
+                                Text(
+                                  l10n.noCustomParams,
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  child: Text(l10n.addCustomParam),
+                                  onPressed: () => _showEditDialog(),
+                                )
+                              ],
+                            ),
+                          )
+                        else
+                          ..._customParams.entries.map((e) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: _buildParamItem(e.key, e.value, theme),
+                            );
+                          }),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Done button
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(l10n.done),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required String title,
+    String? subtitle,
+    required IconData icon,
+    Widget? headerAction,
+    Widget? child,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: theme.primaryColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+                    if (subtitle != null)
+                      Text(subtitle,
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: theme.textTheme.bodySmall?.color)),
+                  ],
+                ),
+              ),
+              if (headerAction != null) headerAction,
+            ],
+          ),
+          if (child != null) child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParamItem(String key, dynamic value, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(key,
+                style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSecondaryContainer)),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right, size: 14, color: Colors.grey),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _formatValue(value),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: theme.textTheme.bodySmall?.color,
+                  fontFamily: 'monospace',
+                  fontSize: 13),
+            ),
+          ),
+          InkWell(
+            onTap: () => _showEditDialog(key, value),
+            child: const Padding(
+              padding: EdgeInsets.all(4.0),
+              child: Icon(Icons.edit, size: 16),
+            ),
+          ),
+          InkWell(
+            onTap: () => _removeParam(key),
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: Icon(Icons.delete_outline,
+                  size: 16, color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatValue(dynamic value) {
+    if (value is String) return '"$value"';
+    return jsonEncode(value);
+  }
+}
+
+class _ExclusionPicker extends StatefulWidget {
+  final List<String> allModels;
+  final List<String> excludedModels;
+  const _ExclusionPicker({required this.allModels, required this.excludedModels});
+
+  @override
+  State<_ExclusionPicker> createState() => _ExclusionPickerState();
+}
+
+class _ExclusionPickerState extends State<_ExclusionPicker> {
+  late List<String> _currentExclusions;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentExclusions = List.from(widget.excludedModels);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.7,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(l10n.excludedModels,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: widget.allModels.length,
+              itemBuilder: (context, index) {
+                final model = widget.allModels[index];
+                final isExcluded = _currentExclusions.contains(model);
+                return CheckboxListTile(
+                  title: Text(model),
+                  value: isExcluded,
+                  onChanged: (val) {
+                    setState(() {
+                      if (val == true) {
+                        _currentExclusions.add(model);
+                      } else {
+                        _currentExclusions.remove(model);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, _currentExclusions);
+                },
+                child: Text(l10n.save),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
