@@ -533,7 +533,7 @@ abstract class AppLocalizations {
   /// No description provided for @success.
   ///
   /// In zh, this message translates to:
-  /// **'成功'**
+  /// **'已完成'**
   String get success;
 
   /// No description provided for @failed.
@@ -677,7 +677,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelConfig.
   ///
   /// In zh, this message translates to:
-  /// **'配置'**
+  /// **'模型配置'**
   String get modelConfig;
 
   /// No description provided for @configureModelParams.
@@ -956,6 +956,432 @@ abstract class AppLocalizations {
   /// **'关于'**
   String get about;
 
+  /// No description provided for @studio.
+  ///
+  /// In zh, this message translates to:
+  /// **'工作室'**
+  String get studio;
+
+  /// No description provided for @novelWriting.
+  ///
+  /// In zh, this message translates to:
+  /// **'小说写作'**
+  String get novelWriting;
+
+  /// No description provided for @taskOrchestration.
+  ///
+  /// In zh, this message translates to:
+  /// **'任务编排'**
+  String get taskOrchestration;
+
+  /// No description provided for @createTask.
+  ///
+  /// In zh, this message translates to:
+  /// **'创建任务'**
+  String get createTask;
+
+  /// No description provided for @pendingTasks.
+  ///
+  /// In zh, this message translates to:
+  /// **'待完成任务'**
+  String get pendingTasks;
+
+  /// No description provided for @taskDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'任务描述'**
+  String get taskDescription;
+
+  /// No description provided for @decompose.
+  ///
+  /// In zh, this message translates to:
+  /// **'拆解任务'**
+  String get decompose;
+
+  /// No description provided for @pause.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂停'**
+  String get pause;
+
+  /// No description provided for @resume.
+  ///
+  /// In zh, this message translates to:
+  /// **'继续'**
+  String get resume;
+
+  /// No description provided for @start.
+  ///
+  /// In zh, this message translates to:
+  /// **'开始'**
+  String get start;
+
+  /// No description provided for @novelName.
+  ///
+  /// In zh, this message translates to:
+  /// **'小说名称'**
+  String get novelName;
+
+  /// No description provided for @chapterTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'章节标题'**
+  String get chapterTitle;
+
+  /// No description provided for @chapters.
+  ///
+  /// In zh, this message translates to:
+  /// **'章节列表'**
+  String get chapters;
+
+  /// No description provided for @novelStructure.
+  ///
+  /// In zh, this message translates to:
+  /// **'小说结构'**
+  String get novelStructure;
+
+  /// No description provided for @reviewModel.
+  ///
+  /// In zh, this message translates to:
+  /// **'审查'**
+  String get reviewModel;
+
+  /// No description provided for @writerModel.
+  ///
+  /// In zh, this message translates to:
+  /// **'写作模型'**
+  String get writerModel;
+
+  /// No description provided for @decomposeModel.
+  ///
+  /// In zh, this message translates to:
+  /// **'拆解模型'**
+  String get decomposeModel;
+
+  /// No description provided for @project.
+  ///
+  /// In zh, this message translates to:
+  /// **'项目'**
+  String get project;
+
+  /// No description provided for @selectProject.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择项目'**
+  String get selectProject;
+
+  /// No description provided for @createProject.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建项目'**
+  String get createProject;
+
+  /// No description provided for @deleteProject.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除项目'**
+  String get deleteProject;
+
+  /// No description provided for @deleteProjectConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除这个项目吗？'**
+  String get deleteProjectConfirm;
+
+  /// No description provided for @deleteChapterConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除这个章节吗？'**
+  String get deleteChapterConfirm;
+
+  /// No description provided for @writing.
+  ///
+  /// In zh, this message translates to:
+  /// **'写作'**
+  String get writing;
+
+  /// No description provided for @context.
+  ///
+  /// In zh, this message translates to:
+  /// **'设定'**
+  String get context;
+
+  /// No description provided for @preview.
+  ///
+  /// In zh, this message translates to:
+  /// **'预览'**
+  String get preview;
+
+  /// No description provided for @stopTask.
+  ///
+  /// In zh, this message translates to:
+  /// **'停止'**
+  String get stopTask;
+
+  /// No description provided for @startWriting.
+  ///
+  /// In zh, this message translates to:
+  /// **'开始'**
+  String get startWriting;
+
+  /// No description provided for @outlineSettings.
+  ///
+  /// In zh, this message translates to:
+  /// **'大纲与设定'**
+  String get outlineSettings;
+
+  /// No description provided for @clearOutline.
+  ///
+  /// In zh, this message translates to:
+  /// **'清除大纲'**
+  String get clearOutline;
+
+  /// No description provided for @startConceiving.
+  ///
+  /// In zh, this message translates to:
+  /// **'开始构思你的故事'**
+  String get startConceiving;
+
+  /// No description provided for @outlineHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'在下方输入你的故事构想，AI 将为你生成详细大纲。'**
+  String get outlineHint;
+
+  /// No description provided for @outlinePlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'例如：写一本关于赛博朋克世界的侦探小说，主角是...'**
+  String get outlinePlaceholder;
+
+  /// No description provided for @generateOutline.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成大纲'**
+  String get generateOutline;
+
+  /// No description provided for @editOutlinePlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'在此处编辑大纲...'**
+  String get editOutlinePlaceholder;
+
+  /// No description provided for @generateChapters.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成章节列表'**
+  String get generateChapters;
+
+  /// No description provided for @regenerateChapters.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新生成章节'**
+  String get regenerateChapters;
+
+  /// No description provided for @clearChaptersWarning.
+  ///
+  /// In zh, this message translates to:
+  /// **'这将清除现有的所有章节和写作进度。\n建议在操作前备份重要内容。\n\n确定要继续吗？'**
+  String get clearChaptersWarning;
+
+  /// No description provided for @clearAndRegenerate.
+  ///
+  /// In zh, this message translates to:
+  /// **'清除并重新生成'**
+  String get clearAndRegenerate;
+
+  /// No description provided for @chaptersAndTasks.
+  ///
+  /// In zh, this message translates to:
+  /// **'章节与任务'**
+  String get chaptersAndTasks;
+
+  /// No description provided for @addChapter.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加自定义章节'**
+  String get addChapter;
+
+  /// No description provided for @noTasks.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无任务'**
+  String get noTasks;
+
+  /// No description provided for @taskDetails.
+  ///
+  /// In zh, this message translates to:
+  /// **'任务详情'**
+  String get taskDetails;
+
+  /// No description provided for @selectTaskToView.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择一个任务查看详情'**
+  String get selectTaskToView;
+
+  /// No description provided for @taskRequirement.
+  ///
+  /// In zh, this message translates to:
+  /// **'任务要求'**
+  String get taskRequirement;
+
+  /// No description provided for @generatedContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成内容'**
+  String get generatedContent;
+
+  /// No description provided for @waitingForGeneration.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待生成...'**
+  String get waitingForGeneration;
+
+  /// No description provided for @worldSettings.
+  ///
+  /// In zh, this message translates to:
+  /// **'世界设定'**
+  String get worldSettings;
+
+  /// No description provided for @autoIncludeHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'勾选的分类会在写作时自动携带'**
+  String get autoIncludeHint;
+
+  /// No description provided for @worldRules.
+  ///
+  /// In zh, this message translates to:
+  /// **'世界规则'**
+  String get worldRules;
+
+  /// No description provided for @characterSettings.
+  ///
+  /// In zh, this message translates to:
+  /// **'人物设定'**
+  String get characterSettings;
+
+  /// No description provided for @relationships.
+  ///
+  /// In zh, this message translates to:
+  /// **'人物关系'**
+  String get relationships;
+
+  /// No description provided for @locations.
+  ///
+  /// In zh, this message translates to:
+  /// **'场景地点'**
+  String get locations;
+
+  /// No description provided for @foreshadowing.
+  ///
+  /// In zh, this message translates to:
+  /// **'伏笔/线索'**
+  String get foreshadowing;
+
+  /// No description provided for @noDataYet.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无数据（写作后自动提取）'**
+  String get noDataYet;
+
+  /// No description provided for @pleaseSelectChapter.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先选择一个章节'**
+  String get pleaseSelectChapter;
+
+  /// No description provided for @copyFullText.
+  ///
+  /// In zh, this message translates to:
+  /// **'复制全文'**
+  String get copyFullText;
+
+  /// No description provided for @unknownChapter.
+  ///
+  /// In zh, this message translates to:
+  /// **'未知章节'**
+  String get unknownChapter;
+
+  /// No description provided for @noContentYet.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无内容'**
+  String get noContentYet;
+
+  /// No description provided for @allTasksPending.
+  ///
+  /// In zh, this message translates to:
+  /// **'按顺序执行所有待办任务'**
+  String get allTasksPending;
+
+  /// No description provided for @noPendingTasks.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有可执行的待办任务'**
+  String get noPendingTasks;
+
+  /// No description provided for @executeTask.
+  ///
+  /// In zh, this message translates to:
+  /// **'执行任务'**
+  String get executeTask;
+
+  /// No description provided for @reviewFeedback.
+  ///
+  /// In zh, this message translates to:
+  /// **'审查反馈'**
+  String get reviewFeedback;
+
+  /// No description provided for @reject.
+  ///
+  /// In zh, this message translates to:
+  /// **'拒绝'**
+  String get reject;
+
+  /// No description provided for @approve.
+  ///
+  /// In zh, this message translates to:
+  /// **'批准'**
+  String get approve;
+
+  /// No description provided for @regenerate.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新生成'**
+  String get regenerate;
+
+  /// No description provided for @pending.
+  ///
+  /// In zh, this message translates to:
+  /// **'待处理'**
+  String get pending;
+
+  /// No description provided for @running.
+  ///
+  /// In zh, this message translates to:
+  /// **'进行中'**
+  String get running;
+
+  /// No description provided for @paused.
+  ///
+  /// In zh, this message translates to:
+  /// **'已暂停'**
+  String get paused;
+
+  /// No description provided for @reviewing.
+  ///
+  /// In zh, this message translates to:
+  /// **'审查中'**
+  String get reviewing;
+
+  /// No description provided for @decomposing.
+  ///
+  /// In zh, this message translates to:
+  /// **'拆解中'**
+  String get decomposing;
+
   /// No description provided for @aboutAurora.
   ///
   /// In zh, this message translates to:
@@ -997,12 +1423,6 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'停止生成'**
   String get stopGenerating;
-
-  /// No description provided for @regenerate.
-  ///
-  /// In zh, this message translates to:
-  /// **'重新生成'**
-  String get regenerate;
 
   /// No description provided for @copyCode.
   ///

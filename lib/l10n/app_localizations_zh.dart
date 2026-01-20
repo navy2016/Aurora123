@@ -233,7 +233,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get error => '错误';
 
   @override
-  String get success => '成功';
+  String get success => '已完成';
 
   @override
   String get failed => '失败';
@@ -305,7 +305,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noModelsFetch => '暂无模型，请点击右上角获取';
 
   @override
-  String get modelConfig => '配置';
+  String get modelConfig => '模型配置';
 
   @override
   String get configureModelParams => '为该模型配置专属参数';
@@ -460,6 +460,220 @@ class AppLocalizationsZh extends AppLocalizations {
   String get about => '关于';
 
   @override
+  String get studio => '工作室';
+
+  @override
+  String get novelWriting => '小说写作';
+
+  @override
+  String get taskOrchestration => '任务编排';
+
+  @override
+  String get createTask => '创建任务';
+
+  @override
+  String get pendingTasks => '待完成任务';
+
+  @override
+  String get taskDescription => '任务描述';
+
+  @override
+  String get decompose => '拆解任务';
+
+  @override
+  String get pause => '暂停';
+
+  @override
+  String get resume => '继续';
+
+  @override
+  String get start => '开始';
+
+  @override
+  String get novelName => '小说名称';
+
+  @override
+  String get chapterTitle => '章节标题';
+
+  @override
+  String get chapters => '章节列表';
+
+  @override
+  String get novelStructure => '小说结构';
+
+  @override
+  String get reviewModel => '审查';
+
+  @override
+  String get writerModel => '写作模型';
+
+  @override
+  String get decomposeModel => '拆解模型';
+
+  @override
+  String get project => '项目';
+
+  @override
+  String get selectProject => '选择项目';
+
+  @override
+  String get createProject => '新建项目';
+
+  @override
+  String get deleteProject => '删除项目';
+
+  @override
+  String get deleteProjectConfirm => '确定要删除这个项目吗？';
+
+  @override
+  String get deleteChapterConfirm => '确定要删除这个章节吗？';
+
+  @override
+  String get writing => '写作';
+
+  @override
+  String get context => '设定';
+
+  @override
+  String get preview => '预览';
+
+  @override
+  String get stopTask => '停止';
+
+  @override
+  String get startWriting => '开始';
+
+  @override
+  String get outlineSettings => '大纲与设定';
+
+  @override
+  String get clearOutline => '清除大纲';
+
+  @override
+  String get startConceiving => '开始构思你的故事';
+
+  @override
+  String get outlineHint => '在下方输入你的故事构想，AI 将为你生成详细大纲。';
+
+  @override
+  String get outlinePlaceholder => '例如：写一本关于赛博朋克世界的侦探小说，主角是...';
+
+  @override
+  String get generateOutline => '生成大纲';
+
+  @override
+  String get editOutlinePlaceholder => '在此处编辑大纲...';
+
+  @override
+  String get generateChapters => '生成章节列表';
+
+  @override
+  String get regenerateChapters => '重新生成章节';
+
+  @override
+  String get clearChaptersWarning =>
+      '这将清除现有的所有章节和写作进度。\n建议在操作前备份重要内容。\n\n确定要继续吗？';
+
+  @override
+  String get clearAndRegenerate => '清除并重新生成';
+
+  @override
+  String get chaptersAndTasks => '章节与任务';
+
+  @override
+  String get addChapter => '添加自定义章节';
+
+  @override
+  String get noTasks => '暂无任务';
+
+  @override
+  String get taskDetails => '任务详情';
+
+  @override
+  String get selectTaskToView => '选择一个任务查看详情';
+
+  @override
+  String get taskRequirement => '任务要求';
+
+  @override
+  String get generatedContent => '生成内容';
+
+  @override
+  String get waitingForGeneration => '等待生成...';
+
+  @override
+  String get worldSettings => '世界设定';
+
+  @override
+  String get autoIncludeHint => '勾选的分类会在写作时自动携带';
+
+  @override
+  String get worldRules => '世界规则';
+
+  @override
+  String get characterSettings => '人物设定';
+
+  @override
+  String get relationships => '人物关系';
+
+  @override
+  String get locations => '场景地点';
+
+  @override
+  String get foreshadowing => '伏笔/线索';
+
+  @override
+  String get noDataYet => '暂无数据（写作后自动提取）';
+
+  @override
+  String get pleaseSelectChapter => '请先选择一个章节';
+
+  @override
+  String get copyFullText => '复制全文';
+
+  @override
+  String get unknownChapter => '未知章节';
+
+  @override
+  String get noContentYet => '暂无内容';
+
+  @override
+  String get allTasksPending => '按顺序执行所有待办任务';
+
+  @override
+  String get noPendingTasks => '没有可执行的待办任务';
+
+  @override
+  String get executeTask => '执行任务';
+
+  @override
+  String get reviewFeedback => '审查反馈';
+
+  @override
+  String get reject => '拒绝';
+
+  @override
+  String get approve => '批准';
+
+  @override
+  String get regenerate => '重新生成';
+
+  @override
+  String get pending => '待处理';
+
+  @override
+  String get running => '进行中';
+
+  @override
+  String get paused => '已暂停';
+
+  @override
+  String get reviewing => '审查中';
+
+  @override
+  String get decomposing => '拆解中';
+
+  @override
   String get aboutAurora => '关于 Aurora';
 
   @override
@@ -479,9 +693,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get stopGenerating => '停止生成';
-
-  @override
-  String get regenerate => '重新生成';
 
   @override
   String get copyCode => '复制代码';

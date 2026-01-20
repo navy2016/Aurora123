@@ -236,7 +236,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get error => 'Error';
 
   @override
-  String get success => 'Success';
+  String get success => 'Completed';
 
   @override
   String get failed => 'Failed';
@@ -310,7 +310,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noModelsFetch => 'No models. Please click to fetch.';
 
   @override
-  String get modelConfig => 'Configuration';
+  String get modelConfig => 'Model Config';
 
   @override
   String get configureModelParams => 'Configure parameters for this model';
@@ -470,6 +470,225 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
 
   @override
+  String get studio => 'Studio';
+
+  @override
+  String get novelWriting => 'Novel Writing';
+
+  @override
+  String get taskOrchestration => 'Task Orchestration';
+
+  @override
+  String get createTask => 'Create Task';
+
+  @override
+  String get pendingTasks => 'Pending Tasks';
+
+  @override
+  String get taskDescription => 'Task Description';
+
+  @override
+  String get decompose => 'Decompose';
+
+  @override
+  String get pause => 'Pause';
+
+  @override
+  String get resume => 'Resume';
+
+  @override
+  String get start => 'Start';
+
+  @override
+  String get novelName => 'Novel Name';
+
+  @override
+  String get chapterTitle => 'Chapter Title';
+
+  @override
+  String get chapters => 'Chapters';
+
+  @override
+  String get novelStructure => 'Structure';
+
+  @override
+  String get reviewModel => 'Check';
+
+  @override
+  String get writerModel => 'Writer Model';
+
+  @override
+  String get decomposeModel => 'Decomposition Model';
+
+  @override
+  String get project => 'Project';
+
+  @override
+  String get selectProject => 'Select Project';
+
+  @override
+  String get createProject => 'New Project';
+
+  @override
+  String get deleteProject => 'Delete Project';
+
+  @override
+  String get deleteProjectConfirm =>
+      'Are you sure you want to delete this project?';
+
+  @override
+  String get deleteChapterConfirm =>
+      'Are you sure you want to delete this chapter?';
+
+  @override
+  String get writing => 'Writing';
+
+  @override
+  String get context => 'Context';
+
+  @override
+  String get preview => 'Preview';
+
+  @override
+  String get stopTask => 'Stop';
+
+  @override
+  String get startWriting => 'Start';
+
+  @override
+  String get outlineSettings => 'Outline & Settings';
+
+  @override
+  String get clearOutline => 'Clear Outline';
+
+  @override
+  String get startConceiving => 'Start Conceiving Your Story';
+
+  @override
+  String get outlineHint =>
+      'Describe your story idea below, and AI will generate a detailed outline.';
+
+  @override
+  String get outlinePlaceholder =>
+      'E.g. Write a cyberpunk detective novel featuring...';
+
+  @override
+  String get generateOutline => 'Generate Outline';
+
+  @override
+  String get editOutlinePlaceholder => 'Edit outline here...';
+
+  @override
+  String get generateChapters => 'Generate Chapters';
+
+  @override
+  String get regenerateChapters => 'Regenerate Chapters';
+
+  @override
+  String get clearChaptersWarning =>
+      'This will clear all existing chapters and progress.\nIt is recommended to backup important content first.\n\nAre you sure you want to continue?';
+
+  @override
+  String get clearAndRegenerate => 'Clear & Regenerate';
+
+  @override
+  String get chaptersAndTasks => 'Chapters & Tasks';
+
+  @override
+  String get addChapter => 'Add Custom Chapter';
+
+  @override
+  String get noTasks => 'No Tasks';
+
+  @override
+  String get taskDetails => 'Task Details';
+
+  @override
+  String get selectTaskToView => 'Select a task to view details';
+
+  @override
+  String get taskRequirement => 'Task Requirements';
+
+  @override
+  String get generatedContent => 'Generated Content';
+
+  @override
+  String get waitingForGeneration => 'Waiting for generation...';
+
+  @override
+  String get worldSettings => 'World Settings';
+
+  @override
+  String get autoIncludeHint =>
+      'Checked categories will be automatically included during writing';
+
+  @override
+  String get worldRules => 'World Rules';
+
+  @override
+  String get characterSettings => 'Character Settings';
+
+  @override
+  String get relationships => 'Relationships';
+
+  @override
+  String get locations => 'Locations';
+
+  @override
+  String get foreshadowing => 'Foreshadowing/Clues';
+
+  @override
+  String get noDataYet => 'No data yet (Auto-extracted after writing)';
+
+  @override
+  String get pleaseSelectChapter => 'Please select a chapter first';
+
+  @override
+  String get copyFullText => 'Copy Full Text';
+
+  @override
+  String get unknownChapter => 'Unknown Chapter';
+
+  @override
+  String get noContentYet => 'No content yet';
+
+  @override
+  String get allTasksPending => 'Execute all pending tasks sequentially';
+
+  @override
+  String get noPendingTasks => 'No executable pending tasks';
+
+  @override
+  String get executeTask => 'Execute';
+
+  @override
+  String get reviewFeedback => 'Review Feedback';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get regenerate => 'Regenerate';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get running => 'Running';
+
+  @override
+  String get paused => 'Paused';
+
+  @override
+  String get reviewing => 'Reviewing';
+
+  @override
+  String get decomposing => 'Decomposing';
+
+  @override
   String get aboutAurora => 'About Aurora';
 
   @override
@@ -489,9 +708,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stopGenerating => 'Stop Generating';
-
-  @override
-  String get regenerate => 'Regenerate';
 
   @override
   String get copyCode => 'Copy Code';
