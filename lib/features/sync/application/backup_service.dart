@@ -48,6 +48,31 @@ class BackupService {
     await file.delete();
   }
 
+  Future<void> exportToLocalFile(String destinationPath) async {
+    final backupEntity = await _exportData();
+    final tempFile = await _createBackupFile(backupEntity);
+    await tempFile.copy(destinationPath);
+    await tempFile.delete();
+  }
+
+  Future<void> importFromLocalFile(String sourcePath) async {
+    final file = File(sourcePath);
+    if (!await file.exists()) {
+      throw Exception('File not found: $sourcePath');
+    }
+    final backupEntity = await _parseBackupFile(file);
+    await _mergeData(backupEntity);
+  }
+
+  Future<void> clearAllData() async {
+    final isar = _storage.isar;
+    await isar.writeTxn(() async {
+      await isar.messageEntitys.clear();
+      await isar.sessionEntitys.clear();
+      await isar.topicEntitys.clear();
+    });
+  }
+
   Future<BackupEntity> _exportData() async {
     final isar = _storage.isar;
     
@@ -158,16 +183,15 @@ class BackupService {
       // 2. Merge Sessions
       for (final s in backup.sessions) {
         final existing = await isar.sessionEntitys.filter().sessionIdEqualTo(s.sessionId).findFirst();
+        
+        // Re-mapping topic ID
+        int? localTopicId;
+        if (s.topicName != null) {
+           localTopicId = topicMap[s.topicName];
+        }
+        
         if (existing == null) {
-            // Re-mapping topic ID
-            int? localTopicId;
-            if (s.topicName != null) {
-               localTopicId = topicMap[s.topicName];
-            } else if (s.topicId != null) {
-               // Fallback logic could go here, but IDs are usually not portable.
-               // Leaving specific localTopicId null if name match fails.
-            }
-
+            // Create new session
             await isar.sessionEntitys.put(SessionEntity()
                 ..sessionId = s.sessionId
                 ..title = s.title
@@ -177,6 +201,12 @@ class BackupService {
                 ..presetId = s.presetId
                 ..totalTokens = s.totalTokens
             );
+        } else {
+            // Update existing session's topicId if it's missing but backup has it
+            if (existing.topicId == null && localTopicId != null) {
+                existing.topicId = localTopicId;
+                await isar.sessionEntitys.put(existing);
+            }
         }
       }
 
@@ -215,3 +245,4 @@ class BackupService {
     });
   }
 }
+

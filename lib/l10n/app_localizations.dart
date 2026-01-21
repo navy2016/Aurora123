@@ -818,6 +818,18 @@ abstract class AppLocalizations {
   /// **'导入数据'**
   String get importData;
 
+  /// No description provided for @backup.
+  ///
+  /// In zh, this message translates to:
+  /// **'备份'**
+  String get backup;
+
+  /// No description provided for @backupAndRestore.
+  ///
+  /// In zh, this message translates to:
+  /// **'备份与恢复'**
+  String get backupAndRestore;
+
   /// No description provided for @clearAllData.
   ///
   /// In zh, this message translates to:
@@ -2221,6 +2233,192 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'在这里配置和编排你的智能助手'**
   String get studioDescription;
+
+  /// No description provided for @cloudSync.
+  ///
+  /// In zh, this message translates to:
+  /// **'数据云同步'**
+  String get cloudSync;
+
+  /// No description provided for @webdavConfig.
+  ///
+  /// In zh, this message translates to:
+  /// **'WebDAV 配置'**
+  String get webdavConfig;
+
+  /// No description provided for @webdavUrl.
+  ///
+  /// In zh, this message translates to:
+  /// **'WebDAV 地址 (URL)'**
+  String get webdavUrl;
+
+  /// No description provided for @webdavUrlHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'https://dav.jianguoyun.com/dav/'**
+  String get webdavUrlHint;
+
+  /// No description provided for @username.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户名'**
+  String get username;
+
+  /// No description provided for @usernameHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'email@example.com'**
+  String get usernameHint;
+
+  /// No description provided for @passwordOrToken.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码 / 应用授权码'**
+  String get passwordOrToken;
+
+  /// No description provided for @testConnection.
+  ///
+  /// In zh, this message translates to:
+  /// **'测试连接'**
+  String get testConnection;
+
+  /// No description provided for @backupNow.
+  ///
+  /// In zh, this message translates to:
+  /// **'立即备份'**
+  String get backupNow;
+
+  /// No description provided for @cloudBackupList.
+  ///
+  /// In zh, this message translates to:
+  /// **'云端备份列表'**
+  String get cloudBackupList;
+
+  /// No description provided for @noBackupsOrNotConnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无备份或未连接'**
+  String get noBackupsOrNotConnected;
+
+  /// No description provided for @restore.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复'**
+  String get restore;
+
+  /// No description provided for @confirmRestore.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认恢复?'**
+  String get confirmRestore;
+
+  /// No description provided for @restoreWarning.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复操作将尝试合并云端数据到本地。如果存在冲突可能会更新本地数据。建议先备份当前数据。'**
+  String get restoreWarning;
+
+  /// No description provided for @confirmRestoreButton.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定恢复'**
+  String get confirmRestoreButton;
+
+  /// No description provided for @connectionSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接成功'**
+  String get connectionSuccess;
+
+  /// No description provided for @connectionFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接失败: 请检查配置'**
+  String get connectionFailed;
+
+  /// No description provided for @connectionError.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接异常'**
+  String get connectionError;
+
+  /// No description provided for @backupSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'备份上传成功'**
+  String get backupSuccess;
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'备份失败'**
+  String get backupFailed;
+
+  /// No description provided for @restoreSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'数据恢复成功'**
+  String get restoreSuccess;
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复失败'**
+  String get restoreFailed;
+
+  /// No description provided for @fetchBackupListFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'获取备份列表失败'**
+  String get fetchBackupListFailed;
+
+  /// No description provided for @exportSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出成功'**
+  String get exportSuccess;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出失败'**
+  String get exportFailed;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入成功'**
+  String get importSuccess;
+
+  /// No description provided for @importFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入失败'**
+  String get importFailed;
+
+  /// No description provided for @clearDataConfirmTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认清空所有数据?'**
+  String get clearDataConfirmTitle;
+
+  /// No description provided for @clearDataConfirmContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'此操作将永久删除所有会话、消息和话题数据，且无法撤销。建议先导出备份。'**
+  String get clearDataConfirmContent;
+
+  /// No description provided for @clearDataSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'数据已清空'**
+  String get clearDataSuccess;
+
+  /// No description provided for @clearDataFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'清空数据失败'**
+  String get clearDataFailed;
 
   /// No description provided for @novelWritingDescription.
   ///

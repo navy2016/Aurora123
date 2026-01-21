@@ -384,6 +384,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importData => 'Import Data';
 
   @override
+  String get backup => 'Backup';
+
+  @override
+  String get backupAndRestore => 'Backup and Restore';
+
+  @override
   String get clearAllData => 'Clear All Data';
 
   @override
@@ -1114,6 +1120,102 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get studioDescription =>
       'Configure and orchestrate your intelligent assistants here';
+
+  @override
+  String get cloudSync => 'Cloud Sync';
+
+  @override
+  String get webdavConfig => 'WebDAV Configuration';
+
+  @override
+  String get webdavUrl => 'WebDAV URL';
+
+  @override
+  String get webdavUrlHint => 'https://dav.example.com/dav/';
+
+  @override
+  String get username => 'Username';
+
+  @override
+  String get usernameHint => 'email@example.com';
+
+  @override
+  String get passwordOrToken => 'Password / App Token';
+
+  @override
+  String get testConnection => 'Test Connection';
+
+  @override
+  String get backupNow => 'Backup Now';
+
+  @override
+  String get cloudBackupList => 'Cloud Backups';
+
+  @override
+  String get noBackupsOrNotConnected => 'No backups or not connected';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get confirmRestore => 'Confirm Restore?';
+
+  @override
+  String get restoreWarning =>
+      'Restore will attempt to merge cloud data to local. If conflicts exist, local data may be updated. It is recommended to backup current data first.';
+
+  @override
+  String get confirmRestoreButton => 'Confirm Restore';
+
+  @override
+  String get connectionSuccess => 'Connection successful';
+
+  @override
+  String get connectionFailed =>
+      'Connection failed: please check configuration';
+
+  @override
+  String get connectionError => 'Connection error';
+
+  @override
+  String get backupSuccess => 'Backup uploaded successfully';
+
+  @override
+  String get backupFailed => 'Backup failed';
+
+  @override
+  String get restoreSuccess => 'Data restored successfully';
+
+  @override
+  String get restoreFailed => 'Restore failed';
+
+  @override
+  String get fetchBackupListFailed => 'Failed to fetch backup list';
+
+  @override
+  String get exportSuccess => 'Export successful';
+
+  @override
+  String get exportFailed => 'Export failed';
+
+  @override
+  String get importSuccess => 'Import successful';
+
+  @override
+  String get importFailed => 'Import failed';
+
+  @override
+  String get clearDataConfirmTitle => 'Clear all data?';
+
+  @override
+  String get clearDataConfirmContent =>
+      'This will permanently delete all sessions, messages, and topics. This action cannot be undone. It is recommended to export a backup first.';
+
+  @override
+  String get clearDataSuccess => 'Data cleared successfully';
+
+  @override
+  String get clearDataFailed => 'Failed to clear data';
 
   @override
   String get novelWritingDescription =>

@@ -8,6 +8,7 @@ import '../../../settings/presentation/usage_stats_view.dart';
 import '../../../history/presentation/history_content.dart';
 import '../widgets/topic_dropdown.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import '../../../sync/presentation/mobile_sync_settings_page.dart';
 
 class MobileNavigationDrawer extends ConsumerWidget {
   final SessionsState sessionsState;
@@ -198,6 +199,19 @@ class MobileNavigationDrawer extends ConsumerWidget {
                             ),
                           );
                         }),
+                        Expanded(
+                          child: _MobileDrawerNavItem(
+                              icon: Icons.cloud_sync_outlined,
+                              label: AppLocalizations.of(context)!.backup,
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const MobileSyncSettingsPage()),
+                                );
+                              }),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -224,6 +238,12 @@ class MobileNavigationDrawer extends ConsumerWidget {
                                       const UsageStatsMobileSheet(),
                                 );
                               }),
+                        ),
+                        Expanded(
+                          child: _MobileDrawerNavItem(
+                              icon: Icons.work_outline,
+                              label: AppLocalizations.of(context)!.studio,
+                              onTap: () => onNavigate('__studio__')),
                         ),
                         Expanded(
                           child: _MobileDrawerNavItem(
@@ -330,13 +350,18 @@ class _MobileDrawerNavItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 24),
+            Icon(icon, size: 22),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 12)),
+            Text(label, 
+              style: const TextStyle(fontSize: 11),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),

@@ -377,6 +377,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importData => '导入数据';
 
   @override
+  String get backup => '备份';
+
+  @override
+  String get backupAndRestore => '备份与恢复';
+
+  @override
   String get clearAllData => '清除所有数据';
 
   @override
@@ -1094,6 +1100,99 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get studioDescription => '在这里配置和编排你的智能助手';
+
+  @override
+  String get cloudSync => '数据云同步';
+
+  @override
+  String get webdavConfig => 'WebDAV 配置';
+
+  @override
+  String get webdavUrl => 'WebDAV 地址 (URL)';
+
+  @override
+  String get webdavUrlHint => 'https://dav.jianguoyun.com/dav/';
+
+  @override
+  String get username => '用户名';
+
+  @override
+  String get usernameHint => 'email@example.com';
+
+  @override
+  String get passwordOrToken => '密码 / 应用授权码';
+
+  @override
+  String get testConnection => '测试连接';
+
+  @override
+  String get backupNow => '立即备份';
+
+  @override
+  String get cloudBackupList => '云端备份列表';
+
+  @override
+  String get noBackupsOrNotConnected => '暂无备份或未连接';
+
+  @override
+  String get restore => '恢复';
+
+  @override
+  String get confirmRestore => '确认恢复?';
+
+  @override
+  String get restoreWarning => '恢复操作将尝试合并云端数据到本地。如果存在冲突可能会更新本地数据。建议先备份当前数据。';
+
+  @override
+  String get confirmRestoreButton => '确定恢复';
+
+  @override
+  String get connectionSuccess => '连接成功';
+
+  @override
+  String get connectionFailed => '连接失败: 请检查配置';
+
+  @override
+  String get connectionError => '连接异常';
+
+  @override
+  String get backupSuccess => '备份上传成功';
+
+  @override
+  String get backupFailed => '备份失败';
+
+  @override
+  String get restoreSuccess => '数据恢复成功';
+
+  @override
+  String get restoreFailed => '恢复失败';
+
+  @override
+  String get fetchBackupListFailed => '获取备份列表失败';
+
+  @override
+  String get exportSuccess => '导出成功';
+
+  @override
+  String get exportFailed => '导出失败';
+
+  @override
+  String get importSuccess => '导入成功';
+
+  @override
+  String get importFailed => '导入失败';
+
+  @override
+  String get clearDataConfirmTitle => '确认清空所有数据?';
+
+  @override
+  String get clearDataConfirmContent => '此操作将永久删除所有会话、消息和话题数据，且无法撤销。建议先导出备份。';
+
+  @override
+  String get clearDataSuccess => '数据已清空';
+
+  @override
+  String get clearDataFailed => '清空数据失败';
 
   @override
   String get novelWritingDescription => '配置写作、审查、大纲模型';

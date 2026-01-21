@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
@@ -14,6 +15,7 @@ import '../../../shared/utils/avatar_cropper.dart';
 import 'model_config_dialog.dart';
 import 'global_config_dialog.dart';
 import '../../sync/presentation/sync_settings_section.dart';
+import '../../sync/presentation/sync_provider.dart';
 
 
 class SettingsContent extends ConsumerStatefulWidget {
@@ -1333,22 +1335,102 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
               style: fluent.FluentTheme.of(context).typography.subtitle),
           const SizedBox(height: 24),
           fluent.Button(
-            onPressed: null,
+            onPressed: _handleExport,
             child: Text(l10n.exportData),
           ),
           const SizedBox(height: 8),
           fluent.Button(
-            onPressed: null,
+            onPressed: _handleImport,
             child: Text(l10n.importData),
           ),
           const SizedBox(height: 8),
           fluent.Button(
-            onPressed: null,
+            onPressed: _handleClearAll,
             child: Text(l10n.clearAllData),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _handleExport() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'aurora_backup_$timestamp.zip';
+      
+      final location = await getSaveLocation(suggestedName: fileName);
+      if (location == null) return;
+      
+      await ref.read(backupServiceProvider).exportToLocalFile(location.path);
+      
+      if (mounted) {
+         _showDialog(l10n.exportSuccess, isError: false);
+      }
+    } catch (e) {
+      if (mounted) {
+         _showDialog('${l10n.exportFailed}: $e', isError: true);
+      }
+    }
+  }
+
+  Future<void> _handleImport() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final typeGroup = XTypeGroup(label: 'Zip', extensions: ['zip']);
+      final file = await openFile(acceptedTypeGroups: [typeGroup]);
+      if (file == null) return;
+
+      await ref.read(backupServiceProvider).importFromLocalFile(file.path);
+      
+      if (mounted) {
+        _showDialog(l10n.importSuccess, isError: false);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showDialog('${l10n.importFailed}: $e', isError: true);
+      }
+    }
+  }
+
+  Future<void> _handleClearAll() async {
+     final l10n = AppLocalizations.of(context)!;
+     showDialog(context: context, builder: (context) {
+        return fluent.ContentDialog(
+          title: Text(l10n.clearDataConfirmTitle),
+          content: Text(l10n.clearDataConfirmContent),
+          actions: [
+            fluent.Button(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
+            fluent.FilledButton(
+                style: fluent.ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
+                child: Text(l10n.clearAllData), 
+                onPressed: () async {
+                    Navigator.pop(context);
+                    try {
+                        await ref.read(backupServiceProvider).clearAllData();
+                        if (mounted) _showDialog(l10n.clearDataSuccess, isError: false);
+                    } catch(e) {
+                        if (mounted) _showDialog('${l10n.clearDataFailed}: $e', isError: true);
+                    }
+                }
+            ),
+          ],
+        );
+     });
+  }
+
+  void _showDialog(String message, {bool isError = false}) {
+     showDialog(context: context, builder: (context) {
+        return fluent.ContentDialog(
+           title: isError 
+               ? const Text('Error', style: TextStyle(color: Colors.red))
+               : const Icon(fluent.FluentIcons.check_mark, color: Colors.green),
+           content: Text(message),
+           actions: [
+              fluent.Button(child: const Text('OK'), onPressed: () => Navigator.pop(context)),
+           ],
+        );
+     });
   }
 
   void _openModelSettings(ProviderConfig provider, String modelName) async {

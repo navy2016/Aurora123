@@ -11,6 +11,7 @@ import '../../../settings/presentation/mobile_user_page.dart';
 import '../mobile_translation_page.dart';
 import '../widgets/cached_page_stack.dart';
 import 'mobile_navigation_drawer.dart';
+import '../../../studio/presentation/pages/mobile_studio_page.dart';
 import '../../../../shared/widgets/custom_toast.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 
@@ -24,6 +25,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   static const String keySettings = '__settings__';
   static const String keyTranslation = '__translation__';
   static const String keyUser = '__user__';
+  static const String keyStudio = '__studio__';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _currentViewKey = 'new_chat';
   String _lastSessionId = 'new_chat';
@@ -69,7 +71,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   }
 
   bool _isSpecialKey(String key) {
-    return key == keySettings || key == keyTranslation || key == keyUser;
+    return key == keySettings || key == keyTranslation || key == keyUser || key == keyStudio;
   }
 
   @override
@@ -148,6 +150,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                         onBack: _navigateBackToSession);
                   } else if (key == keyUser) {
                     return MobileUserPage(onBack: _navigateBackToSession);
+                  } else if (key == keyStudio) {
+                    return MobileStudioPage(onBack: _navigateBackToSession);
                   } else {
                     return _buildSessionPage(
                         context,

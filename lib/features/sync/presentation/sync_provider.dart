@@ -18,6 +18,18 @@ final backupServiceProvider = Provider<BackupService>((ref) {
    return BackupService(storage);
 });
 
+// Message keys for localization in UI layer
+class SyncMessageKeys {
+  static const connectionSuccess = 'connectionSuccess';
+  static const connectionFailed = 'connectionFailed';
+  static const connectionError = 'connectionError';
+  static const backupSuccess = 'backupSuccess';
+  static const backupFailed = 'backupFailed';
+  static const restoreSuccess = 'restoreSuccess';
+  static const restoreFailed = 'restoreFailed';
+  static const fetchBackupListFailed = 'fetchBackupListFailed';
+}
+
 class SyncState {
   final WebDavConfig config;
   final bool isBusy;
@@ -93,13 +105,13 @@ class SyncNotifier extends StateNotifier<SyncState> {
           final service = WebDavService(state.config);
           final success = await service.checkConnection();
           if (success) {
-              state = state.copyWith(isBusy: false, successMessage: '连接成功');
+              state = state.copyWith(isBusy: false, successMessage: SyncMessageKeys.connectionSuccess);
               refreshBackups();
           } else {
-              state = state.copyWith(isBusy: false, error: '连接失败: 请检查配置');
+              state = state.copyWith(isBusy: false, error: SyncMessageKeys.connectionFailed);
           }
       } catch (e) {
-          state = state.copyWith(isBusy: false, error: '连接异常: $e');
+          state = state.copyWith(isBusy: false, error: '${SyncMessageKeys.connectionError}: $e');
       }
   }
 
@@ -107,10 +119,10 @@ class SyncNotifier extends StateNotifier<SyncState> {
       state = state.copyWith(isBusy: true, error: null, successMessage: null);
       try {
         await ref.read(backupServiceProvider).backup(state.config);
-        state = state.copyWith(isBusy: false, successMessage: '备份上传成功');
+        state = state.copyWith(isBusy: false, successMessage: SyncMessageKeys.backupSuccess);
         refreshBackups();
       } catch(e) {
-        state = state.copyWith(isBusy: false, error: '备份失败: $e');
+        state = state.copyWith(isBusy: false, error: '${SyncMessageKeys.backupFailed}: $e');
       }
   }
 
@@ -118,9 +130,9 @@ class SyncNotifier extends StateNotifier<SyncState> {
       state = state.copyWith(isBusy: true, error: null, successMessage: null);
       try {
           await ref.read(backupServiceProvider).restore(state.config, file.name);
-          state = state.copyWith(isBusy: false, successMessage: '数据恢复成功');
+          state = state.copyWith(isBusy: false, successMessage: SyncMessageKeys.restoreSuccess);
       } catch(e) {
-          state = state.copyWith(isBusy: false, error: '恢复失败: $e');
+          state = state.copyWith(isBusy: false, error: '${SyncMessageKeys.restoreFailed}: $e');
       }
   }
 
@@ -131,7 +143,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
           final backups = await service.listBackups();
           state = state.copyWith(isBusy: false, remoteBackups: backups);
       } catch (e) {
-           state = state.copyWith(isBusy: false, error: '获取备份列表失败: $e');
+           state = state.copyWith(isBusy: false, error: '${SyncMessageKeys.fetchBackupListFailed}: $e');
       }
   }
 }
+

@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 import '../domain/webdav_config.dart';
 import 'sync_provider.dart';
@@ -48,6 +49,7 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
   Widget build(BuildContext context) {
     final state = ref.watch(syncProvider);
     final theme = FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     ref.listen(syncProvider, (previous, next) {
       if ((previous?.isConfigLoaded != true) && next.isConfigLoaded) {
@@ -64,22 +66,44 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
        );
     }
 
+    // Helper to translate message keys
+    String translateMessage(String message) {
+      final translations = {
+        SyncMessageKeys.connectionSuccess: l10n.connectionSuccess,
+        SyncMessageKeys.connectionFailed: l10n.connectionFailed,
+        SyncMessageKeys.connectionError: l10n.connectionError,
+        SyncMessageKeys.backupSuccess: l10n.backupSuccess,
+        SyncMessageKeys.backupFailed: l10n.backupFailed,
+        SyncMessageKeys.restoreSuccess: l10n.restoreSuccess,
+        SyncMessageKeys.restoreFailed: l10n.restoreFailed,
+        SyncMessageKeys.fetchBackupListFailed: l10n.fetchBackupListFailed,
+      };
+      
+      // Check if message starts with a known key
+      for (final entry in translations.entries) {
+        if (message.startsWith(entry.key)) {
+          return message.replaceFirst(entry.key, entry.value);
+        }
+      }
+      return translations[message] ?? message;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('WebDAV 云同步', style: theme.typography.subtitle),
+            Text(l10n.cloudSync, style: theme.typography.subtitle),
             if (state.isBusy) const ProgressRing(strokeWidth: 2, activeColor: null /* default accent */),
           ],
         ),
         const SizedBox(height: 16),
         InfoLabel(
-          label: 'WebDAV 地址 (URL)',
+          label: l10n.webdavUrl,
           child: TextBox(
             controller: _urlController,
-            placeholder: 'https://dav.jianguoyun.com/dav/',
+            placeholder: l10n.webdavUrlHint,
             onChanged: (_) => _save(),
           ),
         ),
@@ -88,10 +112,10 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
           children: [
             Expanded(
               child: InfoLabel(
-                label: '用户名',
+                label: l10n.username,
                 child: TextBox(
                   controller: _usernameController,
-                  placeholder: 'email@example.com',
+                  placeholder: l10n.usernameHint,
                   onChanged: (_) => _save(),
                 ),
               ),
@@ -99,7 +123,7 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
             const SizedBox(width: 12),
             Expanded(
               child: InfoLabel(
-                label: '密码 / 应用授权码',
+                label: l10n.passwordOrToken,
                 child: TextBox(
                   controller: _passwordController,
                   placeholder: 'Password',
@@ -119,35 +143,35 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
           children: [
             FilledButton(
               onPressed: state.isBusy ? null : () => ref.read(syncProvider.notifier).testConnection(),
-              child: const Text('测试连接 & 刷新'),
+              child: Text(l10n.testConnection),
             ),
             const SizedBox(width: 12),
             Button(
               onPressed: state.isBusy ? null : () => ref.read(syncProvider.notifier).backup(),
-              child: const Text('立即备份'),
+              child: Text(l10n.backupNow),
             ),
           ],
         ),
         if (state.error != null)
            Padding(
              padding: const EdgeInsets.only(top: 8.0),
-             child: Text(state.error!, style: TextStyle(color: Colors.red)),
+             child: Text(translateMessage(state.error!), style: TextStyle(color: Colors.red)),
            ),
         if (state.successMessage != null)
            Padding(
              padding: const EdgeInsets.only(top: 8.0),
-             child: Text(state.successMessage!, style: TextStyle(color: Colors.green)),
+             child: Text(translateMessage(state.successMessage!), style: TextStyle(color: Colors.green)),
            ),
 
         const SizedBox(height: 24),
         const Divider(),
         const SizedBox(height: 16),
-        Text('云端备份列表', style: theme.typography.bodyStrong),
+        Text(l10n.cloudBackupList, style: theme.typography.bodyStrong),
         const SizedBox(height: 8),
         if (state.remoteBackups.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text('暂无备份或未连接', style: TextStyle(color: Colors.grey)),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(l10n.noBackupsOrNotConnected, style: const TextStyle(color: Colors.grey)),
           )
         else
           Container(
@@ -169,15 +193,15 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
                   title: Text(item.name),
                   subtitle: Text('$dateStr  •  $sizeMb MB'),
                   trailing: Button(
-                    child: const Text('恢复'),
+                    child: Text(l10n.restore),
                     onPressed: state.isBusy ? null : () async {
                         showDialog(context: context, builder: (context) {
                             return ContentDialog(
-                                title: const Text('确认恢复?'),
-                                content: const Text('恢复操作将尝试合并云端数据到本地。如果存在冲突可能会更新本地数据。建议先备份当前数据。'),
+                                title: Text(l10n.confirmRestore),
+                                content: Text(l10n.restoreWarning),
                                 actions: [
-                                    Button(child: const Text('取消'), onPressed: () => Navigator.pop(context)),
-                                    FilledButton(child: const Text('确定恢复'), onPressed: () {
+                                    Button(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
+                                    FilledButton(child: Text(l10n.confirmRestoreButton), onPressed: () {
                                         Navigator.pop(context);
                                         ref.read(syncProvider.notifier).restore(item);
                                     }),

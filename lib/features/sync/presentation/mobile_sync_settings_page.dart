@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 import '../domain/webdav_config.dart';
 import 'sync_provider.dart';
@@ -48,6 +49,7 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
   Widget build(BuildContext context) {
     final state = ref.watch(syncProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     ref.listen(syncProvider, (previous, next) {
       if ((previous?.isConfigLoaded != true) && next.isConfigLoaded) {
@@ -59,14 +61,35 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
 
     if (!state.isConfigLoaded) {
       return Scaffold(
-        appBar: AppBar(title: const Text('数据云同步')),
+        appBar: AppBar(title: Text(l10n.cloudSync)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
+    // Helper to translate message keys
+    String translateMessage(String message) {
+      final translations = {
+        SyncMessageKeys.connectionSuccess: l10n.connectionSuccess,
+        SyncMessageKeys.connectionFailed: l10n.connectionFailed,
+        SyncMessageKeys.connectionError: l10n.connectionError,
+        SyncMessageKeys.backupSuccess: l10n.backupSuccess,
+        SyncMessageKeys.backupFailed: l10n.backupFailed,
+        SyncMessageKeys.restoreSuccess: l10n.restoreSuccess,
+        SyncMessageKeys.restoreFailed: l10n.restoreFailed,
+        SyncMessageKeys.fetchBackupListFailed: l10n.fetchBackupListFailed,
+      };
+      
+      for (final entry in translations.entries) {
+        if (message.startsWith(entry.key)) {
+          return message.replaceFirst(entry.key, entry.value);
+        }
+      }
+      return translations[message] ?? message;
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('数据云同步'),
+        title: Text(l10n.cloudSync),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -75,26 +98,26 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
             const LinearProgressIndicator(),
           if (state.error != null)
              MaterialBanner(
-                 content: Text(state.error!, style: const TextStyle(color: Colors.white)),
+                 content: Text(translateMessage(state.error!), style: const TextStyle(color: Colors.white)),
                  backgroundColor: Colors.red,
                  actions: [TextButton(onPressed: () => ref.refresh(syncProvider), child: const Text('DISMISS', style: TextStyle(color: Colors.white)))],
              ),
            if (state.successMessage != null)
              MaterialBanner(
-                 content: Text(state.successMessage!, style: const TextStyle(color: Colors.white)),
+                 content: Text(translateMessage(state.successMessage!), style: const TextStyle(color: Colors.white)),
                  backgroundColor: Colors.green,
                  actions: [TextButton(onPressed: () => ref.refresh(syncProvider), child: const Text('OK', style: TextStyle(color: Colors.white)))],
              ),
 
           const SizedBox(height: 16),
-          Text('WebDAV 配置', style: theme.textTheme.titleMedium),
+          Text(l10n.webdavConfig, style: theme.textTheme.titleMedium),
           const SizedBox(height: 16),
           TextField(
             controller: _urlController,
-            decoration: const InputDecoration(
-              labelText: 'WebDAV 地址 (URL)',
-              hintText: 'https://dav.jianguoyun.com/dav/',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.webdavUrl,
+              hintText: l10n.webdavUrlHint,
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
             onChanged: (_) => _save(),
@@ -102,10 +125,10 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
           const SizedBox(height: 16),
           TextField(
             controller: _usernameController,
-            decoration: const InputDecoration(
-              labelText: '用户名',
-              hintText: 'email@example.com',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.username,
+              hintText: l10n.usernameHint,
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
             onChanged: (_) => _save(),
@@ -115,7 +138,7 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
             controller: _passwordController,
             obscureText: !_showPassword,
             decoration: InputDecoration(
-              labelText: '密码 / 应用授权码',
+              labelText: l10n.passwordOrToken,
               border: const OutlineInputBorder(),
               isDense: true,
               suffixIcon: IconButton(
@@ -131,14 +154,14 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
               Expanded(
                 child: OutlinedButton(
                   onPressed: state.isBusy ? null : () => ref.read(syncProvider.notifier).testConnection(),
-                  child: const Text('测试连接'),
+                  child: Text(l10n.testConnection),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: FilledButton(
                   onPressed: state.isBusy ? null : () => ref.read(syncProvider.notifier).backup(),
-                  child: const Text('立即备份'),
+                  child: Text(l10n.backupNow),
                 ),
               ),
             ],
@@ -149,7 +172,7 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
           Row(
              mainAxisAlignment: MainAxisAlignment.spaceBetween,
              children: [
-                 Text('云端备份列表', style: theme.textTheme.titleMedium),
+                 Text(l10n.cloudBackupList, style: theme.textTheme.titleMedium),
                  IconButton(
                      icon: const Icon(Icons.refresh),
                      onPressed: state.isBusy ? null : () => ref.read(syncProvider.notifier).refreshBackups(),
@@ -157,9 +180,9 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
              ]
           ),
           if (state.remoteBackups.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
-              child: Center(child: Text('暂无备份或未连接', style: TextStyle(color: Colors.grey))),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: Text(l10n.noBackupsOrNotConnected, style: const TextStyle(color: Colors.grey))),
             )
           else
             ...state.remoteBackups.map((item) {
@@ -173,15 +196,15 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
                   title: Text(item.name),
                   subtitle: Text('$dateStr  •  $sizeMb MB'),
                   trailing: TextButton(
-                    child: const Text('恢复'),
+                    child: Text(l10n.restore),
                     onPressed: state.isBusy ? null : () {
                         showDialog(context: context, builder: (context) {
                             return AlertDialog(
-                                title: const Text('确认恢复?'),
-                                content: const Text('恢复操作将尝试合并云端数据到本地。如果存在冲突可能会更新本地数据。建议先备份当前数据。'),
+                                title: Text(l10n.confirmRestore),
+                                content: Text(l10n.restoreWarning),
                                 actions: [
-                                    TextButton(child: const Text('取消'), onPressed: () => Navigator.pop(context)),
-                                    FilledButton(child: const Text('确定恢复'), onPressed: () {
+                                    TextButton(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
+                                    FilledButton(child: Text(l10n.confirmRestoreButton), onPressed: () {
                                         Navigator.pop(context);
                                         ref.read(syncProvider.notifier).restore(item);
                                     }),
