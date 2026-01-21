@@ -115,7 +115,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               onPressed: () => notifier.togglePause(),
               child: Icon(state.isPaused ? FluentIcons.play : FluentIcons.pause, size: 12),
             ),
-          ] else
+          ] else ...[
             Tooltip(
               message: state.allTasks.any((t) => t.status == TaskStatus.pending)
                   ? '按顺序执行所有待办任务'
@@ -134,6 +134,47 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                 ),
               ),
             ),
+            // Restart button - only show when there are completed/failed tasks
+            if (state.allTasks.any((t) => t.status == TaskStatus.success || t.status == TaskStatus.failed)) ...[
+              const SizedBox(width: 8),
+              Tooltip(
+                message: '重置所有任务状态，从头开始重新生成',
+                child: Button(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => ContentDialog(
+                        title: const Text('重新执行所有任务'),
+                        content: const Text('确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。'),
+                        actions: [
+                          Button(
+                            child: Text(l10n.cancel),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                          FilledButton(
+                            style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.orange)),
+                            child: const Text('重新执行'),
+                            onPressed: () {
+                              notifier.restartAllTasks();
+                              Navigator.pop(ctx);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(FluentIcons.refresh, size: 12),
+                      SizedBox(width: 4),
+                      Text('重新执行'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
           
           const SizedBox(width: 12),
           
@@ -514,6 +555,36 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                   Text(l10n.worldSettings, style: theme.typography.subtitle),
                   const Spacer(),
                   Text(l10n.autoIncludeHint, style: theme.typography.caption),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: '清空所有设定',
+                    child: IconButton(
+                      icon: const Icon(FluentIcons.delete, size: 14),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => ContentDialog(
+                            title: const Text('清空世界设定'),
+                            content: const Text('确定要清空所有世界设定数据吗？\n（人物设定、人物关系、场景地点、伏笔/线索等）'),
+                            actions: [
+                              Button(
+                                child: Text(l10n.cancel),
+                                onPressed: () => Navigator.pop(ctx),
+                              ),
+                              FilledButton(
+                                style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
+                                child: const Text('清空'),
+                                onPressed: () {
+                                  notifier.clearWorldContext();
+                                  Navigator.pop(ctx);
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -718,66 +789,72 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               final tasks = state.tasksForChapter(chapter.id);
               
               return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Expander(
-                  header: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          chapter.title, 
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Chapter header - flat style, no folding
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.resources.layerFillColorAlt,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              chapter.title, 
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(FluentIcons.add, size: 12),
+                            onPressed: () => _showNewTaskDialog(context, l10n, notifier, chapter.id),
+                          ),
+                          IconButton(
+                            icon: const Icon(FluentIcons.delete, size: 12),
+                            onPressed: () {
+                               showDialog(
+                                context: context,
+                                builder: (context) => ContentDialog(
+                                  title: const Text('Delete Chapter'),
+                                  content: Text(l10n.deleteChapterConfirm),
+                                  actions: [
+                                    Button(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
+                                    FilledButton(
+                                      style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
+                                      child: Text(l10n.delete),
+                                      onPressed: () {
+                                        notifier.deleteChapter(chapter.id);
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Tasks list - always visible
+                    if (tasks.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
+                        child: Text(l10n.noTasks, style: theme.typography.caption?.copyWith(fontStyle: FontStyle.italic)),
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: tasks.map((task) => _buildTaskListItem(context, theme, task, state, notifier)).toList(),
                         ),
                       ),
-                    ],
-                  ),
-                  initiallyExpanded: index <= 5,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(FluentIcons.add, size: 12),
-                        onPressed: () => _showNewTaskDialog(context, l10n, notifier, chapter.id),
-                      ),
-                      IconButton(
-                        icon: const Icon(FluentIcons.delete, size: 12),
-                        onPressed: () {
-                           showDialog(
-                            context: context,
-                            builder: (context) => ContentDialog(
-                              title: const Text('Delete Chapter'),
-                              content: Text(l10n.deleteChapterConfirm),
-                              actions: [
-                                Button(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
-                                FilledButton(
-                                  style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
-                                  child: Text(l10n.delete),
-                                  onPressed: () {
-                                    notifier.deleteChapter(chapter.id);
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  content: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (tasks.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text(l10n.noTasks, style: theme.typography.caption?.copyWith(fontStyle: FontStyle.italic)),
-                        )
-                      else
-                        ...tasks.map((task) => _buildTaskListItem(context, theme, task, state, notifier)),
-                    ],
-                  ),
+                  ],
                 ),
               );
             },

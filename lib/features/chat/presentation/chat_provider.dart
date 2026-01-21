@@ -214,8 +214,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final title = text.length > 15 ? '${text.substring(0, 15)}...' : text;
       final topicId = _ref.read(selectedTopicIdProvider);
       final currentPresetId = _ref.read(settingsProvider).lastPresetId;
+      // Don't use currentPresetId for new chats to avoid "leaking" presets
       final realId = await _storage.createSession(
-          title: title, topicId: topicId, presetId: currentPresetId);
+          title: title, topicId: topicId, presetId: '');
       if (_sessionId == 'new_chat' && onSessionCreated != null) {
         onSessionCreated!(realId);
       }
@@ -845,13 +846,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final match = presets.where((p) => p.name == presetName);
       if (match.isNotEmpty) {
         final newPresetId = match.first.id;
-        await _ref.read(settingsProvider.notifier).setLastPresetId(newPresetId);
+        // await _ref.read(settingsProvider.notifier).setLastPresetId(newPresetId);
         if (_sessionId != 'chat' && _sessionId != 'new_chat') {
           await _storage.updateSessionPreset(_sessionId, newPresetId);
         }
       }
     } else {
-      await _ref.read(settingsProvider.notifier).setLastPresetId(null);
+      // await _ref.read(settingsProvider.notifier).setLastPresetId(null);
       if (_sessionId != 'chat' && _sessionId != 'new_chat') {
         await _storage.updateSessionPreset(_sessionId, '');
       }

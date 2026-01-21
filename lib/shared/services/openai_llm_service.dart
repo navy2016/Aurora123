@@ -416,9 +416,10 @@ Use search for:
               _logResponse(json);
               if (json['usage'] != null) {
                 final usage = json['usage'];
-                final int? totalTokens = usage['total_tokens'];
-                if (totalTokens != null) {
-                  yield LLMResponseChunk(usage: totalTokens);
+                // Prefer completion_tokens for token/s calculation
+                final int? completionTokens = usage['completion_tokens'] ?? usage['total_tokens'];
+                if (completionTokens != null) {
+                  yield LLMResponseChunk(usage: completionTokens);
                 }
               }
               final choicesRaw = json['choices'];
@@ -1017,7 +1018,8 @@ Use search for:
       _logResponse(data);
       int? usage;
       if (data['usage'] != null) {
-        usage = data['usage']['total_tokens'];
+        // Use completion_tokens for token/s calculation (not total_tokens which includes input)
+        usage = data['usage']['completion_tokens'] ?? data['usage']['total_tokens'];
       }
       final choices = data['choices'] as List;
       if (choices.isNotEmpty) {
@@ -1057,12 +1059,14 @@ Use search for:
             }
           }
         }
+        final String? finishReason = choices[0]['finish_reason'];
         return LLMResponseChunk(
             content: content,
             reasoning: reasoning,
             images: images,
             toolCalls: toolCalls,
-            usage: usage);
+            usage: usage,
+            finishReason: finishReason);
       }
       return const LLMResponseChunk(content: '');
     } on DioException catch (e) {

@@ -8,6 +8,9 @@ import 'novel_state.dart';
 import 'package:aurora/features/chat/domain/message.dart';
 import 'package:aurora/shared/services/openai_llm_service.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
+import 'package:aurora/features/settings/presentation/usage_stats_provider.dart';
+import 'package:aurora/core/error/app_error_type.dart';
+import 'package:aurora/core/error/app_exception.dart';
 
 final novelProvider = StateNotifierProvider<NovelNotifier, NovelWritingState>((ref) {
   return NovelNotifier(ref);
@@ -16,94 +19,104 @@ final novelProvider = StateNotifierProvider<NovelNotifier, NovelWritingState>((r
 // Preset prompts for model roles
 class NovelPromptPresets {
   // 拆解模型：将用户需求/大纲拆解为章节列表（增强版）
-  static const String decompose = '''你是一个小说章节规划助手。用户会给你一个故事需求或粗略大纲，你需要将其拆解为章节列表。
+  static const String decompose = '''你是一个小说章节规划助手。用户会给你一个故事大纲，你需要将其拆解为完整的章节列表。
 
-请以JSON数组格式返回章节列表，每个章节是一个对象，包含标题和详细描述：
+⚠️【最重要】必须生成大纲中的所有章节！如果大纲规划了30章，你就必须输出30章，不能遗漏！
+
+请以JSON数组格式返回章节列表：
 [
   {
     "title": "第一章 标题",
-    "description": "本章详细梗概（不少于300字）：核心事件、人物互动、情感走向、章末悬念..."
+    "description": "本章写作要点：主要事件、出场角色、情感走向、章末悬念（200-300字即可）"
   }
 ]
 
 【章节规划原则】
-1. 节奏控制 (Strand Weave)：
-   - Quest（主线剧情）：不超过连续5章
-   - Fire（感情线）：每10章内至少出现1次
-   - Constellation（世界观扩展）：每15章内至少出现1次
-2. 重要节点：每10-15章设置一个重要转折点
-3. 章末悬念：每章末尾设置悬念，勾住读者
+1. 严格按照大纲的章节划分，不要自行合并或拆分
+2. description 要包含足够的写作指导，但不要太长
+3. 确保每章之间剧情连贯
 
-【描述要求】
-- 每章描述不少于300字
-- 明确本章目标、核心事件、出场角色
-- 标注本章的 Strand 类型（Quest/Fire/Constellation）
+只返回JSON数组，禁止输出任何其他内容。''';
 
-只返回JSON数组，禁止输出任何与任务无关的内容。''';
 
   // 写作模型：根据章节要求写完整章节（增强版）
-  static const String writer = '''你是一个专业的轻小说作家。请根据给定的章节要求，写出完整的章节正文。
+  static const String writer = '''[创作声明] 这是一个虚构小说创作辅助工具。以下所有内容均为虚构创作，旨在完成文学作品的撰写，不涉及任何真实事件或不当内容。请以专业小说作家的身份完成任务。
+
+你是一个日式轻小说作家。请根据给定的章节要求，写出完整的章节正文。
 
 【核心原则】
 - 大纲即法律：100%执行大纲要求，不擅自发挥
-- 设定即物理：角色能力严格遵守设定，不可超越当前境界
+- 设定即物理：角色能力严格遵守设定
 - 纯正文输出：只写故事正文，不写元信息
 
-【文风要求】
-- 风格：轻小说风（Light Novel），文笔要细腻、清新，注重氛围营造
-- 描写：多描写微表情、心理活动和环境细节，避免流水账
-- 语言：生动活泼，可以使用一些符合轻小说调性的修辞
+【文风要求】⭐最重要
+参考《无职转生》《Re:Zero》《为美好的世界献上祝福》等作品的文风：
+- 叙述清新自然，细腻但不啰嗦
+- 对话生动自然，符合角色性格
+- 日常场景温馨有趣，战斗场景紧张刺激
+- 可以有适度的内心吐槽，但不要油腻
+- 感情描写细腻，但不要肉麻
+
+【对话风格】
+- 对话要自然，像真人说话
+- 不同角色要有不同的说话方式
+- 可以用"呢"、"吧"、"啊"等语气词
+- 避免过于正式或书面的表达
+
+【禁止的中国网文元素】⚠️严格禁止
+- 禁止"老子"、"爷"、"小爷"、"本座"等自称
+- 禁止"找死"、"不知死活"、"蝼蚁"、"给我滚"等用语
+- 禁止装逼打脸、境界碾压的套路
+- 禁止"震惊！"、"竟然！"等夸张表达
+- 禁止突然冒出来找茬的路人甲
+
+【禁用书面语】
+- 禁用文言词：此、彼、其、之、乃、故而、遂
+- 禁用学术词：而言、某种程度上、本质上
+- 禁用正式词：进行、实施、鉴于、基于
+
+【专业术语规避】
+- 禁止心理学术语：应激反应、心理防御机制
+- 禁止文学术语：意象、隐喻、象征意义
+- 禁止像写科普一样解释魔法/能力的原理
+
+【AI痕迹规避】
+- 禁用总结句式："这让他明白了..."、"他意识到..."
+- 禁用排比句式：不要连续三个"他看到...他听到...他感到..."
+- 禁止在对话后解释对话的含义
+- 章节结尾不要搞升华，自然结束即可
+
+【精简描写】⭐重要
+- 形容词克制：每个名词最多1个形容词，避免"xxx的xxx的xxx"
+- 环境描写从简：1-2句点到为止，不要铺陈整段环境描写
+- 聚焦人物：描写为人物服务，与情节无关的景物一律省略
+- 动作优先：用动作和对话推进剧情，减少静态描写
+- 禁止"诗意"描写：不要用大量比喻、排比来描述日常场景
+
+【反面示例】❌
+❌ "阳光像是被打翻的蜂蜜罐头，黏稠而甜蜜地流淌在精心修剪的灌木迷宫上。空气中弥漫着大吉岭红茶的香气，混合着不知名贵妇人身上过于浓郁的熏衣草香水味，编织成了一张令人窒息的大网。"
+✅ "茶会的空气甜腻得让人头疼。"
 
 【字数要求】
 - 本章字数：3000-5000字
-- 短句占比：30-50%（保持节奏明快）
-- 对话换人换行，长段落（5行以上）适当拆分
-
-【写作禁忌】
-1. **拒绝粗鲁语言**：除非角色人设（如流氓/暴徒）强制要求，否则严禁使用粗俗词汇（如"该死"、"混蛋"等）。女性角色台词需符合其性格教养。
-2. **拒绝重复啰嗦**：
-   - 严禁反复描写已知的外貌特征（如反复写"她蓝色的眼睛"）
-   - 严禁反复强调已知的世界观设定（如反复解释魔法原理）
-   - 除非剧情需要，否则不要在这一章重复前一章已经交代过的信息。
-3. **拒绝说教感**：不要借角色之口长篇大论讲道理。
-
-【AI痕迹规避】
-- 禁用总结词：综合、总之、由此可见、总而言之
-- 禁用列举结构：首先、其次、最后、第一、第二、第三
-- 减少学术词：而言、某种程度上、本质上
-- 减少因果连词：因为、所以、由于、因此
-- 多用停顿词：嗯、这个、那什么、怎么说呢
-- 多用口语词：咋回事、得了、行吧、算了
-
-【章末禁止事项】⚠️
-- 禁止在章节结尾进行"总结升华"
-- 禁止写"这一天让他明白了..."、"他知道这只是开始..."之类的感慨
-- 禁止添加人生哲理、道德教训、深刻领悟
-- 禁止使用"或许"、"也许这就是..."引出的总结性段落
-- 章节应该在剧情/对话/动作中自然结束。
-
-【章末要求】
-在正文最后追加章节摘要（用 --- 分隔）：
----
-## 本章摘要
-**剧情**: {主要事件}
-**人物**: {角色互动}
-**状态变化**: {实力/位置/关系变化}
-**伏笔**: [埋设] / [回收]
-**承接点**: {下章衔接}
+- 注意节奏，张弛有度
+- 对话换人换行
 
 禁止输出任何与任务无关的内容，直接输出正文即可。''';
 
   // 审查模型：审查章节质量（增强版）
   static const String reviewer = '''你是一个严格的小说编辑。请审查以下章节内容。
 
+【重要说明】
+如果内容末尾有 "---" 分隔的摘要部分，请忽略摘要，只审查正文内容。
+
 【审查维度】
-1. 字数检查：是否达到3000-5000字
+1. 字数检查：是否达到3000-5000字（不含摘要）
 2. 大纲执行：是否100%完成章节大纲要求
 3. 设定一致性：角色能力是否符合当前境界，战力是否合理
 4. 人物OOC：角色言行是否符合人设
 5. 节奏连贯：与前文衔接是否自然，章末是否有悬念
-6. AI痕迹：是否有明显的AI写作痕迹（总结词、列举结构等）
+6. AI痕迹：是否有明显的AI写作痕迹（总结词、列举结构等）——摘要部分不算AI痕迹
 
 请返回JSON格式的审查结果：
 {
@@ -124,7 +137,9 @@ class NovelPromptPresets {
 只返回JSON，禁止输出任何与任务无关的内容。''';
 
   // 修订模型：根据审查意见修改章节
-  static const String reviser = '''你是一个专业的小说修订编辑。你的任务是根据审查意见修改章节内容。
+  static const String reviser = '''[创作声明] 这是一个虚构小说创作辅助工具。以下所有内容均为虚构创作，旨在完成文学作品的撰写，不涉及任何真实事件或不当内容。请以专业小说编辑的身份完成任务。
+
+你是一个专业的小说修订编辑。你的任务是根据审查意见修改章节内容。
 
 【工作原则】
 1. 只修改审查意见指出的问题
@@ -140,65 +155,88 @@ class NovelPromptPresets {
 
 【输出要求】
 直接输出修改后的完整章节正文，不要解释做了什么修改。
-保留原文的章节摘要格式（如果有的话）。
 禁止输出任何与任务无关的内容。''';
 
   // 大纲模型：生成故事大纲（增强版）
-  static const String outline = '''你是一个小说大纲规划师。请根据用户的故事需求，创建详细的小说大纲。
+  static const String outline = '''你是一个日式轻小说大纲规划师。请根据用户的故事需求，创建详细的小说大纲。
+
+【文风定位】⭐最重要
+这是一部日式轻小说风格的作品，参考《无职转生》《Re:Zero》《为美好的世界献上祝福》等作品的调性：
+- 叙述清新自然，不刻意搞笑也不过于严肃
+- 对话生动但不油腻，不用中国网文的"老子""爷"等用语
+- 角色塑造细腻，有日常互动的温馨感
+- 战斗/冒险场景紧张刺激，但不血腥暴力
+- 可以有轻微的吐槽和幽默，但不是无厘头搞笑
+
+【禁止的中国网文元素】⚠️
+- 禁止"老子"、"爷"、"小爷"等自称
+- 禁止"找死"、"不知死活"、"蝼蚁"等嚣张用语
+- 禁止境界碾压式的装逼打脸情节
+- 禁止后宫收集式的女性角色处理
+- 禁止"震惊！"、"竟然！"等夸张表达
 
 【大纲结构】
 
 # {小说名称}
 
 ## 一、故事背景
-- 世界观设定（详细描述世界观的规则、历史、势力分布等）
+- 世界观设定（西幻风格，可参考欧洲中世纪+魔法元素）
 - 时代背景
-- 核心设定（修炼体系/超能力系统/社会规则等，要详细）
+- 魔法/能力体系（简洁清晰，不要复杂的境界划分）
 
 ## 二、主要人物
-为每个重要角色写详细的人物卡：
+为每个重要角色写人物卡：
 
 ### 主角：{姓名}
 - 身份背景：...
-- 性格特点：...
-- 能力/境界：...
+- 性格特点：用具体行为和习惯描述
+- 说话风格：给出1-2句示例台词（自然、不油腻）
+- 能力特点：...
 - 核心目标：...
-- 人物弧光：...
 
 ### 女主/重要配角：{姓名}
+- 性格特点：...
+- 与主角的关系：...
+- 说话风格：示例台词
 ...
 
 ## 三、核心冲突
-- 主线矛盾：{详细描述}
-- 明线目标：...
-- 暗线目标：...
+- 主线矛盾：{具体的威胁或目标}
+- 主角动机：{为什么要行动}
+- 成长方向：{主角会如何变化}
 
 ## 四、剧情规划
-详细规划每个阶段的剧情走向：
+详细规划每个阶段：
 
 ### 第一阶段（第1-X章）：{阶段名称}
 - 核心事件：...
-- 主角变化：...
-- 关键转折：...
-- 阶段结局：...
+- 角色互动亮点：{写1-2个温馨或有趣的日常场景}
+- 主角成长：...
+- 阶段结尾：{悬念或转折}
 
 ### 第二阶段（第X-Y章）：{阶段名称}
 ...
 
-## 五、节奏规划 (Strand Weave)
-- Quest（主线剧情）占比：55-65%
-- Fire（感情线）占比：20-30%
-- Constellation（世界观）占比：10-20%
+## 五、节奏规划
+- 主线剧情/冒险：50-60%
+- 日常/角色互动：30-40%（日式轻小说很重视日常戏）
+- 世界观展开：10-15%
 
 ## 六、伏笔规划
-| 埋设章节 | 伏笔内容 | 回收章节 | 层级 |
-|---------|---------|---------|------|
-| ... | ... | ... | 核心/支线 |
+| 埋设章节 | 伏笔内容 | 回收章节 |
+|---------|---------|---------|
+| ... | ... | ... |
 
 ## 七、结局走向
-{详细描述结局的发展和最终呈现}
+{描述结局的发展方向}
 
-请输出不少于5000字的详细大纲，内容越详细越好。禁止输出任何与任务无关的内容。''';
+【禁止事项】⚠️
+- 禁止使用文学批评术语
+- 禁止使用心理学专业术语
+- 禁止过度解释魔法/能力的原理
+- 角色对话要自然，不要书面化
+
+请输出不少于3000字的详细大纲。禁止输出任何与任务无关的内容。''';
 
   // 上下文提取模型：从章节内容中提取设定变化（增强版 v2）
   static const String contextExtractor = '''你是一个小说分析助手。请从以下章节内容中提取关键信息的变化。
@@ -283,6 +321,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
 
   // ========== LLM Call Helper ==========
   Future<String> _callLLM(NovelModelConfig config, String systemPrompt, String userMessage) async {
+    final startTime = DateTime.now();
     final settings = _ref.read(settingsProvider);
     
     // Find the provider config
@@ -317,8 +356,65 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       Message.user(userMessage),
     ];
     
-    final response = await llmService.getResponse(messages);
-    return response.content ?? '';
+    int attempts = 0;
+    const maxAttempts = 3;
+    
+    while (true) {
+      attempts++;
+      final requestStartTime = DateTime.now();
+      
+      try {
+        final response = await llmService.getResponse(messages);
+        final durationMs = DateTime.now().difference(requestStartTime).inMilliseconds;
+        
+        // Check for truncation (Content Filter)
+        final isTruncated = response.finishReason == 'prohibited_content' || 
+                           response.finishReason == 'content_filter';
+                           
+        if (isTruncated) {
+          print('⚠️ LLM Request Truncated (Reason: ${response.finishReason}). Retrying... ($attempts/$maxAttempts)');
+          
+          // Still track usage since tokens were consumed
+          _ref.read(usageStatsProvider.notifier).incrementUsage(
+            config.modelId,
+            success: true,
+            durationMs: durationMs,
+            tokenCount: response.usage ?? 0,
+          );
+          
+          if (attempts < maxAttempts) {
+            continue; // Retry loop
+          } else {
+            throw Exception('Generation stopped due to ${response.finishReason} (Max retries reached)');
+          }
+        }
+        
+        // Success case
+        _ref.read(usageStatsProvider.notifier).incrementUsage(
+          config.modelId,
+          success: true,
+          durationMs: durationMs,
+          tokenCount: response.usage ?? 0,
+        );
+        
+        return response.content ?? '';
+        
+      } catch (e) {
+        // Track failed usage
+        final durationMs = DateTime.now().difference(requestStartTime).inMilliseconds;
+        AppErrorType errorType = AppErrorType.unknown;
+        if (e is AppException) {
+          errorType = e.type;
+        }
+        _ref.read(usageStatsProvider.notifier).incrementUsage(
+          config.modelId,
+          success: false,
+          durationMs: durationMs,
+          errorType: errorType,
+        );
+        rethrow;
+      }
+    }
   }
 
   // ========== Workflow Engine ==========
@@ -435,11 +531,11 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
         contextBuffer.writeln();
       }
       
-      // Add previous chapter end content for cohesion
-      final prevChapterEnd = _getPreviousChapterEnd(task.chapterId);
-      if (prevChapterEnd.isNotEmpty) {
-        contextBuffer.writeln('【上一章结尾】(请确保剧情连贯)');
-        contextBuffer.writeln(prevChapterEnd);
+      // Add previous chapter full content for cohesion (避免情节重复和跳变)
+      final prevChapterContent = _getPreviousChapterContent(task.chapterId);
+      if (prevChapterContent.isNotEmpty) {
+        contextBuffer.writeln('【上一章完整内容】⚠️重要：请仔细阅读，确保剧情连贯衔接，避免重复已写过的情节');
+        contextBuffer.writeln(prevChapterContent);
         contextBuffer.writeln();
       }
       
@@ -468,16 +564,15 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       state = state.copyWith(allTasks: updatedTasks);
       _saveState();
       
-      // ========== Step 3: Data Agent - 提取上下文更新 ==========
-      // Always run extraction, even in review mode (reviewer uses extracted data too)
-      await _extractContextUpdates(result);
-      
       // 保存写作上下文（用于审查失败时的修订）
       final writingContextForRevision = contextBuffer.toString().split('请根据以上大纲和本章要求')[0];
       
-      // If review is enabled, run the review
+      // If review is enabled, run the review (extraction happens after review passes)
       if (state.isReviewEnabled && !_shouldStop) {
         await _reviewTask(taskId, result, writingContext: writingContextForRevision);
+      } else {
+        // Review not enabled, extract context updates directly
+        await _extractContextUpdates(result);
       }
       
     } catch (e) {
@@ -627,8 +722,8 @@ ${availableKeys.toString()}
     return buffer.toString();
   }
 
-  /// 获取上一章的结尾内容（用于剧情衔接）
-  String _getPreviousChapterEnd(String currentChapterId) {
+  /// 获取上一章的完整内容（用于剧情衔接，避免重复和跳变）
+  String _getPreviousChapterContent(String currentChapterId) {
     final project = state.selectedProject;
     if (project == null) return '';
     
@@ -641,10 +736,11 @@ ${availableKeys.toString()}
     // 查找上一章的生成内容
     for (final task in tasks) {
       if (task.status == TaskStatus.success && task.content != null && task.content!.isNotEmpty) {
-        final content = task.content!;
-        // 取最后1000个字符作为衔接上下文
-        if (content.length > 1000) {
-          return '...${content.substring(content.length - 1000)}';
+        String content = task.content!;
+        // 去除章节摘要部分（--- 后的内容），只保留正文
+        final summaryIndex = content.indexOf('\n---\n');
+        if (summaryIndex > 0) {
+          content = content.substring(0, summaryIndex).trim();
         }
         return content;
       }
@@ -757,10 +853,29 @@ $content
       
       final reviewResult = await _callLLM(reviewerConfig, systemPrompt, reviewPrompt);
       
+      // Strip markdown code blocks if present (```json ... ```)
+      String jsonStr = reviewResult.trim();
+      if (jsonStr.startsWith('```')) {
+        // Remove opening ``` or ```json
+        final firstNewline = jsonStr.indexOf('\n');
+        if (firstNewline > 0) {
+          jsonStr = jsonStr.substring(firstNewline + 1);
+        }
+        // Remove closing ```
+        if (jsonStr.endsWith('```')) {
+          jsonStr = jsonStr.substring(0, jsonStr.length - 3).trim();
+        }
+      }
+      
       // Try to parse review result
       try {
-        final reviewJson = jsonDecode(reviewResult) as Map<String, dynamic>;
-        final approved = reviewJson['approved'] as bool? ?? true;
+        final reviewJson = jsonDecode(jsonStr) as Map<String, dynamic>;
+        
+        // approved 字段必须存在且为 bool，否则视为格式错误
+        if (!reviewJson.containsKey('approved') || reviewJson['approved'] is! bool) {
+          throw FormatException('Missing or invalid "approved" field in review result');
+        }
+        final approved = reviewJson['approved'] as bool;
         
         if (approved) {
           // 审查通过
@@ -776,6 +891,9 @@ $content
           }).toList();
           state = state.copyWith(allTasks: updatedTasks);
           _saveState();
+          
+          // ========== 审查通过后：提取伏笔和人物信息变化 ==========
+          await _extractContextUpdates(content);
         } else {
           // 审查不通过
           if (revisionAttempt < maxRevisions) {
@@ -792,7 +910,7 @@ $content
             // 用修订后的内容重新审查
             await _reviewTask(taskId, revisedContent, revisionAttempt: revisionAttempt + 1, writingContext: writingContext);
           } else {
-            // 超过重试次数，标记为失败
+            // 超过重试次数，标记为失败并停止队列
             final updatedTasks = state.allTasks.map((t) {
               if (t.id == taskId) {
                 return t.copyWith(
@@ -805,12 +923,28 @@ $content
             }).toList();
             state = state.copyWith(allTasks: updatedTasks);
             _saveState();
+            
+            // 停止后续任务执行，等待人工处理
+            _shouldStop = true;
           }
         }
         
       } catch (e) {
-        // Review result is not valid JSON, treat as approved
-        _updateTaskStatus(taskId, TaskStatus.success);
+        // Review result is not valid JSON, mark as error (don't auto-approve)
+        print('⚠️ Review JSON parse error: $e');
+        print('⚠️ Raw result: $reviewResult');
+        final updatedTasks = state.allTasks.map((t) {
+          if (t.id == taskId) {
+            return t.copyWith(
+              status: TaskStatus.failed,
+              reviewFeedback: '审查结果解析失败\n$reviewResult',
+            );
+          }
+          return t;
+        }).toList();
+        state = state.copyWith(allTasks: updatedTasks);
+        _saveState();
+        _shouldStop = true;
       }
       
     } catch (e) {
@@ -1000,6 +1134,32 @@ $suggestions
     _saveState();
   }
 
+  /// 重新执行所有任务：重置所有任务状态，清空已生成内容，从头开始
+  void restartAllTasks() {
+    if (state.selectedProject == null) return;
+    
+    final projectChapterIds = state.selectedProject!.chapters.map((c) => c.id).toSet();
+    
+    // Reset all tasks in this project to pending status
+    final updatedTasks = state.allTasks.map((t) {
+      if (projectChapterIds.contains(t.chapterId)) {
+        return t.copyWith(
+          status: TaskStatus.pending,
+          content: null,
+          reviewFeedback: null,
+        );
+      }
+      return t;
+    }).toList();
+    
+    state = state.copyWith(
+      allTasks: updatedTasks,
+      isRunning: false,
+      isPaused: false,
+    );
+    _saveState();
+  }
+
   // ========== World Context Management ==========
   void updateWorldContext(WorldContext context) {
     if (state.selectedProject == null) return;
@@ -1009,6 +1169,27 @@ $suggestions
     
     state = state.copyWith(projects: updatedProjects);
     _saveState();
+  }
+
+  /// 清空世界设定数据，但保留开关状态
+  void clearWorldContext() {
+    if (state.selectedProject == null) return;
+    
+    final ctx = state.selectedProject!.worldContext;
+    final clearedContext = WorldContext(
+      rules: const {},
+      characters: const {},
+      relationships: const {},
+      locations: const {},
+      foreshadowing: const [],
+      // 保留 include 开关状态
+      includeRules: ctx.includeRules,
+      includeCharacters: ctx.includeCharacters,
+      includeRelationships: ctx.includeRelationships,
+      includeLocations: ctx.includeLocations,
+      includeForeshadowing: ctx.includeForeshadowing,
+    );
+    updateWorldContext(clearedContext);
   }
 
   void toggleContextCategory(String category, bool enabled) {
