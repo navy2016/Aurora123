@@ -1214,4 +1214,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get generating => '生成中...';
+
+  @override
+  String get branch => '分支';
 }

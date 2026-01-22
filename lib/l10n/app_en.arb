@@ -511,5 +511,6 @@
   "imageManagement": "Image Management",
   "imageManagementDescription": "Organize and manage your project images",
   "comingSoon": "Coming Soon",
-  "generating": "Generating..."
+  "generating": "Generating...",
+  "branch": "Branch"
 }

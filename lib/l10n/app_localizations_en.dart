@@ -1240,4 +1240,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generating => 'Generating...';
+
+  @override
+  String get branch => 'Branch';
 }

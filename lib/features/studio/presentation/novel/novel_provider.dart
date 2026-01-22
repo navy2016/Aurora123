@@ -1138,8 +1138,8 @@ $suggestions
   }
 
   // ========== Project Management ==========
-  void createProject(String name) {
-    final project = NovelProject.create(name);
+  void createProject(String name, {WorldContext? worldContext}) {
+    final project = NovelProject.create(name, worldContext: worldContext);
     state = state.copyWith(
       projects: [...state.projects, project],
       selectedProjectId: project.id,
@@ -1246,13 +1246,14 @@ $suggestions
     
     final projectChapterIds = state.selectedProject!.chapters.map((c) => c.id).toSet();
     
-    // Reset all tasks in this project to pending status
+    // Reset all tasks in this project to pending status, clear content and feedback
     final updatedTasks = state.allTasks.map((t) {
       if (projectChapterIds.contains(t.chapterId)) {
         return t.copyWith(
           status: TaskStatus.pending,
           content: null,
           reviewFeedback: null,
+          retryCount: 0,
         );
       }
       return t;

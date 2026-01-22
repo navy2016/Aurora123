@@ -214,7 +214,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
     super.dispose();
   }
 
-  void _handleAction(String action) {
+  void _handleAction(String action) async {
     final msg = widget.message;
     final notifier = ref.read(historyChatProvider);
     switch (action) {
@@ -235,6 +235,24 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
         break;
       case 'delete':
         notifier.deleteMessage(msg.id);
+        break;
+      case 'branch':
+        final sessionId = ref.read(selectedHistorySessionIdProvider);
+        if (sessionId == null) break;
+        final sessions = ref.read(sessionsProvider).sessions;
+        final session = sessions.where((s) => s.sessionId == sessionId).firstOrNull;
+        if (session == null) break;
+        final l10n = AppLocalizations.of(context);
+        final branchSuffix = l10n?.branch ?? 'Branch';
+        final newSessionId = await ref.read(sessionsProvider.notifier).createBranchSession(
+          originalSessionId: sessionId,
+          originalTitle: session.title,
+          upToMessageId: msg.id,
+          branchSuffix: '-$branchSuffix',
+        );
+        if (newSessionId != null) {
+          ref.read(selectedHistorySessionIdProvider.notifier).state = newSessionId;
+        }
         break;
     }
   }
@@ -801,6 +819,13 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                               icon: fluent.FluentIcons.copy,
                               tooltip: 'Copy',
                               onPressed: () => _handleAction('copy')),
+                          if (!isUser) ...[
+                            const SizedBox(width: 4),
+                            ActionButton(
+                                icon: fluent.FluentIcons.branch_fork2,
+                                tooltip: AppLocalizations.of(context)?.branch ?? 'Branch',
+                                onPressed: () => _handleAction('branch')),
+                          ],
                           const SizedBox(width: 4),
                           ActionButton(
                               icon: fluent.FluentIcons.delete,
@@ -835,6 +860,11 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                               icon: Icons.copy_outlined,
                               onPressed: () => _handleAction('copy'),
                             ),
+                            if (!isUser)
+                              MobileActionButton(
+                                icon: Icons.call_split,
+                                onPressed: () => _handleAction('branch'),
+                              ),
                             MobileActionButton(
                               icon: Icons.delete_outline,
                               onPressed: () => _handleAction('delete'),

@@ -1,5 +1,8 @@
 import 'package:uuid/uuid.dart';
 
+/// Sentinel value for copyWith to distinguish between "not provided" and "explicitly null"
+const _sentinel = Object();
+
 enum TaskStatus {
   pending,
   decomposing,
@@ -82,8 +85,8 @@ class NovelTask {
     String? chapterId,
     String? description,
     TaskStatus? status,
-    String? content,
-    String? reviewFeedback,
+    Object? content = _sentinel,
+    Object? reviewFeedback = _sentinel,
     int? retryCount,
   }) {
     return NovelTask(
@@ -91,8 +94,8 @@ class NovelTask {
       chapterId: chapterId ?? this.chapterId,
       description: description ?? this.description,
       status: status ?? this.status,
-      content: content ?? this.content,
-      reviewFeedback: reviewFeedback ?? this.reviewFeedback,
+      content: content == _sentinel ? this.content : content as String?,
+      reviewFeedback: reviewFeedback == _sentinel ? this.reviewFeedback : reviewFeedback as String?,
       retryCount: retryCount ?? this.retryCount,
     );
   }
@@ -299,10 +302,11 @@ class NovelProject {
     );
   }
   
-  static NovelProject create(String name) {
+  static NovelProject create(String name, {WorldContext? worldContext}) {
     return NovelProject(
       id: const Uuid().v4(),
       name: name,
+      worldContext: worldContext ?? const WorldContext(),
       chapters: [], // No default chapter - user generates from outline
     );
   }

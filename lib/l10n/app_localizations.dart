@@ -2461,6 +2461,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'生成中...'**
   String get generating;
+
+  /// No description provided for @branch.
+  ///
+  /// In zh, this message translates to:
+  /// **'分支'**
+  String get branch;
 }
 
 class _AppLocalizationsDelegate

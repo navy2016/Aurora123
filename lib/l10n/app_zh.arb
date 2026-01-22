@@ -512,5 +512,6 @@
   "imageManagement": "图片管理",
   "imageManagementDescription": "整理和管理项目图片素材",
   "comingSoon": "即将推出",
-  "generating": "生成中..."
+  "generating": "生成中...",
+  "branch": "分支"
 }

@@ -1056,7 +1056,44 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
       _ref.read(selectedHistorySessionIdProvider.notifier).state = null;
     }
   }
+
+  /// Creates a new session with messages copied up to and including the specified message.
+  /// Returns the new session ID if successful, null otherwise.
+  Future<String?> createBranchSession({
+    required String originalSessionId,
+    required String originalTitle,
+    required String upToMessageId,
+    required String branchSuffix,
+  }) async {
+    // Load original session messages
+    final messages = await _storage.loadHistory(originalSessionId);
+    if (messages.isEmpty) return null;
+
+    // Find the index of the target message
+    final targetIndex = messages.indexWhere((m) => m.id == upToMessageId);
+    if (targetIndex == -1) return null;
+
+    // Get the session to copy the topicId
+    final originalSession = await _storage.getSession(originalSessionId);
+    final topicId = originalSession?.topicId;
+
+    // Create a copy of messages up to and including the target
+    final messagesToCopy = messages.sublist(0, targetIndex + 1);
+
+    // Create new session with branch name
+    final newTitle = '$originalTitle$branchSuffix';
+    final newSessionId = await _storage.createSession(title: newTitle, topicId: topicId);
+
+    // Save copied messages to new session
+    await _storage.saveHistory(messagesToCopy, newSessionId);
+
+    // Reload sessions
+    await loadSessions();
+
+    return newSessionId;
+  }
 }
+
 
 final sessionsProvider =
     StateNotifierProvider<SessionsNotifier, SessionsState>((ref) {

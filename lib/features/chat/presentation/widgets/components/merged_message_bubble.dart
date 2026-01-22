@@ -14,6 +14,7 @@ import '../reasoning_display.dart';
 import 'chat_utils.dart';
 import 'tool_output.dart';
 import '../../../../settings/presentation/settings_provider.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 
 class MergedMessageBubble extends ConsumerStatefulWidget {
@@ -55,7 +56,7 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
     super.dispose();
   }
 
-  void _handleAction(String action) {
+  void _handleAction(String action) async {
     final group = widget.group;
     final notifier = ref.read(historyChatProvider);
     switch (action) {
@@ -77,6 +78,25 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
       case 'delete':
         for (final msg in widget.group.messages) {
           notifier.deleteMessage(msg.id);
+        }
+        break;
+      case 'branch':
+        final sessionId = ref.read(selectedHistorySessionIdProvider);
+        if (sessionId == null) break;
+        final sessions = ref.read(sessionsProvider).sessions;
+        final session = sessions.where((s) => s.sessionId == sessionId).firstOrNull;
+        if (session == null) break;
+        final l10n = AppLocalizations.of(context);
+        final branchSuffix = l10n?.branch ?? 'Branch';
+        final lastMsg = widget.group.messages.last;
+        final newSessionId = await ref.read(sessionsProvider.notifier).createBranchSession(
+          originalSessionId: sessionId,
+          originalTitle: session.title,
+          upToMessageId: lastMsg.id,
+          branchSuffix: '-$branchSuffix',
+        );
+        if (newSessionId != null) {
+          ref.read(selectedHistorySessionIdProvider.notifier).state = newSessionId;
         }
         break;
     }
@@ -302,6 +322,11 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                                     onPressed: () => _handleAction('copy')),
                                 const SizedBox(width: 4),
                                 ActionButton(
+                                    icon: fluent.FluentIcons.branch_fork2,
+                                    tooltip: AppLocalizations.of(context)?.branch ?? 'Branch',
+                                    onPressed: () => _handleAction('branch')),
+                                const SizedBox(width: 4),
+                                ActionButton(
                                     icon: fluent.FluentIcons.delete,
                                     tooltip: 'Delete',
                                     onPressed: () => _handleAction('delete')),
@@ -326,6 +351,10 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                                   MobileActionButton(
                                     icon: Icons.copy_outlined,
                                     onPressed: () => _handleAction('copy'),
+                                  ),
+                                  MobileActionButton(
+                                    icon: Icons.call_split,
+                                    onPressed: () => _handleAction('branch'),
                                   ),
                                   MobileActionButton(
                                     icon: Icons.delete_outline,

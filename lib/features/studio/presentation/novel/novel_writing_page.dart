@@ -4,6 +4,7 @@ import 'package:super_clipboard/super_clipboard.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'widgets/model_config_dialog.dart';
+import 'widgets/create_project_dialog.dart';
 import 'novel_provider.dart';
 import 'novel_state.dart';
 
@@ -18,7 +19,6 @@ class NovelWritingPage extends ConsumerStatefulWidget {
 
 class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
   final _taskInputController = TextEditingController();
-  final _newProjectController = TextEditingController();
   final _newChapterController = TextEditingController();
   
   int _selectedNavIndex = 0; // 0: Writing, 1: Context, 2: Preview
@@ -26,7 +26,6 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
   @override
   void dispose() {
     _taskInputController.dispose();
-    _newProjectController.dispose();
     _newChapterController.dispose();
     super.dispose();
   }
@@ -1090,27 +1089,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
   void _showNewProjectDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) {
     showDialog(
       context: context,
-      builder: (ctx) => ContentDialog(
-        title: Text(l10n.createProject),
-        content: TextBox(
-          controller: _newProjectController,
-          placeholder: l10n.novelName,
-          autofocus: true,
-        ),
-        actions: [
-          Button(child: Text(l10n.close), onPressed: () => Navigator.pop(ctx)),
-          FilledButton(
-            child: Text(l10n.add),
-            onPressed: () {
-              if (_newProjectController.text.trim().isNotEmpty) {
-                notifier.createProject(_newProjectController.text.trim());
-                _newProjectController.clear();
-                Navigator.pop(ctx);
-              }
-            },
-          ),
-        ],
-      ),
+      builder: (ctx) => const CreateProjectDialog(),
     );
   }
 
