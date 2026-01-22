@@ -24,18 +24,41 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
   
   // Thinking config temporary state
   bool _thinkingEnabled = false;
-  String _thinkingBudget = '';
   String _thinkingMode = 'auto';
 
-  // Generation config temporary state
-  String _temperature = '';
-  String _maxTokens = '';
-  String _contextLength = '';
+  // Controllers
+  late final TextEditingController _thinkingBudgetController;
+  late final TextEditingController _temperatureController;
+  late final TextEditingController _maxTokensController;
+  late final TextEditingController _contextLengthController;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    
+    // Initialize controllers with loaded values
+    _thinkingBudgetController = TextEditingController(
+      text: _modelSettings['_aurora_thinking_config']?['budget']?.toString() ?? ''
+    );
+    _temperatureController = TextEditingController(
+      text: _modelSettings['_aurora_generation_config']?['temperature']?.toString() ?? ''
+    );
+    _maxTokensController = TextEditingController(
+      text: _modelSettings['_aurora_generation_config']?['max_tokens']?.toString() ?? ''
+    );
+    _contextLengthController = TextEditingController(
+      text: _modelSettings['_aurora_generation_config']?['context_length']?.toString() ?? ''
+    );
+  }
+
+  @override
+  void dispose() {
+    _thinkingBudgetController.dispose();
+    _temperatureController.dispose();
+    _maxTokensController.dispose();
+    _contextLengthController.dispose();
+    super.dispose();
   }
 
   void _loadSettings() {
@@ -49,43 +72,21 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     final thinkingConfig = _modelSettings['_aurora_thinking_config'];
     if (thinkingConfig != null && thinkingConfig is Map) {
       _thinkingEnabled = thinkingConfig['enabled'] == true;
-      _thinkingBudget = thinkingConfig['budget']?.toString() ?? '';
       _thinkingMode = thinkingConfig['mode']?.toString() ?? 'auto';
     } else {
       _thinkingEnabled = false;
-      _thinkingBudget = '';
       _thinkingMode = 'auto';
-    }
-
-    // Load generation config
-    final generationConfig = _modelSettings['_aurora_generation_config'];
-    if (generationConfig != null && generationConfig is Map) {
-      _temperature = generationConfig['temperature']?.toString() ?? '';
-      _maxTokens = generationConfig['max_tokens']?.toString() ?? '';
-      _contextLength = generationConfig['context_length']?.toString() ?? '';
-    } else {
-      _temperature = '';
-      _maxTokens = '';
-      _contextLength = '';
     }
   }
 
   void _saveSettings({
     bool? thinkingEnabled,
-    String? thinkingBudget,
     String? thinkingMode,
-    String? temperature,
-    String? maxTokens,
-    String? contextLength,
     Map<String, dynamic>? customParams,
   }) {
     // Update local state
     if (thinkingEnabled != null) _thinkingEnabled = thinkingEnabled;
-    if (thinkingBudget != null) _thinkingBudget = thinkingBudget;
     if (thinkingMode != null) _thinkingMode = thinkingMode;
-    if (temperature != null) _temperature = temperature;
-    if (maxTokens != null) _maxTokens = maxTokens;
-    if (contextLength != null) _contextLength = contextLength;
 
     // Construct new settings map
     final newSettings = Map<String, dynamic>.from(_modelSettings);
@@ -94,7 +95,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     if (_thinkingEnabled) {
       newSettings['_aurora_thinking_config'] = {
         'enabled': true,
-        'budget': _thinkingBudget,
+        'budget': _thinkingBudgetController.text,
         'mode': _thinkingMode,
       };
     } else {
@@ -102,11 +103,15 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     }
 
     // Handle Generation Config
-    if (_temperature.isNotEmpty || _maxTokens.isNotEmpty || _contextLength.isNotEmpty) {
+    final temp = _temperatureController.text;
+    final maxTokens = _maxTokensController.text;
+    final contextLength = _contextLengthController.text;
+
+    if (temp.isNotEmpty || maxTokens.isNotEmpty || contextLength.isNotEmpty) {
       newSettings['_aurora_generation_config'] = {
-        if (_temperature.isNotEmpty) 'temperature': _temperature,
-        if (_maxTokens.isNotEmpty) 'max_tokens': _maxTokens,
-        if (_contextLength.isNotEmpty) 'context_length': _contextLength,
+        if (temp.isNotEmpty) 'temperature': temp,
+        if (maxTokens.isNotEmpty) 'max_tokens': maxTokens,
+        if (contextLength.isNotEmpty) 'context_length': contextLength,
       };
     } else {
       newSettings.remove('_aurora_generation_config');
@@ -194,9 +199,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                     label: l10n.thinkingBudget,
                     child: TextBox(
                       placeholder: l10n.thinkingBudgetHint,
-                      controller: TextEditingController(text: _thinkingBudget)
-                        ..selection = TextSelection.collapsed(offset: _thinkingBudget.length),
-                      onChanged: (v) => _saveSettings(thinkingBudget: v),
+                      controller: _thinkingBudgetController,
+                      onChanged: (v) => _saveSettings(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -234,9 +238,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                     label: l10n.temperature,
                     child: TextBox(
                       placeholder: l10n.temperatureHint,
-                      controller: TextEditingController(text: _temperature)
-                        ..selection = TextSelection.collapsed(offset: _temperature.length),
-                      onChanged: (v) => _saveSettings(temperature: v),
+                      controller: _temperatureController,
+                      onChanged: (v) => _saveSettings(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -244,9 +247,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                     label: l10n.maxTokens,
                     child: TextBox(
                       placeholder: l10n.maxTokensHint,
-                      controller: TextEditingController(text: _maxTokens)
-                        ..selection = TextSelection.collapsed(offset: _maxTokens.length),
-                      onChanged: (v) => _saveSettings(maxTokens: v),
+                      controller: _maxTokensController,
+                      onChanged: (v) => _saveSettings(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -254,9 +256,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                     label: l10n.contextLength,
                     child: TextBox(
                       placeholder: l10n.contextLengthHint,
-                      controller: TextEditingController(text: _contextLength)
-                        ..selection = TextSelection.collapsed(offset: _contextLength.length),
-                      onChanged: (v) => _saveSettings(contextLength: v),
+                      controller: _contextLengthController,
+                      onChanged: (v) => _saveSettings(),
                     ),
                   ),
                 ],

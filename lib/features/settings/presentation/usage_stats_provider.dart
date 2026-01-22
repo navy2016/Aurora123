@@ -15,6 +15,8 @@ typedef UsageStatsRecord = ({
   int totalFirstTokenMs,
   int validFirstTokenCount,
   int totalTokenCount,
+  int promptTokenCount,
+  int completionTokenCount,
   // Error counts
   int errorTimeoutCount,
   int errorNetworkCount,
@@ -73,6 +75,8 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
         totalFirstTokenMs: e.totalFirstTokenMs,
         validFirstTokenCount: e.validFirstTokenCount,
         totalTokenCount: e.totalTokenCount,
+        promptTokenCount: e.promptTokenCount,
+        completionTokenCount: e.completionTokenCount,
         errorTimeoutCount: e.errorTimeoutCount,
         errorNetworkCount: e.errorNetworkCount,
         errorBadRequestCount: e.errorBadRequestCount,
@@ -89,13 +93,17 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
       {bool success = true,
       int durationMs = 0,
       int firstTokenMs = 0,
-      int tokenCount = 0,
+      int tokenCount = 0, // Legacy combined count or 0 if using split
+      int promptTokens = 0,
+      int completionTokens = 0,
       AppErrorType? errorType}) async {
     await _storage.incrementUsage(modelName,
         success: success,
         durationMs: durationMs,
         firstTokenMs: firstTokenMs,
         tokenCount: tokenCount,
+        promptTokens: promptTokens,
+        completionTokens: completionTokens,
         errorType: errorType);
     final current = state.stats[modelName] ??
         (
@@ -106,6 +114,8 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
           totalFirstTokenMs: 0,
           validFirstTokenCount: 0,
           totalTokenCount: 0,
+          promptTokenCount: 0,
+          completionTokenCount: 0,
           errorTimeoutCount: 0,
           errorNetworkCount: 0,
           errorBadRequestCount: 0,
@@ -115,6 +125,8 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
           errorUnknownCount: 0,
         );
     final newStats = Map<String, UsageStatsRecord>.from(state.stats);
+    final effectiveTotal = tokenCount > 0 ? tokenCount : (promptTokens + completionTokens);
+    
     newStats[modelName] = (
       success: current.success + (success ? 1 : 0),
       failure: current.failure + (success ? 0 : 1),
@@ -126,7 +138,9 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
           current.totalFirstTokenMs + (firstTokenMs > 0 ? firstTokenMs : 0),
       validFirstTokenCount:
           current.validFirstTokenCount + (firstTokenMs > 0 ? 1 : 0),
-      totalTokenCount: current.totalTokenCount + tokenCount,
+      totalTokenCount: current.totalTokenCount + effectiveTotal,
+      promptTokenCount: current.promptTokenCount + promptTokens,
+      completionTokenCount: current.completionTokenCount + completionTokens,
       errorTimeoutCount: current.errorTimeoutCount + (errorType == AppErrorType.timeout ? 1 : 0),
       errorNetworkCount: current.errorNetworkCount + (errorType == AppErrorType.network ? 1 : 0),
       errorBadRequestCount: current.errorBadRequestCount + (errorType == AppErrorType.badRequest ? 1 : 0),

@@ -684,13 +684,23 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       if (message.tokenCount != null && message.tokenCount! > 0) ...[
-                                        Text(
-                                          '${message.tokenCount} Tokens',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: theme.typography.body?.color?.withOpacity(0.5),
+                                        if (message.promptTokens != null && message.completionTokens != null) ...[
+                                            Text(
+                                              '${message.completionTokens} Compl | ${message.promptTokens} Prompt',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: theme.typography.body?.color?.withOpacity(0.5),
+                                              ),
+                                            ),
+                                        ] else ...[
+                                          Text(
+                                            '${message.tokenCount} Tokens',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: theme.typography.body?.color?.withOpacity(0.5),
+                                            ),
                                           ),
-                                        ),
+                                        ],
                                         if (message.firstTokenMs != null && message.firstTokenMs! > 0) ...[
                                           Text(
                                             ' | ',
@@ -700,7 +710,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                             ),
                                           ),
                                           Text(
-                                            'FirstToken: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
+                                            'First: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
                                             style: TextStyle(
                                               fontSize: 10,
                                               color: theme.typography.body?.color?.withOpacity(0.5),
@@ -719,7 +729,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                             ),
                                           ),
                                           Text(
-                                            'Token/s: ${(message.tokenCount! / (message.durationMs! / 1000)).toStringAsFixed(2)}',
+                                            '${(message.tokenCount! / (message.durationMs! / 1000)).toStringAsFixed(2)} T/s',
                                             style: TextStyle(
                                               fontSize: 10,
                                               color: theme.typography.body?.color?.withOpacity(0.5),

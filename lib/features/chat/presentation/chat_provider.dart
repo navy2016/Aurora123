@@ -252,6 +252,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
         state.copyWith(isLoading: true, error: null, hasUnreadResponse: false);
     final startSaveIndex = state.messages.length;
     final startTime = DateTime.now();
+    int promptTokens = 0;
+    int completionTokens = 0;
     try {
       final messagesForApi = List<Message>.from(state.messages);
       final settings = _ref.read(settingsProvider);
@@ -285,6 +287,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           DateTime? reasoningStartTime;
           await for (final chunk in responseStream) {
             if (_currentGenerationId != myGenerationId || !mounted) break;
+            if (chunk.promptTokens != null) promptTokens = chunk.promptTokens!;
+            if (chunk.completionTokens != null) completionTokens = chunk.completionTokens!;
             if (chunk.reasoning != null && chunk.reasoning!.isNotEmpty) {
               reasoningStartTime ??= DateTime.now();
               firstContentTime ??= DateTime.now();
@@ -330,6 +334,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
                 provider: aiMsg.provider,
                 reasoningDurationSeconds: duration,
                 tokenCount: chunk.usage ?? aiMsg.tokenCount,
+                promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
+                completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
                 toolCalls: _mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
               );
               final newMessages = List<Message>.from(state.messages);
@@ -354,6 +360,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
               provider: aiMsg.provider,
               reasoningDurationSeconds: duration,
               tokenCount: chunk.usage ?? aiMsg.tokenCount,
+              promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
+              completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
               toolCalls: _mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
             );
             final newMessages = List<Message>.from(state.messages);
@@ -453,6 +461,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
             tools: tools,
             cancelToken: _currentCancelToken,
           );
+          if (response.promptTokens != null) promptTokens = response.promptTokens!;
+          if (response.completionTokens != null) completionTokens = response.completionTokens!;
           if (_currentGenerationId == myGenerationId && mounted) {
             aiMsg = Message(
                 id: aiMsg.id,
@@ -465,6 +475,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
                 model: aiMsg.model,
                 provider: aiMsg.provider,
                 tokenCount: response.usage,
+                promptTokens: response.promptTokens,
+                completionTokens: response.completionTokens,
                 toolCalls: response.toolCalls
                     ?.map((tc) => ToolCall(
                         id: tc.id ?? '',
@@ -586,6 +598,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
             model: aiMsg.model,
             provider: aiMsg.provider,
             tokenCount: chunk.usage ?? aiMsg.tokenCount,
+            promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
+            completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
           );
           final updateMessages = List<Message>.from(state.messages);
           if (updateMessages.isNotEmpty && updateMessages.last.id == aiMsg.id) {
@@ -615,6 +629,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
               m = m.copyWith(
                 firstTokenMs: firstTokenMs,
                 durationMs: durationMs,
+                promptTokens: promptTokens,
+                completionTokens: completionTokens,
               );
             }
             final dbId = await _storage.saveMessage(m, _sessionId);
@@ -640,7 +656,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
               success: true,
               durationMs: durationMs,
               firstTokenMs: firstTokenMs ?? 0,
-              tokenCount: tokenCount);
+              tokenCount: tokenCount,
+              promptTokens: promptTokens,
+              completionTokens: completionTokens);
         }
         
         // Auto-rotate API key after successful request if enabled

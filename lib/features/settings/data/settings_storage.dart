@@ -233,7 +233,9 @@ class SettingsStorage {
       {bool success = true,
       int durationMs = 0,
       int firstTokenMs = 0,
-      int tokenCount = 0,
+      int tokenCount = 0, // Kept for backward compatibility logic, usually sum of prompt+completion
+      int promptTokens = 0,
+      int completionTokens = 0,
       AppErrorType? errorType}) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -253,7 +255,9 @@ class SettingsStorage {
           ..validDurationCount = durationMs > 0 ? 1 : 0
           ..totalFirstTokenMs = firstTokenMs > 0 ? firstTokenMs : 0
           ..validFirstTokenCount = firstTokenMs > 0 ? 1 : 0
-          ..totalTokenCount = tokenCount;
+          ..totalTokenCount = tokenCount > 0 ? tokenCount : (promptTokens + completionTokens)
+          ..promptTokenCount = promptTokens
+          ..completionTokenCount = completionTokens;
         
         if (errorType != null) {
           _updateErrorCount(existing, errorType);
@@ -275,7 +279,12 @@ class SettingsStorage {
           existing.totalFirstTokenMs += firstTokenMs;
           existing.validFirstTokenCount++;
         }
-        existing.totalTokenCount += tokenCount;
+        
+        // Handle migration/mixed usage
+        final effectiveTotal = tokenCount > 0 ? tokenCount : (promptTokens + completionTokens);
+        existing.totalTokenCount += effectiveTotal;
+        existing.promptTokenCount += promptTokens;
+        existing.completionTokenCount += completionTokens;
       }
       await _isar.usageStatsEntitys.put(existing);
 
@@ -285,13 +294,15 @@ class SettingsStorage {
           .dateEqualTo(today)
           .findFirst();
       
+      final effectiveTotalForDaily = tokenCount > 0 ? tokenCount : (promptTokens + completionTokens);
+
       if (daily == null) {
         daily = DailyUsageStatsEntity()
           ..date = today
           ..totalCalls = 1
           ..successCount = success ? 1 : 0
           ..failureCount = success ? 0 : 1
-          ..tokenCount = tokenCount;
+          ..tokenCount = effectiveTotalForDaily;
       } else {
         daily.totalCalls++;
         if (success) {
@@ -299,7 +310,7 @@ class SettingsStorage {
         } else {
           daily.failureCount++;
         }
-        daily.tokenCount += tokenCount;
+        daily.tokenCount += effectiveTotalForDaily;
       }
       await _isar.dailyUsageStatsEntitys.put(daily);
     });

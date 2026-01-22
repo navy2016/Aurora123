@@ -22,78 +22,88 @@ const MessageEntitySchema = CollectionSchema(
       name: r'attachments',
       type: IsarType.stringList,
     ),
-    r'content': PropertySchema(
+    r'completionTokens': PropertySchema(
       id: 1,
+      name: r'completionTokens',
+      type: IsarType.long,
+    ),
+    r'content': PropertySchema(
+      id: 2,
       name: r'content',
       type: IsarType.string,
     ),
     r'durationMs': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'durationMs',
       type: IsarType.long,
     ),
     r'firstTokenMs': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'firstTokenMs',
       type: IsarType.long,
     ),
     r'images': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'images',
       type: IsarType.stringList,
     ),
     r'isUser': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'isUser',
       type: IsarType.bool,
     ),
     r'model': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'model',
       type: IsarType.string,
     ),
+    r'promptTokens': PropertySchema(
+      id: 8,
+      name: r'promptTokens',
+      type: IsarType.long,
+    ),
     r'provider': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'provider',
       type: IsarType.string,
     ),
     r'reasoningContent': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'reasoningContent',
       type: IsarType.string,
     ),
     r'reasoningDurationSeconds': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'reasoningDurationSeconds',
       type: IsarType.double,
     ),
     r'role': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'role',
       type: IsarType.string,
     ),
     r'sessionId': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'sessionId',
       type: IsarType.string,
     ),
     r'timestamp': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'timestamp',
       type: IsarType.dateTime,
     ),
     r'tokenCount': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'tokenCount',
       type: IsarType.long,
     ),
     r'toolCallId': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'toolCallId',
       type: IsarType.string,
     ),
     r'toolCallsJson': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'toolCallsJson',
       type: IsarType.string,
     )
@@ -212,21 +222,23 @@ void _messageEntitySerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeStringList(offsets[0], object.attachments);
-  writer.writeString(offsets[1], object.content);
-  writer.writeLong(offsets[2], object.durationMs);
-  writer.writeLong(offsets[3], object.firstTokenMs);
-  writer.writeStringList(offsets[4], object.images);
-  writer.writeBool(offsets[5], object.isUser);
-  writer.writeString(offsets[6], object.model);
-  writer.writeString(offsets[7], object.provider);
-  writer.writeString(offsets[8], object.reasoningContent);
-  writer.writeDouble(offsets[9], object.reasoningDurationSeconds);
-  writer.writeString(offsets[10], object.role);
-  writer.writeString(offsets[11], object.sessionId);
-  writer.writeDateTime(offsets[12], object.timestamp);
-  writer.writeLong(offsets[13], object.tokenCount);
-  writer.writeString(offsets[14], object.toolCallId);
-  writer.writeString(offsets[15], object.toolCallsJson);
+  writer.writeLong(offsets[1], object.completionTokens);
+  writer.writeString(offsets[2], object.content);
+  writer.writeLong(offsets[3], object.durationMs);
+  writer.writeLong(offsets[4], object.firstTokenMs);
+  writer.writeStringList(offsets[5], object.images);
+  writer.writeBool(offsets[6], object.isUser);
+  writer.writeString(offsets[7], object.model);
+  writer.writeLong(offsets[8], object.promptTokens);
+  writer.writeString(offsets[9], object.provider);
+  writer.writeString(offsets[10], object.reasoningContent);
+  writer.writeDouble(offsets[11], object.reasoningDurationSeconds);
+  writer.writeString(offsets[12], object.role);
+  writer.writeString(offsets[13], object.sessionId);
+  writer.writeDateTime(offsets[14], object.timestamp);
+  writer.writeLong(offsets[15], object.tokenCount);
+  writer.writeString(offsets[16], object.toolCallId);
+  writer.writeString(offsets[17], object.toolCallsJson);
 }
 
 MessageEntity _messageEntityDeserialize(
@@ -237,22 +249,24 @@ MessageEntity _messageEntityDeserialize(
 ) {
   final object = MessageEntity();
   object.attachments = reader.readStringList(offsets[0]) ?? [];
-  object.content = reader.readString(offsets[1]);
-  object.durationMs = reader.readLongOrNull(offsets[2]);
-  object.firstTokenMs = reader.readLongOrNull(offsets[3]);
+  object.completionTokens = reader.readLongOrNull(offsets[1]);
+  object.content = reader.readString(offsets[2]);
+  object.durationMs = reader.readLongOrNull(offsets[3]);
+  object.firstTokenMs = reader.readLongOrNull(offsets[4]);
   object.id = id;
-  object.images = reader.readStringList(offsets[4]) ?? [];
-  object.isUser = reader.readBool(offsets[5]);
-  object.model = reader.readStringOrNull(offsets[6]);
-  object.provider = reader.readStringOrNull(offsets[7]);
-  object.reasoningContent = reader.readStringOrNull(offsets[8]);
-  object.reasoningDurationSeconds = reader.readDoubleOrNull(offsets[9]);
-  object.role = reader.readStringOrNull(offsets[10]);
-  object.sessionId = reader.readStringOrNull(offsets[11]);
-  object.timestamp = reader.readDateTime(offsets[12]);
-  object.tokenCount = reader.readLongOrNull(offsets[13]);
-  object.toolCallId = reader.readStringOrNull(offsets[14]);
-  object.toolCallsJson = reader.readStringOrNull(offsets[15]);
+  object.images = reader.readStringList(offsets[5]) ?? [];
+  object.isUser = reader.readBool(offsets[6]);
+  object.model = reader.readStringOrNull(offsets[7]);
+  object.promptTokens = reader.readLongOrNull(offsets[8]);
+  object.provider = reader.readStringOrNull(offsets[9]);
+  object.reasoningContent = reader.readStringOrNull(offsets[10]);
+  object.reasoningDurationSeconds = reader.readDoubleOrNull(offsets[11]);
+  object.role = reader.readStringOrNull(offsets[12]);
+  object.sessionId = reader.readStringOrNull(offsets[13]);
+  object.timestamp = reader.readDateTime(offsets[14]);
+  object.tokenCount = reader.readLongOrNull(offsets[15]);
+  object.toolCallId = reader.readStringOrNull(offsets[16]);
+  object.toolCallsJson = reader.readStringOrNull(offsets[17]);
   return object;
 }
 
@@ -266,34 +280,38 @@ P _messageEntityDeserializeProp<P>(
     case 0:
       return (reader.readStringList(offset) ?? []) as P;
     case 1:
-      return (reader.readString(offset)) as P;
-    case 2:
       return (reader.readLongOrNull(offset)) as P;
+    case 2:
+      return (reader.readString(offset)) as P;
     case 3:
       return (reader.readLongOrNull(offset)) as P;
     case 4:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     case 6:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 7:
       return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 9:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 10:
       return (reader.readStringOrNull(offset)) as P;
     case 11:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 12:
-      return (reader.readDateTime(offset)) as P;
-    case 13:
-      return (reader.readLongOrNull(offset)) as P;
-    case 14:
       return (reader.readStringOrNull(offset)) as P;
+    case 13:
+      return (reader.readStringOrNull(offset)) as P;
+    case 14:
+      return (reader.readDateTime(offset)) as P;
     case 15:
+      return (reader.readLongOrNull(offset)) as P;
+    case 16:
+      return (reader.readStringOrNull(offset)) as P;
+    case 17:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -786,6 +804,80 @@ extension MessageEntityQueryFilter
         upper,
         includeUpper,
       );
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      completionTokensIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'completionTokens',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      completionTokensIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'completionTokens',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      completionTokensEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'completionTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      completionTokensGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'completionTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      completionTokensLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'completionTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      completionTokensBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'completionTokens',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
@@ -1512,6 +1604,80 @@ extension MessageEntityQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'model',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      promptTokensIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'promptTokens',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      promptTokensIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'promptTokens',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      promptTokensEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'promptTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      promptTokensGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'promptTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      promptTokensLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'promptTokens',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterFilterCondition>
+      promptTokensBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'promptTokens',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -2662,6 +2828,20 @@ extension MessageEntityQueryLinks
 
 extension MessageEntityQuerySortBy
     on QueryBuilder<MessageEntity, MessageEntity, QSortBy> {
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      sortByCompletionTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completionTokens', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      sortByCompletionTokensDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completionTokens', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy> sortByContent() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'content', Sort.asc);
@@ -2722,6 +2902,20 @@ extension MessageEntityQuerySortBy
   QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy> sortByModelDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'model', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      sortByPromptTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'promptTokens', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      sortByPromptTokensDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'promptTokens', Sort.desc);
     });
   }
 
@@ -2847,6 +3041,20 @@ extension MessageEntityQuerySortBy
 
 extension MessageEntityQuerySortThenBy
     on QueryBuilder<MessageEntity, MessageEntity, QSortThenBy> {
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      thenByCompletionTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completionTokens', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      thenByCompletionTokensDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completionTokens', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy> thenByContent() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'content', Sort.asc);
@@ -2919,6 +3127,20 @@ extension MessageEntityQuerySortThenBy
   QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy> thenByModelDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'model', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      thenByPromptTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'promptTokens', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QAfterSortBy>
+      thenByPromptTokensDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'promptTokens', Sort.desc);
     });
   }
 
@@ -3051,6 +3273,13 @@ extension MessageEntityQueryWhereDistinct
     });
   }
 
+  QueryBuilder<MessageEntity, MessageEntity, QDistinct>
+      distinctByCompletionTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'completionTokens');
+    });
+  }
+
   QueryBuilder<MessageEntity, MessageEntity, QDistinct> distinctByContent(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -3087,6 +3316,13 @@ extension MessageEntityQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'model', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MessageEntity, MessageEntity, QDistinct>
+      distinctByPromptTokens() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'promptTokens');
     });
   }
 
@@ -3169,6 +3405,13 @@ extension MessageEntityQueryProperty
     });
   }
 
+  QueryBuilder<MessageEntity, int?, QQueryOperations>
+      completionTokensProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'completionTokens');
+    });
+  }
+
   QueryBuilder<MessageEntity, String, QQueryOperations> contentProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'content');
@@ -3202,6 +3445,12 @@ extension MessageEntityQueryProperty
   QueryBuilder<MessageEntity, String?, QQueryOperations> modelProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'model');
+    });
+  }
+
+  QueryBuilder<MessageEntity, int?, QQueryOperations> promptTokensProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'promptTokens');
     });
   }
 

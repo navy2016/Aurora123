@@ -416,10 +416,18 @@ Use search for:
               _logResponse(json);
               if (json['usage'] != null) {
                 final usage = json['usage'];
-                // Prefer completion_tokens for token/s calculation
-                final int? completionTokens = usage['completion_tokens'] ?? usage['total_tokens'];
-                if (completionTokens != null) {
-                  yield LLMResponseChunk(usage: completionTokens);
+                final int? completionTokens = usage['completion_tokens'];
+                final int? promptTokens = usage['prompt_tokens'];
+                final int? totalTokens = usage['total_tokens'];
+                
+                // If we have completion tokens, we use it for token/s calc (legacy usage field)
+                // But we now also pass explicit prompt and completion tokens
+                if (completionTokens != null || totalTokens != null) {
+                  yield LLMResponseChunk(
+                    usage: completionTokens ?? totalTokens,
+                    promptTokens: promptTokens,
+                    completionTokens: completionTokens,
+                  );
                 }
               }
               final choicesRaw = json['choices'];
@@ -1017,9 +1025,15 @@ Use search for:
       final data = response.data;
       _logResponse(data);
       int? usage;
+      int? promptTokens;
+      int? completionTokens;
+      
       if (data['usage'] != null) {
-        // Use completion_tokens for token/s calculation (not total_tokens which includes input)
-        usage = data['usage']['completion_tokens'] ?? data['usage']['total_tokens'];
+        final usageData = data['usage'];
+        // Legacy usage for token/s (completion tokens preferred)
+        usage = usageData['completion_tokens'] ?? usageData['total_tokens'];
+        promptTokens = usageData['prompt_tokens'];
+        completionTokens = usageData['completion_tokens'];
       }
       final choices = data['choices'] as List;
       if (choices.isNotEmpty) {
@@ -1066,6 +1080,8 @@ Use search for:
             images: images,
             toolCalls: toolCalls,
             usage: usage,
+            promptTokens: promptTokens,
+            completionTokens: completionTokens,
             finishReason: finishReason);
       }
       return const LLMResponseChunk(content: '');

@@ -573,6 +573,8 @@ class _ModelStatsList extends StatelessWidget {
                 int totalFirstTokenMs,
                 int validFirstTokenCount,
                 int totalTokenCount,
+                int promptTokenCount,
+                int completionTokenCount,
                 int errorTimeoutCount,
                 int errorNetworkCount,
                 int errorBadRequestCount,
@@ -737,7 +739,10 @@ class _ModelStatsList extends StatelessWidget {
              return Row(
                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                children: [
-                 _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'cumulativeToken'), '${stats.totalTokenCount}', null),
+                 _buildMetricItem(isMobile, themeData, mobileTheme, 
+                     _getLoc(context, 'cumulativeToken'), 
+                     '${stats.totalTokenCount}\n(${stats.promptTokenCount}/${stats.completionTokenCount})', 
+                     null),
                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'tokensPerSecond'), tps, tpsColor),
                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'averageFirstToken'), '${avgFirstToken}s', ftColor),
                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'averageDuration'), '${avgDuration}s', durationColor),
@@ -786,6 +791,10 @@ class _ModelStatsList extends StatelessWidget {
         return isZh ? 'FirstToken' : 'First Token';
       case 'averageDuration':
         return isZh ? '平均' : 'Average';
+      case 'prompt':
+        return isZh ? '提问' : 'Prompt';
+      case 'completion':
+        return isZh ? '回答' : 'Completion';
       default:
         return key;
     }

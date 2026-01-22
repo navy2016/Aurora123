@@ -13,6 +13,8 @@ class UsageStatsEntity {
   int totalFirstTokenMs = 0;
   int validFirstTokenCount = 0;
   int totalTokenCount = 0;
+  int promptTokenCount = 0;
+  int completionTokenCount = 0;
 
   // Error Classification Counts
   int errorTimeoutCount = 0;

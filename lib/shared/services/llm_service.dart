@@ -7,6 +7,8 @@ class LLMResponseChunk {
   final List<String> images;
   final List<ToolCallChunk>? toolCalls;
   final int? usage;
+  final int? promptTokens;
+  final int? completionTokens;
   final String? finishReason;
   const LLMResponseChunk(
       {this.content,
@@ -14,6 +16,8 @@ class LLMResponseChunk {
       this.images = const [],
       this.toolCalls,
       this.usage,
+      this.promptTokens,
+      this.completionTokens,
       this.finishReason});
 }
 

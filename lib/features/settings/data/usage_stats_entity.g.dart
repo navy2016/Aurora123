@@ -17,78 +17,88 @@ const UsageStatsEntitySchema = CollectionSchema(
   name: r'UsageStatsEntity',
   id: 4367195191658653319,
   properties: {
-    r'errorBadRequestCount': PropertySchema(
+    r'completionTokenCount': PropertySchema(
       id: 0,
+      name: r'completionTokenCount',
+      type: IsarType.long,
+    ),
+    r'errorBadRequestCount': PropertySchema(
+      id: 1,
       name: r'errorBadRequestCount',
       type: IsarType.long,
     ),
     r'errorNetworkCount': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'errorNetworkCount',
       type: IsarType.long,
     ),
     r'errorRateLimitCount': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'errorRateLimitCount',
       type: IsarType.long,
     ),
     r'errorServerCount': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'errorServerCount',
       type: IsarType.long,
     ),
     r'errorTimeoutCount': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'errorTimeoutCount',
       type: IsarType.long,
     ),
     r'errorUnauthorizedCount': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'errorUnauthorizedCount',
       type: IsarType.long,
     ),
     r'errorUnknownCount': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'errorUnknownCount',
       type: IsarType.long,
     ),
     r'failureCount': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'failureCount',
       type: IsarType.long,
     ),
     r'modelName': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'modelName',
       type: IsarType.string,
     ),
+    r'promptTokenCount': PropertySchema(
+      id: 10,
+      name: r'promptTokenCount',
+      type: IsarType.long,
+    ),
     r'successCount': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'successCount',
       type: IsarType.long,
     ),
     r'totalDurationMs': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'totalDurationMs',
       type: IsarType.long,
     ),
     r'totalFirstTokenMs': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'totalFirstTokenMs',
       type: IsarType.long,
     ),
     r'totalTokenCount': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'totalTokenCount',
       type: IsarType.long,
     ),
     r'validDurationCount': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'validDurationCount',
       type: IsarType.long,
     ),
     r'validFirstTokenCount': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'validFirstTokenCount',
       type: IsarType.long,
     )
@@ -137,21 +147,23 @@ void _usageStatsEntitySerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.errorBadRequestCount);
-  writer.writeLong(offsets[1], object.errorNetworkCount);
-  writer.writeLong(offsets[2], object.errorRateLimitCount);
-  writer.writeLong(offsets[3], object.errorServerCount);
-  writer.writeLong(offsets[4], object.errorTimeoutCount);
-  writer.writeLong(offsets[5], object.errorUnauthorizedCount);
-  writer.writeLong(offsets[6], object.errorUnknownCount);
-  writer.writeLong(offsets[7], object.failureCount);
-  writer.writeString(offsets[8], object.modelName);
-  writer.writeLong(offsets[9], object.successCount);
-  writer.writeLong(offsets[10], object.totalDurationMs);
-  writer.writeLong(offsets[11], object.totalFirstTokenMs);
-  writer.writeLong(offsets[12], object.totalTokenCount);
-  writer.writeLong(offsets[13], object.validDurationCount);
-  writer.writeLong(offsets[14], object.validFirstTokenCount);
+  writer.writeLong(offsets[0], object.completionTokenCount);
+  writer.writeLong(offsets[1], object.errorBadRequestCount);
+  writer.writeLong(offsets[2], object.errorNetworkCount);
+  writer.writeLong(offsets[3], object.errorRateLimitCount);
+  writer.writeLong(offsets[4], object.errorServerCount);
+  writer.writeLong(offsets[5], object.errorTimeoutCount);
+  writer.writeLong(offsets[6], object.errorUnauthorizedCount);
+  writer.writeLong(offsets[7], object.errorUnknownCount);
+  writer.writeLong(offsets[8], object.failureCount);
+  writer.writeString(offsets[9], object.modelName);
+  writer.writeLong(offsets[10], object.promptTokenCount);
+  writer.writeLong(offsets[11], object.successCount);
+  writer.writeLong(offsets[12], object.totalDurationMs);
+  writer.writeLong(offsets[13], object.totalFirstTokenMs);
+  writer.writeLong(offsets[14], object.totalTokenCount);
+  writer.writeLong(offsets[15], object.validDurationCount);
+  writer.writeLong(offsets[16], object.validFirstTokenCount);
 }
 
 UsageStatsEntity _usageStatsEntityDeserialize(
@@ -161,22 +173,24 @@ UsageStatsEntity _usageStatsEntityDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = UsageStatsEntity();
-  object.errorBadRequestCount = reader.readLong(offsets[0]);
-  object.errorNetworkCount = reader.readLong(offsets[1]);
-  object.errorRateLimitCount = reader.readLong(offsets[2]);
-  object.errorServerCount = reader.readLong(offsets[3]);
-  object.errorTimeoutCount = reader.readLong(offsets[4]);
-  object.errorUnauthorizedCount = reader.readLong(offsets[5]);
-  object.errorUnknownCount = reader.readLong(offsets[6]);
-  object.failureCount = reader.readLong(offsets[7]);
+  object.completionTokenCount = reader.readLong(offsets[0]);
+  object.errorBadRequestCount = reader.readLong(offsets[1]);
+  object.errorNetworkCount = reader.readLong(offsets[2]);
+  object.errorRateLimitCount = reader.readLong(offsets[3]);
+  object.errorServerCount = reader.readLong(offsets[4]);
+  object.errorTimeoutCount = reader.readLong(offsets[5]);
+  object.errorUnauthorizedCount = reader.readLong(offsets[6]);
+  object.errorUnknownCount = reader.readLong(offsets[7]);
+  object.failureCount = reader.readLong(offsets[8]);
   object.id = id;
-  object.modelName = reader.readString(offsets[8]);
-  object.successCount = reader.readLong(offsets[9]);
-  object.totalDurationMs = reader.readLong(offsets[10]);
-  object.totalFirstTokenMs = reader.readLong(offsets[11]);
-  object.totalTokenCount = reader.readLong(offsets[12]);
-  object.validDurationCount = reader.readLong(offsets[13]);
-  object.validFirstTokenCount = reader.readLong(offsets[14]);
+  object.modelName = reader.readString(offsets[9]);
+  object.promptTokenCount = reader.readLong(offsets[10]);
+  object.successCount = reader.readLong(offsets[11]);
+  object.totalDurationMs = reader.readLong(offsets[12]);
+  object.totalFirstTokenMs = reader.readLong(offsets[13]);
+  object.totalTokenCount = reader.readLong(offsets[14]);
+  object.validDurationCount = reader.readLong(offsets[15]);
+  object.validFirstTokenCount = reader.readLong(offsets[16]);
   return object;
 }
 
@@ -204,9 +218,9 @@ P _usageStatsEntityDeserializeProp<P>(
     case 7:
       return (reader.readLong(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
-    case 9:
       return (reader.readLong(offset)) as P;
+    case 9:
+      return (reader.readString(offset)) as P;
     case 10:
       return (reader.readLong(offset)) as P;
     case 11:
@@ -216,6 +230,10 @@ P _usageStatsEntityDeserializeProp<P>(
     case 13:
       return (reader.readLong(offset)) as P;
     case 14:
+      return (reader.readLong(offset)) as P;
+    case 15:
+      return (reader.readLong(offset)) as P;
+    case 16:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -417,6 +435,62 @@ extension UsageStatsEntityQueryWhere
 
 extension UsageStatsEntityQueryFilter
     on QueryBuilder<UsageStatsEntity, UsageStatsEntity, QFilterCondition> {
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      completionTokenCountEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'completionTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      completionTokenCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'completionTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      completionTokenCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'completionTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      completionTokenCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'completionTokenCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
       errorBadRequestCountEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
@@ -1058,6 +1132,62 @@ extension UsageStatsEntityQueryFilter
   }
 
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      promptTokenCountEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'promptTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      promptTokenCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'promptTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      promptTokenCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'promptTokenCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
+      promptTokenCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'promptTokenCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterFilterCondition>
       successCountEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1403,6 +1533,20 @@ extension UsageStatsEntityQueryLinks
 extension UsageStatsEntityQuerySortBy
     on QueryBuilder<UsageStatsEntity, UsageStatsEntity, QSortBy> {
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByCompletionTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completionTokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByCompletionTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completionTokenCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
       sortByErrorBadRequestCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'errorBadRequestCount', Sort.asc);
@@ -1529,6 +1673,20 @@ extension UsageStatsEntityQuerySortBy
   }
 
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByPromptTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'promptTokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      sortByPromptTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'promptTokenCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
       sortBySuccessCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'successCount', Sort.asc);
@@ -1615,6 +1773,20 @@ extension UsageStatsEntityQuerySortBy
 
 extension UsageStatsEntityQuerySortThenBy
     on QueryBuilder<UsageStatsEntity, UsageStatsEntity, QSortThenBy> {
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByCompletionTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completionTokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByCompletionTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completionTokenCount', Sort.desc);
+    });
+  }
+
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
       thenByErrorBadRequestCount() {
     return QueryBuilder.apply(this, (query) {
@@ -1755,6 +1927,20 @@ extension UsageStatsEntityQuerySortThenBy
   }
 
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByPromptTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'promptTokenCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
+      thenByPromptTokenCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'promptTokenCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QAfterSortBy>
       thenBySuccessCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'successCount', Sort.asc);
@@ -1842,6 +2028,13 @@ extension UsageStatsEntityQuerySortThenBy
 extension UsageStatsEntityQueryWhereDistinct
     on QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct> {
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
+      distinctByCompletionTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'completionTokenCount');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
       distinctByErrorBadRequestCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'errorBadRequestCount');
@@ -1905,6 +2098,13 @@ extension UsageStatsEntityQueryWhereDistinct
   }
 
   QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
+      distinctByPromptTokenCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'promptTokenCount');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, UsageStatsEntity, QDistinct>
       distinctBySuccessCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'successCount');
@@ -1952,6 +2152,13 @@ extension UsageStatsEntityQueryProperty
   QueryBuilder<UsageStatsEntity, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, int, QQueryOperations>
+      completionTokenCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'completionTokenCount');
     });
   }
 
@@ -2013,6 +2220,13 @@ extension UsageStatsEntityQueryProperty
   QueryBuilder<UsageStatsEntity, String, QQueryOperations> modelNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'modelName');
+    });
+  }
+
+  QueryBuilder<UsageStatsEntity, int, QQueryOperations>
+      promptTokenCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'promptTokenCount');
     });
   }
 

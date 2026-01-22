@@ -55,17 +55,32 @@ class ChatStorage {
       ..toolCallId = message.toolCallId
       ..tokenCount = message.tokenCount
       ..firstTokenMs = message.firstTokenMs
-      ..durationMs = message.durationMs;
+      ..durationMs = message.durationMs
+      ..promptTokens = message.promptTokens
+      ..completionTokens = message.completionTokens;
     if (message.toolCalls != null) {
       entity.toolCallsJson =
           jsonEncode(message.toolCalls!.map((tc) => tc.toJson()).toList());
     }
     await _isar.writeTxn(() async {
       await _isar.messageEntitys.put(entity);
-      if (message.tokenCount != null && message.tokenCount! > 0) {
+      if (message.tokenCount != null || message.promptTokens != null) {
         final session = await _isar.sessionEntitys.getBySessionId(sessionId);
         if (session != null) {
-          session.totalTokens += message.tokenCount!;
+          // Calculate total tokens for this message
+          int msgTotal = message.tokenCount ?? 0;
+          if (message.promptTokens != null && message.completionTokens != null) {
+             // Prefer explicit sum if available, or just use what's provided
+             // If tokenCount is legacy output-only, we might want to add promptTokens to it for the session total.
+             // But if tokenCount is already total, we use it.
+             // Let's assume we want Session Total = Sum of (Prompt + Completion).
+             // If message has explicit split, usage is P + C.
+             msgTotal = (message.promptTokens ?? 0) + (message.completionTokens ?? 0);
+          } else if (message.tokenCount != null) {
+             msgTotal = message.tokenCount!;
+          }
+          
+          session.totalTokens += msgTotal;
           await _isar.sessionEntitys.put(session);
         }
       }
@@ -99,7 +114,9 @@ class ChatStorage {
           ..toolCallId = m.toolCallId
           ..tokenCount = m.tokenCount
           ..firstTokenMs = m.firstTokenMs
-          ..durationMs = m.durationMs;
+          ..durationMs = m.durationMs
+          ..promptTokens = m.promptTokens
+          ..completionTokens = m.completionTokens;
         if (m.toolCalls != null) {
           e.toolCallsJson =
               jsonEncode(m.toolCalls!.map((tc) => tc.toJson()).toList());
@@ -163,6 +180,8 @@ class ChatStorage {
         tokenCount: e.tokenCount,
         firstTokenMs: e.firstTokenMs,
         durationMs: e.durationMs,
+        promptTokens: e.promptTokens,
+        completionTokens: e.completionTokens,
       );
     }).toList();
   }
