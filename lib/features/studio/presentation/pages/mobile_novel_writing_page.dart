@@ -544,6 +544,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
       case TaskStatus.failed: return const Icon(Icons.error_outline, color: Colors.red, size: 20);
       case TaskStatus.paused: return const Icon(Icons.pause_circle_outline, color: Colors.orange, size: 20);
       case TaskStatus.reviewing: return const Icon(Icons.rate_review_outlined, color: Colors.blue, size: 20);
+      case TaskStatus.needsRevision: return const Icon(Icons.warning_amber, color: Colors.orange, size: 20);
       case TaskStatus.decomposing: return const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple));
     }
   }

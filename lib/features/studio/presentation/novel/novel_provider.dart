@@ -18,25 +18,65 @@ final novelProvider = StateNotifierProvider<NovelNotifier, NovelWritingState>((r
 
 // Preset prompts for model roles
 class NovelPromptPresets {
-  // 拆解模型：将用户需求/大纲拆解为章节列表（增强版）
-  static const String decompose = '''你是一个小说章节规划助手。用户会给你一个故事大纲，你需要将其拆解为完整的章节列表。
+  // 拆解模型-第一阶段：生成章节标题列表
+  static const String chapterListPlanner = '''你是一个小说架构师。请阅读故事大纲，并将其规划为精简的章节标题列表。
+  
+请以JSON数组格式返回所有章节的标题：
+[
+  "第一章 标题",
+  "第二章 标题",
+  ...
+]
 
-⚠️【最重要】必须生成大纲中的所有章节！如果大纲规划了30章，你就必须输出30章，不能遗漏！
+⚠️【强制执行】只返回JSON数组，禁止包含任何闲聊、解释、开场白或结尾。不要使用Markdown代码块包裹，直接输出内容。
+⚠️【全书覆盖】必须包含大纲中所有的剧情节点，不得遗漏。''';
 
-请以JSON数组格式返回章节列表：
+  // 拆解模型-第二阶段：为指定章节生成详细细纲
+  static const String decompose = '''你是一个顶尖的小说章节细纲规划专家。
+你的任务是根据全书大纲和【前文进度总结】，为您正在处理的【特定章节】生成极其详细的剧本级细纲。
+
+【细纲要求】⭐极重要
+1. 情节起伏：分为 [起] [承] [转] [合] 四个阶段，详细描述具体事件、环境变化和动作。
+2. 心理/感官焦点：重点描写的感官细节及主角心理转变曲线。
+3. 核心互动：对话要点、博弈过程、关键台词。
+4. 伏笔/衔接：如何自然衔接下一章。
+
+请以JSON对象数组格式返回：
 [
   {
-    "title": "第一章 标题",
-    "description": "本章写作要点：主要事件、出场角色、情感走向、章末悬念（200-300字即可）"
+    "title": "章节标题",
+    "description": "【人称：xxx】\\n[剧情梗概]：...\\n[起]：...\\n[承]：...\\n[转]：...\\n[合]：...\\n[写作要点]：..."
   }
 ]
 
-【章节规划原则】
-1. 严格按照大纲的章节划分，不要自行合并或拆分
-2. description 要包含足够的写作指导，但不要太长
-3. 确保每章之间剧情连贯
+⚠️【强制执行】只返回JSON，禁止包含任何闲聊、解释、开场白、推理内容（Reasoning）或结尾。
+⚠️【格式要求】不要使用Markdown代码块包裹，直接输出内容。
+只返回JSON，禁止输出任何其他内容。''';
 
-只返回JSON数组，禁止输出任何其他内容。''';
+  static const String chapterDetailer = decompose;
+
+  // 拆解模型-第三阶段：生成剧情续航总结（接力总结）
+  static const String batchSummarizer = '''你是一个顶尖的小说逻辑编辑。
+请阅读刚才生成的章节细纲内容，并结合之前的【旧进度总结】，生成一份全新的、极其详尽的【全书进度白皮书】，用于指导后面章节的生成。
+
+【总结要求】必须包含且详尽描写：
+1. 剧情核心位置：当前故事发展到了哪个具体阶段，发生了哪些不可逆的转折。
+2. 人物关系地图：核心角色之间的情感温度、秘密、误会、信任度变化。
+3. 世界观/环境变更：当前的季节、时间、地点状态，以及魔法/社会属性的变动。
+4. 伏笔库：待回收的旧伏笔、刚埋下的新伏笔。
+5. 情感基调：当前整体叙事的氛围感（如：压抑、甜蜜、紧张、治愈）。
+
+请以JSON对象格式返回：
+{
+  "plotStatus": "...",
+  "characterRelations": "...",
+  "worldState": "...",
+  "foreshadowing": "...",
+  "mood": "..."
+}
+
+⚠️【强制执行】只返回JSON，禁止包含任何闲聊、开场白或解释。不要使用Markdown代码块包裹，直接输出内容。
+只返回JSON，禁止输出任何其他内容。''';
 
 
   // 写作模型：根据章节要求写完整章节（增强版）
@@ -86,12 +126,23 @@ class NovelPromptPresets {
 - 禁止在对话后解释对话的含义
 - 章节结尾不要搞升华，自然结束即可
 
+【虚构术语规避】⚠️重要
+- 禁止编造具体的书名，如《社交礼仪守则》《君臣纲纪》《草药学入门》《魔力学基础》
+- 除非是剧情关键道具，否则只用泛称："一本讲礼仪的书"、"关于草药的典籍"
+- 学科/课程也不要编名字：直说"草药课"、"魔法理论课"即可
+
+【人称遵守】⚠️最重要
+- 如果任务描述中标注了【人称：第一人称】，必须全程使用"我"作为叙述视角
+- 如果任务描述中标注了【人称：第三人称】，使用角色名或"他/她"叙述
+- 人称一旦确定，全章不得混用
+
 【精简描写】⭐重要
 - 形容词克制：每个名词最多1个形容词，避免"xxx的xxx的xxx"
 - 环境描写从简：1-2句点到为止，不要铺陈整段环境描写
 - 聚焦人物：描写为人物服务，与情节无关的景物一律省略
 - 动作优先：用动作和对话推进剧情，减少静态描写
-- 禁止"诗意"描写：不要用大量比喻、排比来描述日常场景
+- 禁止"诗意"描写：不要用大量比喻、排比来描述日常场景，禁止使用“灵魂震颤”、“凝固”、“千万年”等空洞夸张词汇
+
 
 【反面示例】❌
 ❌ "阳光像是被打翻的蜂蜜罐头，黏稠而甜蜜地流淌在精心修剪的灌木迷宫上。空气中弥漫着大吉岭红茶的香气，混合着不知名贵妇人身上过于浓郁的熏衣草香水味，编织成了一张令人窒息的大网。"
@@ -111,7 +162,7 @@ class NovelPromptPresets {
 如果内容末尾有 "---" 分隔的摘要部分，请忽略摘要，只审查正文内容。
 
 【审查维度】
-1. 字数检查：是否达到3000-5000字（不含摘要）
+1. 字数检查：是否达到2500-5000字（不含摘要）
 2. 大纲执行：是否100%完成章节大纲要求
 3. 设定一致性：角色能力是否符合当前境界，战力是否合理
 4. 人物OOC：角色言行是否符合人设
@@ -303,6 +354,24 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
         final content = await file.readAsString();
         final json = jsonDecode(content) as Map<String, dynamic>;
         state = NovelWritingState.fromJson(json);
+        
+        // Fix stuck tasks: reset 'running', 'reviewing', or 'needsRevision' tasks to 'pending' on startup
+        // since the workflow is not actually running after a restart
+        final fixedTasks = state.allTasks.map((t) {
+          if (t.status == TaskStatus.running || t.status == TaskStatus.reviewing || t.status == TaskStatus.needsRevision) {
+            return t.copyWith(status: TaskStatus.pending, retryCount: 0);
+          }
+          return t;
+        }).toList();
+        
+        if (state.allTasks.any((t) => t.status == TaskStatus.running || t.status == TaskStatus.reviewing || t.status == TaskStatus.needsRevision)) {
+          state = state.copyWith(
+            allTasks: fixedTasks,
+            isRunning: false,
+            isPaused: false,
+          );
+          _saveState();
+        }
       }
     } catch (e) {
       // Ignore load errors, start with empty state
@@ -430,13 +499,17 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
   Future<void> _processTaskQueue() async {
     while (!_shouldStop && mounted) {
       // Find next pending task for current project
-      final pendingTask = state.allTasks.firstWhere(
+      // We look for tasks that are 'pending' OR 'needsRevision' (if we want to auto-retry those, 
+      // though typically they transition back to 'reviewing' immediately)
+      final allTasks = state.allTasks;
+      final pendingTask = allTasks.firstWhere(
         (t) => t.status == TaskStatus.pending && _isTaskInCurrentProject(t),
         orElse: () => NovelTask(id: '', chapterId: '', description: ''),
       );
       
       if (pendingTask.id.isEmpty) {
         // No more pending tasks
+        print('✅ No more pending tasks found, stopping loop.');
         state = state.copyWith(isRunning: false);
         _saveState();
         return;
@@ -447,10 +520,16 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
         await Future.delayed(const Duration(milliseconds: 500));
       }
       
-      if (_shouldStop) break;
+      if (_shouldStop) {
+        print('⏹ Workflow stopped by _shouldStop flag.');
+        break;
+      }
       
       // Execute the task
       await _executeTask(pendingTask.id);
+      
+      // Safety: wait a tiny bit to ensure state updates propagate
+      await Future.delayed(const Duration(milliseconds: 50));
     }
     
     state = state.copyWith(isRunning: false);
@@ -826,13 +905,18 @@ ${availableKeys.toString()}
     };
   }
   
-  Future<void> _reviewTask(String taskId, String content, {int revisionAttempt = 0, String writingContext = ''}) async {
-    const maxRevisions = 2;
-    
+  Future<void> _reviewTask(String taskId, String content, {String writingContext = ''}) async {
     final reviewerConfig = state.reviewerModel;
     if (reviewerConfig == null) {
-      // No reviewer configured, auto-approve
-      _updateTaskStatus(taskId, TaskStatus.success);
+      // No reviewer configured, auto-approve and reset retry count
+      final updatedTasks = state.allTasks.map((t) {
+        if (t.id == taskId) {
+          return t.copyWith(status: TaskStatus.success, retryCount: 0);
+        }
+        return t;
+      }).toList();
+      state = state.copyWith(allTasks: updatedTasks);
+      _saveState();
       return;
     }
     
@@ -878,13 +962,14 @@ $content
         final approved = reviewJson['approved'] as bool;
         
         if (approved) {
-          // 审查通过
+          // ✅ 审查通过 → success
           final updatedTasks = state.allTasks.map((t) {
             if (t.id == taskId) {
               return t.copyWith(
                 status: TaskStatus.success,
-                content: content, // 保存最终内容（可能已被修订过）
+                content: content,
                 reviewFeedback: reviewResult,
+                retryCount: 0, // Reset retry count on success
               );
             }
             return t;
@@ -892,31 +977,48 @@ $content
           state = state.copyWith(allTasks: updatedTasks);
           _saveState();
           
-          // ========== 审查通过后：提取伏笔和人物信息变化 ==========
+          // 审查通过后：提取伏笔和人物信息变化
           await _extractContextUpdates(content);
         } else {
-          // 审查不通过
-          if (revisionAttempt < maxRevisions) {
-            // 还有重试机会，进行修订
+          // ❌ 审查不通过
+          final currentRetryCount = task.retryCount;
+          
+          if (currentRetryCount == 0) {
+            // 第一次失败 → needsRevision，进行修订
             final issues = reviewJson['issues'] as List<dynamic>? ?? [];
             final suggestions = reviewJson['suggestions'] as String? ?? '';
             
-            // 更新状态为"修订中"
-            _updateTaskFeedback(taskId, '修订中 (${revisionAttempt + 1}/$maxRevisions)...\n$reviewResult');
+            // 更新状态为 needsRevision
+            final updatedTasks = state.allTasks.map((t) {
+              if (t.id == taskId) {
+                return t.copyWith(
+                  status: TaskStatus.needsRevision,
+                  reviewFeedback: '第1次审查未通过，正在修订...\n$reviewResult',
+                  retryCount: 1,
+                );
+              }
+              return t;
+            }).toList();
+            state = state.copyWith(allTasks: updatedTasks);
+            _saveState();
             
-            // 调用修订（带上原始写作上下文）
+            // 调用修订
             final revisedContent = await _reviseContent(content, issues, suggestions, task.description, writingContext);
             
-            // 用修订后的内容重新审查
-            await _reviewTask(taskId, revisedContent, revisionAttempt: revisionAttempt + 1, writingContext: writingContext);
+            // 更新状态为 reviewing 并重新审查
+            _updateTaskStatus(taskId, TaskStatus.reviewing);
+            await _reviewTask(taskId, revisedContent, writingContext: writingContext);
+            return; // 递归调用结束后直接返回，避免执行后续逻辑
+            
           } else {
-            // 超过重试次数，标记为失败并停止队列
+            // 第二次失败 → failed，停止队列
             final updatedTasks = state.allTasks.map((t) {
               if (t.id == taskId) {
                 return t.copyWith(
                   status: TaskStatus.failed,
                   content: content,
-                  reviewFeedback: '审查失败（已重试$maxRevisions次）\n$reviewResult',
+                  reviewFeedback: '审查失败（连续2次未通过）\n$reviewResult',
+                  retryCount: currentRetryCount + 1,
                 );
               }
               return t;
@@ -926,11 +1028,12 @@ $content
             
             // 停止后续任务执行，等待人工处理
             _shouldStop = true;
+            return;
           }
         }
         
       } catch (e) {
-        // Review result is not valid JSON, mark as error (don't auto-approve)
+        // Review result is not valid JSON, mark as error
         print('⚠️ Review JSON parse error: $e');
         print('⚠️ Raw result: $reviewResult');
         final updatedTasks = state.allTasks.map((t) {
@@ -948,10 +1051,13 @@ $content
       }
       
     } catch (e) {
-      // Review failed, but still mark task as needing attention
+      // Review failed, mark task as failed and needing attention
       final updatedTasks = state.allTasks.map((t) {
         if (t.id == taskId) {
-          return t.copyWith(reviewFeedback: 'Review error: $e');
+          return t.copyWith(
+            status: TaskStatus.failed,
+            reviewFeedback: 'Review error: $e',
+          );
         }
         return t;
       }).toList();
@@ -1361,7 +1467,7 @@ $suggestions
     state = state.copyWith(selectedTaskId: taskId);
   }
 
-  /// Decompose the project's outline into chapters
+  /// Decompose the project's outline into chapters (Multi-stage Batch Processing)
   Future<void> decomposeFromOutline() async {
     if (state.selectedProject == null) return;
     
@@ -1372,126 +1478,249 @@ $suggestions
     state = state.copyWith(isDecomposing: true);
     
     final decomposeConfig = state.decomposeModel;
-    
     if (decomposeConfig == null) {
-      // Fallback to mock decomposition if no model configured
-      final newChapters = <NovelChapter>[];
-      final newTasks = <NovelTask>[];
-      
-      for (int i = 1; i <= 3; i++) {
-        final chapterId = const Uuid().v4();
-        newChapters.add(NovelChapter(
-          id: chapterId,
-          title: '第$i章 示例章节',
-          order: state.selectedProject!.chapters.length + i - 1,
-        ));
-        newTasks.add(NovelTask(
-          id: const Uuid().v4(),
-          chapterId: chapterId,
-          description: '根据大纲写作第$i章',
-          status: TaskStatus.pending,
-        ));
-      }
-      
-      final updatedProject = state.selectedProject!.copyWith(
-        chapters: [...state.selectedProject!.chapters, ...newChapters],
-      );
-      final updatedProjects = state.projects.map((p) => p.id == updatedProject.id ? updatedProject : p).toList();
-      
-      state = state.copyWith(
-        projects: updatedProjects,
-        allTasks: [...state.allTasks, ...newTasks],
-        selectedChapterId: newChapters.first.id,
-      );
-      _saveState();
-      state = state.copyWith(isDecomposing: false);  // 拆解完成
+      state = state.copyWith(isDecomposing: false);
       return;
     }
     
     try {
-      final systemPrompt = decomposeConfig.systemPrompt.isNotEmpty 
-          ? decomposeConfig.systemPrompt 
-          : NovelPromptPresets.decompose;
-      
-      final result = await _callLLM(decomposeConfig, systemPrompt, outline);
-      
-      // Clean up markdown code blocks if present
-      String jsonContent = result;
-      if (jsonContent.contains('```json')) {
-        jsonContent = jsonContent.replaceAll('```json', '').replaceAll('```', '');
-      } else if (jsonContent.contains('```')) {
-        jsonContent = jsonContent.replaceAll('```', '');
-      }
-      jsonContent = jsonContent.trim();
-      
-      // Parse JSON result - format: [{title, description}, ...]
-      final List<dynamic> chapterList = jsonDecode(jsonContent);
-      final newChapters = <NovelChapter>[];
-      final newTasks = <NovelTask>[];
-      
-      for (int i = 0; i < chapterList.length; i++) {
-        final chapterData = chapterList[i] as Map<String, dynamic>;
-        final chapterId = const Uuid().v4();
-        final title = chapterData['title'] as String? ?? '第${i + 1}章';
-        final description = chapterData['description'] as String? ?? '';
-        
-        newChapters.add(NovelChapter(
-          id: chapterId,
-          title: title,
-          order: state.selectedProject!.chapters.length + i,
-        ));
-        
-        // Create a writing task for this chapter
-        newTasks.add(NovelTask(
-          id: const Uuid().v4(),
-          chapterId: chapterId,
-          description: description.isNotEmpty ? description : '写作：$title',
-          status: TaskStatus.pending,
-        ));
-      }
-      
-      final updatedProject = state.selectedProject!.copyWith(
-        chapters: [...state.selectedProject!.chapters, ...newChapters],
+      // --- 第一阶段：获取完整的章节标题列表 ---
+      print('🚀 Phase 1: Planning chapter list...');
+      final listResult = await _callLLM(
+        decomposeConfig, 
+        NovelPromptPresets.chapterListPlanner, 
+        '大纲内容如下：\n$outline'
       );
-      final updatedProjects = state.projects.map((p) => p.id == updatedProject.id ? updatedProject : p).toList();
       
-      state = state.copyWith(
-        projects: updatedProjects,
-        allTasks: [...state.allTasks, ...newTasks],
-        selectedChapterId: newChapters.isNotEmpty ? newChapters.first.id : state.selectedChapterId,
-      );
-      _saveState();
-      state = state.copyWith(isDecomposing: false);  // 拆解完成
+      final List<String> allTitles = List<String>.from(jsonDecode(_cleanJson(listResult)));
+      if (allTitles.isEmpty) throw Exception('No chapters planned.');
+      
+      print('✅ Planned ${allTitles.length} chapters. Starting batch detailing...');
+      
+      // 清空当前项目的现有章节和任务（因为是重新生成）
+      // 注意：这里建议用户手动清空，或者我们在这里帮他清空
+      // 为了安全，我们这里采用“渐进式添加”，但如果用户点击了重新生成，通常期望是覆盖。
+      // 先记录已有的任务（如果想保留可以不清空，这里我们选择清空当前项目关联的任务）
+      
+      // --- 第二阶段：分批次填充详细细纲 ---
+      const int batchSize = 10; // 每批处理10章，提高效率的同时保持足够的描述细节
+      final List<NovelChapter> allNewChapters = [];
+      final List<NovelTask> allNewTasks = [];
+      String runningContext = '书籍初始状态：一切尚待开始。';
+      
+      for (int i = 0; i < allTitles.length; i += batchSize) {
+        if (_shouldStop) break;
+        
+        const int maxRetries = 2;
+        bool batchSuccess = false;
+        
+        for (int retry = 0; retry <= maxRetries; retry++) {
+          try {
+            if (retry > 0) {
+              print('🔄 Retrying batch ${i + 1} (Attempt ${retry + 1}/3)...');
+              await Future.delayed(const Duration(seconds: 1));
+            }
+
+            final end = (i + batchSize < allTitles.length) ? i + batchSize : allTitles.length;
+            final batchTitles = allTitles.sublist(i, end);
+            
+            print('📦 Processing batch: ${i + 1} - $end / ${allTitles.length}');
+            
+            final detailPrompt = '以下是全书大纲：\n$outline\n\n'
+                '【前文进度总结】：\n$runningContext\n\n'
+                '请针对以下章节列表生成剧本级细纲：\n${batchTitles.join('\n')}';
+            
+            final systemPrompt = decomposeConfig.systemPrompt.isNotEmpty 
+                ? decomposeConfig.systemPrompt 
+                : NovelPromptPresets.decompose;
+                
+            final detailResult = await _callLLM(decomposeConfig, systemPrompt, detailPrompt);
+            final dynamic decodedData = jsonDecode(_cleanJson(detailResult));
+            
+            List<dynamic> detailedChapters = [];
+            if (decodedData is List) {
+              detailedChapters = decodedData;
+            } else if (decodedData is Map && decodedData.containsKey('chapters')) {
+              detailedChapters = decodedData['chapters'] as List<dynamic>;
+            }
+            
+            String batchContentForSummary = '';
+            for (var chapterData in detailedChapters) {
+              final chapterId = const Uuid().v4();
+              final title = chapterData['title'] as String;
+              final description = chapterData['description'] as String;
+              
+              batchContentForSummary += '标题：$title\n内容概要：$description\n---\n';
+              
+              final chapter = NovelChapter(
+                id: chapterId,
+                title: title,
+                order: allNewChapters.length,
+              );
+              
+              final task = NovelTask(
+                id: const Uuid().v4(),
+                chapterId: chapterId,
+                description: description,
+                status: TaskStatus.pending,
+              );
+              
+              allNewChapters.add(chapter);
+              allNewTasks.add(task);
+            }
+            
+            // --- 专项总结阶段：解耦调用总结官 ---
+            try {
+              print('📝 Summarizing batch for next context...');
+              final summaryInput = '【本批次细纲内容】：\n$batchContentForSummary\n\n【旧进度总结】：\n$runningContext';
+              final summaryResult = await _callLLM(decomposeConfig, NovelPromptPresets.batchSummarizer, summaryInput);
+              runningContext = _cleanJson(summaryResult);
+            } catch (e) {
+              print('⚠️ Summarization failed, using basic concatenation: $e');
+              runningContext += '\n(由于总结失败，仅记录标题) ' + batchTitles.join(', ');
+            }
+            
+            // 每一批次更新一次 UI 进度
+            final currentProject = state.selectedProject!;
+            final updatedProject = currentProject.copyWith(
+              chapters: [...allNewChapters],
+            );
+            final updatedProjects = state.projects.map((p) => p.id == updatedProject.id ? updatedProject : p).toList();
+            
+            state = state.copyWith(
+              projects: updatedProjects,
+              allTasks: [...state.allTasks.where((t) => !_isTaskInCurrentProject(t)), ...allNewTasks],
+            );
+            _saveState();
+            
+            batchSuccess = true;
+            break; // 成功则跳出重试循环
+            
+          } catch (e) {
+            print('⚠️ Batch attempt ${retry + 1} failed: $e');
+            if (retry == maxRetries) {
+              print('❌ Max retries reached for batch starting at index $i. Pausing decomposition.');
+              state = state.copyWith(isDecomposing: false);
+              _shouldStop = true;
+              return; 
+            }
+          }
+        }
+        
+        if (!batchSuccess) break;
+      }
       
     } catch (e) {
-      // If parsing fails, create a single chapter
-      final chapterId = const Uuid().v4();
-      final newChapter = NovelChapter(
-        id: chapterId,
-        title: '第${state.selectedProject!.chapters.length + 1}章',
-        order: state.selectedProject!.chapters.length,
-      );
-      final task = NovelTask(
-        id: const Uuid().v4(),
-        chapterId: chapterId,
-        description: '根据大纲写作本章',
-        status: TaskStatus.pending,
-      );
-      
-      final updatedProject = state.selectedProject!.copyWith(
-        chapters: [...state.selectedProject!.chapters, newChapter],
-      );
-      final updatedProjects = state.projects.map((p) => p.id == updatedProject.id ? updatedProject : p).toList();
-      
-      state = state.copyWith(
-        projects: updatedProjects,
-        allTasks: [...state.allTasks, task],
-        selectedChapterId: chapterId,
-      );
-      _saveState();
+      print('❌ Decomposition failed: $e');
+    } finally {
+      state = state.copyWith(isDecomposing: false);
     }
-    // 拆解完成（包括失败情况）
-    state = state.copyWith(isDecomposing: false);
+  }
+
+  String _cleanJson(String content) {
+    if (content.isEmpty) return '[]';
+    
+    String jsonContent = content.trim();
+    
+    // 1. 提取 Markdown 代码块中的内容
+    if (jsonContent.contains('```')) {
+      // 尝试匹配 ```json ... ``` 或 ``` ... ```
+      final RegExp codeBlockRegExp = RegExp(r'```(?:json)?\s*([\s\S]*?)(?:```|$)');
+      final match = codeBlockRegExp.firstMatch(jsonContent);
+      if (match != null && match.groupCount >= 1) {
+        jsonContent = match.group(1)!.trim();
+      }
+    }
+    
+    // 2. 找到第一个 [ 或 {
+    int firstBracket = jsonContent.indexOf('[');
+    int firstBrace = jsonContent.indexOf('{');
+    int start = -1;
+    if (firstBracket != -1 && firstBrace != -1) {
+      start = firstBracket < firstBrace ? firstBracket : firstBrace;
+    } else {
+      start = firstBracket != -1 ? firstBracket : firstBrace;
+    }
+    
+    if (start == -1) return '[]'; // 没找到 JSON 结构
+    
+    jsonContent = jsonContent.substring(start);
+    
+    // 3. 尝试修复截断的 JSON
+    return _repairJson(jsonContent);
+  }
+
+  String _repairJson(String json) {
+    if (json.isEmpty) return '[]';
+    
+    String repaired = json.trim();
+    List<String> stack = [];
+    bool inString = false;
+    bool escaped = false;
+    
+    int lastValidPos = -1;
+    
+    for (int i = 0; i < repaired.length; i++) {
+        String char = repaired[i];
+        
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        
+        if (char == '\\') {
+            escaped = true;
+            continue;
+        }
+        
+        if (char == '"') {
+            inString = !inString;
+            continue;
+        }
+        
+        if (!inString) {
+            if (char == '[' || char == '{') {
+                stack.add(char);
+            } else if (char == ']') {
+                if (stack.isNotEmpty && stack.last == '[') {
+                    stack.removeLast();
+                    if (stack.isEmpty) lastValidPos = i;
+                }
+            } else if (char == '}') {
+                if (stack.isNotEmpty && stack.last == '{') {
+                    stack.removeLast();
+                    if (stack.isEmpty) lastValidPos = i;
+                }
+            }
+        }
+    }
+    
+    // 如果 JSON 已经完整（栈为空），但后面跟着杂质（如 extra quotes）
+    if (stack.isEmpty && lastValidPos != -1 && lastValidPos < repaired.length - 1) {
+        repaired = repaired.substring(0, lastValidPos + 1);
+    }
+    
+    // 如果在字符串内部截断，先闭合字符串
+    if (inString) {
+        repaired += '"';
+    }
+    
+    // 补齐缺失的括号（倒序补齐）
+    while (stack.isNotEmpty) {
+        String last = stack.removeLast();
+        if (last == '[') {
+            repaired += ']';
+        } else if (last == '{') {
+            repaired += '}';
+        }
+    }
+    
+    try {
+      jsonDecode(repaired);
+      return repaired;
+    } catch (_) {
+      return repaired;
+    }
   }
 
   void updateTaskStatus(String taskId, TaskStatus status) {

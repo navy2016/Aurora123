@@ -5,6 +5,7 @@ enum TaskStatus {
   decomposing,
   running,
   reviewing,
+  needsRevision, // Failed review once, will retry
   success,
   failed,
   paused,
@@ -64,6 +65,7 @@ class NovelTask {
   final TaskStatus status;
   final String? content;
   final String? reviewFeedback;
+  final int retryCount; // Track how many times this task has been retried
 
   const NovelTask({
     required this.id,
@@ -72,6 +74,7 @@ class NovelTask {
     this.status = TaskStatus.pending,
     this.content,
     this.reviewFeedback,
+    this.retryCount = 0,
   });
 
   NovelTask copyWith({
@@ -81,6 +84,7 @@ class NovelTask {
     TaskStatus? status,
     String? content,
     String? reviewFeedback,
+    int? retryCount,
   }) {
     return NovelTask(
       id: id ?? this.id,
@@ -89,6 +93,7 @@ class NovelTask {
       status: status ?? this.status,
       content: content ?? this.content,
       reviewFeedback: reviewFeedback ?? this.reviewFeedback,
+      retryCount: retryCount ?? this.retryCount,
     );
   }
   
@@ -99,6 +104,7 @@ class NovelTask {
     'status': status.name,
     'content': content,
     'reviewFeedback': reviewFeedback,
+    'retryCount': retryCount,
   };
   
   factory NovelTask.fromJson(Map<String, dynamic> json) => NovelTask(
@@ -108,6 +114,7 @@ class NovelTask {
     status: TaskStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => TaskStatus.pending),
     content: json['content'] as String?,
     reviewFeedback: json['reviewFeedback'] as String?,
+    retryCount: json['retryCount'] as int? ?? 0,
   );
 }
 

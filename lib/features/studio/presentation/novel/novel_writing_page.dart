@@ -1054,6 +1054,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       case TaskStatus.decomposing:
       case TaskStatus.running:
       case TaskStatus.reviewing: return const SizedBox(width: 16, height: 16, child: ProgressRing(strokeWidth: 2));
+      case TaskStatus.needsRevision: return Icon(FluentIcons.warning, size: 16, color: Colors.orange);
       case TaskStatus.success: return Icon(FluentIcons.completed, size: 16, color: Colors.green);
       case TaskStatus.failed: return Icon(FluentIcons.error_badge, size: 16, color: Colors.red);
       case TaskStatus.paused: return const Icon(FluentIcons.pause, size: 16);
@@ -1066,6 +1067,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       case TaskStatus.decomposing:
       case TaskStatus.running: return Colors.blue;
       case TaskStatus.reviewing: return Colors.orange;
+      case TaskStatus.needsRevision: return Colors.orange;
       case TaskStatus.success: return Colors.green;
       case TaskStatus.failed: return Colors.red;
       case TaskStatus.paused: return Colors.grey;
@@ -1077,6 +1079,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       case TaskStatus.pending: return l10n.pending;
       case TaskStatus.decomposing: return l10n.decomposing;
       case TaskStatus.running: return l10n.running;
+      case TaskStatus.needsRevision: return '待重试';
       case TaskStatus.success: return l10n.success;
       case TaskStatus.failed: return l10n.failed;
       case TaskStatus.paused: return l10n.paused;

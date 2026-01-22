@@ -58,7 +58,13 @@ class UsageStatsState {
 class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
   final SettingsStorage _storage;
   UsageStatsNotifier(this._storage) : super(const UsageStatsState()) {
-    loadStats();
+    _initAndMigrate();
+  }
+  
+  Future<void> _initAndMigrate() async {
+    // Auto-migrate historical token count data
+    await _storage.migrateTokenCounts();
+    await loadStats();
   }
   Future<void> loadStats() async {
     state = state.copyWith(isLoading: true);

@@ -255,9 +255,9 @@ class SettingsStorage {
           ..validDurationCount = durationMs > 0 ? 1 : 0
           ..totalFirstTokenMs = firstTokenMs > 0 ? firstTokenMs : 0
           ..validFirstTokenCount = firstTokenMs > 0 ? 1 : 0
-          ..totalTokenCount = tokenCount > 0 ? tokenCount : (promptTokens + completionTokens)
-          ..promptTokenCount = promptTokens
-          ..completionTokenCount = completionTokens;
+          ..promptTokenCount = promptTokens > 0 ? promptTokens : (tokenCount ~/ 2)
+          ..completionTokenCount = completionTokens > 0 ? completionTokens : (tokenCount - tokenCount ~/ 2)
+          ..totalTokenCount = (promptTokens > 0 ? promptTokens : (tokenCount ~/ 2)) + (completionTokens > 0 ? completionTokens : (tokenCount - tokenCount ~/ 2));
         
         if (errorType != null) {
           _updateErrorCount(existing, errorType);
@@ -280,11 +280,13 @@ class SettingsStorage {
           existing.validFirstTokenCount++;
         }
         
-        // Handle migration/mixed usage
-        final effectiveTotal = tokenCount > 0 ? tokenCount : (promptTokens + completionTokens);
-        existing.totalTokenCount += effectiveTotal;
-        existing.promptTokenCount += promptTokens;
-        existing.completionTokenCount += completionTokens;
+        // Always use prompt + completion for consistency
+        // If only tokenCount is provided (legacy), split evenly as approximation
+        final effectivePrompt = promptTokens > 0 ? promptTokens : (tokenCount ~/ 2);
+        final effectiveCompletion = completionTokens > 0 ? completionTokens : (tokenCount - tokenCount ~/ 2);
+        existing.promptTokenCount += effectivePrompt;
+        existing.completionTokenCount += effectiveCompletion;
+        existing.totalTokenCount = existing.promptTokenCount + existing.completionTokenCount;
       }
       await _isar.usageStatsEntitys.put(existing);
 
@@ -361,6 +363,33 @@ class SettingsStorage {
       await _isar.usageStatsEntitys.clear();
       await _isar.dailyUsageStatsEntitys.clear();
     });
+  }
+
+  /// Migrate existing usage stats to fix totalTokenCount inconsistency.
+  /// This ensures totalTokenCount = promptTokenCount + completionTokenCount.
+  Future<int> migrateTokenCounts() async {
+    int migratedCount = 0;
+    final allStats = await _isar.usageStatsEntitys.where().findAll();
+    
+    await _isar.writeTxn(() async {
+      for (final stats in allStats) {
+        final expectedTotal = stats.promptTokenCount + stats.completionTokenCount;
+        if (stats.totalTokenCount != expectedTotal) {
+          // If we have prompt+completion data, use that as the source of truth
+          if (stats.promptTokenCount > 0 || stats.completionTokenCount > 0) {
+            stats.totalTokenCount = expectedTotal;
+          } else {
+            // If we only have totalTokenCount, split it evenly
+            stats.promptTokenCount = stats.totalTokenCount ~/ 2;
+            stats.completionTokenCount = stats.totalTokenCount - stats.promptTokenCount;
+          }
+          await _isar.usageStatsEntitys.put(stats);
+          migratedCount++;
+        }
+      }
+    });
+    
+    return migratedCount;
   }
 
   Future<void> saveLastTopicId(String? topicId) async {

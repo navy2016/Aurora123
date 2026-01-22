@@ -739,28 +739,63 @@ class _ModelStatsList extends StatelessWidget {
              return Row(
                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                children: [
-                 _buildMetricItem(isMobile, themeData, mobileTheme, 
-                     _getLoc(context, 'cumulativeToken'), 
-                     '${stats.totalTokenCount}\n(${stats.promptTokenCount}/${stats.completionTokenCount})', 
-                     null),
-                 _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'tokensPerSecond'), tps, tpsColor),
-                 _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'averageFirstToken'), '${avgFirstToken}s', ftColor),
-                 _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'averageDuration'), '${avgDuration}s', durationColor),
-               ],
-             );
+                  _buildMetricItem(isMobile, themeData, mobileTheme, 
+                      _getLoc(context, 'cumulativeToken'), 
+                      RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: isMobile ? 12 : 14,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Segoe UI Variable',
+                            color: isMobile 
+                                ? mobileTheme!.textTheme.bodyMedium?.color 
+                                : themeData!.resources.textFillColorPrimary,
+                          ),
+                          children: [
+                            TextSpan(text: '${stats.totalTokenCount} '),
+                            TextSpan(
+                              text: '(${stats.promptTokenCount}/${stats.completionTokenCount})',
+                              style: TextStyle(
+                                fontSize: isMobile ? 10 : 12,
+                                color: isMobile 
+                                    ? mobileTheme!.textTheme.bodySmall?.color 
+                                    : themeData!.resources.textFillColorSecondary,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'tokensPerSecond'), 
+                      Text(tps, style: TextStyle(
+                          fontSize: isMobile ? 12 : 14,
+                          fontWeight: FontWeight.w600,
+                          color: tpsColor,
+                          fontFamily: 'Segoe UI Variable'))),
+                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'averageFirstToken'), 
+                      Text('${avgFirstToken}s', style: TextStyle(
+                          fontSize: isMobile ? 12 : 14,
+                          fontWeight: FontWeight.w600,
+                          color: ftColor,
+                          fontFamily: 'Segoe UI Variable'))),
+                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'averageDuration'), 
+                      Text('${avgDuration}s', style: TextStyle(
+                          fontSize: isMobile ? 12 : 14,
+                          fontWeight: FontWeight.w600,
+                          color: durationColor,
+                          fontFamily: 'Segoe UI Variable'))),
+                ],
+              );
           }),
         ],
       ),
     );
   }
 
-  Widget _buildMetricItem(bool isMobile, fluent.FluentThemeData? themeData, ThemeData? mobileTheme, String label, String value, Color? valueColorOverride) {
+  Widget _buildMetricItem(bool isMobile, fluent.FluentThemeData? themeData, ThemeData? mobileTheme, String label, Widget valueWidget) {
     final labelColor = isMobile 
         ? mobileTheme!.textTheme.bodySmall?.color 
         : themeData!.resources.textFillColorSecondary;
-    final valueColor = valueColorOverride ?? (isMobile 
-        ? mobileTheme!.textTheme.bodyMedium?.color 
-        : themeData!.resources.textFillColorPrimary);
         
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,12 +805,7 @@ class _ModelStatsList extends StatelessWidget {
           color: labelColor
         )),
         const SizedBox(height: 2),
-        Text(value, style: TextStyle(
-          fontSize: isMobile ? 12 : 14,
-          fontWeight: FontWeight.w600,
-          color: valueColor,
-          fontFamily: 'Segoe UI Variable', // Ensure fluent font
-        )),
+        valueWidget,
       ],
     );
   }
