@@ -839,7 +839,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchDisabled => '已关闭联网搜索';
 
   @override
-  String get desktopInputHint => '随便输入点什么吧 (Enter 换行，Ctrl + Enter 发送，@ 切换模型)';
+  String get desktopInputHint =>
+      '随便输入点什么吧 (Enter 换行，Ctrl + Enter 发送，@ 切换模型，/ 切换 Prompt 预设)';
 
   @override
   String get mobileInputHint => '随便输入点什么吧';
@@ -1217,4 +1218,37 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get branch => '分支';
+
+  @override
+  String get trayShow => '显示程序';
+
+  @override
+  String get trayExit => '退出程序';
+
+  @override
+  String get confirmClose => '确认关闭';
+
+  @override
+  String get minimizeToTray => '是否最小化到系统托盘？';
+
+  @override
+  String get minimize => '最小化';
+
+  @override
+  String get exit => '退出';
+
+  @override
+  String get rememberChoice => '记住我的选择';
+
+  @override
+  String get closeBehavior => '关闭行为';
+
+  @override
+  String get askEveryTime => '每次询问';
+
+  @override
+  String get minimizeToTrayOption => '最小化到托盘';
+
+  @override
+  String get exitApplicationOption => '直接退出程序';
 }

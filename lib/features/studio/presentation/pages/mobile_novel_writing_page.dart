@@ -55,6 +55,43 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
               )
             : null,
         actions: [
+          if (state.allTasks.any((t) => t.status == TaskStatus.success || t.status == TaskStatus.failed))
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 20),
+              tooltip: '重新执行所有任务',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('重新执行所有任务'),
+                    content: const Text('确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+                      TextButton(
+                        onPressed: () {
+                          notifier.restartAllTasks();
+                          Navigator.pop(ctx);
+                        },
+                        child: const Text('重新执行', style: TextStyle(color: Colors.orange)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('审查', style: TextStyle(fontSize: 12)),
+              Transform.scale(
+                scale: 0.7,
+                child: Switch(
+                  value: state.isReviewEnabled,
+                  onChanged: (v) => notifier.toggleReviewMode(v),
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
@@ -308,7 +345,18 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
         child: ExpansionTile(
           initiallyExpanded: !hasOutline,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          title: Text(l10n.outlineSettings, style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Row(
+            children: [
+              Expanded(child: Text(l10n.outlineSettings, style: const TextStyle(fontWeight: FontWeight.bold))),
+              if (hasOutline)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.grey),
+                  onPressed: () => notifier.updateProjectOutline(''),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+            ],
+          ),
           leading: Icon(Icons.auto_stories, color: theme.primaryColor),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           children: [
@@ -480,6 +528,37 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                       ),
                     ),
                   ],
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (tasks.first.status == TaskStatus.reviewing) ...[
+                        TextButton.icon(
+                          onPressed: () => notifier.updateTaskStatus(tasks.first.id, TaskStatus.failed),
+                          icon: const Icon(Icons.close, size: 16, color: Colors.red),
+                          label: Text(l10n.reject, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: () => notifier.updateTaskStatus(tasks.first.id, TaskStatus.success),
+                          icon: const Icon(Icons.check, size: 16),
+                          label: Text(l10n.approve, style: const TextStyle(fontSize: 13)),
+                        ),
+                      ] else if (tasks.first.status == TaskStatus.pending || tasks.first.status == TaskStatus.failed) ...[
+                        ElevatedButton.icon(
+                          onPressed: () => notifier.runSingleTask(tasks.first.id),
+                          icon: const Icon(Icons.play_arrow, size: 16),
+                          label: Text(l10n.executeTask, style: const TextStyle(fontSize: 13)),
+                        ),
+                      ] else if (tasks.first.status == TaskStatus.success) ...[
+                        TextButton.icon(
+                          onPressed: () => notifier.runSingleTask(tasks.first.id),
+                          icon: const Icon(Icons.replay, size: 16),
+                          label: Text(l10n.regenerate, style: const TextStyle(fontSize: 13)),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
           ],
