@@ -51,9 +51,8 @@ class ToolManager {
       {String region = 'us-en'}) async {
     final enginesToTry = {
       preferredEngine,
-      'duckduckgo',
       'bing',
-      'google',
+      'bing',
     }.toList();
     List<Map<String, dynamic>> finalResults = [];
     String successfulEngine = '';
