@@ -14,6 +14,7 @@ import 'mobile_navigation_drawer.dart';
 import '../../../studio/presentation/pages/mobile_studio_page.dart';
 import '../../../../shared/widgets/custom_toast.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/utils/number_format_utils.dart';
 
 class MobileChatScreen extends ConsumerStatefulWidget {
   const MobileChatScreen({super.key});
@@ -274,7 +275,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  '$totalTokens tokens',
+                                  '${formatTokenCount(totalTokens)} tokens',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: Theme.of(context).primaryColor,

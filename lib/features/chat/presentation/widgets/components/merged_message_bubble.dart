@@ -15,6 +15,7 @@ import 'chat_utils.dart';
 import 'tool_output.dart';
 import '../../../../settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/utils/number_format_utils.dart';
 
 
 class MergedMessageBubble extends ConsumerStatefulWidget {
@@ -496,7 +497,7 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
               children: [
                 if (message.tokenCount != null && message.tokenCount! > 0) ...[
                   Text(
-                    '${message.tokenCount} Tokens',
+                    '${formatTokenCount(message.tokenCount!)} Tokens',
                     style: TextStyle(
                       fontSize: 10,
                       color: theme.typography.body!.color!.withOpacity(0.5),

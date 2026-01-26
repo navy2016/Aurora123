@@ -10,6 +10,7 @@ import '../../chat/presentation/widgets/chat_view.dart';
 import '../../chat/presentation/widgets/topic_dropdown.dart';
 import '../../settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/utils/number_format_utils.dart';
 
 class HistoryContent extends ConsumerStatefulWidget {
   const HistoryContent({super.key});
@@ -475,7 +476,7 @@ class _SessionItemState extends State<_SessionItem> {
                             DateFormat('MM/dd HH:mm')
                                     .format(widget.session.lastMessageTime) +
                                 (widget.session.totalTokens > 0
-                                    ? ' • ${widget.session.totalTokens} tokens'
+                                    ? ' • ${formatTokenCount(widget.session.totalTokens)} tokens'
                                     : ''),
                             style: TextStyle(
                                 fontSize: 10,
@@ -569,7 +570,7 @@ class SessionListWidget extends ConsumerWidget {
                 subtitle: Text(
                   DateFormat('MM/dd HH:mm').format(session.lastMessageTime) +
                       (session.totalTokens > 0
-                          ? ' • ${session.totalTokens} tokens'
+                          ? ' • ${formatTokenCount(session.totalTokens)} tokens'
                           : ''),
                   style: const TextStyle(fontSize: 12),
                 ),

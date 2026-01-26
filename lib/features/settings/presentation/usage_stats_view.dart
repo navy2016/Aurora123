@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'usage_stats_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/utils/number_format_utils.dart';
 
 class UsageStatsView extends ConsumerWidget {
   const UsageStatsView({super.key});
@@ -752,9 +753,9 @@ class _ModelStatsList extends StatelessWidget {
                                 : themeData!.resources.textFillColorPrimary,
                           ),
                           children: [
-                            TextSpan(text: '${stats.totalTokenCount} '),
+                            TextSpan(text: '${formatTokenCount(stats.totalTokenCount)} '),
                             TextSpan(
-                              text: '(${stats.promptTokenCount}/${stats.completionTokenCount})',
+                              text: '(${formatTokenCount(stats.promptTokenCount)}/${formatTokenCount(stats.completionTokenCount)})',
                               style: TextStyle(
                                 fontSize: isMobile ? 10 : 12,
                                 color: isMobile 
