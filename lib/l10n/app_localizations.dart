@@ -515,7 +515,7 @@ abstract class AppLocalizations {
   /// No description provided for @disabled.
   ///
   /// In zh, this message translates to:
-  /// **'已禁用'**
+  /// **'已停用'**
   String get disabled;
 
   /// No description provided for @loading.
@@ -577,6 +577,96 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'数据统计'**
   String get usageStats;
+
+  /// No description provided for @agentSkills.
+  ///
+  /// In zh, this message translates to:
+  /// **'技能'**
+  String get agentSkills;
+
+  /// No description provided for @agentSkillsDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'插件从应用根目录下的 \'./skills\' 文件夹加载。创建一个包含 \'SKILL.md\' 文件的文件夹即可添加新插件。'**
+  String get agentSkillsDescription;
+
+  /// No description provided for @noSkillsFound.
+  ///
+  /// In zh, this message translates to:
+  /// **'未在 ./skills 目录下发现插件'**
+  String get noSkillsFound;
+
+  /// No description provided for @openSkillsFolder.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开插件目录'**
+  String get openSkillsFolder;
+
+  /// No description provided for @instructions.
+  ///
+  /// In zh, this message translates to:
+  /// **'指令/说明'**
+  String get instructions;
+
+  /// No description provided for @tools.
+  ///
+  /// In zh, this message translates to:
+  /// **'工具定义'**
+  String get tools;
+
+  /// No description provided for @newSkill.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建插件'**
+  String get newSkill;
+
+  /// No description provided for @editSkill.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑插件'**
+  String get editSkill;
+
+  /// No description provided for @deleteSkill.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除插件'**
+  String get deleteSkill;
+
+  /// No description provided for @deleteSkillTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认删除'**
+  String get deleteSkillTitle;
+
+  /// No description provided for @deleteSkillConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除这个插件吗？此操作无法撤销。'**
+  String get deleteSkillConfirm;
+
+  /// No description provided for @updateSkill.
+  ///
+  /// In zh, this message translates to:
+  /// **'更新插件'**
+  String get updateSkill;
+
+  /// No description provided for @saveSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存成功'**
+  String get saveSuccess;
+
+  /// No description provided for @skillName.
+  ///
+  /// In zh, this message translates to:
+  /// **'插件文件夹名称'**
+  String get skillName;
+
+  /// No description provided for @skillNameHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入文件夹名称 (如 translation_helper)'**
+  String get skillNameHint;
 
   /// No description provided for @providerName.
   ///

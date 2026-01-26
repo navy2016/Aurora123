@@ -13,6 +13,7 @@ import 'features/chat/presentation/topic_provider.dart';
 import 'features/settings/data/settings_storage.dart';
 import 'features/settings/presentation/settings_provider.dart';
 import 'shared/utils/windows_injector.dart';
+import 'features/skills/presentation/skill_provider.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'features/chat/presentation/widgets/chat_image_bubble.dart'
     show clearImageCache;
@@ -110,6 +111,17 @@ void main() async {
     overrides: [
       settingsStorageProvider.overrideWithValue(storage),
       settingsProvider.overrideWith((ref) {
+        // Load skills from a default directory
+        Future.microtask(() {
+          final skillsDir =
+              '${Directory.current.path}${Platform.pathSeparator}skills';
+          final language = appSettings?.language ??
+              (Platform.localeName.startsWith('zh') ? 'zh' : 'en');
+          ref
+              .read(skillProvider.notifier)
+              .loadSkills(skillsDir, language: language);
+        });
+
         return SettingsNotifier(
           storage: storage,
           initialProviders: initialProviders,

@@ -260,6 +260,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usageStats => 'Usage Statistics';
 
   @override
+  String get agentSkills => 'Skills';
+
+  @override
+  String get agentSkillsDescription =>
+      'Skills are loaded from the \'./skills\' folder in the application root. Create a folder with a \'SKILL.md\' file to add a new skill.';
+
+  @override
+  String get noSkillsFound => 'No skills found in ./skills directory';
+
+  @override
+  String get openSkillsFolder => 'Open Skills Folder';
+
+  @override
+  String get instructions => 'Instructions';
+
+  @override
+  String get tools => 'Tools';
+
+  @override
+  String get newSkill => 'New Skill';
+
+  @override
+  String get editSkill => 'Edit Skill';
+
+  @override
+  String get deleteSkill => 'Delete Skill';
+
+  @override
+  String get deleteSkillTitle => 'Delete Skill';
+
+  @override
+  String get deleteSkillConfirm =>
+      'Are you sure you want to delete this skill? This action cannot be undone.';
+
+  @override
+  String get updateSkill => 'Update Skill';
+
+  @override
+  String get saveSuccess => 'Saved Successfully';
+
+  @override
+  String get skillName => 'Skill Folder Name';
+
+  @override
+  String get skillNameHint => 'Enter folder name (e.g. translation_helper)';
+
+  @override
   String get providerName => 'Provider Name';
 
   @override

@@ -18,6 +18,7 @@ import '../../../../history/presentation/widgets/hover_image_preview.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'chat_utils.dart';
 import 'tool_output.dart';
+import 'package:aurora/shared/utils/number_format_utils.dart';
 
 
 class MessageBubble extends ConsumerStatefulWidget {
@@ -704,7 +705,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                       if (message.tokenCount != null && message.tokenCount! > 0) ...[
                                         if (message.promptTokens != null && message.completionTokens != null) ...[
                                             Text(
-                                              '${message.completionTokens} Compl | ${message.promptTokens} Prompt',
+                                              '${formatFullTokenCount(message.completionTokens!)} Compl | ${formatFullTokenCount(message.promptTokens!)} Prompt',
                                               style: TextStyle(
                                                 fontSize: 10,
                                                 color: theme.typography.body?.color?.withOpacity(0.5),
@@ -712,7 +713,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                             ),
                                         ] else ...[
                                           Text(
-                                            '${message.tokenCount} Tokens',
+                                            '${formatFullTokenCount(message.tokenCount!)} Tokens',
                                             style: TextStyle(
                                               fontSize: 10,
                                               color: theme.typography.body?.color?.withOpacity(0.5),

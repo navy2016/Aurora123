@@ -224,7 +224,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enabled => '已启用';
 
   @override
-  String get disabled => '已禁用';
+  String get disabled => '已停用';
 
   @override
   String get loading => '加载中';
@@ -255,6 +255,52 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get usageStats => '数据统计';
+
+  @override
+  String get agentSkills => '技能';
+
+  @override
+  String get agentSkillsDescription =>
+      '插件从应用根目录下的 \'./skills\' 文件夹加载。创建一个包含 \'SKILL.md\' 文件的文件夹即可添加新插件。';
+
+  @override
+  String get noSkillsFound => '未在 ./skills 目录下发现插件';
+
+  @override
+  String get openSkillsFolder => '打开插件目录';
+
+  @override
+  String get instructions => '指令/说明';
+
+  @override
+  String get tools => '工具定义';
+
+  @override
+  String get newSkill => '新建插件';
+
+  @override
+  String get editSkill => '编辑插件';
+
+  @override
+  String get deleteSkill => '删除插件';
+
+  @override
+  String get deleteSkillTitle => '确认删除';
+
+  @override
+  String get deleteSkillConfirm => '确定要删除这个插件吗？此操作无法撤销。';
+
+  @override
+  String get updateSkill => '更新插件';
+
+  @override
+  String get saveSuccess => '保存成功';
+
+  @override
+  String get skillName => '插件文件夹名称';
+
+  @override
+  String get skillNameHint => '输入文件夹名称 (如 translation_helper)';
 
   @override
   String get providerName => '供应商名称';
