@@ -16,6 +16,7 @@ import 'package:aurora/shared/services/tool_manager.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:uuid/uuid.dart';
 import 'topic_provider.dart';
+import '../../skills/presentation/skill_provider.dart';
 import '../../../core/error/app_error_type.dart';
 import '../../../core/error/app_exception.dart';
 
@@ -264,10 +265,32 @@ class ChatNotifier extends StateNotifier<ChatState> {
       var aiMsg =
           Message.ai('', model: currentModel, provider: currentProvider);
       state = state.copyWith(messages: [...state.messages, aiMsg]);
+      final currentPlatform = Platform.operatingSystem;
+      final activeSkills = _ref.read(skillProvider).skills.where((s) => s.isEnabled && s.forAI && s.isCompatible(currentPlatform)).toList();
       List<Map<String, dynamic>>? tools;
-      if (settings.isSearchEnabled) {
-        tools = toolManager.getTools();
+      if (settings.isSearchEnabled || activeSkills.isNotEmpty) {
+        tools = toolManager.getTools(skills: activeSkills);
       } else {}
+
+      // Inject instructions from skills into system prompt
+      if (activeSkills.isNotEmpty) {
+        final skillInstructions = activeSkills.map((s) => '## Skill: ${s.name}\n${s.instructions}').join('\n\n');
+        final systemMsg = messagesForApi.where((m) => m.role == 'system').firstOrNull;
+        if (systemMsg != null) {
+          final index = messagesForApi.indexOf(systemMsg);
+          messagesForApi[index] = systemMsg.copyWith(
+            content: '${systemMsg.content}\n\n# Dynamic Skills Instructions\n$skillInstructions'
+          );
+        } else {
+          messagesForApi.insert(0, Message(
+            id: const Uuid().v4(),
+            role: 'system',
+            content: '# Dynamic Skills Instructions\n$skillInstructions',
+            timestamp: DateTime.now(),
+            isUser: false,
+          ));
+        }
+      }
       bool continueGeneration = true;
       int turns = 0;
       DateTime? firstContentTime;
@@ -406,7 +429,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
               String searchResult;
               try {
                 searchResult = await toolManager.executeTool('SearchWeb', {'query': searchQuery},
-                    preferredEngine: settings.searchEngine);
+                    preferredEngine: settings.searchEngine, skills: activeSkills);
               } catch (e) {
                 searchResult = jsonEncode({'error': e.toString()});
               }
@@ -442,7 +465,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
               try {
                 final args = jsonDecode(tc.arguments);
                 toolResult = await toolManager.executeTool(tc.name, args,
-                    preferredEngine: settings.searchEngine);
+                    preferredEngine: settings.searchEngine, skills: activeSkills);
               } catch (e) {
                 toolResult = jsonEncode({'error': e.toString()});
               }
@@ -503,7 +526,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
                 String searchResult;
                 try {
                   searchResult = await toolManager.executeTool('SearchWeb', {'query': searchQuery},
-                      preferredEngine: settings.searchEngine);
+                      preferredEngine: settings.searchEngine, skills: activeSkills);
                 } catch (e) {
                   searchResult = jsonEncode({'error': e.toString()});
                 }
@@ -537,7 +560,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
                 try {
                   final args = jsonDecode(tc.arguments);
                   toolResult = await toolManager.executeTool(tc.name, args,
-                      preferredEngine: settings.searchEngine);
+                      preferredEngine: settings.searchEngine, skills: activeSkills);
                 } catch (e) {
                   toolResult = jsonEncode({'error': e.toString()});
                 }

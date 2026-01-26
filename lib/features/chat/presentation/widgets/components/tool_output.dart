@@ -23,10 +23,65 @@ class _BuildToolOutputState extends State<BuildToolOutput> {
     final results = data != null ? data['results'] as List? : null;
     final count = results?.length ?? 0;
     final engine = data?['engine'] ?? 'Search';
+
+    final stdout = data?['stdout'] as String?;
+    final stderr = data?['stderr'] as String?;
+    final exitCode = data?['exitCode'] as int?;
+    final error = data?['error'] as String?;
+
+    // Handle Shell Tool Output (Terminal Style)
+    if (stdout != null || stderr != null || exitCode != null) {
+      return _buildTerminalOutput(theme, stdout, stderr, exitCode);
+    }
+
+    // Handle Generic Errors from Skill execution
+    if (error != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const SizedBox(width: 8),
+                Text(
+                  'Skill Error',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: TextStyle(fontSize: 13, color: theme.typography.body?.color),
+            ),
+            if (data?['missing_parameters'] != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Missing: ${(data!['missing_parameters'] as List).join(', ')}',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.red),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
     if (count == 0) {
       if (data?.containsKey('message') == true) {
-        return Text('Search Error: ${data!['message']}',
-            style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 13));
+        return Text('Tool Message: ${data!['message']}',
+            style: TextStyle(color: theme.typography.caption?.color, fontSize: 13));
       }
       return const SizedBox.shrink();
     }
@@ -285,6 +340,92 @@ class _BuildToolOutputState extends State<BuildToolOutput> {
           }).toList(),
         ],
       ],
+    );
+  }
+
+  Widget _buildTerminalOutput(fluent.FluentThemeData theme, String? stdout, String? stderr, int? exitCode) {
+    final isError = (exitCode != null && exitCode != 0) || (stderr != null && stderr.isNotEmpty && (stdout == null || stdout.isEmpty));
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E), // Terminal black
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isError ? Colors.red.withOpacity(0.5) : Colors.grey.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Terminal Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isError ? Colors.red.withOpacity(0.15) : Colors.white.withOpacity(0.05),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isError ? Icons.error_outline : Icons.terminal,
+                  size: 14,
+                  color: isError ? Colors.red.shade300 : Colors.green.shade300,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isError ? 'Terminal Error (Code $exitCode)' : 'Terminal Output',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'Consolas',
+                    color: isError ? Colors.red.shade100 : Colors.grey.shade300,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Terminal Content
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (stdout != null && stdout.isNotEmpty)
+                  SelectableText(
+                    stdout.trim(),
+                    style: const TextStyle(
+                      fontFamily: 'Consolas',
+                      fontSize: 12,
+                      color: Color(0xFFD4D4D4),
+                      height: 1.4,
+                    ),
+                  ),
+                if (stderr != null && stderr.isNotEmpty) ...[
+                  if (stdout != null && stdout.isNotEmpty) const SizedBox(height: 8),
+                  SelectableText(
+                    stderr.trim(),
+                    style: TextStyle(
+                      fontFamily: 'Consolas',
+                      fontSize: 12,
+                      color: Colors.red.shade300,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                if ((stdout == null || stdout.isEmpty) && (stderr == null || stderr.isEmpty))
+                  const Text(
+                    '[No output]',
+                    style: TextStyle(
+                      fontFamily: 'Consolas',
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

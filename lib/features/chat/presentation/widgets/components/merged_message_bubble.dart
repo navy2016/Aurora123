@@ -412,44 +412,52 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
       ));
     }
 
-    // 2. Aggregate all tool outputs (search results)
-    final List<Map<String, dynamic>> allResults = [];
-    String? firstErrorMessage;
+    // 2. Aggregate all tool outputs
+    final List<Map<String, dynamic>> allSearchResults = [];
+    final List<String> otherToolOutputs = [];
+    
     for (final msg in messages) {
       if (msg.role == 'tool') {
         try {
           final data = jsonDecode(msg.content) as Map<String, dynamic>?;
           if (data != null) {
+            // Check if it's a Search result
             if (data['results'] is List) {
               final results = data['results'] as List;
               for (final r in results) {
                 if (r is Map<String, dynamic>) {
-                  allResults.add(r);
+                  allSearchResults.add(r);
                 }
               }
-            } else if (data['error'] != null || data['message'] != null) {
-              // Capture error/message from failed tool calls
-              firstErrorMessage ??= data['error']?.toString() ?? data['message']?.toString();
+            } else {
+              // It's a general tool output or error
+              otherToolOutputs.add(msg.content);
             }
+          } else {
+            // Raw string output
+            otherToolOutputs.add(jsonEncode({'message': msg.content}));
           }
         } catch (_) {
-          // If parsing fails, skip this tool output
+          // If parsing fails, show raw content as message
+          otherToolOutputs.add(jsonEncode({'message': msg.content}));
         }
       }
     }
 
-    if (allResults.isNotEmpty) {
-      // Create merged tool output JSON
-      final mergedJson = jsonEncode({'results': allResults});
+    // Render Search Results if any
+    if (allSearchResults.isNotEmpty) {
+      final mergedJson = jsonEncode({'results': allSearchResults});
       parts.add(Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: BuildToolOutput(content: mergedJson),
       ));
-    } else if (firstErrorMessage != null) {
-      // Show error message if no results but there was an error
+    }
+
+    // Render Other Tool Outputs (Shell, Errors, etc.)
+    for (final output in otherToolOutputs) {
       parts.add(Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: BuildToolOutput(content: jsonEncode({'message': firstErrorMessage})),
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: BuildToolOutput(content: output),
       ));
     }
 
