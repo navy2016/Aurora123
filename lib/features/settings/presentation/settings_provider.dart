@@ -125,6 +125,7 @@ class SettingsState {
   final String backgroundColor;
   final int closeBehavior;
   final String? executionModel;
+  final String? executionProviderId;
   SettingsState({
     required this.providers,
     required this.activeProviderId,
@@ -148,6 +149,7 @@ class SettingsState {
     this.backgroundColor = 'default',
     this.closeBehavior = 0,
     this.executionModel,
+    this.executionProviderId,
   });
   ProviderConfig get activeProvider =>
       providers.firstWhere((p) => p.id == activeProviderId);
@@ -179,6 +181,7 @@ class SettingsState {
     String? backgroundColor,
     int? closeBehavior,
     String? executionModel,
+    String? executionProviderId,
   }) {
     return SettingsState(
       providers: providers ?? this.providers,
@@ -205,6 +208,7 @@ class SettingsState {
       backgroundColor: backgroundColor ?? this.backgroundColor,
       closeBehavior: closeBehavior ?? this.closeBehavior,
       executionModel: executionModel ?? this.executionModel,
+      executionProviderId: executionProviderId ?? this.executionProviderId,
     );
   }
 }
@@ -233,6 +237,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     String backgroundColor = 'default',
     int closeBehavior = 0,
     String? executionModel,
+    String? executionProviderId,
   })  : _storage = storage,
         super(SettingsState(
           providers: initialProviders,
@@ -254,6 +259,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           backgroundColor: backgroundColor,
           closeBehavior: closeBehavior,
           executionModel: executionModel,
+          executionProviderId: executionProviderId,
         )) {
     loadPresets();
   }
@@ -442,6 +448,20 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     
     final newModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
     newModelSettings[modelId] = newSettings;
+    
+    await updateProvider(id: providerId, modelSettings: newModelSettings);
+  }
+
+  Future<void> setAllModelsEnabled(String providerId, bool enabled) async {
+    final provider = state.providers.firstWhere((p) => p.id == providerId);
+    final newModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+    
+    for (final modelId in provider.models) {
+      final currentSettings = newModelSettings[modelId] ?? {};
+      final newSettings = Map<String, dynamic>.from(currentSettings);
+      newSettings['_aurora_model_disabled'] = !enabled;
+      newModelSettings[modelId] = newSettings;
+    }
     
     await updateProvider(id: providerId, modelSettings: newModelSettings);
   }
@@ -700,6 +720,16 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       executionModel: model,
+      executionProviderId: state.executionProviderId,
+    );
+  }
+
+  Future<void> setExecutionProviderId(String? id) async {
+    state = state.copyWith(executionProviderId: id);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      executionModel: state.executionModel,
+      executionProviderId: id,
     );
   }
 }
