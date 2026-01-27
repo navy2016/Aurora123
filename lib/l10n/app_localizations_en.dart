@@ -1375,5 +1375,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savePresetOverrideHint =>
-      'Save current config to selected preset (Not implemented, use New instead)';
+      'Save current config and overwrite selected preset';
 }

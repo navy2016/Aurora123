@@ -779,13 +779,13 @@ abstract class AppLocalizations {
   /// No description provided for @enableAll.
   ///
   /// In zh, this message translates to:
-  /// **'一键启用'**
+  /// **'全部启用'**
   String get enableAll;
 
   /// No description provided for @disableAll.
   ///
   /// In zh, this message translates to:
-  /// **'一键禁用'**
+  /// **'全部禁用'**
   String get disableAll;
 
   /// No description provided for @modelConfig.
@@ -2717,7 +2717,7 @@ abstract class AppLocalizations {
   /// No description provided for @savePresetOverrideHint.
   ///
   /// In zh, this message translates to:
-  /// **'保存当前配置覆盖选中的预设（暂未实现，请使用新建）'**
+  /// **'保存当前配置覆盖选中的预设'**
   String get savePresetOverrideHint;
 }
 

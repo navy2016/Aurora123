@@ -571,5 +571,5 @@
   },
   "outline": "Outline",
   "outlineModel": "Outline Model",
-  "savePresetOverrideHint": "Save current config to selected preset (Not implemented, use New instead)"
+  "savePresetOverrideHint": "Save current config and overwrite selected preset"
 }

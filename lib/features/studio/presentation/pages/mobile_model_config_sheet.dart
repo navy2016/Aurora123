@@ -60,15 +60,21 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
       _isInitialized = true;
     }
 
-    return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return DraggableScrollableSheet(
+      initialChildSize: 0.95,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) => Container(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          top: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
           AppBar(
             title: Text(l10n.modelConfig),
             automaticallyImplyLeading: false,
@@ -76,6 +82,25 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
             elevation: 0,
             actions: [
               // 全局预设管理
+            if (novelState.activePromptPresetId != null)
+              IconButton(
+                tooltip: '${l10n.save} "${novelState.promptPresets.firstWhere((p) => p.id == novelState.activePromptPresetId).name}"',
+                icon: const Icon(Icons.save),
+                onPressed: () {
+                  final activeId = novelState.activePromptPresetId!;
+                  final currentPreset = novelState.promptPresets.firstWhere((p) => p.id == activeId);
+                  final updatedPreset = currentPreset.copyWith(
+                    outlinePrompt: _controllers['outline']?.text ?? '',
+                    decomposePrompt: _controllers['decompose']?.text ?? '',
+                    writerPrompt: _controllers['writer']?.text ?? '',
+                    reviewerPrompt: _controllers['reviewer']?.text ?? '',
+                  );
+                  ref.read(novelProvider.notifier).updatePromptPreset(updatedPreset);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.presetSaved(updatedPreset.name))),
+                  );
+                },
+              ),
             IconButton(
               tooltip: l10n.newNovelPreset,
               icon: const Icon(Icons.add),
@@ -83,7 +108,8 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
             ),
             PopupMenuButton<NovelPromptPreset?>(
               tooltip: l10n.selectPreset,
-              icon: const Icon(Icons.bookmark_outline),
+              icon: const Icon(Icons.tune),
+              offset: const Offset(0, 48),
               itemBuilder: (context) {
                 final presets = ref.read(novelProvider).promptPresets;
                 return [
@@ -110,46 +136,48 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
                       ),
                     )),
                   ];
-                },
-                onSelected: (preset) {
-                  if (preset == null) {
-                    // 应用系统默认
-                    _controllers['outline']!.text = NovelPromptPresets.outline;
-                    novelNotifier.setOutlinePrompt(NovelPromptPresets.outline);
-                    _controllers['decompose']!.text = NovelPromptPresets.decompose;
-                    novelNotifier.setDecomposePrompt(NovelPromptPresets.decompose);
-                    _controllers['writer']!.text = NovelPromptPresets.writer;
-                    novelNotifier.setWriterPrompt(NovelPromptPresets.writer);
-                    _controllers['reviewer']!.text = NovelPromptPresets.reviewer;
-                    novelNotifier.setReviewerPrompt(NovelPromptPresets.reviewer);
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.systemDefaultRestored)),
-                    );
-                    return;
-                  }
+              },
+              onSelected: (preset) {
+                if (preset == null) {
+                  // 应用系统默认
+                  _controllers['outline']!.text = NovelPromptPresets.outline;
+                  novelNotifier.setOutlinePrompt(NovelPromptPresets.outline);
+                  _controllers['decompose']!.text = NovelPromptPresets.decompose;
+                  novelNotifier.setDecomposePrompt(NovelPromptPresets.decompose);
+                  _controllers['writer']!.text = NovelPromptPresets.writer;
+                  novelNotifier.setWriterPrompt(NovelPromptPresets.writer);
+                  _controllers['reviewer']!.text = NovelPromptPresets.reviewer;
+                  novelNotifier.setReviewerPrompt(NovelPromptPresets.reviewer);
+                  novelNotifier.setActivePromptPresetId(null);
                   
-                  // 应用整套预设
-                  if (preset.outlinePrompt.isNotEmpty) {
-                    _controllers['outline']!.text = preset.outlinePrompt;
-                    novelNotifier.setOutlinePrompt(preset.outlinePrompt);
-                  }
-                  if (preset.decomposePrompt.isNotEmpty) {
-                    _controllers['decompose']!.text = preset.decomposePrompt;
-                    novelNotifier.setDecomposePrompt(preset.decomposePrompt);
-                  }
-                  if (preset.writerPrompt.isNotEmpty) {
-                    _controllers['writer']!.text = preset.writerPrompt;
-                    novelNotifier.setWriterPrompt(preset.writerPrompt);
-                  }
-                  if (preset.reviewerPrompt.isNotEmpty) {
-                    _controllers['reviewer']!.text = preset.reviewerPrompt;
-                    novelNotifier.setReviewerPrompt(preset.reviewerPrompt);
-                  }
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.presetLoaded(preset.name))),
+                    SnackBar(content: Text(l10n.systemDefaultRestored)),
                   );
-                },
+                  return;
+                }
+                
+                // 应用整套预设
+                if (preset.outlinePrompt.isNotEmpty) {
+                  _controllers['outline']!.text = preset.outlinePrompt;
+                  novelNotifier.setOutlinePrompt(preset.outlinePrompt);
+                }
+                if (preset.decomposePrompt.isNotEmpty) {
+                  _controllers['decompose']!.text = preset.decomposePrompt;
+                  novelNotifier.setDecomposePrompt(preset.decomposePrompt);
+                }
+                if (preset.writerPrompt.isNotEmpty) {
+                  _controllers['writer']!.text = preset.writerPrompt;
+                  novelNotifier.setWriterPrompt(preset.writerPrompt);
+                }
+                if (preset.reviewerPrompt.isNotEmpty) {
+                  _controllers['reviewer']!.text = preset.reviewerPrompt;
+                  novelNotifier.setReviewerPrompt(preset.reviewerPrompt);
+                }
+                novelNotifier.setActivePromptPresetId(preset.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.presetLoaded(preset.name))),
+                );
+              },
               ),
               IconButton(
                 icon: const Icon(Icons.close),
@@ -160,6 +188,7 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
           const Divider(height: 1),
           Flexible(
             child: ListView(
+              controller: scrollController,
               padding: const EdgeInsets.all(16),
               shrinkWrap: true,
               children: [
@@ -211,8 +240,10 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
             ),
           ),
         ],
-      ),
-    );
+      ), // Column
+    ), // SafeArea
+    ), // Container
+    ); // DraggableScrollableSheet
   }
 
   Widget _buildModelSection(

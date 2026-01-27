@@ -1886,9 +1886,24 @@ $suggestions
   }
 
   // ========== Novel Prompt Presets ==========
+  void setActivePromptPresetId(String? id) {
+    state = state.copyWith(activePromptPresetId: id);
+    _saveState();
+  }
+
   void addPromptPreset(NovelPromptPreset preset) {
     state = state.copyWith(
       promptPresets: [...state.promptPresets, preset],
+      activePromptPresetId: preset.id,
+    );
+    _saveState();
+  }
+
+  void updatePromptPreset(NovelPromptPreset preset) {
+    final updatedPresets = state.promptPresets.map((p) => p.id == preset.id ? preset : p).toList();
+    state = state.copyWith(
+      promptPresets: updatedPresets,
+      activePromptPresetId: preset.id,
     );
     _saveState();
   }
@@ -1896,6 +1911,7 @@ $suggestions
   void deletePromptPreset(String presetId) {
     state = state.copyWith(
       promptPresets: state.promptPresets.where((p) => p.id != presetId).toList(),
+      activePromptPresetId: state.activePromptPresetId == presetId ? null : state.activePromptPresetId,
     );
     _saveState();
   }
