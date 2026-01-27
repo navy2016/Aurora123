@@ -83,6 +83,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
           _buildNavTab(context, theme, 1, l10n.context, FluentIcons.database),
           const SizedBox(width: 4),
           _buildNavTab(context, theme, 2, l10n.preview, FluentIcons.print),
+          const SizedBox(width: 8),
+          // Preset Dropdown
+          _buildPresetDropdown(context, theme, state, ref.read(novelProvider.notifier), l10n),
 
           const Spacer(),
 
@@ -292,6 +295,55 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
         ),
       );
     }
+  }
+
+  Widget _buildPresetDropdown(BuildContext context, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier, AppLocalizations l10n) {
+    final presets = state.promptPresets;
+    final activePresetId = state.activePromptPresetId;
+    
+    // Find active preset name
+    String selectedLabel = l10n.systemDefault;
+    if (activePresetId != null) {
+      final active = presets.firstWhere(
+        (p) => p.id == activePresetId,
+        orElse: () => NovelPromptPreset(id: '', name: l10n.systemDefault, outlinePrompt: '', decomposePrompt: '', writerPrompt: '', reviewerPrompt: ''),
+      );
+      if (active.id.isNotEmpty) selectedLabel = active.name;
+    }
+    
+    return DropDownButton(
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(FluentIcons.edit_note, size: 14),
+          const SizedBox(width: 6),
+          Text(selectedLabel, style: const TextStyle(fontSize: 13)),
+        ],
+      ),
+      items: [
+        MenuFlyoutItem(
+          text: Text(l10n.systemDefault, style: const TextStyle(fontWeight: FontWeight.bold)),
+          onPressed: () {
+            notifier.setOutlinePrompt(NovelPromptPresets.outline);
+            notifier.setDecomposePrompt(NovelPromptPresets.decompose);
+            notifier.setWriterPrompt(NovelPromptPresets.writer);
+            notifier.setReviewerPrompt(NovelPromptPresets.reviewer);
+            notifier.setActivePromptPresetId(null);
+          },
+        ),
+        if (presets.isNotEmpty) const MenuFlyoutSeparator(),
+        ...presets.map((preset) => MenuFlyoutItem(
+          text: Text(preset.name),
+          onPressed: () {
+            if (preset.outlinePrompt.isNotEmpty) notifier.setOutlinePrompt(preset.outlinePrompt);
+            if (preset.decomposePrompt.isNotEmpty) notifier.setDecomposePrompt(preset.decomposePrompt);
+            if (preset.writerPrompt.isNotEmpty) notifier.setWriterPrompt(preset.writerPrompt);
+            if (preset.reviewerPrompt.isNotEmpty) notifier.setReviewerPrompt(preset.reviewerPrompt);
+            notifier.setActivePromptPresetId(preset.id);
+          },
+        )),
+      ],
+    );
   }
 
   Widget _buildBodyContent(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {

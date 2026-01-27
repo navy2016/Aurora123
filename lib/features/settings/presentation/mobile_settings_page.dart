@@ -156,49 +156,74 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                 _SectionHeader(
                   title: l10n.availableModels,
                   icon: Icons.format_list_bulleted,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (activeProvider != null && activeProvider.models.isNotEmpty) ...[
-                        TextButton(
-                          onPressed: () => ref
-                              .read(settingsProvider.notifier)
-                              .setAllModelsEnabled(activeProvider.id, true),
-                          child: Text(l10n.enableAll, 
-                            style: const TextStyle(fontSize: 12)),
-                        ),
-                        TextButton(
-                          onPressed: () => ref
-                              .read(settingsProvider.notifier)
-                              .setAllModelsEnabled(activeProvider.id, false),
-                          child: Text(l10n.disableAll, 
-                            style: const TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                      SizedBox(
-                        height: 32,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            visualDensity: VisualDensity.compact,
-                            textStyle: const TextStyle(fontSize: 12),
-                          ),
-                          onPressed: settingsState.isLoadingModels
-                              ? null
-                              : () {
-                                  ref.read(settingsProvider.notifier).fetchModels();
-                                },
-                          child: settingsState.isLoadingModels
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2))
-                              : Text(l10n.fetchModelList),
-                        ),
+                  trailing: SizedBox(
+                    height: 32,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                    ],
+                      onPressed: settingsState.isLoadingModels
+                          ? null
+                          : () {
+                              ref.read(settingsProvider.notifier).fetchModels();
+                            },
+                      icon: settingsState.isLoadingModels
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.refresh, size: 16),
+                      label: Text(l10n.fetchModelList, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                    ),
                   ),
                 ),
+                if (activeProvider != null && activeProvider.models.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 30,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.5)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              onPressed: () => ref
+                                  .read(settingsProvider.notifier)
+                                  .setAllModelsEnabled(activeProvider.id, true),
+                              icon: Icon(Icons.done_all, size: 14, color: Theme.of(context).primaryColor),
+                              label: Text(l10n.enableAll, 
+                                style: TextStyle(fontSize: 11, color: Theme.of(context).primaryColor)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 30,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                side: BorderSide(color: Colors.grey.withOpacity(0.5)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              onPressed: () => ref
+                                  .read(settingsProvider.notifier)
+                                  .setAllModelsEnabled(activeProvider.id, false),
+                              icon: const Icon(Icons.remove_done, size: 14, color: Colors.grey),
+                              label: Text(l10n.disableAll, 
+                                style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),

@@ -357,10 +357,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noModelsFetch => '暂无模型，请点击右上角获取';
 
   @override
-  String get enableAll => '一键启用';
+  String get enableAll => '全部启用';
 
   @override
-  String get disableAll => '一键禁用';
+  String get disableAll => '全部禁用';
 
   @override
   String get modelConfig => '模型配置';
@@ -1348,5 +1348,5 @@ class AppLocalizationsZh extends AppLocalizations {
   String get outlineModel => '大纲模型';
 
   @override
-  String get savePresetOverrideHint => '保存当前配置覆盖选中的预设（暂未实现，请使用新建）';
+  String get savePresetOverrideHint => '保存当前配置覆盖选中的预设';
 }

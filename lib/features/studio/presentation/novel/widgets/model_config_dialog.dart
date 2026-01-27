@@ -176,6 +176,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                         novelNotifier.setWriterPrompt(NovelPromptPresets.writer);
                         _controllers['reviewer']!.text = NovelPromptPresets.reviewer;
                         novelNotifier.setReviewerPrompt(NovelPromptPresets.reviewer);
+                        novelNotifier.setActivePromptPresetId(null);
                         
                         displayInfoBar(context, builder: (context, close) {
                           return InfoBar(
@@ -213,6 +214,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                             _controllers['reviewer']!.text = preset.reviewerPrompt;
                             novelNotifier.setReviewerPrompt(preset.reviewerPrompt);
                           }
+                          novelNotifier.setActivePromptPresetId(preset.id);
                           displayInfoBar(context, builder: (context, close) {
                             return InfoBar(
                               title: Text(l10n.presetLoaded(preset.name)),
@@ -246,10 +248,33 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                 ),
                 const SizedBox(width: 8),
                 Tooltip(
-                  message: l10n.savePresetOverrideHint,
+                  message: novelState.activePromptPresetId != null 
+                    ? '${l10n.save} "${novelState.promptPresets.firstWhere((p) => p.id == novelState.activePromptPresetId).name}"'
+                    : l10n.savePresetOverrideHint,
                   child: IconButton(
-                    icon: const Icon(FluentIcons.save, size: 14),
-                    onPressed: () => _showSavePresetDialog(context, ref), // 暂时都只提供新建入口
+                    icon: Icon(
+                      FluentIcons.save, 
+                      size: 14, 
+                      color: novelState.activePromptPresetId != null ? theme.accentColor : null
+                    ),
+                    onPressed: novelState.activePromptPresetId == null ? null : () {
+                      final activeId = novelState.activePromptPresetId!;
+                      final currentPreset = novelState.promptPresets.firstWhere((p) => p.id == activeId);
+                      final updatedPreset = currentPreset.copyWith(
+                        outlinePrompt: _controllers['outline']?.text ?? '',
+                        decomposePrompt: _controllers['decompose']?.text ?? '',
+                        writerPrompt: _controllers['writer']?.text ?? '',
+                        reviewerPrompt: _controllers['reviewer']?.text ?? '',
+                      );
+                      novelNotifier.updatePromptPreset(updatedPreset);
+                      displayInfoBar(context, builder: (context, close) {
+                        return InfoBar(
+                          title: Text(l10n.presetSaved(updatedPreset.name)),
+                          severity: InfoBarSeverity.success,
+                          onClose: close,
+                        );
+                      });
+                    },
                   ),
                 ),
               ],

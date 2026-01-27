@@ -701,14 +701,28 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                             onPressed: () => ref
                                 .read(settingsProvider.notifier)
                                 .setAllModelsEnabled(viewingProvider.id, true),
-                            child: fluent.Text(l10n.enableAll),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.done_all, size: 14),
+                                const SizedBox(width: 4),
+                                fluent.Text(l10n.enableAll),
+                              ],
+                            ),
                           ),
                           const SizedBox(width: 8),
                           fluent.Button(
                             onPressed: () => ref
                                 .read(settingsProvider.notifier)
                                 .setAllModelsEnabled(viewingProvider.id, false),
-                            child: fluent.Text(l10n.disableAll),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.remove_done, size: 14),
+                                const SizedBox(width: 4),
+                                fluent.Text(l10n.disableAll),
+                              ],
+                            ),
                           ),
                           const SizedBox(width: 8),
                         ],
