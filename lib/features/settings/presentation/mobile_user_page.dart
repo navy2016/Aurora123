@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../shared/utils/avatar_cropper.dart';
 import 'settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import '../../sync/presentation/mobile_sync_settings_page.dart';
 
 class MobileUserPage extends ConsumerStatefulWidget {
@@ -112,148 +113,66 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
   }
 
   void _showTextEditor(BuildContext context, String title, String currentValue,
-      Function(String) onSave) {
-    final controller = TextEditingController(text: currentValue);
+      Function(String) onSave) async {
     final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet(
+    final newValue = await AuroraBottomSheet.showInput(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('${l10n.edit}$title', style: Theme.of(context).textTheme.titleMedium),
-              ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: controller,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: '${l10n.pleaseEnter}$title',
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(l10n.cancel),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        onSave(controller.text);
-                        Navigator.pop(ctx);
-                      },
-                      child: Text(l10n.save),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: '${l10n.edit}$title',
+      initialValue: currentValue,
+      hintText: '${l10n.pleaseEnter}$title',
     );
+    if (newValue != null) {
+      onSave(newValue);
+    }
   }
 
   void _showAvatarPicker({required bool isUser}) {
     final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 8),
-                Container(
-                  width: 32,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.changeAvatarTitle(isUser ? l10n.user : 'AI'),
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  leading: const Icon(Icons.camera_alt),
-                  title: Text(l10n.camera),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _pickImage(ImageSource.camera, isUser);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: Text(l10n.photos),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _pickImage(ImageSource.gallery, isUser);
-                  },
-                ),
-                if ((isUser
-                        ? ref.read(settingsProvider).userAvatar
-                        : ref.read(settingsProvider).llmAvatar) !=
-                    null)
-                  ListTile(
-                    leading:
-                        const Icon(Icons.delete_outline, color: Colors.red),
-                    title: Text(l10n.removeAvatar,
-                        style: const TextStyle(color: Colors.red)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      if (isUser) {
-                        ref
-                            .read(settingsProvider.notifier)
-                            .setChatDisplaySettings(userAvatar: '');
-                      } else {
-                        ref
-                            .read(settingsProvider.notifier)
-                            .setChatDisplaySettings(llmAvatar: '');
-                      }
-                    },
-                  ),
-                const SizedBox(height: 16),
-              ],
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AuroraBottomSheet.buildTitle(context, l10n.changeAvatarTitle(isUser ? l10n.user : 'AI')),
+            const Divider(height: 1),
+            AuroraBottomSheet.buildListItem(
+              context: context,
+              leading: const Icon(Icons.camera_alt),
+              title: Text(l10n.camera),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.camera, isUser);
+              },
             ),
-          ),
+            AuroraBottomSheet.buildListItem(
+              context: context,
+              leading: const Icon(Icons.photo_library),
+              title: Text(l10n.photos),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.gallery, isUser);
+              },
+            ),
+            if ((isUser
+                    ? ref.read(settingsProvider).userAvatar
+                    : ref.read(settingsProvider).llmAvatar) !=
+                null)
+              AuroraBottomSheet.buildListItem(
+                context: context,
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: Text(l10n.removeAvatar, style: const TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (isUser) {
+                    ref.read(settingsProvider.notifier).setChatDisplaySettings(userAvatar: '');
+                  } else {
+                    ref.read(settingsProvider.notifier).setChatDisplaySettings(llmAvatar: '');
+                  }
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
         );
       },
     );
@@ -305,29 +224,18 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
     }
   }
 
-  void _showPermissionDialog(String name) {
+  void _showPermissionDialog(String name) async {
     final l10n = AppLocalizations.of(context)!;
     final localizedName = name == '相机' ? l10n.camera : name;
-    showDialog(
+    final confirmed = await AuroraBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.permissionRequired(localizedName)),
-        content: Text(l10n.permissionContent(localizedName)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              openAppSettings();
-            },
-            child: Text(l10n.goToSettings),
-          ),
-        ],
-      ),
+      title: l10n.permissionRequired(localizedName),
+      content: l10n.permissionContent(localizedName),
+      confirmText: l10n.goToSettings,
     );
+    if (confirmed == true) {
+      openAppSettings();
+    }
   }
 
 

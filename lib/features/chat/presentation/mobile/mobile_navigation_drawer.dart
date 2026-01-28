@@ -1,3 +1,4 @@
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
@@ -227,10 +228,8 @@ class MobileNavigationDrawer extends ConsumerWidget {
                               label: AppLocalizations.of(context)!.stats,
                               onTap: () {
                                 Navigator.pop(context);
-                                showModalBottomSheet(
+                                AuroraBottomSheet.show(
                                   context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
                                   builder: (context) =>
                                       const UsageStatsMobileSheet(),
                                 );

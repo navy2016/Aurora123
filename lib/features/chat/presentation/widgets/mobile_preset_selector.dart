@@ -1,3 +1,4 @@
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../settings/presentation/settings_provider.dart';
@@ -29,93 +30,74 @@ class MobilePresetSelector extends ConsumerWidget {
         .currentState;
     String? activePresetName = chatState.activePresetName;
     final isDefault = activePresetName == null;
-    showModalBottomSheet(
+
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (ctx) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AuroraBottomSheet.buildTitle(
+            context,
+            l10n.promptPresets,
+            trailing: TextButton.icon(
+              icon: const Icon(Icons.settings, size: 18),
+              label: Text(l10n.managePresets),
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MobilePresetManagePage(),
+                  ),
+                );
+              },
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.promptPresets,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.settings, size: 18),
-                      label: Text(l10n.managePresets),
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const MobilePresetManagePage(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+          const Divider(height: 1),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  leading: Icon(
+                    isDefault ? Icons.check_circle : Icons.circle_outlined,
+                    color: isDefault ? Theme.of(context).primaryColor : null,
+                  ),
+                  title: Text(l10n.defaultPreset),
+                  onTap: () {
+                    ref
+                        .read(chatSessionManagerProvider)
+                        .getOrCreate(sessionId)
+                        .updateSystemPrompt('', null);
+                    Navigator.pop(ctx);
+                  },
                 ),
-              ),
-              const Divider(height: 1),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    ListTile(
-                      leading: Icon(
-                        isDefault ? Icons.check_circle : Icons.circle_outlined,
-                        color:
-                            isDefault ? Theme.of(context).primaryColor : null,
-                      ),
-                      title: Text(l10n.defaultPreset),
-                      onTap: () {
-                        ref
-                            .read(chatSessionManagerProvider)
-                            .getOrCreate(sessionId)
-                            .updateSystemPrompt('', null);
-                        Navigator.pop(ctx);
-                      },
+                if (presets.isNotEmpty) const Divider(),
+                for (final preset in presets)
+                  ListTile(
+                    leading: Icon(
+                      activePresetName == preset.name
+                          ? Icons.check_circle
+                          : Icons.circle_outlined,
+                      color: activePresetName == preset.name
+                          ? Theme.of(context).primaryColor
+                          : null,
                     ),
-                    if (presets.isNotEmpty) const Divider(),
-                    for (final preset in presets)
-                      ListTile(
-                        leading: Icon(
-                          activePresetName == preset.name
-                              ? Icons.check_circle
-                              : Icons.circle_outlined,
-                          color: activePresetName == preset.name
-                              ? Theme.of(context).primaryColor
-                              : null,
-                        ),
-                        title: Text(preset.name),
-                        onTap: () {
-                          ref
-                              .read(chatSessionManagerProvider)
-                              .getOrCreate(sessionId)
-                              .updateSystemPrompt(
-                                  preset.systemPrompt, preset.name);
-                          Navigator.pop(ctx);
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            ],
+                    title: Text(preset.name),
+                    onTap: () {
+                      ref
+                          .read(chatSessionManagerProvider)
+                          .getOrCreate(sessionId)
+                          .updateSystemPrompt(preset.systemPrompt, preset.name);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+              ],
+            ),
           ),
-        );
-      },
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 }

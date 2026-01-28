@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 
 class TopicManagementDialog extends ConsumerStatefulWidget {
   final int? existingTopicId;
@@ -36,62 +37,52 @@ class _TopicManagementDialogState extends ConsumerState<TopicManagementDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isEditing = widget.existingTopicId != null;
-    final isWindows = Theme.of(context).platform == TargetPlatform.windows;
-    if (isWindows) {
-      return fluent.ContentDialog(
-        title: Text(isEditing ? l10n.editTopic : l10n.createTopic),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            fluent.TextBox(
-              controller: _controller,
-              placeholder: l10n.topicNamePlaceholder,
-              autofocus: true,
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AuroraBottomSheet.buildTitle(
+            context, isEditing ? l10n.editTopic : l10n.createTopic),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _controller,
+            decoration: InputDecoration(
+              labelText: l10n.topicNamePlaceholder,
+              hintText: l10n.topicNamePlaceholder,
+              border: const OutlineInputBorder(),
             ),
-          ],
+            autofocus: true,
+          ),
         ),
-        actions: [
-          fluent.Button(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n.cancel),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () {
+                    if (_controller.text.trim().isNotEmpty) {
+                      widget.onConfirm(_controller.text.trim());
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text(l10n.confirm),
+                ),
+              ),
+            ],
           ),
-          fluent.FilledButton(
-            onPressed: () {
-              if (_controller.text.trim().isNotEmpty) {
-                widget.onConfirm(_controller.text.trim());
-                Navigator.pop(context);
-              }
-            },
-            child: Text(l10n.confirm),
-          ),
-        ],
-      );
-    } else {
-      return AlertDialog(
-        title: Text(isEditing ? l10n.editTopic : l10n.createTopic),
-        content: TextField(
-          controller: _controller,
-          decoration: InputDecoration(
-            hintText: l10n.topicNamePlaceholder,
-          ),
-          autofocus: true,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              if (_controller.text.trim().isNotEmpty) {
-                widget.onConfirm(_controller.text.trim());
-                Navigator.pop(context);
-              }
-            },
-            child: Text(l10n.confirm),
-          ),
-        ],
-      );
-    }
+      ],
+    );
   }
 }

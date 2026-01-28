@@ -4,6 +4,7 @@ import 'package:aurora/l10n/app_localizations.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import '../../settings/domain/chat_preset.dart';
 import '../../settings/presentation/settings_provider.dart';
+import '../../../../shared/widgets/aurora_bottom_sheet.dart';
 
 class MobilePresetManagePage extends ConsumerWidget {
   const MobilePresetManagePage({super.key});
@@ -44,31 +45,17 @@ class MobilePresetManagePage extends ConsumerWidget {
                   },
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    onPressed: () {
-                      showDialog(
+                    onPressed: () async {
+                      final confirmed = await AuroraBottomSheet.showConfirm(
                         context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(l10n.deletePreset),
-                          content:
-                              Text(l10n.deletePresetConfirmation(preset.name)),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(l10n.cancel),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                ref
-                                    .read(settingsProvider.notifier)
-                                    .deletePreset(preset.id);
-                                Navigator.pop(context);
-                              },
-                              child: Text(l10n.delete,
-                                  style: const TextStyle(color: Colors.red)),
-                            ),
-                          ],
-                        ),
+                        title: l10n.deletePreset,
+                        content: l10n.deletePresetConfirmation(preset.name),
+                        confirmText: l10n.delete,
+                        isDestructive: true,
                       );
+                      if (confirmed == true) {
+                        ref.read(settingsProvider.notifier).deletePreset(preset.id);
+                      }
                     },
                   ),
                 );

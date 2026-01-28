@@ -1,3 +1,4 @@
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
@@ -218,202 +219,305 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
     fluent.FluentThemeData theme,
     AppLocalizations l10n,
   ) {
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AuroraBottomSheet.buildTitle(context, l10n.topics),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.all_inclusive,
+                      size: 20, color: theme.accentColor),
+                  title: Text(l10n.allChats),
+                  trailing: selectedTopicId == null
+                      ? Icon(Icons.check, size: 20, color: theme.accentColor)
+                      : null,
+                  onTap: () {
+                    ref.read(selectedTopicIdProvider.notifier).state = null;
+                    Navigator.pop(ctx);
+                  },
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  l10n.topics,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              const Divider(height: 1),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    ListTile(
-                      leading: Icon(Icons.all_inclusive, size: 20, color: theme.accentColor),
-                      title: Text(l10n.allChats),
-                      trailing: selectedTopicId == null
-                          ? Icon(Icons.check, size: 20, color: theme.accentColor)
-                          : null,
-                      onTap: () {
-                        ref.read(selectedTopicIdProvider.notifier).state = null;
-                        Navigator.pop(ctx);
-                      },
-                    ),
-                    const Divider(height: 1),
-                    ...topicsAsync.when(
-                      data: (topics) => topics.map((topic) => ListTile(
-                            contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                            title: Text(topic.name),
-                            trailing: selectedTopicId == topic.id
-                                ? Icon(Icons.check, size: 20, color: theme.accentColor)
-                                : null,
-                            onTap: () {
-                              ref.read(selectedTopicIdProvider.notifier).state = topic.id;
-                              Navigator.pop(ctx);
-                            },
-                          )),
-                      loading: () => [
-                        const ListTile(
-                          title: Text('Loading...'),
-                          enabled: false,
-                        )
-                      ],
-                      error: (_, __) => [
-                        const ListTile(
-                          title: Text('Error'),
-                          enabled: false,
-                        )
-                      ],
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.add_circle_outline, size: 20),
-                      title: Text(l10n.createTopic),
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _showCreateDialog(context, ref);
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.settings_outlined, size: 20),
-                      title: Text(l10n.topics),
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _showManageTopicsDialog(context, ref);
-                      },
-                    ),
+                const Divider(height: 1),
+                ...topicsAsync.when(
+                  data: (topics) => topics.map((topic) => ListTile(
+                        contentPadding:
+                            const EdgeInsets.only(left: 32, right: 16),
+                        title: Text(topic.name),
+                        trailing: selectedTopicId == topic.id
+                            ? Icon(Icons.check,
+                                size: 20, color: theme.accentColor)
+                            : null,
+                        onTap: () {
+                          ref.read(selectedTopicIdProvider.notifier).state =
+                              topic.id;
+                          Navigator.pop(ctx);
+                        },
+                      )),
+                  loading: () => [
+                    const ListTile(
+                      title: Text('Loading...'),
+                      enabled: false,
+                    )
+                  ],
+                  error: (_, __) => [
+                    const ListTile(
+                      title: Text('Error'),
+                      enabled: false,
+                    )
                   ],
                 ),
-              ),
-            ],
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.add_circle_outline, size: 20),
+                  title: Text(l10n.createTopic),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showCreateDialog(context, ref);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings_outlined, size: 20),
+                  title: Text(l10n.topics),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showManageTopicsDialog(context, ref);
+                  },
+                ),
+              ],
+            ),
           ),
-        );
-      },
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 
   void _showCreateDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => TopicManagementDialog(
-        onConfirm: (name) {
-          ref.read(topicNotifierProvider.notifier).createTopic(name);
-        },
-      ),
-    );
+    if (widget.isMobile) {
+      AuroraBottomSheet.show(
+        context: context,
+        builder: (context) => TopicManagementDialog(
+          onConfirm: (name) {
+            ref.read(topicNotifierProvider.notifier).createTopic(name);
+          },
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => TopicManagementDialog(
+          onConfirm: (name) {
+            ref.read(topicNotifierProvider.notifier).createTopic(name);
+          },
+        ),
+      );
+    }
   }
 
   void _showManageTopicsDialog(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => fluent.ContentDialog(
-        title: Text(l10n.editTopic),
-        content: SizedBox(
-          width: 300,
-          height: 400,
-          child: Consumer(builder: (context, ref, _) {
-            final topicsAsync = ref.watch(topicsProvider);
-            return topicsAsync.when(
-              data: (topics) {
-                if (topics.isEmpty) return Center(child: Text("No groups"));
-                return ListView.builder(
-                  itemCount: topics.length,
-                  itemBuilder: (context, index) {
-                    final topic = topics[index];
-                    return _TopicItem(
-                      name: topic.name,
-                      isSelected: false,
-                      onTap: () {},
-                      isMobile: widget.isMobile,
-                      onEdit: () =>
-                          _showEditDialog(context, ref, topic.id, topic.name),
-                      onDelete: () =>
-                          _showDeleteConfirm(context, ref, topic.id),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: fluent.ProgressRing()),
-              error: (e, s) => Center(child: Text('Error: $e')),
-            );
-          }),
+    if (widget.isMobile) {
+      AuroraBottomSheet.show(
+        context: context,
+        builder: (context) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AuroraBottomSheet.buildTitle(context, l10n.editTopic),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Consumer(builder: (context, ref, _) {
+                  final topicsAsync = ref.watch(topicsProvider);
+                  return topicsAsync.when(
+                    data: (topics) {
+                      if (topics.isEmpty)
+                        return Center(child: Text(l10n.noCustomParams));
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: topics.map((topic) {
+                          return _TopicItem(
+                            name: topic.name,
+                            isSelected: false,
+                            onTap: () {},
+                            isMobile: widget.isMobile,
+                            onEdit: () => _showEditDialog(
+                                context, ref, topic.id, topic.name),
+                            onDelete: () =>
+                                _showDeleteConfirm(context, ref, topic.id),
+                          );
+                        }).toList(),
+                      );
+                    },
+                    loading: () => const Center(child: fluent.ProgressRing()),
+                    error: (e, s) => Center(child: Text('Error: $e')),
+                  );
+                }),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n.close),
+                ),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          fluent.Button(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.close),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => fluent.ContentDialog(
+          title: Text(l10n.editTopic),
+          content: SizedBox(
+            width: 300,
+            height: 400,
+            child: Consumer(builder: (context, ref, _) {
+              final topicsAsync = ref.watch(topicsProvider);
+              return topicsAsync.when(
+                data: (topics) {
+                  if (topics.isEmpty) return Center(child: Text("No groups"));
+                  return ListView.builder(
+                    itemCount: topics.length,
+                    itemBuilder: (context, index) {
+                      final topic = topics[index];
+                      return _TopicItem(
+                        name: topic.name,
+                        isSelected: false,
+                        onTap: () {},
+                        isMobile: widget.isMobile,
+                        onEdit: () =>
+                            _showEditDialog(context, ref, topic.id, topic.name),
+                        onDelete: () =>
+                            _showDeleteConfirm(context, ref, topic.id),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: fluent.ProgressRing()),
+                error: (e, s) => Center(child: Text('Error: $e')),
+              );
+            }),
           ),
-        ],
-      ),
-    );
+          actions: [
+            fluent.Button(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.close),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _showEditDialog(
       BuildContext context, WidgetRef ref, int id, String name) {
-    showDialog(
-      context: context,
-      builder: (context) => TopicManagementDialog(
-        existingTopicId: id,
-        initialName: name,
-        onConfirm: (newName) {
-          ref.read(topicNotifierProvider.notifier).updateTopic(id, newName);
-        },
-      ),
-    );
+    if (widget.isMobile) {
+      AuroraBottomSheet.show(
+        context: context,
+        builder: (context) => TopicManagementDialog(
+          existingTopicId: id,
+          initialName: name,
+          onConfirm: (newName) {
+            ref.read(topicNotifierProvider.notifier).updateTopic(id, newName);
+          },
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => TopicManagementDialog(
+          existingTopicId: id,
+          initialName: name,
+          onConfirm: (newName) {
+            ref.read(topicNotifierProvider.notifier).updateTopic(id, newName);
+          },
+        ),
+      );
+    }
   }
 
   void _showDeleteConfirm(BuildContext context, WidgetRef ref, int id) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteTopic),
-        content: Text(l10n.deleteTopicConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(topicNotifierProvider.notifier).deleteTopic(id);
-              if (ref.read(selectedTopicIdProvider) == id) {
-                ref.read(selectedTopicIdProvider.notifier).state = null;
-              }
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
-    );
+    if (widget.isMobile) {
+      AuroraBottomSheet.show(
+        context: context,
+        builder: (context) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AuroraBottomSheet.buildTitle(context, l10n.deleteTopic),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(l10n.deleteTopicConfirm, textAlign: TextAlign.center),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(l10n.cancel),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        ref.read(topicNotifierProvider.notifier).deleteTopic(id);
+                        if (ref.read(selectedTopicIdProvider) == id) {
+                          ref.read(selectedTopicIdProvider.notifier).state =
+                              null;
+                        }
+                        Navigator.pop(context);
+                      },
+                      style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white),
+                      child: Text(l10n.delete),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.deleteTopic),
+          content: Text(l10n.deleteTopicConfirm),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                ref.read(topicNotifierProvider.notifier).deleteTopic(id);
+                if (ref.read(selectedTopicIdProvider) == id) {
+                  ref.read(selectedTopicIdProvider.notifier).state = null;
+                }
+                Navigator.pop(context);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text(l10n.delete),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
 

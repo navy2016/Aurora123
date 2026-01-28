@@ -6,6 +6,7 @@ import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import '../novel/novel_provider.dart';
 import '../novel/novel_state.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 
 class MobileModelConfigSheet extends ConsumerStatefulWidget {
   const MobileModelConfigSheet({super.key});
@@ -144,45 +145,36 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
       _lastActivePresetId = novelState.activePromptPresetId;
     }
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.95,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder: (context, scrollController) => Container(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: Stack(
-          children: [
-            SafeArea(
-              top: true,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-          AppBar(
-            title: Text(l10n.modelConfig),
-            automaticallyImplyLeading: false,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            actions: [
-              // 全局预设管理
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppBar(
+          title: Text(l10n.modelConfig),
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            // 全局预设管理
             if (novelState.activePromptPresetId != null)
               IconButton(
-                tooltip: '${l10n.save} "${novelState.promptPresets.firstWhere((p) => p.id == novelState.activePromptPresetId).name}"',
+                tooltip:
+                    '${l10n.save} "${novelState.promptPresets.firstWhere((p) => p.id == novelState.activePromptPresetId).name}"',
                 icon: const Icon(Icons.save),
                 onPressed: () {
                   final activeId = novelState.activePromptPresetId!;
-                  final currentPreset = novelState.promptPresets.firstWhere((p) => p.id == activeId);
+                  final currentPreset = novelState.promptPresets
+                      .firstWhere((p) => p.id == activeId);
                   final updatedPreset = currentPreset.copyWith(
                     outlinePrompt: _controllers['outline']?.text ?? '',
                     decomposePrompt: _controllers['decompose']?.text ?? '',
                     writerPrompt: _controllers['writer']?.text ?? '',
                     reviewerPrompt: _controllers['reviewer']?.text ?? '',
                   );
-                  ref.read(novelProvider.notifier).updatePromptPreset(updatedPreset);
-                  _showToast(l10n.presetSaved(updatedPreset.name), Icons.check_circle);
+                  ref
+                      .read(novelProvider.notifier)
+                      .updatePromptPreset(updatedPreset);
+                  _showToast(
+                      l10n.presetSaved(updatedPreset.name), Icons.check_circle);
                 },
               ),
             IconButton(
@@ -193,7 +185,8 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
             IconButton(
               tooltip: l10n.selectPreset,
               icon: const Icon(Icons.tune),
-              onPressed: () => _showPresetPicker(context, novelState, novelNotifier, l10n),
+              onPressed: () =>
+                  _showPresetPicker(context, novelState, novelNotifier, l10n),
             ),
             IconButton(
               icon: const Icon(Icons.close),
@@ -201,67 +194,66 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
             ),
           ],
         ),
-          const Divider(height: 1),
-          Flexible(
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(16),
-              shrinkWrap: true,
-              children: [
-                _buildModelSection(
-                  context,
-                  'outline',
-                  l10n.outlineModel,
-                  NovelPromptPresets.outline,
-                  novelState.outlineModel,
-                  allModels,
-                  settingsState,
-                  novelNotifier.setOutlineModel,
-                  novelNotifier.setOutlinePrompt,
-                ),
-                _buildModelSection(
-                  context,
-                  'decompose',
-                  l10n.decomposeModel,
-                  NovelPromptPresets.decompose,
-                  novelState.decomposeModel,
-                  allModels,
-                  settingsState,
-                  novelNotifier.setDecomposeModel,
-                  novelNotifier.setDecomposePrompt,
-                ),
-                _buildModelSection(
-                  context,
-                  'writer',
-                  l10n.writerModel,
-                  NovelPromptPresets.writer,
-                  novelState.writerModel,
-                  allModels,
-                  settingsState,
-                  novelNotifier.setWriterModel,
-                  novelNotifier.setWriterPrompt,
-                ),
-                _buildModelSection(
-                  context,
-                  'reviewer',
-                  l10n.reviewModel,
-                  NovelPromptPresets.reviewer,
-                  novelState.reviewerModel,
-                  allModels,
-                  settingsState,
-                  novelNotifier.setReviewerModel,
-                  novelNotifier.setReviewerPrompt,
-                ),
-              ],
-            ),
-          ),
+        const Divider(height: 1),
+        Flexible(
+          child: Stack(
+            children: [
+              ListView(
+                padding: const EdgeInsets.all(16),
+                shrinkWrap: true,
+                children: [
+                  _buildModelSection(
+                    context,
+                    'outline',
+                    l10n.outlineModel,
+                    NovelPromptPresets.outline,
+                    novelState.outlineModel,
+                    allModels,
+                    settingsState,
+                    novelNotifier.setOutlineModel,
+                    novelNotifier.setOutlinePrompt,
+                  ),
+                  _buildModelSection(
+                    context,
+                    'decompose',
+                    l10n.decomposeModel,
+                    NovelPromptPresets.decompose,
+                    novelState.decomposeModel,
+                    allModels,
+                    settingsState,
+                    novelNotifier.setDecomposeModel,
+                    novelNotifier.setDecomposePrompt,
+                  ),
+                  _buildModelSection(
+                    context,
+                    'writer',
+                    l10n.writerModel,
+                    NovelPromptPresets.writer,
+                    novelState.writerModel,
+                    allModels,
+                    settingsState,
+                    novelNotifier.setWriterModel,
+                    novelNotifier.setWriterPrompt,
+                  ),
+                  _buildModelSection(
+                    context,
+                    'reviewer',
+                    l10n.reviewModel,
+                    NovelPromptPresets.reviewer,
+                    novelState.reviewerModel,
+                    allModels,
+                    settingsState,
+                    novelNotifier.setReviewerModel,
+                    novelNotifier.setReviewerPrompt,
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
-            ),
-            _buildToastWidget(),
-          ],
+              _buildToastWidget(),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -367,64 +359,81 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
     NovelNotifier novelNotifier,
     AppLocalizations l10n,
   ) {
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _buildSelectionSheet(
-        context: ctx,
-        title: l10n.selectPreset,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildSelectionItem(
-            context: ctx,
-            title: l10n.systemDefault,
-            isSelected: novelState.activePromptPresetId == null,
-            onTap: () {
-              _controllers['outline']!.text = NovelPromptPresets.outline;
-              novelNotifier.setOutlinePrompt(NovelPromptPresets.outline);
-              _controllers['decompose']!.text = NovelPromptPresets.decompose;
-              novelNotifier.setDecomposePrompt(NovelPromptPresets.decompose);
-              _controllers['writer']!.text = NovelPromptPresets.writer;
-              novelNotifier.setWriterPrompt(NovelPromptPresets.writer);
-              _controllers['reviewer']!.text = NovelPromptPresets.reviewer;
-              novelNotifier.setReviewerPrompt(NovelPromptPresets.reviewer);
-              novelNotifier.setActivePromptPresetId(null);
-              _showToast(l10n.systemDefaultRestored, Icons.settings_backup_restore);
-              Navigator.pop(ctx);
-            },
-            isBold: true,
+          AuroraBottomSheet.buildTitle(context, l10n.selectPreset),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                AuroraBottomSheet.buildListItem(
+                  context: context,
+                  title: Text(l10n.systemDefault),
+                  selected: novelState.activePromptPresetId == null,
+                  onTap: () {
+                    _controllers['outline']!.text = NovelPromptPresets.outline;
+                    novelNotifier.setOutlinePrompt(NovelPromptPresets.outline);
+                    _controllers['decompose']!.text =
+                        NovelPromptPresets.decompose;
+                    novelNotifier
+                        .setDecomposePrompt(NovelPromptPresets.decompose);
+                    _controllers['writer']!.text = NovelPromptPresets.writer;
+                    novelNotifier.setWriterPrompt(NovelPromptPresets.writer);
+                    _controllers['reviewer']!.text =
+                        NovelPromptPresets.reviewer;
+                    novelNotifier.setReviewerPrompt(NovelPromptPresets.reviewer);
+                    novelNotifier.setActivePromptPresetId(null);
+                    _showToast(l10n.systemDefaultRestored,
+                        Icons.settings_backup_restore);
+                    Navigator.pop(ctx);
+                  },
+                ),
+                if (novelState.promptPresets.isNotEmpty) const Divider(),
+                ...novelState.promptPresets.map((preset) =>
+                    AuroraBottomSheet.buildListItem(
+                        context: context,
+                        title: Text(preset.name),
+                        selected: novelState.activePromptPresetId == preset.id,
+                        onTap: () {
+                          if (preset.outlinePrompt.isNotEmpty) {
+                            _controllers['outline']!.text = preset.outlinePrompt;
+                            novelNotifier.setOutlinePrompt(preset.outlinePrompt);
+                          }
+                          if (preset.decomposePrompt.isNotEmpty) {
+                            _controllers['decompose']!.text =
+                                preset.decomposePrompt;
+                            novelNotifier
+                                .setDecomposePrompt(preset.decomposePrompt);
+                          }
+                          if (preset.writerPrompt.isNotEmpty) {
+                            _controllers['writer']!.text = preset.writerPrompt;
+                            novelNotifier.setWriterPrompt(preset.writerPrompt);
+                          }
+                          if (preset.reviewerPrompt.isNotEmpty) {
+                            _controllers['reviewer']!.text =
+                                preset.reviewerPrompt;
+                            novelNotifier
+                                .setReviewerPrompt(preset.reviewerPrompt);
+                          }
+                          novelNotifier.setActivePromptPresetId(preset.id);
+                          _showToast(
+                              l10n.presetLoaded(preset.name), Icons.check_circle);
+                          Navigator.pop(ctx);
+                        },
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                          onPressed: () {
+                            novelNotifier.deletePromptPreset(preset.id);
+                          },
+                        ))),
+              ],
+            ),
           ),
-          if (novelState.promptPresets.isNotEmpty) const Divider(),
-          ...novelState.promptPresets.map((preset) => _buildSelectionItem(
-            context: ctx,
-            title: preset.name,
-            isSelected: novelState.activePromptPresetId == preset.id,
-            onTap: () {
-              if (preset.outlinePrompt.isNotEmpty) {
-                _controllers['outline']!.text = preset.outlinePrompt;
-                novelNotifier.setOutlinePrompt(preset.outlinePrompt);
-              }
-              if (preset.decomposePrompt.isNotEmpty) {
-                _controllers['decompose']!.text = preset.decomposePrompt;
-                novelNotifier.setDecomposePrompt(preset.decomposePrompt);
-              }
-              if (preset.writerPrompt.isNotEmpty) {
-                _controllers['writer']!.text = preset.writerPrompt;
-                novelNotifier.setWriterPrompt(preset.writerPrompt);
-              }
-              if (preset.reviewerPrompt.isNotEmpty) {
-                _controllers['reviewer']!.text = preset.reviewerPrompt;
-                novelNotifier.setReviewerPrompt(preset.reviewerPrompt);
-              }
-              novelNotifier.setActivePromptPresetId(preset.id);
-              _showToast(l10n.presetLoaded(preset.name), Icons.check_circle);
-              Navigator.pop(ctx);
-            },
-            onDelete: () {
-              novelNotifier.deletePromptPreset(preset.id);
-              // Selection sheet will rebuild since we watch novelProvider
-            }
-          )),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -441,43 +450,62 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
   ) {
     final l10n = AppLocalizations.of(context)!;
     
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _buildSelectionSheet(
-        context: ctx,
-        title: label,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          for (final provider in settingsState.providers) ...[
-            if (provider.isEnabled && provider.models.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text(
-                  provider.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12),
-                ),
-              ),
-              ...provider.models.where((m) => provider.isModelEnabled(m)).map((modelId) {
-                final itemConfig = NovelModelConfig(providerId: provider.id, modelId: modelId);
-                final isSelected = currentConfig?.providerId == provider.id && currentConfig?.modelId == modelId;
-                
-                return _buildSelectionItem(
-                  context: ctx,
-                  title: modelId,
-                  isSelected: isSelected,
-                  onTap: () {
-                    final currentText = _controllers[key]!.text;
-                    onModelChanged(itemConfig.copyWith(systemPrompt: currentText));
-                    Navigator.pop(ctx);
-                  },
-                  padding: const EdgeInsets.only(left: 32, right: 16),
-                );
-              }),
-              if (provider != settingsState.providers.where((p) => p.isEnabled && p.models.isNotEmpty).last)
-                const Divider(height: 1),
-            ],
-          ],
+          AuroraBottomSheet.buildTitle(context, label),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final provider in settingsState.providers) ...[
+                  if (provider.isEnabled && provider.models.isNotEmpty) ...[
+                    ListTile(
+                      dense: true,
+                      enabled: false,
+                      title: Text(
+                        provider.name,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                            fontSize: 12),
+                      ),
+                    ),
+                    ...provider.models
+                        .where((m) => provider.isModelEnabled(m))
+                        .map((modelId) {
+                      final itemConfig = NovelModelConfig(
+                          providerId: provider.id, modelId: modelId);
+                      final isSelected =
+                          currentConfig?.providerId == provider.id &&
+                              currentConfig?.modelId == modelId;
+
+                      return AuroraBottomSheet.buildListItem(
+                        context: context,
+                        title: Text(modelId),
+                        selected: isSelected,
+                        onTap: () {
+                          final currentText = _controllers[key]!.text;
+                          onModelChanged(
+                              itemConfig.copyWith(systemPrompt: currentText));
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    }),
+                    if (provider !=
+                        settingsState.providers
+                            .where((p) => p.isEnabled && p.models.isNotEmpty)
+                            .last)
+                      const Divider(height: 1),
+                  ],
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -488,83 +516,73 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
     final theme = Theme.of(context);
     final nameController = TextEditingController();
 
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          left: 16,
-          right: 16,
-          top: 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(l10n.newNovelPreset, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameController,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: l10n.presetName,
-                hintText: '${l10n.pleaseEnter}${l10n.presetName}...',
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(l10n.savePresetHint, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 24),
-            Row(
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AuroraBottomSheet.buildTitle(context, l10n.newNovelPreset),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: Text(l10n.cancel),
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: l10n.presetName,
+                    hintText: '${l10n.pleaseEnter}${l10n.presetName}...',
+                    border: const OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () {
-                      final name = nameController.text.trim();
-                      if (name.isNotEmpty) {
-                        final preset = NovelPromptPreset.create(
-                          name: name,
-                          outlinePrompt: _controllers['outline']?.text ?? '',
-                          decomposePrompt: _controllers['decompose']?.text ?? '',
-                          writerPrompt: _controllers['writer']?.text ?? '',
-                          reviewerPrompt: _controllers['reviewer']?.text ?? '',
-                        );
-                        ref.read(novelProvider.notifier).addPromptPreset(preset);
-                        Navigator.pop(ctx);
-                        _showToast(l10n.presetSaved(name), Icons.check_circle);
-                      }
-                    },
-                    child: Text(l10n.save),
-                  ),
+                const SizedBox(height: 12),
+                Text(l10n.savePresetHint,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(l10n.cancel),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          final name = nameController.text.trim();
+                          if (name.isNotEmpty) {
+                            final preset = NovelPromptPreset.create(
+                              name: name,
+                              outlinePrompt: _controllers['outline']?.text ?? '',
+                              decomposePrompt:
+                                  _controllers['decompose']?.text ?? '',
+                              writerPrompt: _controllers['writer']?.text ?? '',
+                              reviewerPrompt:
+                                  _controllers['reviewer']?.text ?? '',
+                            );
+                            ref
+                                .read(novelProvider.notifier)
+                                .addPromptPreset(preset);
+                            Navigator.pop(ctx);
+                            _showToast(
+                                l10n.presetSaved(name), Icons.check_circle);
+                          }
+                        },
+                        child: Text(l10n.save),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }

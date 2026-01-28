@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:intl/intl.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 
@@ -197,20 +198,16 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
                   subtitle: Text('$dateStr  •  $sizeMb MB'),
                   trailing: TextButton(
                     child: Text(l10n.restore),
-                    onPressed: state.isBusy ? null : () {
-                        showDialog(context: context, builder: (context) {
-                            return AlertDialog(
-                                title: Text(l10n.confirmRestore),
-                                content: Text(l10n.restoreWarning),
-                                actions: [
-                                    TextButton(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
-                                    FilledButton(child: Text(l10n.confirmRestoreButton), onPressed: () {
-                                        Navigator.pop(context);
-                                        ref.read(syncProvider.notifier).restore(item);
-                                    }),
-                                ],
-                            );
-                        });
+                    onPressed: state.isBusy ? null : () async {
+                        final confirmed = await AuroraBottomSheet.showConfirm(
+                          context: context,
+                          title: l10n.confirmRestore,
+                          content: l10n.restoreWarning,
+                          confirmText: l10n.confirmRestoreButton,
+                        );
+                        if (confirmed == true) {
+                          ref.read(syncProvider.notifier).restore(item);
+                        }
                     },
                   ),
                 ),

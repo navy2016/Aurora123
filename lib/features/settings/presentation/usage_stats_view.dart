@@ -1,3 +1,4 @@
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -414,91 +415,62 @@ class UsageStatsMobileSheet extends ConsumerWidget {
   const UsageStatsMobileSheet({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Keep mobile concise, maybe just summary cards and model list for now
-    // Or if needed, add chart later. Currently matching previous implementation + new data.
-    // User asked for "UI concept" which was PC focused mainly.
-    // Let's keep existing mobile structure but updated.
     final statsState = ref.watch(usageStatsProvider);
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color:
-                    theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(2),
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AuroraBottomSheet.buildTitle(
+          context,
+          l10n.usageStats,
+          trailing: IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () async {
+              ref.read(usageStatsProvider.notifier).clearStats();
+            },
+          ),
+        ),
+        const Divider(height: 1),
+        if (statsState.isLoading)
+          const SizedBox(
+              height: 200, child: Center(child: CircularProgressIndicator()))
+        else if (statsState.stats.isEmpty)
+          const SizedBox(height: 300, child: Center(child: Text('No data')))
+        else
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                          child: _buildSummaryCardMobile(
+                              theme,
+                              l10n.totalCalls,
+                              statsState.totalCalls,
+                              Colors.blue)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: _buildSummaryCardMobile(theme, l10n.success,
+                              statsState.totalSuccess, Colors.green)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: _buildSummaryCardMobile(theme, l10n.failed,
+                              statsState.totalFailure, Colors.red)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _ModelStatsList(statsState: statsState, isMobile: true),
+                  const SizedBox(height: 32),
+                ],
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(l10n.usageStats, style: theme.textTheme.titleLarge),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () async {
-                    // Copied delete logic...
-                    ref.read(usageStatsProvider.notifier).clearStats();
-                  },
-                ),
-              ],
-            ),
-          ),
-          Divider(
-              height: 1,
-              color: theme.colorScheme.outlineVariant.withOpacity(0.2)),
-          if (statsState.isLoading)
-            const SizedBox(
-                height: 200, child: Center(child: CircularProgressIndicator()))
-          else if (statsState.stats.isEmpty)
-            SizedBox(height: 300, child: Center(child: Text(l10n.noUsageData)))
-          else
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                            child: _buildSummaryCardMobile(
-                                theme,
-                                l10n.totalCalls,
-                                statsState.totalCalls,
-                                Colors.blue)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                            child: _buildSummaryCardMobile(theme, l10n.success,
-                                statsState.totalSuccess, Colors.green)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                            child: _buildSummaryCardMobile(theme, l10n.failed,
-                                statsState.totalFailure, Colors.red)),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _ModelStatsList(statsState: statsState, isMobile: true),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 

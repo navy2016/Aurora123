@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/message.dart';
@@ -96,53 +97,47 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
       );
       return;
     }
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
       builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(AppLocalizations.of(context)!.selectModel,
-                    style: Theme.of(context).textTheme.titleMedium),
-              ),
-              const Divider(height: 1),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.5),
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final model in provider.models)
-                      if (provider.isModelEnabled(model))
-                        ListTile(
-                          leading: Icon(
-                            model == settingsState.selectedModel
-                                ? Icons.check_circle
-                                : Icons.circle_outlined,
-                            color: model == settingsState.selectedModel
-                                ? Theme.of(context).primaryColor
-                                : null,
-                          ),
-                          title: Text(model),
-                          onTap: () {
-                            ref.read(settingsProvider.notifier).updateProvider(
-                                  id: provider.id,
-                                  selectedModel: model,
-                                );
-                            ref
-                                .read(settingsProvider.notifier)
-                                .selectProvider(provider.id);
-                            Navigator.pop(ctx);
-                          },
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AuroraBottomSheet.buildTitle(
+                context, AppLocalizations.of(context)!.selectModel),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final model in provider.models)
+                    if (provider.isModelEnabled(model))
+                      ListTile(
+                        leading: Icon(
+                          model == settingsState.selectedModel
+                              ? Icons.check_circle
+                              : Icons.circle_outlined,
+                          color: model == settingsState.selectedModel
+                              ? Theme.of(context).primaryColor
+                              : null,
                         ),
-                  ],
-                ),
+                        title: Text(model),
+                        onTap: () {
+                          ref.read(settingsProvider.notifier).updateProvider(
+                                id: provider.id,
+                                selectedModel: model,
+                              );
+                          ref
+                              .read(settingsProvider.notifier)
+                              .selectProvider(provider.id);
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+          ],
         );
       },
     );

@@ -16,6 +16,7 @@ import '../../../studio/presentation/pages/mobile_studio_page.dart';
 import '../../../../shared/widgets/custom_toast.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/utils/number_format_utils.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 
 class MobileChatScreen extends ConsumerStatefulWidget {
   const MobileChatScreen({super.key});
@@ -345,10 +346,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
       );
       return;
     }
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
       builder: (ctx) {
         return Container(
           constraints: BoxConstraints(
@@ -357,11 +356,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('选择模型',
-                    style: Theme.of(context).textTheme.titleMedium),
-              ),
+              AuroraBottomSheet.buildTitle(context, '选择模型'),
               const Divider(height: 1),
               Flexible(
                 child: ListView(
@@ -382,9 +377,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                         ),
                         for (final model in provider.models)
                           if (provider.isModelEnabled(model))
-                            ListTile(
-                              contentPadding:
-                                  const EdgeInsets.only(left: 32, right: 16),
+                            AuroraBottomSheet.buildListItem(
+                              context: context,
                               leading: Icon(
                                 activeProvider?.id == provider.id &&
                                         selectedModel == model
@@ -444,30 +438,36 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   }
 
   void _showAboutDialog() {
-    showDialog(
+    AuroraBottomSheet.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.stars, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 8),
-            const Text('Aurora'),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('版本: v1.0.0'),
-            SizedBox(height: 8),
-            Text('一款优雅的跨平台 AI 对话助手'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('确定'),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AuroraBottomSheet.buildTitle(context, 'Aurora'),
+          const Divider(height: 1),
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Icon(Icons.stars, size: 48, color: Colors.amber),
+                SizedBox(height: 16),
+                Text('版本: v1.0.0', style: TextStyle(fontWeight: FontWeight.w600)),
+                SizedBox(height: 8),
+                Text('一款优雅的跨平台 AI 对话助手', textAlign: TextAlign.center),
+              ],
+            ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('确定'),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
