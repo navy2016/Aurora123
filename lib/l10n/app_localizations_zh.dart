@@ -1179,10 +1179,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get passwordOrToken => '密码 / 应用授权码';
 
   @override
-  String get testConnection => '测试连接';
+  String get testConnection => '连接';
 
   @override
-  String get backupNow => '立即备份';
+  String get backupNow => '备份';
 
   @override
   String get cloudBackupList => '云端备份列表';

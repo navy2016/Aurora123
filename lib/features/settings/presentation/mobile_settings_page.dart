@@ -305,16 +305,17 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                           IconButton(
                             icon: const Icon(Icons.delete_outline, size: 20),
                             onPressed: () async {
+                              final notifier = ref.read(settingsProvider.notifier);
                               Navigator.pop(ctx);
                               final confirmed = await AuroraBottomSheet.showConfirm(
-                                context: scopedContext,
+                                context: context,
                                 title: l10n.deleteProvider,
                                 content: l10n.deleteProviderConfirm,
                                 confirmText: l10n.delete,
                                 isDestructive: true,
                               );
                               if (confirmed == true) {
-                                ref.read(settingsProvider.notifier).deleteProvider(p.id);
+                                notifier.deleteProvider(p.id);
                               }
                             },
                           ),
@@ -412,95 +413,90 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
               .firstWhere((p) => p.id == provider.id, orElse: () => provider);
 
           return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AuroraBottomSheet.buildTitle(context, l10n.apiKeys),
-              const Divider(height: 1),
-              // Add key button moved to the bottom or as a list item
-              // Header actions replace
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    const Spacer(),
-                    TextButton.icon(
-                      icon: const Icon(Icons.add_circle_outline, size: 18),
-                      label: Text(l10n.addApiKey),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AuroraBottomSheet.buildTitle(context, l10n.apiKeys),
+                const Divider(height: 1),
+                // Auto-rotate toggle
+                if (currentProvider.apiKeys.length > 1)
+                  SwitchListTile(
+                    title: Text(l10n.autoRotateKeys),
+                    value: currentProvider.autoRotateKeys,
+                    onChanged: (v) {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setAutoRotateKeys(provider.id, v);
+                      setModalState(() {});
+                    },
+                  ),
+                // Key list
+                Flexible(
+                  child: currentProvider.apiKeys.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 40),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.key_off,
+                                    size: 48, color: Colors.grey),
+                                const SizedBox(height: 8),
+                                Text(l10n.notConfigured,
+                                    style: const TextStyle(color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: currentProvider.apiKeys.length,
+                          itemBuilder: (context, index) {
+                            final key = currentProvider.apiKeys[index];
+                            final isCurrent =
+                                index == currentProvider.safeCurrentKeyIndex;
+
+                            return _ApiKeyListItem(
+                              apiKey: key,
+                              isCurrent: isCurrent,
+                              onSelect: () {
+                                ref
+                                    .read(settingsProvider.notifier)
+                                    .setCurrentKeyIndex(provider.id, index);
+                                setModalState(() {});
+                              },
+                              onEdit: (newValue) {
+                                ref
+                                    .read(settingsProvider.notifier)
+                                    .updateApiKeyAtIndex(
+                                        provider.id, index, newValue);
+                                setModalState(() {});
+                              },
+                              onDelete: () {
+                                ref
+                                    .read(settingsProvider.notifier)
+                                    .removeApiKey(provider.id, index);
+                                setModalState(() {});
+                              },
+                            );
+                          },
+                        ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
                       onPressed: () =>
                           _showAddKeyDialog(context, provider.id, () {
                         setModalState(() {});
                       }),
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.addApiKey),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              // Auto-rotate toggle
-              if (currentProvider.apiKeys.length > 1)
-                SwitchListTile(
-                  title: Text(l10n.autoRotateKeys),
-                  value: currentProvider.autoRotateKeys,
-                  onChanged: (v) {
-                    ref
-                        .read(settingsProvider.notifier)
-                        .setAutoRotateKeys(provider.id, v);
-                    setModalState(() {});
-                  },
-                ),
-              // Key list
-              Flexible(
-                child: currentProvider.apiKeys.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 40),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.key_off,
-                                  size: 48, color: Colors.grey),
-                              const SizedBox(height: 8),
-                              Text(l10n.notConfigured,
-                                  style: const TextStyle(color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: currentProvider.apiKeys.length,
-                        itemBuilder: (context, index) {
-                          final key = currentProvider.apiKeys[index];
-                          final isCurrent =
-                              index == currentProvider.safeCurrentKeyIndex;
-
-                          return _ApiKeyListItem(
-                            apiKey: key,
-                            isCurrent: isCurrent,
-                            onSelect: () {
-                              ref
-                                  .read(settingsProvider.notifier)
-                                  .setCurrentKeyIndex(provider.id, index);
-                              setModalState(() {});
-                            },
-                            onEdit: (newValue) {
-                              ref
-                                  .read(settingsProvider.notifier)
-                                  .updateApiKeyAtIndex(
-                                      provider.id, index, newValue);
-                              setModalState(() {});
-                            },
-                            onDelete: () {
-                              ref
-                                  .read(settingsProvider.notifier)
-                                  .removeApiKey(provider.id, index);
-                              setModalState(() {});
-                            },
-                          );
-                        },
-                      ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          );
+              ],
+            );
         },
       ),
     );

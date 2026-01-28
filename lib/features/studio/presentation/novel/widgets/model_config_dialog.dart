@@ -3,6 +3,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import '../novel_provider.dart';
 import '../novel_state.dart';
 
@@ -424,55 +425,25 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
   }
 
 
-  void _showSavePresetDialog(BuildContext context, WidgetRef ref) {
+  void _showSavePresetDialog(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context)!;
-    final nameController = TextEditingController();
-    showDialog(
+    final name = await AuroraBottomSheet.showInput(
       context: context,
-      builder: (ctx) => ContentDialog(
-        constraints: const BoxConstraints(maxWidth: 400),
-        title: Text(l10n.newNovelPreset),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InfoLabel(
-              label: l10n.presetName,
-              child: TextBox(
-                controller: nameController,
-                autofocus: true,
-                placeholder: '${l10n.pleaseEnter}${l10n.presetName}...',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(l10n.savePresetHint, style: FluentTheme.of(context).typography.caption),
-          ],
-        ),
-        actions: [
-          Button(
-            child: Text(l10n.cancel),
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          FilledButton(
-            child: Text(l10n.save),
-            onPressed: () {
-              final name = nameController.text.trim();
-              if (name.isNotEmpty) {
-                final preset = NovelPromptPreset.create(
-                  name: name,
-                  outlinePrompt: _controllers['outline']?.text ?? '',
-                  decomposePrompt: _controllers['decompose']?.text ?? '',
-                  writerPrompt: _controllers['writer']?.text ?? '',
-                  reviewerPrompt: _controllers['reviewer']?.text ?? '',
-                );
-                ref.read(novelProvider.notifier).addPromptPreset(preset);
-                Navigator.pop(ctx);
-                _showToast(l10n.presetSaved(name), FluentIcons.save);
-              }
-            },
-          ),
-        ],
-      ),
+      title: l10n.newNovelPreset,
+      hintText: '${l10n.pleaseEnter}${l10n.presetName}...',
     );
+
+    if (name != null && name.trim().isNotEmpty) {
+      final presetName = name.trim();
+      final preset = NovelPromptPreset.create(
+        name: presetName,
+        outlinePrompt: _controllers['outline']?.text ?? '',
+        decomposePrompt: _controllers['decompose']?.text ?? '',
+        writerPrompt: _controllers['writer']?.text ?? '',
+        reviewerPrompt: _controllers['reviewer']?.text ?? '',
+      );
+      ref.read(novelProvider.notifier).addPromptPreset(preset);
+      _showToast(l10n.presetSaved(presetName), FluentIcons.save);
+    }
   }
 }

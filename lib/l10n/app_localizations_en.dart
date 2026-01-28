@@ -1199,10 +1199,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordOrToken => 'Password / App Token';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Connection';
 
   @override
-  String get backupNow => 'Backup Now';
+  String get backupNow => 'Backup';
 
   @override
   String get cloudBackupList => 'Cloud Backups';

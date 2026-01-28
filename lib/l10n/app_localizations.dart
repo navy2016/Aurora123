@@ -2387,13 +2387,13 @@ abstract class AppLocalizations {
   /// No description provided for @testConnection.
   ///
   /// In zh, this message translates to:
-  /// **'测试连接'**
+  /// **'连接'**
   String get testConnection;
 
   /// No description provided for @backupNow.
   ///
   /// In zh, this message translates to:
-  /// **'立即备份'**
+  /// **'备份'**
   String get backupNow;
 
   /// No description provided for @cloudBackupList.
