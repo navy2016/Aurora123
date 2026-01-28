@@ -75,11 +75,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get switchModel => '切换模型';
 
   @override
-  String get deepThinking => '深度思考中...';
+  String get deepThinking => '思考中...';
 
   @override
   String deepThoughtFinished(String duration) {
-    return '已深度思考 (用时 $duration 秒)';
+    return '已思考 (用时 $duration 秒)';
   }
 
   @override
@@ -224,7 +224,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enabled => '已启用';
 
   @override
-  String get disabled => '已停用';
+  String get disabled => '已禁用';
 
   @override
   String get loading => '加载中';
@@ -248,7 +248,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatSettings => '对话设置';
 
   @override
-  String get displaySettings => '界面设置';
+  String get displaySettings => '外观设置';
 
   @override
   String get dataSettings => '数据设置';
@@ -481,12 +481,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String averageDuration(String duration) {
-    return '平均';
+    return '平均: ${duration}s';
   }
 
   @override
   String averageFirstToken(String duration) {
-    return 'FirstToken';
+    return 'TTFT: ${duration}s';
   }
 
   @override
@@ -496,7 +496,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String tokensPerSecond(String tps) {
-    return 'Token/s';
+    return 'Token/s: $tps';
   }
 
   @override
@@ -964,7 +964,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editPreset => '编辑预设';
 
   @override
-  String get managePresets => '管理预设';
+  String get managePresets => '预设管理';
 
   @override
   String get presetName => '预设名称';
@@ -1030,9 +1030,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorUnknown => '其他错误';
-
-  @override
-  String get cumulativeToken => '累计Token';
 
   @override
   String get bgDefault => '默认';
@@ -1182,10 +1179,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get passwordOrToken => '密码 / 应用授权码';
 
   @override
-  String get testConnection => '测试连接';
+  String get testConnection => '连接';
 
   @override
-  String get backupNow => '立即备份';
+  String get backupNow => '备份';
 
   @override
   String get cloudBackupList => '云端备份列表';

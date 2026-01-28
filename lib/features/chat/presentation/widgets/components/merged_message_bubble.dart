@@ -121,6 +121,7 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
     final theme = fluent.FluentTheme.of(context);
     final messages = widget.group.messages;
     final lastMsg = messages.last;
+    final l10n = AppLocalizations.of(context);
     final headerMsg = messages.firstWhere((m) => m.role != 'tool',
         orElse: () => messages.last);
     return MouseRegion(
@@ -228,7 +229,7 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    '思考中...',
+                                    '${l10n?.deepThinking ?? '思考中...'}',
                                     style: TextStyle(
                                       color: theme.typography.body?.color
                                           ?.withOpacity(0.6),
@@ -284,13 +285,13 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                                   children: [
                                     ActionButton(
                                         icon: fluent.FluentIcons.cancel,
-                                        tooltip: 'Cancel',
+                                        tooltip: l10n?.cancel ?? 'Cancel',
                                         onPressed: () =>
                                             setState(() => _isEditing = false)),
                                     const SizedBox(width: 4),
                                     ActionButton(
                                         icon: fluent.FluentIcons.save,
-                                        tooltip: 'Save',
+                                        tooltip: l10n?.save ?? 'Save',
                                         onPressed: _saveEdit),
                                   ],
                                 ),
@@ -309,27 +310,27 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                               children: [
                                 ActionButton(
                                     icon: fluent.FluentIcons.refresh,
-                                    tooltip: 'Retry',
+                                    tooltip: l10n?.retry ?? 'Retry',
                                     onPressed: () => _handleAction('retry')),
                                 const SizedBox(width: 4),
                                 ActionButton(
                                     icon: fluent.FluentIcons.edit,
-                                    tooltip: 'Edit',
+                                    tooltip: l10n?.edit ?? 'Edit',
                                     onPressed: () => _handleAction('edit')),
                                 const SizedBox(width: 4),
                                 ActionButton(
                                     icon: fluent.FluentIcons.copy,
-                                    tooltip: 'Copy',
+                                    tooltip: l10n?.copy ?? 'Copy',
                                     onPressed: () => _handleAction('copy')),
                                 const SizedBox(width: 4),
                                 ActionButton(
                                     icon: fluent.FluentIcons.branch_fork2,
-                                    tooltip: AppLocalizations.of(context)?.branch ?? 'Branch',
+                                    tooltip: l10n?.branch ?? 'Branch',
                                     onPressed: () => _handleAction('branch')),
                                 const SizedBox(width: 4),
                                 ActionButton(
                                     icon: fluent.FluentIcons.delete,
-                                    tooltip: 'Delete',
+                                    tooltip: l10n?.delete ?? 'Delete',
                                     onPressed: () => _handleAction('delete')),
                               ],
                             ),
@@ -520,7 +521,7 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                       ),
                     ),
                     Text(
-                      'FirstToken: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
+                      '${AppLocalizations.of(context)?.averageFirstToken((message.firstTokenMs! / 1000).toStringAsFixed(2)) ?? 'TTFT: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s'}',
                       style: TextStyle(
                         fontSize: 10,
                         color: theme.typography.body!.color!.withOpacity(0.5),

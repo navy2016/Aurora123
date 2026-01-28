@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import '../domain/skill_entity.dart';
 import '../presentation/skill_provider.dart';
 import '../../settings/presentation/settings_provider.dart';
@@ -455,139 +456,282 @@ class _SkillSettingsPageState extends ConsumerState<SkillSettingsPage> {
     );
   }
 
-  Future<void> _showDeleteConfirmDialog(BuildContext context, WidgetRef ref, Skill skill) async {
+  Future<void> _showDeleteConfirmDialog(
+      BuildContext context, WidgetRef ref, Skill skill) async {
     final l10n = AppLocalizations.of(context)!;
+    final isWindows = Theme.of(context).platform == TargetPlatform.windows;
 
-    await fluent.showDialog(
-      context: context,
-      builder: (context) => fluent.ContentDialog(
-        title: Text('${l10n.deleteSkillTitle}: ${skill.name}'),
-        content: Text(l10n.deleteSkillConfirm),
-        actions: [
-          fluent.Button(
-            child: Text(l10n.cancel),
-            onPressed: () => Navigator.pop(context),
-          ),
-          fluent.FilledButton(
-            style: fluent.ButtonStyle(
-              backgroundColor: fluent.ButtonState.all(fluent.Colors.red),
+    if (isWindows) {
+      await fluent.showDialog(
+        context: context,
+        builder: (context) => fluent.ContentDialog(
+          title: Text('${l10n.deleteSkillTitle}: ${skill.name}'),
+          content: Text(l10n.deleteSkillConfirm),
+          actions: [
+            fluent.Button(
+              child: Text(l10n.cancel),
+              onPressed: () => Navigator.pop(context),
             ),
-            child: Text(l10n.deleteSkill),
-            onPressed: () {
-              ref.read(skillProvider.notifier).deleteSkill(skill);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showEditSkillDialog(BuildContext context, WidgetRef ref, Skill skill) async {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = fluent.FluentTheme.of(context);
-    
-    // Initial fetch of content
-    final content = await ref.read(skillProvider.notifier).getSkillMarkdown(skill);
-    final controller = TextEditingController(text: content);
-
-    await fluent.showDialog(
-      context: context,
-      builder: (context) => fluent.ContentDialog(
-        title: Row(
-          children: [
-            const Icon(fluent.FluentIcons.edit, size: 16),
-            const SizedBox(width: 8),
-            Text('${l10n.editSkill}: ${skill.name}'),
+            fluent.FilledButton(
+              style: fluent.ButtonStyle(
+                backgroundColor: fluent.ButtonState.all(fluent.Colors.red),
+              ),
+              child: Text(l10n.deleteSkill),
+              onPressed: () {
+                ref.read(skillProvider.notifier).deleteSkill(skill);
+                Navigator.pop(context);
+              },
+            ),
           ],
         ),
-        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 600),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: fluent.InfoLabel(
-                label: 'SKILL.md',
-                child: fluent.TextBox(
-                  controller: controller,
-                  maxLines: null,
-                  minLines: 20,
-                  placeholder: 'SKILL.md content...',
-                  style: const TextStyle(
-                    fontFamily: 'Consolas',
-                    fontSize: 13,
+      );
+    } else {
+      final confirmed = await AuroraBottomSheet.showConfirm(
+        context: context,
+        title: l10n.deleteSkillTitle,
+        content: '${l10n.deleteSkillConfirm}: ${skill.name}',
+        confirmText: l10n.deleteSkill,
+        isDestructive: true,
+      );
+      if (confirmed == true) {
+        ref.read(skillProvider.notifier).deleteSkill(skill);
+      }
+    }
+  }
+
+  Future<void> _showEditSkillDialog(
+      BuildContext context, WidgetRef ref, Skill skill) async {
+    final l10n = AppLocalizations.of(context)!;
+    final isWindows = Theme.of(context).platform == TargetPlatform.windows;
+
+    // Initial fetch of content
+    final content =
+        await ref.read(skillProvider.notifier).getSkillMarkdown(skill);
+    final controller = TextEditingController(text: content);
+
+    if (isWindows) {
+      await fluent.showDialog(
+        context: context,
+        builder: (context) => fluent.ContentDialog(
+          title: Row(
+            children: [
+              const Icon(fluent.FluentIcons.edit, size: 16),
+              const SizedBox(width: 8),
+              Text('${l10n.editSkill}: ${skill.name}'),
+            ],
+          ),
+          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 600),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: fluent.InfoLabel(
+                  label: 'SKILL.md',
+                  child: fluent.TextBox(
+                    controller: controller,
+                    maxLines: null,
+                    minLines: 20,
+                    placeholder: 'SKILL.md content...',
+                    style: const TextStyle(
+                      fontFamily: 'Consolas',
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
+            ],
+          ),
+          actions: [
+            fluent.Button(
+              child: Text(l10n.cancel),
+              onPressed: () => Navigator.pop(context),
+            ),
+            fluent.FilledButton(
+              child: Text(l10n.updateSkill),
+              onPressed: () async {
+                await ref
+                    .read(skillProvider.notifier)
+                    .saveSkill(skill, controller.text);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  fluent.displayInfoBar(
+                    context,
+                    builder: (context, close) => fluent.InfoBar(
+                      title: Text(l10n.saveSuccess),
+                      severity: fluent.InfoBarSeverity.success,
+                    ),
+                  );
+                }
+              },
             ),
           ],
         ),
-        actions: [
-          fluent.Button(
-            child: Text(l10n.cancel),
-            onPressed: () => Navigator.pop(context),
-          ),
-          fluent.FilledButton(
-            child: Text(l10n.updateSkill),
-            onPressed: () async {
-              await ref.read(skillProvider.notifier).saveSkill(skill, controller.text);
-              if (context.mounted) {
-                Navigator.pop(context);
-                fluent.displayInfoBar(
-                  context,
-                  builder: (context, close) => fluent.InfoBar(
-                    title: Text(l10n.saveSuccess),
-                    severity: fluent.InfoBarSeverity.success,
+      );
+    } else {
+      AuroraBottomSheet.show(
+        context: context,
+        builder: (ctx) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AuroraBottomSheet.buildTitle(context, l10n.editSkill),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(skill.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    maxLines: 15,
+                    minLines: 5,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'SKILL.md content...',
+                    ),
+                    style: const TextStyle(
+                      fontFamily: 'Consolas',
+                      fontSize: 13,
+                    ),
                   ),
-                );
-              }
-            },
-          ),
-        ],
-      ),
-    );
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: Text(l10n.cancel),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () async {
+                            await ref
+                                .read(skillProvider.notifier)
+                                .saveSkill(skill, controller.text);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(l10n.saveSuccess)),
+                              );
+                            }
+                          },
+                          child: Text(l10n.updateSkill),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _showAddSkillDialog(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
+    final isWindows = Theme.of(context).platform == TargetPlatform.windows;
 
-    await fluent.showDialog(
-      context: context,
-      builder: (context) => fluent.ContentDialog(
-        title: Text(l10n.newSkill),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.skillName),
-            const SizedBox(height: 8),
-            fluent.TextBox(
-              controller: controller,
-              placeholder: l10n.skillNameHint,
-              autofocus: true,
+    if (isWindows) {
+      await fluent.showDialog(
+        context: context,
+        builder: (context) => fluent.ContentDialog(
+          title: Text(l10n.newSkill),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.skillName),
+              const SizedBox(height: 8),
+              fluent.TextBox(
+                controller: controller,
+                placeholder: l10n.skillNameHint,
+                autofocus: true,
+              ),
+            ],
+          ),
+          actions: [
+            fluent.Button(
+              child: Text(l10n.cancel),
+              onPressed: () => Navigator.pop(context),
+            ),
+            fluent.FilledButton(
+              child: Text(l10n.confirm),
+              onPressed: () {
+                final name = controller.text.trim();
+                if (name.isNotEmpty) {
+                  ref.read(skillProvider.notifier).createSkill(name);
+                  Navigator.pop(context);
+                }
+              },
             ),
           ],
         ),
-        actions: [
-          fluent.Button(
-            child: Text(l10n.cancel),
-            onPressed: () => Navigator.pop(context),
-          ),
-          fluent.FilledButton(
-            child: Text(l10n.confirm),
-            onPressed: () {
-              final name = controller.text.trim();
-              if (name.isNotEmpty) {
-                ref.read(skillProvider.notifier).createSkill(name);
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
-      ),
-    );
+      );
+    } else {
+      AuroraBottomSheet.show(
+        context: context,
+        builder: (ctx) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AuroraBottomSheet.buildTitle(context, l10n.newSkill),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: l10n.skillName,
+                      hintText: l10n.skillNameHint,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: Text(l10n.cancel),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            final name = controller.text.trim();
+                            if (name.isNotEmpty) {
+                              ref.read(skillProvider.notifier).createSkill(name);
+                              Navigator.pop(ctx);
+                            }
+                          },
+                          child: Text(l10n.confirm),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _openSkillsFolder(String? path) async {

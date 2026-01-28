@@ -76,11 +76,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get switchModel => 'Switch Model';
 
   @override
-  String get deepThinking => 'Deep Thinking...';
+  String get deepThinking => 'Thinking...';
 
   @override
   String deepThoughtFinished(String duration) {
-    return 'Deep Thought (${duration}s)';
+    return 'Thought for ${duration}s';
   }
 
   @override
@@ -251,7 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatSettings => 'Chat Settings';
 
   @override
-  String get displaySettings => 'UI Settings';
+  String get displaySettings => 'Display Settings';
 
   @override
   String get dataSettings => 'Data Settings';
@@ -491,12 +491,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String averageDuration(String duration) {
-    return 'Average';
+    return 'Avg Duration: ${duration}s';
   }
 
   @override
   String averageFirstToken(String duration) {
-    return 'FirstToken';
+    return 'TTFT: ${duration}s';
   }
 
   @override
@@ -506,7 +506,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tokensPerSecond(String tps) {
-    return 'Tokens/s';
+    return 'Token/s: $tps';
   }
 
   @override
@@ -574,16 +574,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chapters => 'Chapters';
 
   @override
-  String get novelStructure => 'Structure';
+  String get novelStructure => 'Novel Structure';
 
   @override
-  String get reviewModel => 'Check';
+  String get reviewModel => 'Review';
 
   @override
   String get writerModel => 'Writer Model';
 
   @override
-  String get decomposeModel => 'Decomposition Model';
+  String get decomposeModel => 'Structure Model';
 
   @override
   String get project => 'Project';
@@ -609,7 +609,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get writing => 'Writing';
 
   @override
-  String get context => 'Context';
+  String get context => 'World Settings';
 
   @override
   String get preview => 'Preview';
@@ -1051,9 +1051,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorUnknown => 'Other Error';
 
   @override
-  String get cumulativeToken => 'Total Tokens';
-
-  @override
   String get bgDefault => 'Default';
 
   @override
@@ -1202,10 +1199,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordOrToken => 'Password / App Token';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Connection';
 
   @override
-  String get backupNow => 'Backup Now';
+  String get backupNow => 'Backup';
 
   @override
   String get cloudBackupList => 'Cloud Backups';

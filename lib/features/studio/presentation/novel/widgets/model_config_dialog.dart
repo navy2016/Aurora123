@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import '../novel_provider.dart';
 import '../novel_state.dart';
 
@@ -15,6 +17,80 @@ class ModelConfigDialog extends ConsumerStatefulWidget {
 class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
   late Map<String, TextEditingController> _controllers;
   int _currentIndex = 0;
+  bool _toastVisible = false;
+  String _toastMessage = '';
+  IconData? _toastIcon;
+  Timer? _toastTimer;
+  bool _isInitialized = false;
+  String? _lastActivePresetId;
+
+
+
+  void _showToast(String message, IconData icon) {
+    _toastTimer?.cancel();
+    setState(() {
+      _toastMessage = message;
+      _toastIcon = icon;
+      _toastVisible = true;
+    });
+    _toastTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _toastVisible = false);
+    });
+  }
+
+  Widget _buildToastWidget() {
+    final theme = FluentTheme.of(context);
+    return Positioned(
+      top: 20,
+      left: 0,
+      right: 0,
+      child: IgnorePointer(
+        ignoring: !_toastVisible,
+        child: Center(
+          child: AnimatedOpacity(
+            opacity: _toastVisible ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.menuColor,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                border: Border.all(
+                  color: theme.resources.dividerStrokeColorDefault,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_toastIcon != null) ...[
+                    Icon(_toastIcon,
+                        size: 18, color: theme.accentColor),
+                    const SizedBox(width: 10),
+                  ],
+                  Text(
+                    _toastMessage,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: theme.typography.body?.color,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   @override
   void initState() {
@@ -29,6 +105,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
 
   @override
   void dispose() {
+    _toastTimer?.cancel();
     _controllers.forEach((_, controller) => controller.dispose());
     super.dispose();
   }
@@ -60,6 +137,14 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
       _controllers['writer']!.text = novelState.writerModel?.systemPrompt ?? '';
       _controllers['reviewer']!.text = novelState.reviewerModel?.systemPrompt ?? '';
       _isInitialized = true;
+      _lastActivePresetId = novelState.activePromptPresetId;
+    } else if (_lastActivePresetId != novelState.activePromptPresetId) {
+      // 检查是否发生了预设切换
+      _controllers['outline']!.text = novelState.outlineModel?.systemPrompt ?? '';
+      _controllers['decompose']!.text = novelState.decomposeModel?.systemPrompt ?? '';
+      _controllers['writer']!.text = novelState.writerModel?.systemPrompt ?? '';
+      _controllers['reviewer']!.text = novelState.reviewerModel?.systemPrompt ?? '';
+      _lastActivePresetId = novelState.activePromptPresetId;
     }
 
     Widget buildConfigInterface(
@@ -178,13 +263,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                         novelNotifier.setReviewerPrompt(NovelPromptPresets.reviewer);
                         novelNotifier.setActivePromptPresetId(null);
                         
-                        displayInfoBar(context, builder: (context, close) {
-                          return InfoBar(
-                            title: Text(l10n.systemDefaultRestored),
-                            severity: InfoBarSeverity.info,
-                            onClose: close,
-                          );
-                        });
+                        _showToast(l10n.systemDefaultRestored, FluentIcons.reset);
                       },
                     ),
                     const MenuFlyoutSeparator(),
@@ -215,13 +294,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                             novelNotifier.setReviewerPrompt(preset.reviewerPrompt);
                           }
                           novelNotifier.setActivePromptPresetId(preset.id);
-                          displayInfoBar(context, builder: (context, close) {
-                            return InfoBar(
-                              title: Text(l10n.presetLoaded(preset.name)),
-                              severity: InfoBarSeverity.success,
-                              onClose: close,
-                            );
-                          });
+                          _showToast(l10n.presetLoaded(preset.name), FluentIcons.check_mark);
                         },
                         trailing: IconButton(
                           icon: const Icon(FluentIcons.delete, size: 10),
@@ -267,13 +340,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                         reviewerPrompt: _controllers['reviewer']?.text ?? '',
                       );
                       novelNotifier.updatePromptPreset(updatedPreset);
-                      displayInfoBar(context, builder: (context, close) {
-                        return InfoBar(
-                          title: Text(l10n.presetSaved(updatedPreset.name)),
-                          severity: InfoBarSeverity.success,
-                          onClose: close,
-                        );
-                      });
+                      _showToast(l10n.presetSaved(updatedPreset.name), FluentIcons.save);
                     },
                   ),
                 ),
@@ -282,66 +349,71 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
           ),
         ],
       ),
-      content: Container(
-        width: 900,
-        height: 600,
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.resources.dividerStrokeColorDefault),
-          borderRadius: BorderRadius.circular(8),
-          color: theme.scaffoldBackgroundColor,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: TabView(
-          currentIndex: _currentIndex,
-          onChanged: (index) => setState(() => _currentIndex = index),
-          closeButtonVisibility: CloseButtonVisibilityMode.never,
-          tabs: [
-            Tab(
-              text: Text(l10n.outline),
-              icon: const Icon(FluentIcons.text_document),
-              body: buildConfigInterface(
-                'outline',
-                NovelPromptPresets.outline,
-                novelState.outlineModel,
-                novelNotifier.setOutlineModel,
-                novelNotifier.setOutlinePrompt,
-              ),
+      content: Stack(
+        children: [
+          Container(
+            width: 900,
+            height: 600,
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.resources.dividerStrokeColorDefault),
+              borderRadius: BorderRadius.circular(8),
+              color: theme.scaffoldBackgroundColor,
             ),
-            Tab(
-              text: Text(l10n.decompose),
-              icon: const Icon(FluentIcons.org),
-              body: buildConfigInterface(
-                'decompose',
-                NovelPromptPresets.decompose,
-                novelState.decomposeModel,
-                novelNotifier.setDecomposeModel,
-                novelNotifier.setDecomposePrompt,
-              ),
+            clipBehavior: Clip.antiAlias,
+            child: TabView(
+              currentIndex: _currentIndex,
+              onChanged: (index) => setState(() => _currentIndex = index),
+              closeButtonVisibility: CloseButtonVisibilityMode.never,
+              tabs: [
+                Tab(
+                  text: Text(l10n.outline),
+                  icon: const Icon(FluentIcons.text_document),
+                  body: buildConfigInterface(
+                    'outline',
+                    NovelPromptPresets.outline,
+                    novelState.outlineModel,
+                    novelNotifier.setOutlineModel,
+                    novelNotifier.setOutlinePrompt,
+                  ),
+                ),
+                Tab(
+                  text: Text(l10n.decompose),
+                  icon: const Icon(FluentIcons.org),
+                  body: buildConfigInterface(
+                    'decompose',
+                    NovelPromptPresets.decompose,
+                    novelState.decomposeModel,
+                    novelNotifier.setDecomposeModel,
+                    novelNotifier.setDecomposePrompt,
+                  ),
+                ),
+                Tab(
+                  text: Text(l10n.writing),
+                  icon: const Icon(FluentIcons.edit),
+                  body: buildConfigInterface(
+                    'writer',
+                    NovelPromptPresets.writer,
+                    novelState.writerModel,
+                    novelNotifier.setWriterModel,
+                    novelNotifier.setWriterPrompt,
+                  ),
+                ),
+                Tab(
+                  text: Text(l10n.reviewModel),
+                  icon: const Icon(FluentIcons.preview_link),
+                  body: buildConfigInterface(
+                    'reviewer',
+                    NovelPromptPresets.reviewer,
+                    novelState.reviewerModel,
+                    novelNotifier.setReviewerModel,
+                    novelNotifier.setReviewerPrompt,
+                  ),
+                ),
+              ],
             ),
-            Tab(
-              text: Text(l10n.writing),
-              icon: const Icon(FluentIcons.edit),
-              body: buildConfigInterface(
-                'writer',
-                NovelPromptPresets.writer,
-                novelState.writerModel,
-                novelNotifier.setWriterModel,
-                novelNotifier.setWriterPrompt,
-              ),
-            ),
-            Tab(
-              text: Text(l10n.reviewModel),
-              icon: const Icon(FluentIcons.preview_link),
-              body: buildConfigInterface(
-                'reviewer',
-                NovelPromptPresets.reviewer,
-                novelState.reviewerModel,
-                novelNotifier.setReviewerModel,
-                novelNotifier.setReviewerPrompt,
-              ),
-            ),
-          ],
-        ),
+          ),
+          _buildToastWidget(),
+        ],
       ),
       actions: [
         Button(
@@ -352,63 +424,26 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     );
   }
 
-  bool _isInitialized = false;
 
-  void _showSavePresetDialog(BuildContext context, WidgetRef ref) {
+  void _showSavePresetDialog(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context)!;
-    final nameController = TextEditingController();
-    showDialog(
+    final name = await AuroraBottomSheet.showInput(
       context: context,
-      builder: (ctx) => ContentDialog(
-        constraints: const BoxConstraints(maxWidth: 400),
-        title: Text(l10n.newNovelPreset),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InfoLabel(
-              label: l10n.presetName,
-              child: TextBox(
-                controller: nameController,
-                autofocus: true,
-                placeholder: '${l10n.pleaseEnter}${l10n.presetName}...',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(l10n.savePresetHint, style: FluentTheme.of(context).typography.caption),
-          ],
-        ),
-        actions: [
-          Button(
-            child: Text(l10n.cancel),
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          FilledButton(
-            child: Text(l10n.save),
-            onPressed: () {
-              final name = nameController.text.trim();
-              if (name.isNotEmpty) {
-                final preset = NovelPromptPreset.create(
-                  name: name,
-                  outlinePrompt: _controllers['outline']?.text ?? '',
-                  decomposePrompt: _controllers['decompose']?.text ?? '',
-                  writerPrompt: _controllers['writer']?.text ?? '',
-                  reviewerPrompt: _controllers['reviewer']?.text ?? '',
-                );
-                ref.read(novelProvider.notifier).addPromptPreset(preset);
-                Navigator.pop(ctx);
-                displayInfoBar(context, builder: (context, close) {
-                  return InfoBar(
-                    title: Text(l10n.presetSaved(name)),
-                    severity: InfoBarSeverity.success,
-                    onClose: close,
-                  );
-                });
-              }
-            },
-          ),
-        ],
-      ),
+      title: l10n.newNovelPreset,
+      hintText: '${l10n.pleaseEnter}${l10n.presetName}...',
     );
+
+    if (name != null && name.trim().isNotEmpty) {
+      final presetName = name.trim();
+      final preset = NovelPromptPreset.create(
+        name: presetName,
+        outlinePrompt: _controllers['outline']?.text ?? '',
+        decomposePrompt: _controllers['decompose']?.text ?? '',
+        writerPrompt: _controllers['writer']?.text ?? '',
+        reviewerPrompt: _controllers['reviewer']?.text ?? '',
+      );
+      ref.read(novelProvider.notifier).addPromptPreset(preset);
+      _showToast(l10n.presetSaved(presetName), FluentIcons.save);
+    }
   }
 }

@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_selector/file_selector.dart';
 import 'settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
-import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import '../../sync/presentation/mobile_sync_settings_page.dart';
 
 class MobileSettingsPage extends ConsumerStatefulWidget {
@@ -276,98 +276,74 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
   }
 
   void _showProviderPicker(BuildContext context, SettingsState paramState) {
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
       builder: (ctx) {
         final l10n = AppLocalizations.of(context)!;
         return Consumer(
           builder: (scopedContext, ref, _) {
             final state = ref.watch(settingsProvider);
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(l10n.selectProvider,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                  const Divider(height: 1),
-                  ...state.providers.map((p) => ListTile(
-                        leading: Icon(
-                          p.id == state.activeProviderId
-                              ? Icons.check_circle
-                              : Icons.circle_outlined,
-                          color: p.id == state.activeProviderId
-                              ? Theme.of(scopedContext).primaryColor
-                              : null,
-                        ),
-                        title: Text(p.name),
-
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 20),
-                              onPressed: () {
-                                Navigator.pop(ctx);
-                                showDialog(
-                                    context: scopedContext,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: Text(l10n.deleteProvider),
-                                        content:
-                                            Text(l10n.deleteProviderConfirm),
-                                        actions: [
-                                          TextButton(
-                                            child: Text(l10n.cancel),
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                          ),
-                                          TextButton(
-                                            child: Text(l10n.delete),
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              ref
-                                                  .read(
-                                                      settingsProvider.notifier)
-                                                  .deleteProvider(p.id);
-                                            },
-                                          ),
-                                        ],
-                                      );
-                                    });
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 20),
-                              onPressed: () {
-                                Navigator.pop(ctx);
-                                _showProviderRenameDialog(scopedContext, p);
-                              },
-                            ),
-                          ],
-                        ),
-                        onTap: () {
-                          if (!p.isEnabled) {}
-                          ref
-                              .read(settingsProvider.notifier)
-                              .selectProvider(p.id);
-                          Navigator.pop(ctx);
-                        },
-                      )),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.add),
-                    title: Text(l10n.addProvider),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      ref.read(settingsProvider.notifier).addProvider();
-                    },
-                  ),
-                ],
-              ),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AuroraBottomSheet.buildTitle(context, l10n.selectProvider),
+                const Divider(height: 1),
+                ...state.providers.map((p) => AuroraBottomSheet.buildListItem(
+                      context: context,
+                      leading: Icon(
+                        p.id == state.activeProviderId
+                            ? Icons.check_circle
+                            : Icons.circle_outlined,
+                        color: p.id == state.activeProviderId
+                            ? Theme.of(scopedContext).primaryColor
+                            : null,
+                      ),
+                      title: Text(p.name),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 20),
+                            onPressed: () async {
+                              final notifier = ref.read(settingsProvider.notifier);
+                              Navigator.pop(ctx);
+                              final confirmed = await AuroraBottomSheet.showConfirm(
+                                context: context,
+                                title: l10n.deleteProvider,
+                                content: l10n.deleteProviderConfirm,
+                                confirmText: l10n.delete,
+                                isDestructive: true,
+                              );
+                              if (confirmed == true) {
+                                notifier.deleteProvider(p.id);
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined, size: 20),
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _showProviderRenameDialog(scopedContext, p);
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        ref.read(settingsProvider.notifier).selectProvider(p.id);
+                        Navigator.pop(ctx);
+                      },
+                    )),
+                const Divider(),
+                AuroraBottomSheet.buildListItem(
+                  context: context,
+                  leading: const Icon(Icons.add),
+                  title: Text(l10n.addProvider),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ref.read(settingsProvider.notifier).addProvider();
+                  },
+                ),
+              ],
             );
           },
         );
@@ -378,13 +354,8 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
   void _showModelConfigDialog(
       BuildContext context, ProviderConfig provider, String modelName) {
     final currentSettings = provider.modelSettings[modelName] ?? {};
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (ctx) => _ModelConfigDialog(
         modelName: modelName,
         initialSettings: currentSettings,
@@ -401,15 +372,9 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
     );
   }
 
-  void _showGlobalConfigDialog(
-      BuildContext context, ProviderConfig provider) {
-    showModalBottomSheet(
+  void _showGlobalConfigDialog(BuildContext context, ProviderConfig provider) {
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (ctx) => _GlobalConfigBottomSheet(
         provider: provider,
       ),
@@ -417,158 +382,98 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
   }
 
   void _showProviderRenameDialog(
-      BuildContext context, ProviderConfig provider) {
+      BuildContext context, ProviderConfig provider) async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: provider.name);
-    showDialog(
+    final newName = await AuroraBottomSheet.showInput(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF202020)
-            : Colors.white,
-        surfaceTintColor: Colors.transparent,
-        title: Text(l10n.renameProvider),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: l10n.enterProviderName,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                ref.read(settingsProvider.notifier).updateProvider(
-                      id: provider.id,
-                      name: controller.text.trim(),
-                    );
-              }
-              Navigator.pop(ctx);
-            },
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
+      title: l10n.renameProvider,
+      initialValue: provider.name,
+      hintText: l10n.enterProviderName,
     );
+    if (newName != null && newName.isNotEmpty) {
+      ref.read(settingsProvider.notifier).updateProvider(
+            id: provider.id,
+            name: newName,
+          );
+    }
   }
 
   void _showApiKeysManager(BuildContext context, ProviderConfig? provider) {
     if (provider == null) return;
     final l10n = AppLocalizations.of(context)!;
-    
-    showModalBottomSheet(
+
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF202020)
-          : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           // Re-fetch provider to get latest state
-          final currentProvider = ref.read(settingsProvider).providers
+          final currentProvider = ref
+              .read(settingsProvider)
+              .providers
               .firstWhere((p) => p.id == provider.id, orElse: () => provider);
-          
-          return DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            minChildSize: 0.3,
-            maxChildSize: 0.9,
-            expand: false,
-            builder: (context, scrollController) => Column(
+
+          return Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle bar
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 8),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[400],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Text(
-                        l10n.apiKeys,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const Spacer(),
-                      // Add key button
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () => _showAddKeyDialog(context, provider.id, () {
-                          setModalState(() {});
-                        }),
-                      ),
-                    ],
-                  ),
-                ),
+                AuroraBottomSheet.buildTitle(context, l10n.apiKeys),
+                const Divider(height: 1),
                 // Auto-rotate toggle
                 if (currentProvider.apiKeys.length > 1)
                   SwitchListTile(
                     title: Text(l10n.autoRotateKeys),
                     value: currentProvider.autoRotateKeys,
                     onChanged: (v) {
-                      ref.read(settingsProvider.notifier)
+                      ref
+                          .read(settingsProvider.notifier)
                           .setAutoRotateKeys(provider.id, v);
                       setModalState(() {});
                     },
                   ),
-                const Divider(),
                 // Key list
-                Expanded(
+                Flexible(
                   child: currentProvider.apiKeys.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.key_off, size: 48, color: Colors.grey),
-                              const SizedBox(height: 8),
-                              Text(l10n.notConfigured, style: const TextStyle(color: Colors.grey)),
-                              const SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                onPressed: () => _showAddKeyDialog(context, provider.id, () {
-                                  setModalState(() {});
-                                }),
-                                icon: const Icon(Icons.add),
-                                label: Text(l10n.addApiKey),
-                              ),
-                            ],
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 40),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.key_off,
+                                    size: 48, color: Colors.grey),
+                                const SizedBox(height: 8),
+                                Text(l10n.notConfigured,
+                                    style: const TextStyle(color: Colors.grey)),
+                              ],
+                            ),
                           ),
                         )
                       : ListView.builder(
-                          controller: scrollController,
+                          shrinkWrap: true,
                           itemCount: currentProvider.apiKeys.length,
                           itemBuilder: (context, index) {
                             final key = currentProvider.apiKeys[index];
-                            final isCurrent = index == currentProvider.safeCurrentKeyIndex;
-                            
+                            final isCurrent =
+                                index == currentProvider.safeCurrentKeyIndex;
+
                             return _ApiKeyListItem(
                               apiKey: key,
                               isCurrent: isCurrent,
                               onSelect: () {
-                                ref.read(settingsProvider.notifier)
+                                ref
+                                    .read(settingsProvider.notifier)
                                     .setCurrentKeyIndex(provider.id, index);
                                 setModalState(() {});
                               },
                               onEdit: (newValue) {
-                                ref.read(settingsProvider.notifier)
-                                    .updateApiKeyAtIndex(provider.id, index, newValue);
+                                ref
+                                    .read(settingsProvider.notifier)
+                                    .updateApiKeyAtIndex(
+                                        provider.id, index, newValue);
                                 setModalState(() {});
                               },
                               onDelete: () {
-                                ref.read(settingsProvider.notifier)
+                                ref
+                                    .read(settingsProvider.notifier)
                                     .removeApiKey(provider.id, index);
                                 setModalState(() {});
                               },
@@ -576,234 +481,85 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                           },
                         ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () =>
+                          _showAddKeyDialog(context, provider.id, () {
+                        setModalState(() {});
+                      }),
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.addApiKey),
+                    ),
+                  ),
+                ),
               ],
-            ),
-          );
+            );
         },
       ),
     );
   }
 
-  void _showAddKeyDialog(BuildContext context, String providerId, VoidCallback onAdded) {
+  void _showAddKeyDialog(BuildContext context, String providerId, VoidCallback onAdded) async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController();
-    
-    showDialog(
+    final newKey = await AuroraBottomSheet.showInput(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF202020)
-            : Colors.white,
-        title: Text(l10n.addApiKey),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'sk-xxxxxxxx',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              final newKey = controller.text.trim();
-              if (newKey.isNotEmpty) {
-                ref.read(settingsProvider.notifier).addApiKey(providerId, newKey);
-                onAdded();
-              }
-              Navigator.pop(ctx);
-            },
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
+      title: l10n.addApiKey,
+      hintText: 'sk-xxxxxxxx',
     );
+    if (newKey != null && newKey.isNotEmpty) {
+      ref.read(settingsProvider.notifier).addApiKey(providerId, newKey);
+      onAdded();
+    }
   }
 
-  void _showBaseUrlEditor(BuildContext context, ProviderConfig? provider) {
+  void _showBaseUrlEditor(BuildContext context, ProviderConfig? provider) async {
     if (provider == null) return;
     final l10n = AppLocalizations.of(context)!;
-    _baseUrlController.text = provider.baseUrl;
-    showModalBottomSheet(
+    final newUrl = await AuroraBottomSheet.showInput(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(l10n.editBaseUrl, style: Theme.of(context).textTheme.titleMedium),
-              ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _baseUrlController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: 'https://api.openai.com/v1',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(l10n.cancel),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.read(settingsProvider.notifier).updateProvider(
-                              id: provider.id,
-                              baseUrl: _baseUrlController.text,
-                            );
-                        Navigator.pop(ctx);
-                      },
-                      child: Text(l10n.save),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: l10n.editBaseUrl,
+      initialValue: provider.baseUrl,
+      hintText: 'https://api.openai.com/v1',
     );
+    if (newUrl != null) {
+      ref.read(settingsProvider.notifier).updateProvider(
+            id: provider.id,
+            baseUrl: newUrl,
+          );
+    }
   }
 
-  void _showColorEditor(BuildContext context, ProviderConfig? provider) {
+  void _showColorEditor(BuildContext context, ProviderConfig? provider) async {
     if (provider == null) return;
     final l10n = AppLocalizations.of(context)!;
-    _colorController.text = provider.color ?? '';
-    showModalBottomSheet(
+    final newColor = await AuroraBottomSheet.showInput(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Edit Color', style: Theme.of(context).textTheme.titleMedium),
-              ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _colorController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: '#FF0000',
-                    labelText: 'Hex Color',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(l10n.cancel),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.read(settingsProvider.notifier).updateProvider(
-                              id: provider.id,
-                              color: _colorController.text,
-                            );
-                        Navigator.pop(ctx);
-                      },
-                      child: Text(l10n.save),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: 'Edit Color',
+      initialValue: provider.color ?? '',
+      hintText: '#FF0000',
     );
+    if (newColor != null) {
+      ref.read(settingsProvider.notifier).updateProvider(
+            id: provider.id,
+            color: newColor,
+          );
+    }
   }
 
   void _showTextEditor(BuildContext context, String title, String currentValue,
-      Function(String) onSave) {
-    final controller = TextEditingController(text: currentValue);
-    showDialog(
+      Function(String) onSave) async {
+    final newValue = await AuroraBottomSheet.showInput(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF202020)
-            : Colors.white,
-        surfaceTintColor: Colors.transparent,
-        title: Text('编辑$title'),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: '请输入$title',
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              onSave(controller.text);
-              Navigator.pop(ctx);
-            },
-            child: const Text('保存'),
-          ),
-        ],
-      ),
+      title: '编辑$title',
+      initialValue: currentValue,
+      hintText: '请输入$title',
     );
+    if (newValue != null) {
+      onSave(newValue);
+    }
   }
 
   Future<void> _pickAvatar({required bool isUser}) async {
@@ -996,7 +752,7 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
 
 
   Future<void> _showEditDialog([String? key, dynamic value]) async {
-     await showDialog(
+     await AuroraBottomSheet.show(
       context: context,
       builder: (ctx) => _ParameterConfigDialog(
         initialKey: key,
@@ -1034,45 +790,22 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
       _modelSettings.entries.where((e) => !e.key.startsWith('_aurora_'))
     );
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[400],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // Header
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+          AuroraBottomSheet.buildTitle(context, widget.modelName),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.modelName,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(l10n.modelConfig,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              ],
-            ),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(l10n.modelConfig,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ),
           const Divider(height: 1),
-          // Scrollable content
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Thinking Configuration Card
                   _buildSectionCard(
                     context,
                     title: l10n.thinkingConfig,
@@ -1118,10 +851,7 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
                       ],
                     ) : null,
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Generation Configuration Card
                   _buildSectionCard(
                     context,
                     title: l10n.generationConfig,
@@ -1169,10 +899,7 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Custom Parameters Card
                   _buildSectionCard(
                     context,
                     title: l10n.customParams,
@@ -1220,20 +947,18 @@ class _ModelConfigDialogState extends State<_ModelConfigDialog> {
               ),
             ),
           ),
-          // Done button
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: FilledButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(l10n.done),
               ),
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildSectionCard(
@@ -1424,82 +1149,97 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
       'boolean': l10n.typeBoolean,
       'json': l10n.typeJson,
     };
-    return AlertDialog(
-      backgroundColor: isDark ? const Color(0xFF202020) : Colors.white,
-      surfaceTintColor: Colors.transparent,
-      title: Text(isEditing ? l10n.editParam : l10n.addCustomParam),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _keyController,
-            decoration: InputDecoration(
-              labelText: l10n.paramKey,
-              hintText: 'e.g. image_config',
-              border: const OutlineInputBorder(),
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AuroraBottomSheet.buildTitle(context, isEditing ? l10n.editParam : l10n.addCustomParam),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _keyController,
+                decoration: InputDecoration(
+                  labelText: l10n.paramKey,
+                  hintText: 'e.g. image_config',
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _type,
+                dropdownColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                decoration: InputDecoration(
+                  labelText: l10n.paramType,
+                  border: const OutlineInputBorder(),
+                ),
+                items: typeMap.entries
+                    .map(
+                        (e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                    .toList(),
+                onChanged: (v) => setState(() => _type = v!),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _valueController,
+                maxLines: _type == 'json' ? 5 : 1,
+                minLines: _type == 'json' ? 3 : 1,
+                decoration: InputDecoration(
+                  labelText: l10n.paramValue,
+                  hintText: 'Value',
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _type,
-            dropdownColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-            decoration: InputDecoration(
-              labelText: l10n.paramType,
-              border: const OutlineInputBorder(),
-            ),
-            items: typeMap.entries
-                .map(
-                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-                .toList(),
-            onChanged: (v) => setState(() => _type = v!),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _valueController,
-            maxLines: _type == 'json' ? 5 : 1,
-            minLines: _type == 'json' ? 3 : 1,
-            decoration: InputDecoration(
-              labelText: l10n.paramValue,
-              hintText: 'Value',
-              border: const OutlineInputBorder(),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
         ),
-        ElevatedButton(
-          onPressed: () {
-            final key = _keyController.text.trim();
-            final valueStr = _valueController.text.trim();
-            if (key.isEmpty) return;
-            dynamic value;
-            try {
-              switch (_type) {
-                case 'number':
-                  value = num.parse(valueStr);
-                  break;
-                case 'boolean':
-                  value = valueStr.toLowerCase() == 'true';
-                  break;
-                case 'json':
-                  value = jsonDecode(valueStr);
-                  break;
-                default:
-                  value = valueStr;
-              }
-              widget.onSave(key, value);
-              Navigator.pop(context);
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${l10n.formatError}: $e')),
-              );
-            }
-          },
-          child: Text(isEditing ? l10n.save : l10n.add),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n.cancel),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () {
+                    final key = _keyController.text.trim();
+                    final valueStr = _valueController.text.trim();
+                    if (key.isEmpty) return;
+                    dynamic value;
+                    try {
+                      switch (_type) {
+                        case 'number':
+                          value = num.parse(valueStr);
+                          break;
+                        case 'boolean':
+                          value = valueStr.toLowerCase() == 'true';
+                          break;
+                        case 'json':
+                          value = jsonDecode(valueStr);
+                          break;
+                        default:
+                          value = valueStr;
+                      }
+                      widget.onSave(key, value);
+                      Navigator.pop(context);
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${l10n.formatError}: $e')),
+                      );
+                    }
+                  },
+                  child: Text(isEditing ? l10n.save : l10n.add),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -1721,9 +1461,8 @@ class _GlobalConfigBottomSheetState
   }
 
   Future<void> _showExclusionPicker() async {
-    final result = await showModalBottomSheet<List<String>>(
+    final result = await AuroraBottomSheet.show<List<String>>(
       context: context,
-      isScrollControlled: true,
       builder: (ctx) => _ExclusionPicker(
         allModels: widget.provider.models,
         excludedModels: _excludedModels,
@@ -1735,7 +1474,7 @@ class _GlobalConfigBottomSheetState
   }
 
   void _showEditDialog([String? key, dynamic value]) {
-    showDialog(
+    AuroraBottomSheet.show(
       context: context,
       builder: (ctx) => _ParameterConfigDialog(
         initialKey: key,
@@ -1760,252 +1499,219 @@ class _GlobalConfigBottomSheetState
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    // Reuse helper methods from MobileSettingsPage if possible?
-    // They are private to MobileSettingsPage. I need to duplicate _buildSectionCard and _buildParamItem.
-    // Or make them static/public. Duplication is safer for now to avoid refactoring MobileSettingsPage massively.
-
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.85,
-      child: Column(
-        children: [
-          // Drag Handle
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[400],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return Column(
+      children: [
+        AuroraBottomSheet.buildTitle(context, l10n.globalConfig),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(widget.provider.name,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        ),
+        const Divider(height: 1),
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(l10n.globalConfig,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(widget.provider.name,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                // Excluded Models Card
+                _buildSectionCard(
+                  context,
+                  title: l10n.excludedModels,
+                  subtitle: '${_excludedModels.length} models excluded',
+                  icon: Icons.block,
+                  headerAction: IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: _showExclusionPicker,
+                  ),
+                  child: _excludedModels.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: _excludedModels
+                                .map((m) =>
+                                    Chip(label: Text(m, style: const TextStyle(fontSize: 10))))
+                                .toList(),
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                // Thinking Configuration Card
+                _buildSectionCard(
+                  context,
+                  title: l10n.thinkingConfig,
+                  icon: Icons.lightbulb_outline,
+                  headerAction: Switch(
+                    value: _thinkingEnabled,
+                    onChanged: (v) => _saveSettings(thinkingEnabled: v),
+                  ),
+                  child: _thinkingEnabled
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: TextEditingController(
+                                  text: _thinkingBudget)
+                                ..selection = TextSelection.collapsed(
+                                    offset: _thinkingBudget.length),
+                              decoration: InputDecoration(
+                                labelText: l10n.thinkingBudget,
+                                hintText: l10n.thinkingBudgetHint,
+                                border: const OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                              onChanged: (v) =>
+                                  _saveSettings(thinkingBudget: v),
+                            ),
+                            const SizedBox(height: 12),
+                            DropdownButtonFormField<String>(
+                              value: _thinkingMode,
+                              decoration: InputDecoration(
+                                labelText: l10n.transmissionMode,
+                                border: const OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                              items: [
+                                DropdownMenuItem(
+                                    value: 'auto', child: Text(l10n.modeAuto)),
+                                DropdownMenuItem(
+                                    value: 'extra_body',
+                                    child: Text(l10n.modeExtraBody)),
+                                DropdownMenuItem(
+                                    value: 'reasoning_effort',
+                                    child: Text(l10n.modeReasoningEffort)),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) _saveSettings(thinkingMode: v);
+                              },
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                // Generation Configuration Card
+                _buildSectionCard(
+                  context,
+                  title: l10n.generationConfig,
+                  icon: Icons.settings,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: TextEditingController(text: _temperature)
+                          ..selection = TextSelection.collapsed(
+                              offset: _temperature.length),
+                        decoration: InputDecoration(
+                          labelText: l10n.temperature,
+                          hintText: l10n.temperatureHint,
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        onChanged: (v) => _saveSettings(temperature: v),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: TextEditingController(text: _maxTokens)
+                          ..selection = TextSelection.collapsed(
+                              offset: _maxTokens.length),
+                        decoration: InputDecoration(
+                          labelText: l10n.maxTokens,
+                          hintText: l10n.maxTokensHint,
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        onChanged: (v) => _saveSettings(maxTokens: v),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: TextEditingController(text: _contextLength)
+                          ..selection = TextSelection.collapsed(
+                              offset: _contextLength.length),
+                        decoration: InputDecoration(
+                          labelText: l10n.contextLength,
+                          hintText: l10n.contextLengthHint,
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        onChanged: (v) => _saveSettings(contextLength: v),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Custom Parameters Card
+                _buildSectionCard(
+                  context,
+                  title: l10n.customParams,
+                  subtitle: l10n.paramsHigherPriority,
+                  icon: Icons.edit,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      if (_customParams.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Colors.grey.withOpacity(0.3)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.tune,
+                                  size: 32, color: Colors.grey),
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.noCustomParams,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                child: Text(l10n.addCustomParam),
+                                onPressed: () => _showEditDialog(),
+                              )
+                            ],
+                          ),
+                        )
+                      else
+                        ..._customParams.entries.map((e) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: _buildParamItem(e.key, e.value, theme),
+                          );
+                        }),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          const Divider(height: 1),
-          // Scrollable content
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Excluded Models Card
-                  _buildSectionCard(
-                    context,
-                    title: l10n.excludedModels,
-                    subtitle: '${_excludedModels.length} models excluded',
-                    icon: Icons.block,
-                    headerAction: IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: _showExclusionPicker,
-                    ),
-                    child: _excludedModels.isNotEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: _excludedModels
-                                  .map((m) =>
-                                      Chip(label: Text(m, style: const TextStyle(fontSize: 10))))
-                                  .toList(),
-                            ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Thinking Configuration Card
-                  _buildSectionCard(
-                    context,
-                    title: l10n.thinkingConfig,
-                    icon: Icons.lightbulb_outline,
-                    headerAction: Switch(
-                      value: _thinkingEnabled,
-                      onChanged: (v) => _saveSettings(thinkingEnabled: v),
-                    ),
-                    child: _thinkingEnabled
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 16),
-                              const Divider(),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: TextEditingController(
-                                    text: _thinkingBudget)
-                                  ..selection = TextSelection.collapsed(
-                                      offset: _thinkingBudget.length),
-                                decoration: InputDecoration(
-                                  labelText: l10n.thinkingBudget,
-                                  hintText: l10n.thinkingBudgetHint,
-                                  border: const OutlineInputBorder(),
-                                  isDense: true,
-                                ),
-                                onChanged: (v) =>
-                                    _saveSettings(thinkingBudget: v),
-                              ),
-                              const SizedBox(height: 12),
-                              DropdownButtonFormField<String>(
-                                value: _thinkingMode,
-                                decoration: InputDecoration(
-                                  labelText: l10n.transmissionMode,
-                                  border: const OutlineInputBorder(),
-                                  isDense: true,
-                                ),
-                                items: [
-                                  DropdownMenuItem(
-                                      value: 'auto', child: Text(l10n.modeAuto)),
-                                  DropdownMenuItem(
-                                      value: 'extra_body',
-                                      child: Text(l10n.modeExtraBody)),
-                                  DropdownMenuItem(
-                                      value: 'reasoning_effort',
-                                      child: Text(l10n.modeReasoningEffort)),
-                                ],
-                                onChanged: (v) {
-                                  if (v != null) _saveSettings(thinkingMode: v);
-                                },
-                              ),
-                            ],
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Generation Configuration Card
-                  _buildSectionCard(
-                    context,
-                    title: l10n.generationConfig,
-                    icon: Icons.settings,
-                    headerAction: null,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller:
-                              TextEditingController(text: _temperature)
-                                ..selection = TextSelection.collapsed(
-                                    offset: _temperature.length),
-                          decoration: InputDecoration(
-                            labelText: l10n.temperature,
-                            hintText: l10n.temperatureHint,
-                            border: const OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          onChanged: (v) => _saveSettings(temperature: v),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: TextEditingController(text: _maxTokens)
-                            ..selection = TextSelection.collapsed(
-                                offset: _maxTokens.length),
-                          decoration: InputDecoration(
-                            labelText: l10n.maxTokens,
-                            hintText: l10n.maxTokensHint,
-                            border: const OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          onChanged: (v) => _saveSettings(maxTokens: v),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: TextEditingController(text: _contextLength)
-                            ..selection = TextSelection.collapsed(
-                                offset: _contextLength.length),
-                          decoration: InputDecoration(
-                            labelText: l10n.contextLength,
-                            hintText: l10n.contextLengthHint,
-                            border: const OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          onChanged: (v) => _saveSettings(contextLength: v),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Custom Parameters Card
-                  _buildSectionCard(
-                    context,
-                    title: l10n.customParams,
-                    subtitle: l10n.paramsHigherPriority,
-                    icon: Icons.edit,
-                    headerAction: null,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 16),
-                        if (_customParams.isEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: Colors.grey.withOpacity(0.3)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              children: [
-                                const Icon(Icons.tune,
-                                    size: 32, color: Colors.grey),
-                                const SizedBox(height: 8),
-                                Text(
-                                  l10n.noCustomParams,
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                                const SizedBox(height: 8),
-                                TextButton(
-                                  child: Text(l10n.addCustomParam),
-                                  onPressed: () => _showEditDialog(),
-                                )
-                              ],
-                            ),
-                          )
-                        else
-                          ..._customParams.entries.map((e) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: _buildParamItem(e.key, e.value, theme),
-                            );
-                          }),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.done),
             ),
           ),
-          // Done button
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(l10n.done),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -2155,51 +1861,47 @@ class _ExclusionPickerState extends State<_ExclusionPicker> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(l10n.excludedModels,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: widget.allModels.length,
-              itemBuilder: (context, index) {
-                final model = widget.allModels[index];
-                final isExcluded = _currentExclusions.contains(model);
-                return CheckboxListTile(
-                  title: Text(model),
-                  value: isExcluded,
-                  onChanged: (val) {
-                    setState(() {
-                      if (val == true) {
-                        _currentExclusions.add(model);
-                      } else {
-                        _currentExclusions.remove(model);
-                      }
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context, _currentExclusions);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AuroraBottomSheet.buildTitle(context, l10n.excludedModels),
+        const Divider(height: 1),
+        Flexible(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: widget.allModels.length,
+            itemBuilder: (context, index) {
+              final model = widget.allModels[index];
+              final isExcluded = _currentExclusions.contains(model);
+              return CheckboxListTile(
+                title: Text(model),
+                value: isExcluded,
+                onChanged: (val) {
+                  setState(() {
+                    if (val == true) {
+                      _currentExclusions.add(model);
+                    } else {
+                      _currentExclusions.remove(model);
+                    }
+                  });
                 },
-                child: Text(l10n.save),
-              ),
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(context, _currentExclusions);
+              },
+              child: Text(l10n.save),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

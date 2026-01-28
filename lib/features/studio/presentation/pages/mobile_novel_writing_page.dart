@@ -6,6 +6,7 @@ import '../novel/novel_state.dart';
 import 'mobile_model_config_sheet.dart';
 import 'package:flutter/services.dart';
 import '../../../../shared/widgets/custom_toast.dart';
+import '../../../../shared/widgets/aurora_bottom_sheet.dart';
 
 class MobileNovelWritingPage extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
@@ -59,24 +60,17 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
               tooltip: '重新执行所有任务',
-              onPressed: () {
-                showDialog(
+              onPressed: () async {
+                final confirmed = await AuroraBottomSheet.showConfirm(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('重新执行所有任务'),
-                    content: const Text('确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-                      TextButton(
-                        onPressed: () {
-                          notifier.restartAllTasks();
-                          Navigator.pop(ctx);
-                        },
-                        child: const Text('重新执行', style: TextStyle(color: Colors.orange)),
-                      ),
-                    ],
-                  ),
+                  title: '重新执行所有任务',
+                  content: '确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。',
+                  confirmText: '重新执行',
+                  isDestructive: true,
                 );
+                if (confirmed == true) {
+                  notifier.restartAllTasks();
+                }
               },
             ),
           Row(
@@ -95,10 +89,8 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              showModalBottomSheet(
+              AuroraBottomSheet.show(
                 context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
                 builder: (context) => const MobileModelConfigSheet(),
               );
             },
@@ -171,106 +163,80 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
   }
 
   void _showProjectPicker(BuildContext context, AppLocalizations l10n, NovelWritingState state, NovelNotifier notifier) {
-    showModalBottomSheet(
+    AuroraBottomSheet.show(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.selectProject, style: Theme.of(context).textTheme.titleMedium),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showNewProjectDialog(context, l10n, notifier);
-                    },
-                  ),
-                ],
-              ),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AuroraBottomSheet.buildTitle(context, l10n.selectProject),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showNewProjectDialog(context, l10n, notifier);
+                  },
+                ),
+              ],
             ),
-            const Divider(height: 1),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: state.projects.length,
-                itemBuilder: (context, index) {
-                  final p = state.projects[index];
-                  return ListTile(
-                    title: Text(p.name),
-                    selected: state.selectedProjectId == p.id,
-                    onTap: () {
-                      notifier.selectProject(p.id);
-                      Navigator.pop(ctx);
-                    },
-                    trailing: state.selectedProjectId == p.id 
-                        ? IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
-                            onPressed: () => _showDeleteProjectConfirm(context, p, l10n, notifier, ctx),
-                          )
-                        : null,
-                  );
-                },
-              ),
+          ),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: state.projects.length,
+              itemBuilder: (context, index) {
+                final p = state.projects[index];
+                return AuroraBottomSheet.buildListItem(
+                  context: context,
+                  title: Text(p.name),
+                  selected: state.selectedProjectId == p.id,
+                  onTap: () {
+                    notifier.selectProject(p.id);
+                    Navigator.pop(ctx);
+                  },
+                  trailing: state.selectedProjectId == p.id 
+                      ? IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () => _showDeleteProjectConfirm(context, p, l10n, notifier, ctx),
+                        )
+                      : null,
+                );
+              },
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDeleteProjectConfirm(BuildContext context, NovelProject project, AppLocalizations l10n, NovelNotifier notifier, BuildContext pickerCtx) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.deleteProject),
-        content: Text(l10n.deleteProjectConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-          TextButton(
-            onPressed: () {
-              notifier.deleteProject(project.id);
-              Navigator.pop(ctx);
-              Navigator.pop(pickerCtx);
-            },
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
-  void _showNewProjectDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) {
-    _newProjectController.clear();
-    showDialog(
+  void _showDeleteProjectConfirm(BuildContext context, NovelProject project, AppLocalizations l10n, NovelNotifier notifier, BuildContext pickerCtx) async {
+    final confirmed = await AuroraBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.createProject),
-        content: TextField(
-          controller: _newProjectController,
-          autofocus: true,
-          decoration: InputDecoration(hintText: l10n.novelName),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-          TextButton(
-            onPressed: () {
-              final name = _newProjectController.text.trim();
-              if (name.isNotEmpty) {
-                notifier.createProject(name);
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text(l10n.confirm),
-          ),
-        ],
-      ),
+      title: l10n.deleteProject,
+      content: l10n.deleteProjectConfirm,
+      confirmText: l10n.delete,
+      isDestructive: true,
     );
+    if (confirmed == true) {
+      notifier.deleteProject(project.id);
+      if (context.mounted) Navigator.pop(pickerCtx);
+    }
+  }
+
+  void _showNewProjectDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) async {
+    final name = await AuroraBottomSheet.showInput(
+      context: context,
+      title: l10n.createProject,
+      hintText: l10n.novelName,
+    );
+    if (name != null && name.isNotEmpty) {
+      notifier.createProject(name);
+    }
   }
 
   Widget _buildWritingView(BuildContext context, AppLocalizations l10n, ThemeData theme, NovelWritingState state, NovelNotifier notifier) {
@@ -444,26 +410,19 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     );
   }
 
-  void _handleDecompose(BuildContext context, AppLocalizations l10n, NovelWritingState state, NovelNotifier notifier) {
+  void _handleDecompose(BuildContext context, AppLocalizations l10n, NovelWritingState state, NovelNotifier notifier) async {
     if (state.selectedProject?.chapters.isNotEmpty ?? false) {
-      showDialog(
+      final confirmed = await AuroraBottomSheet.showConfirm(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text(l10n.confirm),
-          content: Text(l10n.clearChaptersWarning),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-            TextButton(
-              onPressed: () {
-                notifier.clearChaptersAndTasks();
-                notifier.decomposeFromOutline();
-                Navigator.pop(context);
-              },
-              child: Text(l10n.confirm, style: const TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
+        title: l10n.confirm,
+        content: l10n.clearChaptersWarning,
+        confirmText: l10n.confirm,
+        isDestructive: true,
       );
+      if (confirmed == true) {
+        notifier.clearChaptersAndTasks();
+        notifier.decomposeFromOutline();
+      }
     } else {
       notifier.decomposeFromOutline();
     }
@@ -567,52 +526,28 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     );
   }
 
-  void _showDeleteChapterConfirm(BuildContext context, NovelChapter chapter, AppLocalizations l10n, NovelNotifier notifier) {
-    showDialog(
+  void _showDeleteChapterConfirm(BuildContext context, NovelChapter chapter, AppLocalizations l10n, NovelNotifier notifier) async {
+    final confirmed = await AuroraBottomSheet.showConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.confirm),
-        content: Text(l10n.deleteChapterConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-          TextButton(
-            onPressed: () {
-              notifier.deleteChapter(chapter.id);
-              Navigator.pop(ctx);
-            },
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: l10n.confirm,
+      content: l10n.deleteChapterConfirm,
+      confirmText: l10n.delete,
+      isDestructive: true,
     );
+    if (confirmed == true) {
+      notifier.deleteChapter(chapter.id);
+    }
   }
 
-  void _showNewChapterDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) {
-    _newChapterController.clear();
-    showDialog(
+  void _showNewChapterDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) async {
+    final title = await AuroraBottomSheet.showInput(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.addChapter),
-        content: TextField(
-          controller: _newChapterController,
-          autofocus: true,
-          decoration: InputDecoration(hintText: l10n.chapterTitle),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
-          TextButton(
-            onPressed: () {
-              final title = _newChapterController.text.trim();
-              if (title.isNotEmpty) {
-                notifier.addChapter(title);
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text(l10n.confirm),
-          ),
-        ],
-      ),
+      title: l10n.addChapter,
+      hintText: l10n.chapterTitle,
     );
+    if (title != null && title.isNotEmpty) {
+      notifier.addChapter(title);
+    }
   }
 
   Widget _getStatusIcon(TaskStatus status) {

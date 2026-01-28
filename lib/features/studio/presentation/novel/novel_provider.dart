@@ -1845,8 +1845,11 @@ $suggestions
   void setOutlinePrompt(String prompt) {
     if (state.outlineModel != null) {
       state = state.copyWith(outlineModel: state.outlineModel!.copyWith(systemPrompt: prompt));
-      _saveState();
+    } else {
+      // Create a placeholder config to store the prompt even when no model is selected
+      state = state.copyWith(outlineModel: NovelModelConfig(providerId: '', modelId: '', systemPrompt: prompt));
     }
+    _saveState();
   }
 
   void setDecomposeModel(NovelModelConfig? config) {
@@ -1857,8 +1860,10 @@ $suggestions
   void setDecomposePrompt(String prompt) {
     if (state.decomposeModel != null) {
       state = state.copyWith(decomposeModel: state.decomposeModel!.copyWith(systemPrompt: prompt));
-      _saveState();
+    } else {
+      state = state.copyWith(decomposeModel: NovelModelConfig(providerId: '', modelId: '', systemPrompt: prompt));
     }
+    _saveState();
   }
 
   void setWriterModel(NovelModelConfig? config) {
@@ -1869,8 +1874,10 @@ $suggestions
   void setWriterPrompt(String prompt) {
     if (state.writerModel != null) {
       state = state.copyWith(writerModel: state.writerModel!.copyWith(systemPrompt: prompt));
-      _saveState();
+    } else {
+      state = state.copyWith(writerModel: NovelModelConfig(providerId: '', modelId: '', systemPrompt: prompt));
     }
+    _saveState();
   }
 
   void setReviewerModel(NovelModelConfig? config) {
@@ -1881,8 +1888,10 @@ $suggestions
   void setReviewerPrompt(String prompt) {
     if (state.reviewerModel != null) {
       state = state.copyWith(reviewerModel: state.reviewerModel!.copyWith(systemPrompt: prompt));
-      _saveState();
+    } else {
+      state = state.copyWith(reviewerModel: NovelModelConfig(providerId: '', modelId: '', systemPrompt: prompt));
     }
+    _saveState();
   }
 
   // ========== Novel Prompt Presets ==========

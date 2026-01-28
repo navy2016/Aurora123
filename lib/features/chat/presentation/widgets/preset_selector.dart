@@ -118,7 +118,7 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
     items.add(fluent.CommandBarButton(
       onPressed: () {
         _removeOverlay();
-        ref.read(desktopActiveTabProvider.notifier).state = 2;
+        ref.read(desktopActiveTabProvider.notifier).state = 4;
         ref.read(settingsPageIndexProvider.notifier).state = 2;
       },
       label: fluent.Padding(

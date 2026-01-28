@@ -1,9 +1,9 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import 'custom_dropdown_overlay.dart';
-
 import 'package:aurora/l10n/app_localizations.dart';
 
 class ModelSelector extends ConsumerStatefulWidget {
@@ -240,84 +240,65 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
     String? selected,
     Future<void> Function(String, String) switchModel,
   ) {
-    showModalBottomSheet(
+    final l10n = AppLocalizations.of(context)!;
+    AuroraBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  AppLocalizations.of(context)!.switchModel,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              const Divider(height: 1),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final provider in providers) ...[
-                      if (provider.isEnabled && provider.models.isNotEmpty) ...[
-                        ListTile(
-                          dense: true,
-                          enabled: false,
-                          title: Text(
-                            provider.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ),
-                          ),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AuroraBottomSheet.buildTitle(context, l10n.switchModel),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final provider in providers) ...[
+                  if (provider.isEnabled && provider.models.isNotEmpty) ...[
+                    ListTile(
+                      dense: true,
+                      enabled: false,
+                      title: Text(
+                        provider.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
                         ),
-                        for (final model in provider.models)
-                          if (provider.isModelEnabled(model))
-                            ListTile(
-                              contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                              leading: Icon(
-                                activeProvider.id == provider.id && selected == model
-                                    ? Icons.check_circle
-                                    : Icons.circle_outlined,
-                                color: activeProvider.id == provider.id && selected == model
-                                    ? Theme.of(context).primaryColor
-                                    : null,
-                              ),
-                              title: Text(model),
-                              onTap: () async {
-                                Navigator.pop(ctx);
-                                await switchModel(provider.id, model);
-                              },
-                            ),
-                        if (provider != providers.where((p) => p.isEnabled && p.models.isNotEmpty).last)
-                          const Divider(),
-                      ],
-                    ],
+                      ),
+                    ),
+                    for (final model in provider.models)
+                      if (provider.isModelEnabled(model))
+                        ListTile(
+                          contentPadding:
+                              const EdgeInsets.only(left: 32, right: 16),
+                          leading: Icon(
+                            activeProvider.id == provider.id &&
+                                    selected == model
+                                ? Icons.check_circle
+                                : Icons.circle_outlined,
+                            color: activeProvider.id == provider.id &&
+                                    selected == model
+                                ? Theme.of(context).primaryColor
+                                : null,
+                          ),
+                          title: Text(model),
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await switchModel(provider.id, model);
+                          },
+                        ),
+                    if (provider !=
+                        providers
+                            .where((p) => p.isEnabled && p.models.isNotEmpty)
+                            .last)
+                      const Divider(),
                   ],
-                ),
-              ),
-            ],
+                ],
+              ],
+            ),
           ),
-        );
-      },
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 }

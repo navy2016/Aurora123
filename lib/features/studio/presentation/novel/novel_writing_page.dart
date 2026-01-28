@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'widgets/model_config_dialog.dart';
 import 'widgets/create_project_dialog.dart';
 import 'novel_provider.dart';
@@ -1160,65 +1161,26 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  void _showNewChapterDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) {
-    showDialog(
+  void _showNewChapterDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) async {
+    final title = await AuroraBottomSheet.showInput(
       context: context,
-      builder: (ctx) => ContentDialog(
-        title: Text(l10n.addChapter),
-        content: TextBox(
-          controller: _newChapterController,
-          placeholder: l10n.chapterTitle,
-          autofocus: true,
-        ),
-        actions: [
-          Button(child: Text(l10n.close), onPressed: () => Navigator.pop(ctx)),
-          FilledButton(
-            child: Text(l10n.add),
-            onPressed: () {
-              if (_newChapterController.text.trim().isNotEmpty) {
-                notifier.addChapter(_newChapterController.text.trim());
-                _newChapterController.clear();
-                Navigator.pop(ctx);
-              }
-            },
-          ),
-        ],
-      ),
+      title: l10n.addChapter,
+      hintText: l10n.chapterTitle,
     );
+    if (title != null && title.trim().isNotEmpty) {
+      notifier.addChapter(title.trim());
+    }
   }
 
-  void _showNewTaskDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier, String chapterId) {
-    final controller = TextEditingController();
-    showDialog(
+  void _showNewTaskDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier, String chapterId) async {
+    final task = await AuroraBottomSheet.showInput(
       context: context,
-      builder: (ctx) => ContentDialog(
-        title: Text(l10n.createTask),
-        content: TextBox(
-          controller: controller,
-          placeholder: l10n.taskDescription,
-          autofocus: true,
-          onSubmitted: (value) {
-             if (value.trim().isNotEmpty) {
-                notifier.selectChapter(chapterId);
-                notifier.addTask(value.trim());
-                Navigator.pop(ctx);
-             }
-          },
-        ),
-        actions: [
-          Button(child: Text(l10n.close), onPressed: () => Navigator.pop(ctx)),
-          FilledButton(
-            child: Text(l10n.add),
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                notifier.selectChapter(chapterId);
-                notifier.addTask(controller.text.trim());
-                Navigator.pop(ctx);
-              }
-            },
-          ),
-        ],
-      ),
+      title: l10n.createTask,
+      hintText: l10n.taskDescription,
     );
+    if (task != null && task.trim().isNotEmpty) {
+      notifier.selectChapter(chapterId);
+      notifier.addTask(task.trim());
+    }
   }
 }
