@@ -24,8 +24,8 @@
   "translationResultPlaceholder": "翻译结果将显示在这里",
   "selectModel": "选择模型",
   "switchModel": "切换模型",
-  "deepThinking": "深度思考中...",
-  "deepThoughtFinished": "已深度思考 (用时 {duration} 秒)",
+  "deepThinking": "思考中...",
+  "deepThoughtFinished": "已思考 (用时 {duration} 秒)",
   "@deepThoughtFinished": {
     "placeholders": {
       "duration": {
@@ -108,7 +108,7 @@
   "settings": "设置",
   "modelProvider": "模型提供",
   "chatSettings": "对话设置",
-  "displaySettings": "界面设置",
+  "displaySettings": "外观设置",
   "dataSettings": "数据设置",
   "usageStats": "数据统计",
   "agentSkills": "技能",
@@ -127,7 +127,7 @@
   "updateSkill": "更新插件",
   "saveSuccess": "保存成功",
   "enabled": "已启用",
-  "disabled": "已停用",
+  "disabled": "已禁用",
   "skillName": "插件文件夹名称",
   "skillNameHint": "输入文件夹名称 (如 translation_helper)",
   
@@ -213,13 +213,13 @@
       "count": {"type": "int"}
     }
   },
-  "averageDuration": "平均: {duration}秒",
+  "averageDuration": "平均: {duration}s",
   "@averageDuration": {
     "placeholders": {
       "duration": {"type": "String"}
     }
   },
-  "averageFirstToken": "FirstToken: {duration}秒",
+  "averageFirstToken": "TTFT: {duration}s",
   "@averageFirstToken": {
     "placeholders": {
       "duration": {"type": "String"}
@@ -413,7 +413,7 @@
   "defaultPreset": "默认",
   "newPreset": "新建自定义预设",
   "editPreset": "编辑预设",
-  "managePresets": "管理预设",
+  "managePresets": "预设管理",
   "presetName": "预设名称",
   "presetDescription": "描述 (可选)",
   "systemPrompt": "系统提示词",
@@ -443,10 +443,6 @@
   "errorServerError": "服务器错误 (5XX)",
   "errorRateLimit": "限流 (429)",
   "errorUnknown": "其他错误",
-  "averageDuration": "平均",
-  "averageFirstToken": "FirstToken",
-  "tokensPerSecond": "Token/s",
-  "cumulativeToken": "累计Token",
   "clearStats": "清除数据",
   "clearStatsConfirm": "确定要清除所有统计数据吗？此操作无法撤销。",
   "clearData": "清除数据",

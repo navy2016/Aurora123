@@ -613,13 +613,13 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                         const SizedBox(width: 8),
                                         ActionButton(
                                             icon: fluent.FluentIcons.cancel,
-                                            tooltip: 'Cancel',
+                                            tooltip: AppLocalizations.of(context)?.cancel ?? 'Cancel',
                                             onPressed: () => setState(
                                                 () => _isEditing = false)),
                                         const SizedBox(width: 4),
                                         ActionButton(
                                             icon: fluent.FluentIcons.save,
-                                            tooltip: 'Save',
+                                            tooltip: AppLocalizations.of(context)?.save ?? 'Save',
                                             onPressed: _saveEdit),
                                         if (message.isUser) ...[
                                           const SizedBox(width: 4),
@@ -729,7 +729,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                             ),
                                           ),
                                           Text(
-                                            'First: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
+                                            '${AppLocalizations.of(context)?.averageFirstToken((message.firstTokenMs! / 1000).toStringAsFixed(2)) ?? 'TTFT: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s'}',
                                             style: TextStyle(
                                               fontSize: 10,
                                               color: theme.typography.body?.color?.withOpacity(0.5),

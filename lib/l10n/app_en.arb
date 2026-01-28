@@ -24,8 +24,8 @@
   "translationResultPlaceholder": "Translation result will be shown here",
   "selectModel": "Select Model",
   "switchModel": "Switch Model",
-  "deepThinking": "Deep Thinking...",
-  "deepThoughtFinished": "Deep Thought ({duration}s)",
+  "deepThinking": "Thinking...",
+  "deepThoughtFinished": "Thought for {duration}s",
   "@deepThoughtFinished": {
     "placeholders": {
       "duration": {
@@ -108,7 +108,7 @@
   "settings": "Settings",
   "modelProvider": "Model Provider",
   "chatSettings": "Chat Settings",
-  "displaySettings": "UI Settings",
+  "displaySettings": "Display Settings",
   "dataSettings": "Data Settings",
   "usageStats": "Usage Statistics",
   "agentSkills": "Skills",
@@ -213,13 +213,13 @@
       "count": {"type": "int"}
     }
   },
-  "averageDuration": "Avg: {duration}s",
+  "averageDuration": "Avg Duration: {duration}s",
   "@averageDuration": {
     "placeholders": {
       "duration": {"type": "String"}
     }
   },
-  "averageFirstToken": "FirstToken: {duration}s",
+  "averageFirstToken": "TTFT: {duration}s",
   "@averageFirstToken": {
     "placeholders": {
       "duration": {"type": "String"}
@@ -260,11 +260,11 @@
   "novelName": "Novel Name",
   "chapterTitle": "Chapter Title",
   "chapters": "Chapters",
-  "novelStructure": "Structure",
+  "novelStructure": "Novel Structure",
   "modelConfig": "Model Config",
-  "reviewModel": "Check",
+  "reviewModel": "Review",
   "writerModel": "Writer Model",
-  "decomposeModel": "Decomposition Model",
+  "decomposeModel": "Structure Model",
   "project": "Project",
   "selectProject": "Select Project",
   "createProject": "New Project",
@@ -272,7 +272,7 @@
   "deleteProjectConfirm": "Are you sure you want to delete this project?",
   "deleteChapterConfirm": "Are you sure you want to delete this chapter?",
   "writing": "Writing",
-  "context": "Context",
+  "context": "World Settings",
   "preview": "Preview",
   "stopTask": "Stop",
   "startWriting": "Start",
@@ -443,10 +443,6 @@
   "errorServerError": "Server Error (5XX)",
   "errorRateLimit": "Rate Limit (429)",
   "errorUnknown": "Other Error",
-  "averageDuration": "Average",
-  "averageFirstToken": "FirstToken",
-  "tokensPerSecond": "Tokens/s",
-  "cumulativeToken": "Total Tokens",
   "clearStats": "Clear Stats",
   "clearStatsConfirm": "Are you sure you want to clear all statistics? This cannot be undone.",
   "clearData": "Clear Data",

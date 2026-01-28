@@ -233,13 +233,13 @@ abstract class AppLocalizations {
   /// No description provided for @deepThinking.
   ///
   /// In zh, this message translates to:
-  /// **'深度思考中...'**
+  /// **'思考中...'**
   String get deepThinking;
 
   /// No description provided for @deepThoughtFinished.
   ///
   /// In zh, this message translates to:
-  /// **'已深度思考 (用时 {duration} 秒)'**
+  /// **'已思考 (用时 {duration} 秒)'**
   String deepThoughtFinished(String duration);
 
   /// No description provided for @thoughtChain.
@@ -515,7 +515,7 @@ abstract class AppLocalizations {
   /// No description provided for @disabled.
   ///
   /// In zh, this message translates to:
-  /// **'已停用'**
+  /// **'已禁用'**
   String get disabled;
 
   /// No description provided for @loading.
@@ -563,7 +563,7 @@ abstract class AppLocalizations {
   /// No description provided for @displaySettings.
   ///
   /// In zh, this message translates to:
-  /// **'界面设置'**
+  /// **'外观设置'**
   String get displaySettings;
 
   /// No description provided for @dataSettings.
@@ -1013,13 +1013,13 @@ abstract class AppLocalizations {
   /// No description provided for @averageDuration.
   ///
   /// In zh, this message translates to:
-  /// **'平均'**
+  /// **'平均: {duration}s'**
   String averageDuration(String duration);
 
   /// No description provided for @averageFirstToken.
   ///
   /// In zh, this message translates to:
-  /// **'FirstToken'**
+  /// **'TTFT: {duration}s'**
   String averageFirstToken(String duration);
 
   /// No description provided for @totalTokensCount.
@@ -1031,7 +1031,7 @@ abstract class AppLocalizations {
   /// No description provided for @tokensPerSecond.
   ///
   /// In zh, this message translates to:
-  /// **'Token/s'**
+  /// **'Token/s: {tps}'**
   String tokensPerSecond(String tps);
 
   /// No description provided for @mobileSettings.
@@ -1961,7 +1961,7 @@ abstract class AppLocalizations {
   /// No description provided for @managePresets.
   ///
   /// In zh, this message translates to:
-  /// **'管理预设'**
+  /// **'预设管理'**
   String get managePresets;
 
   /// No description provided for @presetName.
@@ -2089,12 +2089,6 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'其他错误'**
   String get errorUnknown;
-
-  /// No description provided for @cumulativeToken.
-  ///
-  /// In zh, this message translates to:
-  /// **'累计Token'**
-  String get cumulativeToken;
 
   /// No description provided for @bgDefault.
   ///

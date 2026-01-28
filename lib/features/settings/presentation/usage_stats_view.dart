@@ -395,7 +395,7 @@ class UsageStatsView extends ConsumerWidget {
       case 'tokensPerSecond':
         return isZh ? 'Token/s' : 'Tokens/s';
       case 'averageFirstToken':
-        return isZh ? 'FirstToken' : 'First Token';
+        return isZh ? 'TTFT' : 'TTFT';
       case 'averageDuration':
         return isZh ? '平均' : 'Average';
       case 'clearStats':
@@ -819,7 +819,7 @@ class _ModelStatsList extends StatelessWidget {
       case 'tokensPerSecond':
         return isZh ? 'Token/s' : 'Tokens/s';
       case 'averageFirstToken':
-        return isZh ? 'FirstToken' : 'First Token';
+        return isZh ? 'TTFT' : 'TTFT';
       case 'averageDuration':
         return isZh ? '平均' : 'Average';
       case 'prompt':
