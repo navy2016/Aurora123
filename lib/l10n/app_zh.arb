@@ -322,6 +322,9 @@
   "reviewing": "审查中",
   "decomposing": "拆解中",
   "deleteProjectConfirm": "确定要删除这个项目吗？",
+  "noProjectSelected": "未选择项目",
+  "createYourFirstProject": "开始你的创作吧",
+  "createProjectDescription": "新建一个项目来开始编写你的故事大纲和章节。",
   
   "aboutAurora": "关于 Aurora",
   "crossPlatformLlmClient": "一个跨平台 LLM 客户端",
@@ -567,5 +570,11 @@
   },
   "outline": "大纲",
   "outlineModel": "大纲模型",
-  "savePresetOverrideHint": "保存当前配置覆盖选中的预设"
+  "savePresetOverrideHint": "保存当前配置覆盖选中的预设",
+  "selectiveBackup": "可选备份",
+  "backupChatHistory": "聊天记录",
+  "backupChatPresets": "Prompt 预设",
+  "backupProviderConfigs": "模型供应商配置",
+  "backupStudioContent": "Studio 内容",
+  "noOptionsSelected": "请至少选择一项进行备份"
 }

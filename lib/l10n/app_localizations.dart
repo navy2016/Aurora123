@@ -1508,6 +1508,24 @@ abstract class AppLocalizations {
   /// **'拆解中'**
   String get decomposing;
 
+  /// No description provided for @noProjectSelected.
+  ///
+  /// In zh, this message translates to:
+  /// **'未选择项目'**
+  String get noProjectSelected;
+
+  /// No description provided for @createYourFirstProject.
+  ///
+  /// In zh, this message translates to:
+  /// **'开始你的创作吧'**
+  String get createYourFirstProject;
+
+  /// No description provided for @createProjectDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建一个项目来开始编写你的故事大纲和章节。'**
+  String get createProjectDescription;
+
   /// No description provided for @aboutAurora.
   ///
   /// In zh, this message translates to:
@@ -2713,6 +2731,42 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'保存当前配置覆盖选中的预设'**
   String get savePresetOverrideHint;
+
+  /// No description provided for @selectiveBackup.
+  ///
+  /// In zh, this message translates to:
+  /// **'可选备份'**
+  String get selectiveBackup;
+
+  /// No description provided for @backupChatHistory.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天记录'**
+  String get backupChatHistory;
+
+  /// No description provided for @backupChatPresets.
+  ///
+  /// In zh, this message translates to:
+  /// **'Prompt 预设'**
+  String get backupChatPresets;
+
+  /// No description provided for @backupProviderConfigs.
+  ///
+  /// In zh, this message translates to:
+  /// **'模型供应商配置'**
+  String get backupProviderConfigs;
+
+  /// No description provided for @backupStudioContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'Studio 内容'**
+  String get backupStudioContent;
+
+  /// No description provided for @noOptionsSelected.
+  ///
+  /// In zh, this message translates to:
+  /// **'请至少选择一项进行备份'**
+  String get noOptionsSelected;
 }
 
 class _AppLocalizationsDelegate

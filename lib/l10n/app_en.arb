@@ -322,6 +322,9 @@
   "reviewing": "Reviewing",
   "decomposing": "Decomposing",
   "deleteProjectConfirm": "Are you sure you want to delete this project?",
+  "noProjectSelected": "No Project Selected",
+  "createYourFirstProject": "Start Your Creative Journey",
+  "createProjectDescription": "Create a new project to start building your story outline and chapters.",
   
   "aboutAurora": "About Aurora",
   "crossPlatformLlmClient": "A cross-platform LLM client",
@@ -567,5 +570,11 @@
   },
   "outline": "Outline",
   "outlineModel": "Outline Model",
-  "savePresetOverrideHint": "Save current config and overwrite selected preset"
+  "savePresetOverrideHint": "Save current config and overwrite selected preset",
+  "selectiveBackup": "Selective Backup",
+  "backupChatHistory": "Chat History",
+  "backupChatPresets": "Prompt Presets",
+  "backupProviderConfigs": "Model Provider Configs",
+  "backupStudioContent": "Studio Content",
+  "noOptionsSelected": "Please select at least one option to backup"
 }
