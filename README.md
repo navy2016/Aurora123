@@ -1,22 +1,21 @@
-<p align="center">
+<div align="center">
   <img src="assets/icon/app_icon.png" width="128" />
-</p>
-
-# Aurora
-
-[中文](README_zh.md)
-
-A clean, native-style LLM Chat Client for all platforms.
+  <h1>Aurora</h1>
+  <p>A clean, native-style LLM Chat Client for all platforms.</p>
+  <a href="README_zh.md">中文</a>
+</div>
 
 ## Preview
 
 <p align="center">
-  <img src="docs/images/1.jpeg" width="24%" />
-  <img src="docs/images/3.png" width="48%" />
+  <img src="docs/images/1.jpeg" height="340" />
+  <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+  <img src="docs/images/3.png" height="340" />
 </p>
 <p align="center">
-  <img src="docs/images/2.jpg" width="24%" />
-  <img src="docs/images/4.png" width="48%" />
+  <img src="docs/images/2.jpg" height="340" />
+  <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+  <img src="docs/images/4.png" height="340" />
 </p>
 
 ## Platforms

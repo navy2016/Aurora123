@@ -1,22 +1,21 @@
-<p align="center">
+<div align="center">
   <img src="assets/icon/app_icon.png" width="128" />
-</p>
-
-# Aurora
-
-[English](README.md)
-
-基于 Flutter 开发的跨平台 LLM 聊天客户端。
+  <h1>Aurora</h1>
+  <p>基于 Flutter 开发的跨平台 LLM 聊天客户端。</p>
+  <a href="README.md">English</a>
+</div>
 
 ## 预览
 
 <p align="center">
-  <img src="docs/images/1.jpeg" width="24%" />
-  <img src="docs/images/3.png" width="48%" />
+  <img src="docs/images/1.jpeg" height="340" />
+  <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+  <img src="docs/images/3.png" height="340" />
 </p>
 <p align="center">
-  <img src="docs/images/2.jpg" width="24%" />
-  <img src="docs/images/4.png" width="48%" />
+  <img src="docs/images/2.jpg" height="340" />
+  <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+  <img src="docs/images/4.png" height="340" />
 </p>
 
 ## 平台支持
