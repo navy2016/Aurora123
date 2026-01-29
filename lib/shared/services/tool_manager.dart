@@ -56,7 +56,7 @@ class ToolManager {
   }
 
   Future<String> executeTool(String name, Map<String, dynamic> args,
-      {String preferredEngine = 'duckduckgo', List<Skill> skills = const []}) async {
+      {String preferredEngine = 'bing', List<Skill> skills = const []}) async {
     if (name == 'SearchWeb') {
       return await _searchWeb(args['query'] ?? '', preferredEngine);
     }
@@ -191,9 +191,7 @@ class ToolManager {
       {String region = 'us-en'}) async {
     final enginesToTry = {
       preferredEngine,
-      'duckduckgo',
       'bing',
-      'google',
     }.toList();
     List<Map<String, dynamic>> finalResults = [];
     String successfulEngine = '';
