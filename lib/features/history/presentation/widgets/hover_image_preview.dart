@@ -1,19 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
-class HoverImagePreview extends StatefulWidget {
-  final String imagePath;
+class HoverAttachmentPreview extends StatefulWidget {
+  final String filePath;
   final Widget child;
-  const HoverImagePreview({
+  const HoverAttachmentPreview({
     Key? key,
-    required this.imagePath,
+    required this.filePath,
     required this.child,
   }) : super(key: key);
   @override
-  State<HoverImagePreview> createState() => _HoverImagePreviewState();
+  State<HoverAttachmentPreview> createState() => _HoverAttachmentPreviewState();
 }
 
-class _HoverImagePreviewState extends State<HoverImagePreview> {
+class _HoverAttachmentPreviewState extends State<HoverAttachmentPreview> {
   OverlayEntry? _overlayEntry;
   final LayerLink _layerLink = LayerLink();
   void _showPreview() {
@@ -27,8 +27,31 @@ class _HoverImagePreviewState extends State<HoverImagePreview> {
   }
 
   OverlayEntry _createOverlayEntry() {
-    RenderBox renderBox = context.findRenderObject() as RenderBox;
-    var size = renderBox.size;
+    final path = widget.filePath.toLowerCase();
+    final isImage = path.endsWith('.png') ||
+        path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.webp') ||
+        path.endsWith('.gif') ||
+        path.endsWith('.bmp');
+    final isAudio = path.endsWith('.mp3') ||
+        path.endsWith('.wav') ||
+        path.endsWith('.m4a') ||
+        path.endsWith('.flac') ||
+        path.endsWith('.ogg') ||
+        path.endsWith('.opus');
+    final isVideo = path.endsWith('.mp4') ||
+        path.endsWith('.mov') ||
+        path.endsWith('.avi') ||
+        path.endsWith('.webm') ||
+        path.endsWith('.mkv');
+    final isPdf = path.endsWith('.pdf');
+
+    IconData iconData = Icons.insert_drive_file;
+    if (isAudio) iconData = Icons.audiotrack;
+    if (isVideo) iconData = Icons.videocam;
+    if (isPdf) iconData = Icons.picture_as_pdf;
+
     return OverlayEntry(
       builder: (context) => Positioned(
         width: 250,
@@ -47,29 +70,26 @@ class _HoverImagePreviewState extends State<HoverImagePreview> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: Image.file(
-                      File(widget.imagePath),
-                      height: 200,
-                      width: 234,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        height: 200,
-                        color: Colors.grey,
-                        alignment: Alignment.center,
-                        child:
-                            const Icon(Icons.broken_image, color: Colors.white),
-                      ),
-                    ),
+                    child: isImage
+                        ? Image.file(
+                            File(widget.filePath),
+                            height: 200,
+                            width: 234,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                _buildIconPreview(Icons.broken_image),
+                          )
+                        : _buildIconPreview(iconData),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.imagePath.split(Platform.pathSeparator).last,
+                    widget.filePath.split(Platform.pathSeparator).last,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    _getFileSize(widget.imagePath),
+                    _getFileSize(widget.filePath),
                     style: const TextStyle(color: Colors.white70, fontSize: 10),
                   )
                 ],
@@ -81,6 +101,16 @@ class _HoverImagePreviewState extends State<HoverImagePreview> {
     );
   }
 
+  Widget _buildIconPreview(IconData icon) {
+    return Container(
+      height: 200,
+      width: 234,
+      color: Colors.grey.withOpacity(0.2),
+      alignment: Alignment.center,
+      child: Icon(icon, color: Colors.white, size: 64),
+    );
+  }
+
   String _getFileSize(String path) {
     try {
       final file = File(path);
@@ -89,7 +119,9 @@ class _HoverImagePreviewState extends State<HoverImagePreview> {
         if (bytes < 1024) return '$bytes B';
         if (bytes < 1024 * 1024)
           return '${(bytes / 1024).toStringAsFixed(1)} KB';
-        return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+        if (bytes < 1024 * 1024 * 1024)
+          return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+        return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
       }
     } catch (_) {}
     return '';

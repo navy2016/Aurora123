@@ -513,78 +513,12 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                                   padding:
                                                       const EdgeInsets.only(
                                                           right: 8),
-                                                  child: HoverImagePreview(
-                                                    imagePath:
-                                                        _newAttachments[index],
-                                                    child: MouseRegion(
-                                                      cursor: SystemMouseCursors
-                                                          .click,
-                                                      child: GestureDetector(
-                                                        onTap: () => setState(
-                                                            () =>
-                                                                _newAttachments
-                                                                    .removeAt(
-                                                                        index)),
-                                                        child: Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 4),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: theme
-                                                                .accentColor
-                                                                .withOpacity(
-                                                                    0.1),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        12),
-                                                            border: Border.all(
-                                                                color: theme
-                                                                    .accentColor
-                                                                    .withOpacity(
-                                                                        0.3)),
-                                                          ),
-                                                          child: Row(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: [
-                                                              ConstrainedBox(
-                                                                constraints:
-                                                                    const BoxConstraints(
-                                                                        maxWidth:
-                                                                            100),
-                                                                child: Text(
-                                                                  _newAttachments[
-                                                                          index]
-                                                                      .split(Platform
-                                                                          .pathSeparator)
-                                                                      .last,
-                                                                  style: const TextStyle(
-                                                                      fontSize:
-                                                                          12),
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .ellipsis,
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 4),
-                                                              Icon(
-                                                                  fluent
-                                                                      .FluentIcons
-                                                                      .chrome_close,
-                                                                  size: 8,
-                                                                  color: theme
-                                                                      .accentColor),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
+                                                  child: _buildFileAttachmentPill(
+                                                    _newAttachments[index],
+                                                    theme,
+                                                    onDelete: () => setState(
+                                                        () => _newAttachments
+                                                            .removeAt(index)),
                                                   ),
                                                 ),
                                               ),
@@ -660,29 +594,29 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     textColor: theme.typography.body!.color!,
                                   ),
                                 ),
-                              if (isUser &&
-                                  message.attachments.isNotEmpty &&
-                                  !_isEditing) ...[
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: message.attachments
-                                      .where((path) {
-                                        final ext = path.toLowerCase();
-                                        return ext.endsWith('.png') ||
-                                            ext.endsWith('.jpg') ||
-                                            ext.endsWith('.jpeg') ||
-                                            ext.endsWith('.webp') ||
-                                            ext.endsWith('.gif');
-                                      })
-                                      .map((path) => ChatImageBubble(
-                                            key: ValueKey(path.hashCode),
-                                            imageUrl: path,
-                                          ))
-                                      .toList(),
-                                ),
-                              ],
+                               if (message.attachments.isNotEmpty &&
+                                   !_isEditing) ...[
+                                 const SizedBox(height: 8),
+                                 Wrap(
+                                   spacing: 8,
+                                   runSpacing: 8,
+                                   children: message.attachments.map((path) {
+                                     final ext = path.toLowerCase();
+                                     final isImage = ext.endsWith('.png') ||
+                                         ext.endsWith('.jpg') ||
+                                         ext.endsWith('.jpeg') ||
+                                         ext.endsWith('.webp') ||
+                                         ext.endsWith('.gif');
+                                     if (isImage) {
+                                       return ChatImageBubble(
+                                         key: ValueKey(path.hashCode),
+                                         imageUrl: path,
+                                       );
+                                     }
+                                     return _buildFileAttachmentPill(path, theme);
+                                   }).toList(),
+                                 ),
+                               ],
                               if (message.images.isNotEmpty &&
                                   !(isUser && _isEditing)) ...[
                                 const SizedBox(height: 8),
@@ -875,6 +809,66 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                         ),
                       ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFileAttachmentPill(String path, fluent.FluentThemeData theme,
+      {VoidCallback? onDelete}) {
+    final pathLower = path.toLowerCase();
+    IconData iconData = Icons.insert_drive_file;
+    if (pathLower.endsWith('.mp3') ||
+        pathLower.endsWith('.wav') ||
+        pathLower.endsWith('.m4a') ||
+        pathLower.endsWith('.flac') ||
+        pathLower.endsWith('.ogg') ||
+        pathLower.endsWith('.opus')) {
+      iconData = Icons.audiotrack;
+    } else if (pathLower.endsWith('.mp4') ||
+        pathLower.endsWith('.mov') ||
+        pathLower.endsWith('.avi') ||
+        pathLower.endsWith('.webm') ||
+        pathLower.endsWith('.mkv')) {
+      iconData = Icons.videocam;
+    } else if (pathLower.endsWith('.pdf')) {
+      iconData = Icons.picture_as_pdf;
+    }
+
+    return HoverAttachmentPreview(
+      filePath: path,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onDelete,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.accentColor.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(iconData, size: 14, color: theme.accentColor),
+                const SizedBox(width: 4),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 150),
+                  child: Text(
+                    path.split(Platform.pathSeparator).last,
+                    style: const TextStyle(fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (onDelete != null) ...[
+                  const SizedBox(width: 4),
+                  Icon(fluent.FluentIcons.chrome_close,
+                      size: 8, color: theme.accentColor),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

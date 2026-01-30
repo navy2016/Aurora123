@@ -332,6 +332,7 @@
   
   "takePhoto": "Take Photo",
   "selectFromGallery": "Select from Gallery",
+  "selectVideo": "Select Video",
   "selectFile": "Select File",
   
   "stopGenerating": "Stop Generating",

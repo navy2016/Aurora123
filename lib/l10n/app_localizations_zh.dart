@@ -762,6 +762,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectFromGallery => '从相册选择';
 
   @override
+  String get selectVideo => '选择视频';
+
+  @override
   String get selectFile => '选择文件';
 
   @override

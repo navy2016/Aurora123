@@ -1556,6 +1556,12 @@ abstract class AppLocalizations {
   /// **'从相册选择'**
   String get selectFromGallery;
 
+  /// No description provided for @selectVideo.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择视频'**
+  String get selectVideo;
+
   /// No description provided for @selectFile.
   ///
   /// In zh, this message translates to:
