@@ -251,7 +251,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get displaySettings => '外观设置';
 
   @override
-  String get dataSettings => '数据设置';
+  String get dataSettings => '数据备份';
 
   @override
   String get usageStats => '数据统计';
@@ -760,6 +760,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get selectFromGallery => '从相册选择';
+
+  @override
+  String get selectVideo => '选择视频';
 
   @override
   String get selectFile => '选择文件';
@@ -1406,4 +1409,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noOptionsSelected => '请至少选择一项进行备份';
+
+  @override
+  String get pressAgainToExit => '再按一次退出应用';
+
+  @override
+  String get pleaseConfigureModel => '请先在设置中配置模型';
+
+  @override
+  String get version => '版本';
 }

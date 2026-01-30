@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
+import 'package:archive/archive.dart';
 import '../../features/chat/domain/message.dart';
 import '../../features/settings/presentation/settings_provider.dart';
 import 'llm_service.dart';
@@ -50,24 +51,30 @@ Future<List<Map<String, dynamic>>> _compressImagesTask(
         if (item is Map && item['type'] == 'image_url') {
           final imageUrl = item['image_url']?['url'];
           if (imageUrl is String && imageUrl.startsWith('data:')) {
-            final parts = imageUrl.split(',');
-            if (parts.length == 2) {
-              try {
-                final bytes = base64Decode(parts[1]);
-                final compressed =
-                    compressSingleImage(Uint8List.fromList(bytes));
-                newContentList.add({
-                  'type': 'image_url',
-                  'image_url': {
-                    'url': 'data:image/jpeg;base64,$compressed',
-                  },
-                  if (item.containsKey('thought_signature'))
-                    'thought_signature': item['thought_signature'],
-                });
-                continue;
-              } catch (e) {
-                newContentList.add(item);
-                continue;
+            final commaIndex = imageUrl.indexOf(',');
+            if (commaIndex != -1) {
+              final header = imageUrl.substring(0, commaIndex);
+              final mimeType = header.split(':')[1].split(';')[0];
+              
+              // Only attempt to compress if it's an image
+              if (mimeType.startsWith('image/')) {
+                try {
+                  final bytes = base64Decode(imageUrl.substring(commaIndex + 1));
+                  final compressed =
+                      compressSingleImage(Uint8List.fromList(bytes));
+                  newContentList.add({
+                    'type': 'image_url',
+                    'image_url': {
+                      'url': 'data:image/jpeg;base64,$compressed',
+                    },
+                    if (item.containsKey('thought_signature'))
+                      'thought_signature': item['thought_signature'],
+                  });
+                  continue;
+                } catch (e) {
+                  newContentList.add(item);
+                  continue;
+                }
               }
             }
           }
@@ -693,12 +700,49 @@ Use search for:
   }
 
   String _getMimeType(String path) {
-    if (path.toLowerCase().endsWith('png')) return 'image/png';
-    if (path.toLowerCase().endsWith('jpg') ||
-        path.toLowerCase().endsWith('jpeg')) return 'image/jpeg';
-    if (path.toLowerCase().endsWith('webp')) return 'image/webp';
-    if (path.toLowerCase().endsWith('gif')) return 'image/gif';
-    return 'image/jpeg';
+    final p = path.toLowerCase();
+    // Images
+    if (p.endsWith('png')) return 'image/png';
+    if (p.endsWith('jpg') || p.endsWith('jpeg')) return 'image/jpeg';
+    if (p.endsWith('webp')) return 'image/webp';
+    if (p.endsWith('gif')) return 'image/gif';
+    if (p.endsWith('bmp')) return 'image/bmp';
+
+    // Audio
+    if (p.endsWith('mp3')) return 'audio/mpeg';
+    if (p.endsWith('wav')) return 'audio/wav';
+    if (p.endsWith('m4a')) return 'audio/x-m4a';
+    if (p.endsWith('flac')) return 'audio/flac';
+    if (p.endsWith('ogg')) return 'audio/ogg';
+    if (p.endsWith('opus')) return 'audio/opus';
+    if (p.endsWith('aac')) return 'audio/aac';
+
+    // Video
+    if (p.endsWith('mp4')) return 'video/mp4';
+    if (p.endsWith('mov')) return 'video/quicktime';
+    if (p.endsWith('avi')) return 'video/x-msvideo';
+    if (p.endsWith('webm')) return 'video/webm';
+    if (p.endsWith('mkv')) return 'video/x-matroska';
+    if (p.endsWith('flv')) return 'video/x-flv';
+    if (p.endsWith('3gp')) return 'video/3gpp';
+    if (p.endsWith('mpg') || p.endsWith('mpeg')) return 'video/mpeg';
+
+    // Documents
+    if (p.endsWith('pdf')) return 'application/pdf';
+    if (p.endsWith('txt')) return 'text/plain';
+    if (p.endsWith('md')) return 'text/markdown';
+    if (p.endsWith('csv')) return 'text/csv';
+    if (p.endsWith('json')) return 'application/json';
+    if (p.endsWith('xml')) return 'application/xml';
+    if (p.endsWith('yaml') || p.endsWith('yml')) return 'text/yaml';
+    if (p.endsWith('docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (p.endsWith('doc')) return 'application/msword';
+    if (p.endsWith('xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    if (p.endsWith('xls')) return 'application/vnd.ms-excel';
+    if (p.endsWith('pptx')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    if (p.endsWith('ppt')) return 'application/vnd.ms-powerpoint';
+
+    return 'application/octet-stream';
   }
 
   Future<List<Map<String, dynamic>>> _buildApiMessages(
@@ -756,19 +800,76 @@ Use search for:
             final file = File(path);
             if (await file.exists()) {
               final bytes = await file.readAsBytes();
-              final base64Image = base64Encode(bytes);
+              final base64Data = base64Encode(bytes);
               final mimeType = _getMimeType(path);
-              contentList.add({
-                'type': 'image_url',
-                'image_url': {
-                  'url': 'data:$mimeType;base64,$base64Image',
-                },
-              });
+              
+              if (mimeType.startsWith('image/') || 
+                  mimeType.startsWith('audio/') || 
+                  mimeType.startsWith('video/') || 
+                  mimeType == 'application/pdf') {
+                // 由于反代层 (CLIProxyAPI) 目前仅处理 'image_url' 类型并从中提取 MIME，
+                // 我们必须统一使用该字段以确保音频/视频/PDF能被正确转发给 Gemini。
+                contentList.add({
+                  'type': 'image_url',
+                  'image_url': {
+                    'url': 'data:$mimeType;base64,$base64Data',
+                  },
+                });
+              } else if (mimeType.endsWith('officedocument.wordprocessingml.document') || 
+                         mimeType == 'application/msword') {
+                // Perform deep extraction (Text + Images) for Word documents
+                final docxParts = _extractDocxContent(bytes, path.split(Platform.pathSeparator).last);
+                if (docxParts.isNotEmpty) {
+                  contentList.addAll(docxParts);
+                } else {
+                  // Fallback to binary transmission via image_url (the only multimodal channel we have)
+                  contentList.add({
+                    'type': 'image_url',
+                    'image_url': {
+                      'url': 'data:$mimeType;base64,$base64Data',
+                    },
+                  });
+                }
+              } else if (mimeType.contains('officedocument') ||
+                         mimeType == 'application/vnd.ms-excel' ||
+                         mimeType == 'application/vnd.ms-powerpoint' ||
+                         mimeType == 'application/vnd.ms-excel') {
+                // Other Office documents: send as binary via image_url and hope for the best
+                contentList.add({
+                  'type': 'image_url',
+                  'image_url': {
+                    'url': 'data:$mimeType;base64,$base64Data',
+                  },
+                });
+              } else if (mimeType.startsWith('text/') || 
+                         mimeType == 'application/json' || 
+                         mimeType == 'application/xml') {
+                try {
+                  final textContent = await file.readAsString();
+                  contentList.add({
+                    'type': 'text',
+                    'text': '--- File: ${path.split(Platform.pathSeparator).last} ---\n$textContent\n--- End File ---',
+                  });
+                } catch (e) {
+                  // Fallback to placeholder if read fails (e.g. encoding issue)
+                  contentList.add({
+                    'type': 'text',
+                    'text': '[Attached File: ${path.split(Platform.pathSeparator).last} ($mimeType)]',
+                  });
+                }
+              } else {
+                // Fallback for other documents: send as text or metadata if possible
+                // For now, just a placeholder indicator
+                contentList.add({
+                  'type': 'text',
+                  'text': '[Attached File: ${path.split(Platform.pathSeparator).last} ($mimeType)]',
+                });
+              }
             }
           } catch (e) {
             contentList.add({
               'type': 'text',
-              'text': '[Failed to load image: $path]',
+              'text': '[Failed to load file: $path]',
             });
           }
         }
@@ -1205,5 +1306,68 @@ Use search for:
         : otherMessages;
 
     return [...systemMessages, ...keptOthers];
+  }
+
+  List<Map<String, dynamic>> _extractDocxContent(Uint8List bytes, String fileName) {
+    final List<Map<String, dynamic>> parts = [];
+    try {
+      final archive = ZipDecoder().decodeBytes(bytes);
+      
+      // 1. Extract Text
+      final documentFile = archive.findFile('word/document.xml');
+      if (documentFile != null) {
+        final content = utf8.decode(documentFile.content as List<int>);
+        
+        // Simple regex to extract text within <w:t> tags
+        final tRegExp = RegExp(r'<w:t[^>]*>(.*?)<\/w:t>');
+        
+        // Find all paragraph nodes <w:p>
+        final pRegExp = RegExp(r'<w:p[^>]*>(.*?)<\/w:p>');
+        final pMatches = pRegExp.allMatches(content);
+        
+        final StringBuffer sb = StringBuffer();
+        for (final pMatch in pMatches) {
+          final pContent = pMatch.group(1) ?? '';
+          final tMatches = tRegExp.allMatches(pContent);
+          for (final tMatch in tMatches) {
+            sb.write(tMatch.group(1));
+          }
+          sb.write('\n'); // Add newline after each paragraph
+        }
+        
+        final text = sb.toString().trim();
+        if (text.isNotEmpty) {
+          parts.add({
+            'type': 'text',
+            'text': '--- File: $fileName (Text Content) ---\n$text\n--- End Text ---',
+          });
+        }
+      }
+
+      // 2. Extract Images (word/media/)
+      for (final file in archive) {
+        if (file.name.startsWith('word/media/') && file.isFile) {
+          final ext = file.name.split('.').last.toLowerCase();
+          String? mimeType;
+          if (ext == 'png') mimeType = 'image/png';
+          else if (ext == 'jpg' || ext == 'jpeg') mimeType = 'image/jpeg';
+          else if (ext == 'gif') mimeType = 'image/gif';
+          else if (ext == 'webp') mimeType = 'image/webp';
+          
+          if (mimeType != null) {
+            final imgBytes = file.content as List<int>;
+            parts.add({
+              'type': 'image_url',
+              'image_url': {
+                'url': 'data:$mimeType;base64,${base64Encode(Uint8List.fromList(imgBytes))}',
+              },
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Docx deep processing failed: $e');
+    }
+    return parts;
   }
 }

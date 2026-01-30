@@ -569,7 +569,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataSettings.
   ///
   /// In zh, this message translates to:
-  /// **'数据设置'**
+  /// **'数据备份'**
   String get dataSettings;
 
   /// No description provided for @usageStats.
@@ -1555,6 +1555,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'从相册选择'**
   String get selectFromGallery;
+
+  /// No description provided for @selectVideo.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择视频'**
+  String get selectVideo;
 
   /// No description provided for @selectFile.
   ///
@@ -2821,6 +2827,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'请至少选择一项进行备份'**
   String get noOptionsSelected;
+
+  /// No description provided for @pressAgainToExit.
+  ///
+  /// In zh, this message translates to:
+  /// **'再按一次退出应用'**
+  String get pressAgainToExit;
+
+  /// No description provided for @pleaseConfigureModel.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先在设置中配置模型'**
+  String get pleaseConfigureModel;
+
+  /// No description provided for @version.
+  ///
+  /// In zh, this message translates to:
+  /// **'版本'**
+  String get version;
 }
 
 class _AppLocalizationsDelegate

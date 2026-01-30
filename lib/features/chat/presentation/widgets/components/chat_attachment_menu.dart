@@ -9,6 +9,7 @@ class ChatAttachmentMenu {
     BuildContext context, {
     required VoidCallback onPickCamera,
     required VoidCallback onPickGallery,
+    required VoidCallback onPickVideo,
     required VoidCallback onPickFile,
   }) async {
     final theme = fluent.FluentTheme.of(context);
@@ -34,6 +35,15 @@ class ChatAttachmentMenu {
             onTap: () {
               Navigator.pop(ctx);
               onPickGallery();
+            },
+          ),
+          _buildAttachmentOption(
+            context,
+            icon: Icons.videocam_outlined,
+            label: AppLocalizations.of(context)!.selectVideo,
+            onTap: () {
+              Navigator.pop(ctx);
+              onPickVideo();
             },
           ),
           _buildAttachmentOption(

@@ -254,7 +254,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get displaySettings => 'Display Settings';
 
   @override
-  String get dataSettings => 'Data Settings';
+  String get dataSettings => 'Data Backup';
 
   @override
   String get usageStats => 'Usage Statistics';
@@ -777,6 +777,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectFromGallery => 'Select from Gallery';
+
+  @override
+  String get selectVideo => 'Select Video';
 
   @override
   String get selectFile => 'Select File';
@@ -1434,4 +1437,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noOptionsSelected => 'Please select at least one option to backup';
+
+  @override
+  String get pressAgainToExit => 'Press again to exit';
+
+  @override
+  String get pleaseConfigureModel =>
+      'Please configure a model in settings first';
+
+  @override
+  String get version => 'Version';
 }

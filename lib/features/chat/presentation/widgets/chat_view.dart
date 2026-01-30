@@ -108,19 +108,59 @@ class ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
+  Future<List<String>> _saveFilesToAppDir(List<XFile> files) async {
+    final savedPaths = <String>[];
+    try {
+      final attachDir = await getAttachmentsDir();
+      for (final file in files) {
+        try {
+          final fileName =
+              '${DateTime.now().millisecondsSinceEpoch}_${file.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '')}';
+          final newPath =
+              '${attachDir.path}${Platform.pathSeparator}$fileName';
+          await file.saveTo(newPath);
+          savedPaths.add(newPath);
+        } catch (e) {
+          debugPrint('Failed to save file ${file.path}: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error accessing attachment directory: $e');
+    }
+    return savedPaths;
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
     try {
       final XFile? image = await picker.pickImage(source: source);
       if (image != null) {
-        if (!_attachments.contains(image.path)) {
+        final saved = await _saveFilesToAppDir([image]);
+        if (saved.isNotEmpty && !_attachments.contains(saved.first)) {
           setState(() {
-            _attachments.add(image.path);
+            _attachments.add(saved.first);
           });
         }
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
+    }
+  }
+
+  Future<void> _pickVideo(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? video = await picker.pickVideo(source: source);
+      if (video != null) {
+        final saved = await _saveFilesToAppDir([video]);
+        if (saved.isNotEmpty && !_attachments.contains(saved.first)) {
+          setState(() {
+            _attachments.add(saved.first);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error picking video: $e');
     }
   }
 
@@ -132,10 +172,6 @@ class ChatViewState extends ConsumerState<ChatView> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _notifier = ref.read(chatSessionManagerProvider).getOrCreate(_sessionId);
-      _notifier!.addLocalListener(_onNotifierStateChanged);
-    });
   }
 
   void _onNotifierStateChanged() {
@@ -145,8 +181,7 @@ class ChatViewState extends ConsumerState<ChatView> {
   }
 
   void _restoreScrollPosition() {
-    final notifier =
-        ref.read(chatSessionManagerProvider).getOrCreate(_sessionId);
+    final notifier = _notifier!;
     final state = notifier.currentState;
     if (_hasRestoredPosition || state.messages.isEmpty) return;
     _hasRestoredPosition = true;
@@ -172,9 +207,7 @@ class ChatViewState extends ConsumerState<ChatView> {
     if (!_scrollController.hasClients) return;
     final currentScroll = _scrollController.position.pixels;
     final autoScroll = currentScroll < 100;
-    ref
-        .read(chatSessionManagerProvider)
-        .getOrCreate(_sessionId)
+    _notifier!
         .setAutoScrollEnabled(autoScroll);
   }
 
@@ -188,16 +221,27 @@ class ChatViewState extends ConsumerState<ChatView> {
 
   Future<void> _pickFiles() async {
     const XTypeGroup typeGroup = XTypeGroup(
-      label: 'images',
-      extensions: <String>['jpg', 'png', 'jpeg', 'bmp', 'gif'],
+      label: 'All supported files',
+      extensions: <String>[
+        // Images
+        'jpg', 'png', 'jpeg', 'bmp', 'gif', 'webp',
+        // Audio
+        'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus',
+        // Video
+        'mp4', 'mov', 'avi', 'webm', 'mkv',
+        // Documents
+        'pdf', 'doc', 'docx', 'txt', 'md', 'csv', 'xlsx', 'pptx'
+      ],
     );
     final List<XFile> files =
         await openFiles(acceptedTypeGroups: <XTypeGroup>[typeGroup]);
     if (files.isEmpty) return;
-    final newPaths = files
-        .map((e) => e.path)
+    
+    final savedPaths = await _saveFilesToAppDir(files);
+    final newPaths = savedPaths
         .where((path) => !_attachments.contains(path))
         .toList();
+        
     if (newPaths.isNotEmpty) {
       setState(() {
         _attachments.addAll(newPaths);
@@ -381,13 +425,12 @@ class ChatViewState extends ConsumerState<ChatView> {
     if (text.trim().isEmpty && _attachments.isEmpty) {
       return;
     }
-    final currentSessionId = ref.read(selectedHistorySessionIdProvider);
     final attachmentsCopy = List<String>.from(_attachments);
     setState(() {
       _controller.clear();
       _attachments.clear();
     });
-    ref.read(historyChatProvider).setAutoScrollEnabled(true);
+    ref.read(chatSessionManagerProvider).getOrCreate(_sessionId).setAutoScrollEnabled(true);
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         0,
@@ -395,11 +438,16 @@ class ChatViewState extends ConsumerState<ChatView> {
         curve: Curves.easeOut,
       );
     }
-    final finalSessionId = await ref
-        .read(historyChatProvider)
-        .sendMessage(text, attachments: attachmentsCopy);
+    final effectiveSessionId = widget.sessionId;
+    
+    // Always get the freshest notifier for sending to avoid using disposed instances
+    final activeNotifier = ref.read(chatSessionNotifierProvider(effectiveSessionId));
+    if (!activeNotifier.mounted) return;
+
+    final finalSessionId = await activeNotifier.sendMessage(text, attachments: attachmentsCopy);
+    
     if (!mounted) return;
-    if (currentSessionId == 'new_chat' && finalSessionId != 'new_chat') {
+    if (effectiveSessionId == 'new_chat' && finalSessionId != 'new_chat') {
       ref.read(selectedHistorySessionIdProvider.notifier).state =
           finalSessionId;
     }
@@ -407,8 +455,12 @@ class ChatViewState extends ConsumerState<ChatView> {
 
   @override
   Widget build(BuildContext context) {
-    final notifier =
-        ref.read(chatSessionManagerProvider).getOrCreate(_sessionId);
+    final notifier = ref.watch(chatSessionNotifierProvider(widget.sessionId));
+    if (_notifier != notifier) {
+      _notifier?.removeLocalListener(_onNotifierStateChanged);
+      _notifier = notifier;
+      _notifier!.addLocalListener(_onNotifierStateChanged);
+    }
     final chatState = notifier.currentState;
     final messages = chatState.messages;
     final isLoading = chatState.isLoading;
@@ -468,6 +520,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                             onPickCamera: () => _pickImage(ImageSource.camera),
                             onPickGallery: () =>
                                 _pickImage(ImageSource.gallery),
+                            onPickVideo: () => _pickVideo(ImageSource.gallery),
                             onPickFile: _pickFiles,
                           ),
                           onShowToast: _showPillToast,
@@ -744,8 +797,8 @@ class ChatViewState extends ConsumerState<ChatView> {
                           itemCount: _attachments.length,
                           itemBuilder: (context, index) {
                             final path = _attachments[index];
-                            return HoverImagePreview(
-                              imagePath: path,
+                            return HoverAttachmentPreview(
+                              filePath: path,
                               child: Container(
                                 margin: const EdgeInsets.only(right: 8),
                                 padding: const EdgeInsets.symmetric(
@@ -804,6 +857,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                           context,
                           onPickCamera: () => _pickImage(ImageSource.camera),
                           onPickGallery: () => _pickImage(ImageSource.gallery),
+                          onPickVideo: () => _pickVideo(ImageSource.gallery),
                           onPickFile: _pickFiles,
                         ),
                         onShowToast: _showPillToast,
