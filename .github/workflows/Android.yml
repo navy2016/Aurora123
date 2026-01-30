@@ -5,9 +5,10 @@ permissions:
   contents: write
 
 on:
+  workflow_dispatch:
   push:
     tags:
-      - 'v*'
+      - 'vv*'
 
 jobs:
   build-android:
@@ -52,58 +53,18 @@ jobs:
           name: android-apks
           path: release_output/*.apk
 
-  build-windows:
-    name: Build Windows App
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Get Dependencies
-        run: flutter pub get
-
-      - name: Build Windows Release
-        run: flutter build windows --release
-
-      - name: Package Windows
-        run: |
-          $versionRaw = Select-String -Path "pubspec.yaml" -Pattern "version: (.*)"
-          $version = $versionRaw.Matches.Groups[1].Value.Trim().Split('+')[0]
-          echo "Detected Version: $version"
-          
-          New-Item -ItemType Directory -Force -Path "release_output"
-          $zipPath = "release_output\Aurora_Windows_${version}.zip"
-          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath $zipPath
-        shell: powershell
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-app
-          path: release_output/*.zip
-
+  
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build-android, build-windows]
+    needs: [build-android]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - name: Download Android Artifacts
+      - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: android-apks
           path: artifacts
-
-      - name: Download Windows Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-app
-          path: artifacts
+          merge-multiple: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -112,4 +73,3 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
