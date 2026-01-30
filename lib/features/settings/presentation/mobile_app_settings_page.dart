@@ -68,6 +68,13 @@ class MobileAppSettingsPage extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showBackgroundStylePicker(context, ref, settingsState, l10n),
           ),
+          ListTile(
+            leading: const Icon(Icons.format_size),
+            title: Text(l10n.fontSize),
+            subtitle: Text('${settingsState.fontSize.toStringAsFixed(1)} pt'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showFontSizePicker(context, ref, settingsState, l10n),
+          ),
           const Divider(),
           _SectionHeader(
               title: l10n.chatExperience, icon: Icons.chat_bubble_outline),
@@ -407,6 +414,59 @@ class MobileAppSettingsPage extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+
+  void _showFontSizePicker(BuildContext context, WidgetRef ref, SettingsState settings, AppLocalizations l10n) {
+    AuroraBottomSheet.show(
+      context: context,
+      builder: (ctx) => Consumer(
+        builder: (context, ref, _) {
+          final currentSize = ref.watch(settingsProvider.select((s) => s.fontSize));
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AuroraBottomSheet.buildTitle(context, l10n.fontSize),
+                const SizedBox(height: 20),
+                Text(
+                  '${currentSize.toStringAsFixed(1)} pt',
+                  style: TextStyle(fontSize: currentSize),
+                ),
+                const SizedBox(height: 10),
+                fluent.Slider(
+                  label: '${currentSize.toStringAsFixed(1)}',
+                  value: currentSize,
+                  min: 10,
+                  max: 20,
+                  onChanged: (v) {
+                    ref.read(settingsProvider.notifier).setFontSize(v);
+                  },
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      child: const Text('Reset'),
+                      onPressed: () {
+                        ref.read(settingsProvider.notifier).setFontSize(14.0);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      child: Text(l10n.done),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

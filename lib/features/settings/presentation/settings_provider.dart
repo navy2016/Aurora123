@@ -126,6 +126,7 @@ class SettingsState {
   final int closeBehavior;
   final String? executionModel;
   final String? executionProviderId;
+  final double fontSize;
   SettingsState({
     required this.providers,
     required this.activeProviderId,
@@ -150,6 +151,7 @@ class SettingsState {
     this.closeBehavior = 0,
     this.executionModel,
     this.executionProviderId,
+    this.fontSize = 14.0,
   });
   ProviderConfig get activeProvider =>
       providers.firstWhere((p) => p.id == activeProviderId);
@@ -182,6 +184,7 @@ class SettingsState {
     int? closeBehavior,
     String? executionModel,
     String? executionProviderId,
+    double? fontSize,
   }) {
     return SettingsState(
       providers: providers ?? this.providers,
@@ -209,6 +212,7 @@ class SettingsState {
       closeBehavior: closeBehavior ?? this.closeBehavior,
       executionModel: executionModel ?? this.executionModel,
       executionProviderId: executionProviderId ?? this.executionProviderId,
+      fontSize: fontSize ?? this.fontSize,
     );
   }
 }
@@ -238,6 +242,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     int closeBehavior = 0,
     String? executionModel,
     String? executionProviderId,
+    double fontSize = 14.0,
   })  : _storage = storage,
         super(SettingsState(
           providers: initialProviders,
@@ -260,6 +265,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           closeBehavior: closeBehavior,
           executionModel: executionModel,
           executionProviderId: executionProviderId,
+          fontSize: fontSize,
         )) {
     loadPresets();
   }
@@ -352,6 +358,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       closeBehavior: appSettings?.closeBehavior ?? 0,
       executionModel: appSettings?.executionModel,
       executionProviderId: appSettings?.executionProviderId,
+      fontSize: appSettings?.fontSize ?? 14.0,
     );
 
     await loadPresets();
@@ -797,6 +804,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       backgroundColor: color,
+    );
+  }
+
+  Future<void> setFontSize(double size) async {
+    state = state.copyWith(fontSize: size);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      fontSize: size,
     );
   }
 

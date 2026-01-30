@@ -1389,6 +1389,34 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
               }).toList(),
             ),
           ),
+          const SizedBox(height: 24),
+          fluent.InfoLabel(
+            label: l10n.fontSize,
+            child: Row(
+              children: [
+                Expanded(
+                  child: fluent.Slider(
+                    label: '${settingsState.fontSize.toStringAsFixed(1)}',
+                    value: settingsState.fontSize,
+                    min: 10,
+                    max: 20,
+                    onChanged: (v) {
+                      ref.read(settingsProvider.notifier).setFontSize(v);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${settingsState.fontSize.toStringAsFixed(1)} pt'),
+                const SizedBox(width: 8),
+                fluent.Button(
+                  child: const Text('Reset'),
+                  onPressed: () {
+                    ref.read(settingsProvider.notifier).setFontSize(14.0);
+                  },
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

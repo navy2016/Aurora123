@@ -141,8 +141,7 @@ class OpenAILLMService implements LLMService {
 
   @override
   Stream<LLMResponseChunk> streamResponse(List<Message> messages,
-      {List<String>? attachments,
-      List<Map<String, dynamic>>? tools,
+      {List<Map<String, dynamic>>? tools,
       String? toolChoice,
       String? model,
       String? providerId,
@@ -158,13 +157,12 @@ class OpenAILLMService implements LLMService {
         : '${provider.baseUrl}/';
     if (apiKey.isEmpty) {
       yield const LLMResponseChunk(
-          content:
-              'Error: API Key is not configured. Please check your settings.');
+          content: 'Error: API key is empty. Please check your settings.');
       return;
     }
     try {
       List<Map<String, dynamic>> apiMessages =
-          await _buildApiMessages(messages, attachments);
+          await _buildApiMessages(messages);
       for (int i = 0; i < apiMessages.length; i++) {
         final msg = apiMessages[i];
         final content = msg['content'];
@@ -704,7 +702,7 @@ Use search for:
   }
 
   Future<List<Map<String, dynamic>>> _buildApiMessages(
-      List<Message> messages, List<String>? currentAttachments) async {
+      List<Message> messages) async {
     final List<Map<String, dynamic>> result = [];
     for (final m in messages) {
       if (m.role == 'tool') {
@@ -831,8 +829,7 @@ Use search for:
 
   @override
   Future<LLMResponseChunk> getResponse(List<Message> messages,
-      {List<String>? attachments,
-      List<Map<String, dynamic>>? tools,
+      {List<Map<String, dynamic>>? tools,
       String? toolChoice,
       String? model,
       String? providerId,
@@ -848,12 +845,11 @@ Use search for:
         : '${provider.baseUrl}/';
     if (apiKey.isEmpty) {
       return const LLMResponseChunk(
-          content:
-              'Error: API Key is not configured. Please check your settings.');
+          content: 'Error: API key is empty. Please check your settings.');
     }
     try {
       List<Map<String, dynamic>> apiMessages =
-          await _buildApiMessages(messages, attachments);
+          await _buildApiMessages(messages);
       apiMessages = await _compressApiMessagesIfNeeded(apiMessages);
       final now = DateTime.now();
       final dateStr = now.toIso8601String().split('T')[0];

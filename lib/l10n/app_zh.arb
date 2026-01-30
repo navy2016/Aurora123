@@ -507,6 +507,8 @@
   "addApiKey": "添加 Key",
   "autoRotateKeys": "自动轮询",
   "editApiKey": "编辑 API Key",
+  "fontSize": "字体大小",
+  "fontSizeHint": "调整全局文字显示大小",
 
   "generationConfig": "生成配置",
   "customParams": "自定义参数",
