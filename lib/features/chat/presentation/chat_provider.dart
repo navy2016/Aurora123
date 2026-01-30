@@ -338,7 +338,6 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
         if (settings.isStreamEnabled) {
           final responseStream = llmService.streamResponse(
             messagesForApi,
-            attachments: attachments,
             tools: tools,
             cancelToken: _currentCancelToken,
           );
@@ -570,7 +569,6 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
         } else {
           final response = await llmService.getResponse(
             messagesForApi,
-            attachments: attachments,
             tools: tools,
             cancelToken: _currentCancelToken,
           );
@@ -696,7 +694,6 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
         // Final generation without tools
         final finalStream = llmService.streamResponse(
           messagesForApi,
-          attachments: attachments,
           tools: null, // No tools for final response
           cancelToken: _currentCancelToken,
         );
@@ -878,7 +875,7 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
       timestamp: oldMsg.timestamp,
       reasoningContent: oldMsg.reasoningContent,
       attachments: updatedAttachments,
-      images: oldMsg.images,
+      images: newAttachments != null ? const [] : oldMsg.images,
     );
     final newMessages = List<Message>.from(state.messages);
     newMessages[index] = newMsg;

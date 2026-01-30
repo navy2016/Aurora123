@@ -177,6 +177,8 @@ class MyApp extends ConsumerWidget {
         ref.watch(settingsProvider.select((value) => value.language));
     final themeColorStr =
         ref.watch(settingsProvider.select((value) => value.themeColor));
+    final fontSize =
+        ref.watch(settingsProvider.select((value) => value.fontSize));
     
     fluent.AccentColor getAccentColor(String color) {
       switch (color) {
@@ -322,7 +324,11 @@ class MyApp extends ConsumerWidget {
         final brightness = fluentTheme.brightness;
         final accentColor = fluentTheme.accentColor;
         final materialPrimary = Color(accentColor.normal.value);
-        return Theme(
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(fontSize / 14.0),
+          ),
+          child: Theme(
           data: ThemeData(
             fontFamily: fontFamily,
             brightness: brightness == fluent.Brightness.dark
@@ -374,7 +380,7 @@ class MyApp extends ConsumerWidget {
           child: ScaffoldMessenger(
             child: child ?? const SizedBox.shrink(),
           ),
-        );
+        ));
       },
       darkTheme: fluent.FluentThemeData(
         fontFamily: fontFamily,

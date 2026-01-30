@@ -23,15 +23,13 @@ class LLMResponseChunk {
 
 abstract class LLMService {
   Stream<LLMResponseChunk> streamResponse(List<Message> messages,
-      {List<String>? attachments,
-      List<Map<String, dynamic>>? tools,
+      {List<Map<String, dynamic>>? tools,
       String? toolChoice,
       String? model,
       String? providerId,
       CancelToken? cancelToken});
   Future<LLMResponseChunk> getResponse(List<Message> messages,
-      {List<String>? attachments,
-      List<Map<String, dynamic>>? tools,
+      {List<Map<String, dynamic>>? tools,
       String? toolChoice,
       String? model,
       String? providerId,

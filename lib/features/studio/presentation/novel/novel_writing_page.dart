@@ -64,7 +64,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       color: Colors.transparent,
       child: Row(
         children: [
-          // Left Group: Back & Project Selector
+          // Left Group: Back Button
           if (widget.onBack != null)
             Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -74,12 +74,6 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               ),
             ),
           
-          _buildProjectSelector(context, l10n, theme, state, notifier),
-          
-          const SizedBox(width: 16),
-          Container(width: 1, height: 24, color: theme.resources.dividerStrokeColorDefault),
-          const SizedBox(width: 16),
-
           // Navigation Tabs (Left Aligned)
           _buildNavTab(context, theme, 0, l10n.writing, FluentIcons.edit),
           const SizedBox(width: 4),
@@ -211,82 +205,104 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
 
     final projectName = state.selectedProject?.name ?? l10n.selectProject;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FlyoutTarget(
-          controller: _projectFlyoutController,
-          child: SizedBox(
-            width: 200,
-            child: Button(
-              onPressed: () {
-                _projectFlyoutController.showFlyout(
-                  autoModeConfiguration: FlyoutAutoConfiguration(
-                    preferredMode: FlyoutPlacementMode.bottomCenter,
-                  ),
-                  builder: (context) {
-                    return MenuFlyout(
-                      items: state.projects.map((p) => MenuFlyoutItem(
-                        text: Text(p.name, style: const TextStyle(fontSize: 13)),
-                        selected: state.selectedProjectId == p.id,
-                        onPressed: () {
-                          notifier.selectProject(p.id);
-                        },
-                      )).toList(),
-                    );
-                  },
-                );
-              },
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      projectName,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: const TextStyle(fontSize: 13),
+
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.resources.controlAltFillColorSecondary,
+        border: Border.all(color: theme.resources.controlStrokeColorDefault),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: FlyoutTarget(
+              controller: _projectFlyoutController,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  _projectFlyoutController.showFlyout(
+                    autoModeConfiguration: FlyoutAutoConfiguration(
+                      preferredMode: FlyoutPlacementMode.bottomCenter,
                     ),
+                    builder: (context) {
+                      return MenuFlyout(
+                        items: state.projects.map((p) => MenuFlyoutItem(
+                          text: Text(p.name),
+                          selected: state.selectedProjectId == p.id,
+                          onPressed: () {
+                            notifier.selectProject(p.id);
+                          },
+                        )).toList(),
+                      );
+                    },
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    children: [
+                       const Icon(FluentIcons.text_document, size: 14),
+                       const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          projectName,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(FluentIcons.chevron_down, size: 10),
+                    ],
                   ),
-                  const Icon(FluentIcons.chevron_down, size: 8),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          icon: const Icon(FluentIcons.add, size: 14),
-          onPressed: () => _showNewProjectDialog(context, l10n, notifier),
-        ),
-        IconButton(
-          icon: Icon(FluentIcons.delete, size: 14, color: Colors.red.light),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => ContentDialog(
-                title: Text(l10n.deleteProject),
-                content: Text(l10n.deleteProjectConfirm),
-                actions: [
-                  Button(
-                    child: Text(l10n.cancel),
-                    onPressed: () => Navigator.pop(context),
+          Container(width: 1, height: 20, color: theme.resources.dividerStrokeColorDefault),
+          Tooltip(
+            message: l10n.createProject,
+            child: IconButton(
+              icon: const Icon(FluentIcons.add, size: 14),
+              onPressed: () => _showNewProjectDialog(context, l10n, notifier),
+            ),
+          ),
+          Tooltip(
+            message: l10n.deleteProject,
+            child: IconButton(
+              icon: Icon(FluentIcons.delete, size: 14, color: Colors.red.light),
+              onPressed: () {
+                if (state.selectedProjectId == null) return;
+                showDialog(
+                  context: context,
+                  builder: (context) => ContentDialog(
+                    title: Text(l10n.deleteProject),
+                    content: Text(l10n.deleteProjectConfirm),
+                    actions: [
+                      Button(
+                        child: Text(l10n.cancel),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      FilledButton(
+                        style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
+                        child: Text(l10n.delete),
+                        onPressed: () {
+                          if (state.selectedProjectId != null) {
+                            notifier.deleteProject(state.selectedProjectId!);
+                          }
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
                   ),
-                  FilledButton(
-                    style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
-                    child: Text(l10n.delete),
-                    onPressed: () {
-                      if (state.selectedProjectId != null) {
-                        notifier.deleteProject(state.selectedProjectId!);
-                      }
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
     );
   }
 
@@ -451,20 +467,32 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       children: [
         Padding(
           padding: const EdgeInsets.all(12),
-          child: Row(
+          child: Column(
             children: [
-              const Icon(FluentIcons.text_document, size: 16),
-              const SizedBox(width: 8),
-              Text(l10n.outlineSettings, style: theme.typography.subtitle),
-              const Spacer(),
-              if (hasOutline)
-                 Tooltip(
-                  message: l10n.clearOutline,
-                  child: IconButton(
-                    icon: const Icon(FluentIcons.delete, size: 14),
-                    onPressed: () => notifier.updateProjectOutline(''),
+              Row(
+                children: [
+                  const Icon(FluentIcons.text_document, size: 16),
+                  const SizedBox(width: 8),
+                  Text(l10n.outlineSettings, style: theme.typography.subtitle),
+                  const Spacer(),
+                  if (hasOutline)
+                     Tooltip(
+                      message: l10n.clearOutline,
+                      child: IconButton(
+                        icon: const Icon(FluentIcons.delete, size: 14),
+                        onPressed: () => notifier.updateProjectOutline(''),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildProjectSelector(context, l10n, theme, state, notifier),
                   ),
-                ),
+                ],
+              ),
             ],
           ),
         ),
@@ -1117,7 +1145,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Button(
-                        onPressed: () => notifier.updateTaskStatus(task.id, TaskStatus.failed),
+                        onPressed: () => notifier.runSingleTask(task.id),
                         child: Text('${l10n.reject} (${l10n.regenerate})', style: TextStyle(color: Colors.red.light)),
                       ),
                       const SizedBox(width: 8),

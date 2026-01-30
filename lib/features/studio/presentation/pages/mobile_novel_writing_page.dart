@@ -498,7 +498,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                     children: [
                       if (tasks.first.status == TaskStatus.reviewing) ...[
                         TextButton.icon(
-                          onPressed: () => notifier.updateTaskStatus(tasks.first.id, TaskStatus.failed),
+                          onPressed: () => notifier.runSingleTask(tasks.first.id),
                           icon: const Icon(Icons.close, size: 16, color: Colors.red),
                           label: Text(l10n.reject, style: const TextStyle(color: Colors.red, fontSize: 13)),
                         ),

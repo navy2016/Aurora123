@@ -1167,6 +1167,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get autoRotateKeys => '自动轮询';
 
   @override
+  String get fontSize => '字体大小';
+
+  @override
+  String get fontSizeHint => '调整全局文字显示大小';
+
+  @override
   String get generationConfig => '生成配置';
 
   @override

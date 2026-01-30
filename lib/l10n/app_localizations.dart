@@ -2348,6 +2348,18 @@ abstract class AppLocalizations {
   /// **'自动轮询'**
   String get autoRotateKeys;
 
+  /// No description provided for @fontSize.
+  ///
+  /// In zh, this message translates to:
+  /// **'字体大小'**
+  String get fontSize;
+
+  /// No description provided for @fontSizeHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'调整全局文字显示大小'**
+  String get fontSizeHint;
+
   /// No description provided for @generationConfig.
   ///
   /// In zh, this message translates to:

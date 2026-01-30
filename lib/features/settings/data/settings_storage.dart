@@ -88,6 +88,7 @@ class SettingsStorage {
     int? closeBehavior,
     String? executionModel,
     String? executionProviderId,
+    double? fontSize,
   }) async {
     final existing = await loadAppSettings();
     final settings = AppSettingsEntity()
@@ -114,7 +115,8 @@ class SettingsStorage {
       ..backgroundColor = backgroundColor ?? existing?.backgroundColor
       ..closeBehavior = closeBehavior ?? existing?.closeBehavior ?? 0
       ..executionModel = executionModel ?? existing?.executionModel
-      ..executionProviderId = executionProviderId ?? existing?.executionProviderId;
+      ..executionProviderId = executionProviderId ?? existing?.executionProviderId
+      ..fontSize = fontSize ?? existing?.fontSize ?? 14.0;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -146,7 +148,8 @@ class SettingsStorage {
       ..backgroundColor = existing.backgroundColor
       ..closeBehavior = existing.closeBehavior
       ..executionModel = existing.executionModel
-      ..executionProviderId = existing.executionProviderId;
+      ..executionProviderId = existing.executionProviderId
+      ..fontSize = existing.fontSize;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -186,7 +189,8 @@ class SettingsStorage {
       ..backgroundColor = existing.backgroundColor
       ..closeBehavior = existing.closeBehavior
       ..executionModel = existing.executionModel
-      ..executionProviderId = existing.executionProviderId;
+      ..executionProviderId = existing.executionProviderId
+      ..fontSize = existing.fontSize;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -428,7 +432,8 @@ class SettingsStorage {
       ..backgroundColor = existing.backgroundColor
       ..closeBehavior = existing.closeBehavior
       ..executionModel = existing.executionModel
-      ..executionProviderId = existing.executionProviderId;
+      ..executionProviderId = existing.executionProviderId
+      ..fontSize = existing.fontSize;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);
@@ -479,7 +484,8 @@ class SettingsStorage {
       ..backgroundColor = existing.backgroundColor
       ..closeBehavior = existing.closeBehavior
       ..executionModel = existing.executionModel
-      ..executionProviderId = existing.executionProviderId;
+      ..executionProviderId = existing.executionProviderId
+      ..fontSize = existing.fontSize;
     await _isar.writeTxn(() async {
       await _isar.appSettingsEntitys.clear();
       await _isar.appSettingsEntitys.put(settings);

@@ -3379,78 +3379,83 @@ const AppSettingsEntitySchema = CollectionSchema(
       name: r'executionProviderId',
       type: IsarType.string,
     ),
-    r'isSearchEnabled': PropertySchema(
+    r'fontSize': PropertySchema(
       id: 7,
+      name: r'fontSize',
+      type: IsarType.double,
+    ),
+    r'isSearchEnabled': PropertySchema(
+      id: 8,
       name: r'isSearchEnabled',
       type: IsarType.bool,
     ),
     r'isStreamEnabled': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'isStreamEnabled',
       type: IsarType.bool,
     ),
     r'language': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'language',
       type: IsarType.string,
     ),
     r'lastPresetId': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'lastPresetId',
       type: IsarType.string,
     ),
     r'lastSessionId': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'lastSessionId',
       type: IsarType.string,
     ),
     r'lastTopicId': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'lastTopicId',
       type: IsarType.string,
     ),
     r'llmAvatar': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'llmAvatar',
       type: IsarType.string,
     ),
     r'llmName': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'llmName',
       type: IsarType.string,
     ),
     r'searchEngine': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'searchEngine',
       type: IsarType.string,
     ),
     r'selectedModel': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'selectedModel',
       type: IsarType.string,
     ),
     r'themeColor': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'themeColor',
       type: IsarType.string,
     ),
     r'themeMode': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'topicGenerationModel': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'topicGenerationModel',
       type: IsarType.string,
     ),
     r'userAvatar': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'userAvatar',
       type: IsarType.string,
     ),
     r'userName': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'userName',
       type: IsarType.string,
     )
@@ -3584,21 +3589,22 @@ void _appSettingsEntitySerialize(
   writer.writeBool(offsets[4], object.enableSmartTopic);
   writer.writeString(offsets[5], object.executionModel);
   writer.writeString(offsets[6], object.executionProviderId);
-  writer.writeBool(offsets[7], object.isSearchEnabled);
-  writer.writeBool(offsets[8], object.isStreamEnabled);
-  writer.writeString(offsets[9], object.language);
-  writer.writeString(offsets[10], object.lastPresetId);
-  writer.writeString(offsets[11], object.lastSessionId);
-  writer.writeString(offsets[12], object.lastTopicId);
-  writer.writeString(offsets[13], object.llmAvatar);
-  writer.writeString(offsets[14], object.llmName);
-  writer.writeString(offsets[15], object.searchEngine);
-  writer.writeString(offsets[16], object.selectedModel);
-  writer.writeString(offsets[17], object.themeColor);
-  writer.writeString(offsets[18], object.themeMode);
-  writer.writeString(offsets[19], object.topicGenerationModel);
-  writer.writeString(offsets[20], object.userAvatar);
-  writer.writeString(offsets[21], object.userName);
+  writer.writeDouble(offsets[7], object.fontSize);
+  writer.writeBool(offsets[8], object.isSearchEnabled);
+  writer.writeBool(offsets[9], object.isStreamEnabled);
+  writer.writeString(offsets[10], object.language);
+  writer.writeString(offsets[11], object.lastPresetId);
+  writer.writeString(offsets[12], object.lastSessionId);
+  writer.writeString(offsets[13], object.lastTopicId);
+  writer.writeString(offsets[14], object.llmAvatar);
+  writer.writeString(offsets[15], object.llmName);
+  writer.writeString(offsets[16], object.searchEngine);
+  writer.writeString(offsets[17], object.selectedModel);
+  writer.writeString(offsets[18], object.themeColor);
+  writer.writeString(offsets[19], object.themeMode);
+  writer.writeString(offsets[20], object.topicGenerationModel);
+  writer.writeString(offsets[21], object.userAvatar);
+  writer.writeString(offsets[22], object.userName);
 }
 
 AppSettingsEntity _appSettingsEntityDeserialize(
@@ -3615,22 +3621,23 @@ AppSettingsEntity _appSettingsEntityDeserialize(
   object.enableSmartTopic = reader.readBool(offsets[4]);
   object.executionModel = reader.readStringOrNull(offsets[5]);
   object.executionProviderId = reader.readStringOrNull(offsets[6]);
+  object.fontSize = reader.readDouble(offsets[7]);
   object.id = id;
-  object.isSearchEnabled = reader.readBool(offsets[7]);
-  object.isStreamEnabled = reader.readBool(offsets[8]);
-  object.language = reader.readString(offsets[9]);
-  object.lastPresetId = reader.readStringOrNull(offsets[10]);
-  object.lastSessionId = reader.readStringOrNull(offsets[11]);
-  object.lastTopicId = reader.readStringOrNull(offsets[12]);
-  object.llmAvatar = reader.readStringOrNull(offsets[13]);
-  object.llmName = reader.readString(offsets[14]);
-  object.searchEngine = reader.readString(offsets[15]);
-  object.selectedModel = reader.readStringOrNull(offsets[16]);
-  object.themeColor = reader.readStringOrNull(offsets[17]);
-  object.themeMode = reader.readString(offsets[18]);
-  object.topicGenerationModel = reader.readStringOrNull(offsets[19]);
-  object.userAvatar = reader.readStringOrNull(offsets[20]);
-  object.userName = reader.readString(offsets[21]);
+  object.isSearchEnabled = reader.readBool(offsets[8]);
+  object.isStreamEnabled = reader.readBool(offsets[9]);
+  object.language = reader.readString(offsets[10]);
+  object.lastPresetId = reader.readStringOrNull(offsets[11]);
+  object.lastSessionId = reader.readStringOrNull(offsets[12]);
+  object.lastTopicId = reader.readStringOrNull(offsets[13]);
+  object.llmAvatar = reader.readStringOrNull(offsets[14]);
+  object.llmName = reader.readString(offsets[15]);
+  object.searchEngine = reader.readString(offsets[16]);
+  object.selectedModel = reader.readStringOrNull(offsets[17]);
+  object.themeColor = reader.readStringOrNull(offsets[18]);
+  object.themeMode = reader.readString(offsets[19]);
+  object.topicGenerationModel = reader.readStringOrNull(offsets[20]);
+  object.userAvatar = reader.readStringOrNull(offsets[21]);
+  object.userName = reader.readString(offsets[22]);
   return object;
 }
 
@@ -3656,13 +3663,13 @@ P _appSettingsEntityDeserializeProp<P>(
     case 6:
       return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 8:
       return (reader.readBool(offset)) as P;
     case 9:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 11:
       return (reader.readStringOrNull(offset)) as P;
     case 12:
@@ -3670,20 +3677,22 @@ P _appSettingsEntityDeserializeProp<P>(
     case 13:
       return (reader.readStringOrNull(offset)) as P;
     case 14:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
       return (reader.readString(offset)) as P;
     case 16:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 17:
       return (reader.readStringOrNull(offset)) as P;
     case 18:
-      return (reader.readString(offset)) as P;
-    case 19:
       return (reader.readStringOrNull(offset)) as P;
+    case 19:
+      return (reader.readString(offset)) as P;
     case 20:
       return (reader.readStringOrNull(offset)) as P;
     case 21:
+      return (reader.readStringOrNull(offset)) as P;
+    case 22:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -4775,6 +4784,72 @@ extension AppSettingsEntityQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'executionProviderId',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      fontSizeEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'fontSize',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      fontSizeGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'fontSize',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      fontSizeLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'fontSize',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterFilterCondition>
+      fontSizeBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'fontSize',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
       ));
     });
   }
@@ -6861,6 +6936,20 @@ extension AppSettingsEntityQuerySortBy
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByFontSize() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'fontSize', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      sortByFontSizeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'fontSize', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
       sortByIsSearchEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isSearchEnabled', Sort.asc);
@@ -7157,6 +7246,20 @@ extension AppSettingsEntityQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByFontSize() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'fontSize', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy>
+      thenByFontSizeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'fontSize', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -7437,6 +7540,13 @@ extension AppSettingsEntityQueryWhereDistinct
   }
 
   QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
+      distinctByFontSize() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'fontSize');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, AppSettingsEntity, QDistinct>
       distinctByIsSearchEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isSearchEnabled');
@@ -7599,6 +7709,12 @@ extension AppSettingsEntityQueryProperty
       executionProviderIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'executionProviderId');
+    });
+  }
+
+  QueryBuilder<AppSettingsEntity, double, QQueryOperations> fontSizeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'fontSize');
     });
   }
 

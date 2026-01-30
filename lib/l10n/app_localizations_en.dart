@@ -1187,6 +1187,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoRotateKeys => 'Auto Rotate';
 
   @override
+  String get fontSize => 'Font Size';
+
+  @override
+  String get fontSizeHint => 'Adjust global text display size';
+
+  @override
   String get generationConfig => 'Generation Config';
 
   @override

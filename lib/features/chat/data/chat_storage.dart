@@ -258,6 +258,13 @@ class ChatStorage {
           }
           existing.tokenCount = message.tokenCount;
         }
+        if (_messagesCache.containsKey(existing.sessionId!)) {
+          final cachedList = _messagesCache[existing.sessionId!]!;
+          final cacheIndex = cachedList.indexWhere((m) => m.id == message.id);
+          if (cacheIndex != -1) {
+            cachedList[cacheIndex] = message;
+          }
+        }
         await _isar.messageEntitys.put(existing);
       }
     });

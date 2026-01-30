@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -356,6 +357,7 @@ class NovelPromptPresets {
 class NovelNotifier extends StateNotifier<NovelWritingState> {
   final Ref _ref;
   bool _shouldStop = false;
+  CancelToken? _currentCancelToken;
   
   NovelNotifier(this._ref) : super(const NovelWritingState()) {
     loadState();
@@ -408,7 +410,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
   }
 
   // ========== LLM Call Helper ==========
-  Future<String> _callLLM(NovelModelConfig config, String systemPrompt, String userMessage) async {
+  Future<String> _callLLM(NovelModelConfig config, String systemPrompt, String userMessage, {CancelToken? cancelToken}) async {
     final startTime = DateTime.now();
     final settings = _ref.read(settingsProvider);
     
@@ -452,7 +454,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       final requestStartTime = DateTime.now();
       
       try {
-        final response = await llmService.getResponse(messages);
+        final response = await llmService.getResponse(messages, cancelToken: cancelToken);
         final durationMs = DateTime.now().difference(requestStartTime).inMilliseconds;
         
         // Check for truncation (Content Filter)
@@ -488,6 +490,10 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
         return response.content ?? '';
         
       } catch (e) {
+        if (e is DioException && e.type == DioExceptionType.cancel) {
+          rethrow;
+        }
+        
         // Track failed usage
         final durationMs = DateTime.now().difference(requestStartTime).inMilliseconds;
         AppErrorType errorType = AppErrorType.unknown;
@@ -522,7 +528,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       // though typically they transition back to 'reviewing' immediately)
       final allTasks = state.allTasks;
       final pendingTask = allTasks.firstWhere(
-        (t) => t.status == TaskStatus.pending && _isTaskInCurrentProject(t),
+        (t) => (t.status == TaskStatus.pending || t.status == TaskStatus.failed) && _isTaskInCurrentProject(t),
         orElse: () => NovelTask(id: '', chapterId: '', description: ''),
       );
       
@@ -561,8 +567,18 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
   }
   
   Future<void> _executeTask(String taskId) async {
-    // Mark task as running
-    _updateTaskStatus(taskId, TaskStatus.running);
+    // Mark task as running and reset its internal retry state
+    final updatedTasks = state.allTasks.map((t) {
+      if (t.id == taskId) {
+        return t.copyWith(
+          status: TaskStatus.running,
+          retryCount: 0,
+          reviewFeedback: '',
+        );
+      }
+      return t;
+    }).toList();
+    state = state.copyWith(allTasks: updatedTasks);
     
     final task = state.allTasks.firstWhere((t) => t.id == taskId);
     
@@ -595,6 +611,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
         task.description,
         chapterTitle,
         worldContext,
+        cancelToken: _currentCancelToken,
       );
       
       final StringBuffer contextBuffer = StringBuffer();
@@ -650,7 +667,9 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       final String fullPrompt = contextBuffer.toString();
       
       // ========== Step 2: Writer - 写作 ==========
-      final result = await _callLLM(writerConfig, systemPrompt, fullPrompt);
+      final result = await _callLLM(writerConfig, systemPrompt, fullPrompt, cancelToken: _currentCancelToken);
+      
+      if (_shouldStop) return; // Stop if requested
       
       // Update task with content
       final updatedTasks = state.allTasks.map((t) {
@@ -674,6 +693,11 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       }
       
     } catch (e) {
+      if (e is DioException && e.type == DioExceptionType.cancel) {
+        // 静默处理中止
+        print('⏹ Task $taskId execution cancelled by user.');
+        return;
+      }
       _updateTaskStatus(taskId, TaskStatus.failed);
       // Store error in reviewFeedback field
       final updatedTasks = state.allTasks.map((t) {
@@ -692,8 +716,9 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
     NovelModelConfig config,
     String taskDescription,
     String chapterTitle,
-    WorldContext worldContext,
-  ) async {
+    WorldContext worldContext, {
+    CancelToken? cancelToken,
+  }) async {
     // 如果设定很少（少于10项），直接全量返回，不需要筛选
     final totalItems = worldContext.characters.length + 
                        worldContext.locations.length + 
@@ -718,7 +743,7 @@ ${availableKeys.toString()}
 
 请分析本章需要哪些设定信息。''';
       
-      final result = await _callLLM(config, NovelPromptPresets.contextBuilder, prompt);
+      final result = await _callLLM(config, NovelPromptPresets.contextBuilder, prompt, cancelToken: cancelToken);
       final selection = jsonDecode(result) as Map<String, dynamic>;
       
       // 根据筛选结果，构建精简的上下文
@@ -954,7 +979,9 @@ $content
 
 请审查以上内容。''';
       
-      final reviewResult = await _callLLM(reviewerConfig, systemPrompt, reviewPrompt);
+      final reviewResult = await _callLLM(reviewerConfig, systemPrompt, reviewPrompt, cancelToken: _currentCancelToken);
+      
+      if (_shouldStop) return; // Stop if requested
       
       // Strip markdown code blocks if present (```json ... ```)
       String jsonStr = reviewResult.trim();
@@ -1022,7 +1049,9 @@ $content
             _saveState();
             
             // 调用修订
-            final revisedContent = await _reviseContent(content, issues, suggestions, task.description, writingContext);
+            final revisedContent = await _reviseContent(content, issues, suggestions, task.description, writingContext, cancelToken: _currentCancelToken);
+            
+            if (_shouldStop) return;
             
             // 更新状态为 reviewing 并重新审查
             _updateTaskStatus(taskId, TaskStatus.reviewing);
@@ -1070,6 +1099,10 @@ $content
       }
       
     } catch (e) {
+      if (e is DioException && e.type == DioExceptionType.cancel) {
+        print('⏹ Task $taskId review cancelled by user.');
+        return;
+      }
       // Review failed, mark task as failed and needing attention
       final updatedTasks = state.allTasks.map((t) {
         if (t.id == taskId) {
@@ -1091,8 +1124,9 @@ $content
     List<dynamic> issues, 
     String suggestions, 
     String taskDescription,
-    String writingContext,  // 新增：原始写作上下文
-  ) async {
+    String writingContext, {
+    CancelToken? cancelToken,
+  }) async {
     final writerConfig = state.writerModel;
     if (writerConfig == null) {
       return originalContent; // 无法修订，返回原内容
@@ -1129,7 +1163,7 @@ $suggestions
 - 只输出修改后的完整章节正文''';
     
     try {
-      final revisedContent = await _callLLM(writerConfig, NovelPromptPresets.reviser, revisionPrompt);
+      final revisedContent = await _callLLM(writerConfig, NovelPromptPresets.reviser, revisionPrompt, cancelToken: cancelToken);
       return revisedContent;
     } catch (e) {
       return originalContent; // 修订失败，返回原内容
@@ -1210,12 +1244,16 @@ $suggestions
       return;
     }
     
+    _shouldStop = false;
+    _currentCancelToken?.cancel();
+    _currentCancelToken = CancelToken();
+    
     try {
       final systemPrompt = outlineConfig.systemPrompt.isNotEmpty 
           ? outlineConfig.systemPrompt 
           : NovelPromptPresets.outline;
       
-      final result = await _callLLM(outlineConfig, systemPrompt, requirement);
+      final result = await _callLLM(outlineConfig, systemPrompt, requirement, cancelToken: _currentCancelToken);
       _updateProjectOutline(result);
       
     } catch (e) {
@@ -1358,7 +1396,10 @@ $suggestions
         extractorModel, 
         NovelPromptPresets.contextExtractor, 
         content,
+        cancelToken: _currentCancelToken,
       );
+      
+      if (_shouldStop) return;
       
       final updates = jsonDecode(result) as Map<String, dynamic>;
       final ctx = state.selectedProject!.worldContext;
@@ -1526,12 +1567,17 @@ $suggestions
     }
     
     try {
+      _shouldStop = false;
+      _currentCancelToken?.cancel();
+      _currentCancelToken = CancelToken();
+
       // --- 第一阶段：获取完整的章节标题列表 ---
       print('🚀 Phase 1: Planning chapter list...');
       final listResult = await _callLLM(
         decomposeConfig, 
         NovelPromptPresets.chapterListPlanner, 
-        '大纲内容如下：\n$outline'
+        '大纲内容如下：\n$outline',
+        cancelToken: _currentCancelToken,
       );
       
       final List<String> allTitles = List<String>.from(jsonDecode(_cleanJson(listResult)));
@@ -1576,7 +1622,7 @@ $suggestions
                 ? decomposeConfig.systemPrompt 
                 : NovelPromptPresets.decompose;
                 
-            final detailResult = await _callLLM(decomposeConfig, systemPrompt, detailPrompt);
+            final detailResult = await _callLLM(decomposeConfig, systemPrompt, detailPrompt, cancelToken: _currentCancelToken);
             final dynamic decodedData = jsonDecode(_cleanJson(detailResult));
             
             List<dynamic> detailedChapters = [];
@@ -1779,6 +1825,19 @@ $suggestions
     if (task.id.isEmpty) return;
     if (task.status == TaskStatus.running) return; // Already running
     
+    // Reset retry count and clear feedback when manually triggered
+    final updatedTasks = state.allTasks.map((t) {
+      if (t.id == taskId) {
+        return t.copyWith(
+          retryCount: 0, 
+          reviewFeedback: '',
+          status: TaskStatus.pending,
+        );
+      }
+      return t;
+    }).toList();
+    state = state.copyWith(allTasks: updatedTasks);
+    
     await _executeTask(taskId);
   }
 
@@ -1818,6 +1877,8 @@ $suggestions
   
   void stopQueue() {
     _shouldStop = true;
+    _currentCancelToken?.cancel('User stopped queue');
+    _currentCancelToken = null;
     
     // 重置所有正在运行的任务状态为 pending，避免一直转圈
     final updatedTasks = state.allTasks.map((t) {

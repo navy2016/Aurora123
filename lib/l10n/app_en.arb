@@ -507,6 +507,8 @@
   "addApiKey": "Add Key",
   "autoRotateKeys": "Auto Rotate",
   "editApiKey": "Edit API Key",
+  "fontSize": "Font Size",
+  "fontSizeHint": "Adjust global text display size",
 
   "generationConfig": "Generation Config",
   "customParams": "Custom Parameters",
