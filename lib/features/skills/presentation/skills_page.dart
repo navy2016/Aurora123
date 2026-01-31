@@ -77,7 +77,7 @@ class _SkillSettingsPageState extends ConsumerState<SkillSettingsPage> {
       label: l10n.defaultModelSameAsChat,
       onPressed: () {
         _removeOverlay();
-        ref.read(settingsProvider.notifier).setExecutionModel(null);
+        ref.read(settingsProvider.notifier).setExecutionSettings(model: null, providerId: null);
       },
       isSelected: executionModel == null,
       textColor: executionModel == null ? theme.accentColor : theme.typography.caption?.color,
@@ -116,7 +116,7 @@ class _SkillSettingsPageState extends ConsumerState<SkillSettingsPage> {
           label: model,
           onPressed: () {
             _removeOverlay();
-            ref.read(settingsProvider.notifier).setExecutionModel(model);
+            ref.read(settingsProvider.notifier).setExecutionSettings(model: model, providerId: provider.id);
           },
           backgroundColor: providerColor,
           isSelected: isSelected,

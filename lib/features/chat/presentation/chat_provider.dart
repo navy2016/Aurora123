@@ -291,6 +291,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final startTime = DateTime.now();
     int promptTokens = 0;
     int completionTokens = 0;
+    int reasoningTokens = 0;
     try {
       final messagesForApi = List<Message>.from(state.messages);
       final settings = _ref.read(settingsProvider);
@@ -321,7 +322,8 @@ You have access to the following specialized agents. Delegate tasks to them when
 ## Registry
 $skillDescriptions
 
-To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `skill_name` and a detailed `query` for the worker agent.
+To invoke a skill, output a skill tag in this exact format:
+<skill name="skill_name">natural language task description</skill>
 ''';
         final systemMsg = messagesForApi.where((m) => m.role == 'system').firstOrNull;
         if (systemMsg != null) {
@@ -339,25 +341,8 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
           ));
         }
         
-        // Add call_skill tool
-        final callSkillTool = {
-          'type': 'function',
-          'function': {
-            'name': 'call_skill',
-            'description': 'Route a complex task to a specialized worker agent with full documentation access.',
-            'parameters': {
-              'type': 'object',
-              'required': ['skill_name', 'query'],
-              'properties': {
-                'skill_name': {'type': 'string', 'description': 'The exact identifier of the skill from the registry'},
-                'query': {'type': 'string', 'description': 'The full natural language task description for the worker'}
-              }
-            }
-          }
-        };
-        // Merge with existing tools
-        tools ??= [];
-        tools.add(callSkillTool);
+      // Tools are now primarily tag-based for Search and Skills Routing.
+      // Physical tools are only used if explicitly provided or by sub-agents.
       }
       bool continueGeneration = true;
       int turns = 0;
@@ -379,6 +364,7 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
             if (_currentGenerationId != myGenerationId || !mounted) break;
             if (chunk.promptTokens != null) promptTokens = chunk.promptTokens!;
             if (chunk.completionTokens != null) completionTokens = chunk.completionTokens!;
+            if (chunk.reasoningTokens != null) reasoningTokens = chunk.reasoningTokens!;
             if (chunk.reasoning != null && chunk.reasoning!.isNotEmpty) {
               reasoningStartTime ??= DateTime.now();
               firstContentTime ??= DateTime.now();
@@ -426,6 +412,8 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
                 tokenCount: chunk.usage ?? aiMsg.tokenCount,
                 promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
                 completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
+                reasoningTokens: reasoningTokens > 0 ? reasoningTokens : aiMsg.reasoningTokens,
+                firstTokenMs: firstContentTime != null ? firstContentTime.difference(startTime).inMilliseconds : null,
                 toolCalls: _mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
               );
               if (!mounted) break;
@@ -453,6 +441,8 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
               tokenCount: chunk.usage ?? aiMsg.tokenCount,
               promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
               completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
+              reasoningTokens: reasoningTokens > 0 ? reasoningTokens : aiMsg.reasoningTokens,
+              firstTokenMs: firstContentTime != null ? firstContentTime.difference(startTime).inMilliseconds : null,
               toolCalls: _mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
             );
             final newMessages = List<Message>.from(state.messages);
@@ -479,11 +469,15 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
           // Check for text-based search pattern: <search>query</search>
           final searchPattern = RegExp(r'<search>(.*?)</search>', dotAll: true);
           final searchMatch = searchPattern.firstMatch(aiMsg.content);
+
+          // Check for skill tag pattern: <skill name="skill_name">query</skill>
+          final skillPattern = RegExp(r'''<skill\s+name=["'](.*?)["']>(.*?)</skill>''', dotAll: true);
+          final skillMatch = skillPattern.firstMatch(aiMsg.content);
+
           if (searchMatch != null) {
             final searchQuery = searchMatch.group(1)?.trim() ?? '';
             if (searchQuery.isNotEmpty) {
               continueGeneration = true;
-              // Remove the <search> tag from displayed content
               if (!mounted) break;
               final cleanedContent = aiMsg.content.replaceAll(searchPattern, '').trim();
               aiMsg = aiMsg.copyWith(content: cleanedContent);
@@ -494,7 +488,6 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
               newMessages.add(aiMsg);
               state = state.copyWith(messages: newMessages);
               
-              // Execute search
               String searchResult;
               try {
                 searchResult = await toolManager.executeTool('SearchWeb', {'query': searchQuery},
@@ -503,30 +496,81 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
                 searchResult = jsonEncode({'error': e.toString()});
               }
               
-              // Create a tool call ID for display purposes
               final toolCallId = 'search_${const Uuid().v4().substring(0, 8)}';
-              
               if (!mounted) break;
-              // Display search results to user as tool message
               final toolMsg = Message.tool(searchResult, toolCallId: toolCallId);
               state = state.copyWith(messages: [...state.messages, toolMsg]);
               
-              // Add assistant message and search result to API messages
+              // Protocol: Wrap original call in tags, wrap result in <result> tags
               messagesForApi.add(aiMsg.copyWith(content: '<search>$searchQuery</search>'));
               messagesForApi.add(Message(
                 id: const Uuid().v4(),
                 role: 'user',
-                content: '## Search Results for "$searchQuery"\n$searchResult\n\nPlease synthesize the above search results and provide a comprehensive answer. Cite sources using [index](link) format.',
+                content: '<result name="SearchWeb">\n$searchResult\n</result>\n\nPlease synthesize the above results.',
                 timestamp: DateTime.now(),
                 isUser: false,
               ));
               
               if (!mounted) break;
-              // Create new AI message for final response
               aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
               state = state.copyWith(messages: [...state.messages, aiMsg]);
             }
+          } else if (skillMatch != null) {
+             final skillName = skillMatch.group(1)?.trim() ?? '';
+             final skillQuery = skillMatch.group(2)?.trim() ?? '';
+             
+             if (skillName.isNotEmpty) {
+                if (!mounted) break;
+                // Clean tag from display
+                final cleanedContent = aiMsg.content.replaceAll(skillPattern, '').trim();
+                aiMsg = aiMsg.copyWith(content: cleanedContent);
+                final newMessages = List<Message>.from(state.messages);
+                if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
+                   newMessages.removeLast();
+                }
+                newMessages.add(aiMsg);
+                state = state.copyWith(messages: newMessages);
+
+                // Get original user request from history
+                final originalUserMsg = state.messages.lastWhere((m) => m.isUser, orElse: () => Message.user(''));
+
+                String executionResult;
+                try {
+                  final skill = _ref.read(skillProvider).skills.firstWhere(
+                    (s) => s.name == skillName,
+                    orElse: () => throw Exception('Skill "$skillName" not found.'),
+                  );
+                  final workerService = WorkerService(llmService);
+                  executionResult = await workerService.executeSkillTask(
+                    skill, 
+                    skillQuery, 
+                    originalRequest: originalUserMsg.content,
+                    model: settings.executionModel,
+                    providerId: settings.executionProviderId
+                  );
+                } catch (e) {
+                  executionResult = "Error executing skill: $e";
+                }
+
+                if (!mounted) break;
+                
+                // Add the action and result to API history for the Decision Model to summarize
+                messagesForApi.add(aiMsg.copyWith(content: '<skill name="$skillName">$skillQuery</skill>'));
+                messagesForApi.add(Message(
+                  id: const Uuid().v4(),
+                  role: 'user',
+                  content: '<result name="$skillName">\n$executionResult\n</result>\n\nPlease provide a final human-readable response based on the above result.',
+                  timestamp: DateTime.now(),
+                  isUser: false,
+                ));
+
+                // Prepare for the final Summary call (Call 3)
+                continueGeneration = true;
+                aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
+                state = state.copyWith(messages: [...state.messages, aiMsg]);
+             }
           }
+
           // Legacy JSON-based tool calls (fallback)
           else if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
             continueGeneration = true;
@@ -610,8 +654,10 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
             tools: tools,
             cancelToken: _currentCancelToken,
           );
+          firstContentTime ??= DateTime.now();
           if (response.promptTokens != null) promptTokens = response.promptTokens!;
           if (response.completionTokens != null) completionTokens = response.completionTokens!;
+          if (response.reasoningTokens != null) reasoningTokens = response.reasoningTokens!;
           if (_currentGenerationId == myGenerationId && mounted) {
             aiMsg = Message(
                 id: aiMsg.id,
@@ -626,6 +672,8 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
                 tokenCount: response.usage,
                 promptTokens: response.promptTokens,
                 completionTokens: response.completionTokens,
+                reasoningTokens: response.reasoningTokens,
+                firstTokenMs: firstContentTime != null ? firstContentTime.difference(startTime).inMilliseconds : null,
                 toolCalls: response.toolCalls
                     ?.map((tc) => ToolCall(
                         id: tc.id ?? '',
@@ -737,6 +785,12 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
         );
         await for (final chunk in finalStream) {
           if (_currentGenerationId != myGenerationId || !mounted) break;
+          if (chunk.promptTokens != null) promptTokens = chunk.promptTokens!;
+          if (chunk.completionTokens != null) completionTokens = chunk.completionTokens!;
+          if (chunk.reasoningTokens != null) reasoningTokens = chunk.reasoningTokens!;
+          if (firstContentTime == null && (chunk.content != null || chunk.reasoning != null)) {
+            firstContentTime = DateTime.now();
+          }
           aiMsg = Message(
             id: aiMsg.id,
             content: aiMsg.content + (chunk.content ?? ''),
@@ -748,6 +802,8 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
             tokenCount: chunk.usage ?? aiMsg.tokenCount,
             promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
             completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
+            reasoningTokens: reasoningTokens > 0 ? reasoningTokens : aiMsg.reasoningTokens,
+            firstTokenMs: firstContentTime != null ? firstContentTime.difference(startTime).inMilliseconds : null,
           );
           final updateMessages = List<Message>.from(state.messages);
           if (updateMessages.isNotEmpty && updateMessages.last.id == aiMsg.id) {
@@ -775,17 +831,26 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
             // Add timing metrics to the last non-tool AI message
             if (!m.isUser && m.role != 'tool' && i == unsaved.length - 1) {
               m = m.copyWith(
-                firstTokenMs: firstTokenMs,
-                durationMs: durationMs,
                 promptTokens: promptTokens,
                 completionTokens: completionTokens,
+                reasoningTokens: reasoningTokens,
+                tokenCount: (promptTokens > 0 || completionTokens > 0) 
+                    ? (promptTokens + completionTokens + reasoningTokens) 
+                    : m.tokenCount,
+                durationMs: durationMs,
+                firstTokenMs: firstTokenMs,
               );
             }
             final dbId = await _storage.saveMessage(m, _sessionId);
             if (!mounted) break;
             final stateIndex = startSaveIndex + i;
             if (stateIndex < updatedMessages.length) {
-              updatedMessages[stateIndex] = m.copyWith(id: dbId);
+              final savedMsg = m.copyWith(id: dbId);
+              updatedMessages[stateIndex] = savedMsg;
+              // Ensure we use the final saved message (with all metrics) for usage stats
+              if (!m.isUser && m.role != 'tool' && i == unsaved.length - 1) {
+                aiMsg = savedMsg;
+              }
             }
           }
           if (mounted && _currentGenerationId == myGenerationId) {
@@ -807,7 +872,8 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
               firstTokenMs: firstTokenMs ?? 0,
               tokenCount: tokenCount,
               promptTokens: promptTokens,
-              completionTokens: completionTokens);
+              completionTokens: completionTokens,
+              reasoningTokens: reasoningTokens);
         }
         
         // Auto-rotate API key after successful request if enabled

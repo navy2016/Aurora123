@@ -360,6 +360,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       executionProviderId: appSettings?.executionProviderId,
       fontSize: appSettings?.fontSize ?? 14.0,
     );
+    print('DEBUG: refreshSettings loaded - executionModel: ${appSettings?.executionModel}, executionProviderId: ${appSettings?.executionProviderId}');
 
     await loadPresets();
   }
@@ -823,21 +824,15 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     );
   }
 
-  Future<void> setExecutionModel(String? model) async {
-    state = state.copyWith(executionModel: model);
+  Future<void> setExecutionSettings({String? model, String? providerId}) async {
+    state = state.copyWith(
+      executionModel: model,
+      executionProviderId: providerId,
+    );
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       executionModel: model,
-      executionProviderId: state.executionProviderId,
-    );
-  }
-
-  Future<void> setExecutionProviderId(String? id) async {
-    state = state.copyWith(executionProviderId: id);
-    await _storage.saveAppSettings(
-      activeProviderId: state.activeProviderId,
-      executionModel: state.executionModel,
-      executionProviderId: id,
+      executionProviderId: providerId,
     );
   }
 }
