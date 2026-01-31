@@ -224,6 +224,9 @@ class OpenAILLMService implements LLMService {
         if (toolChoice != null) {
           requestData['tool_choice'] = toolChoice;
         }
+      }
+
+      if (_settings.isSearchEnabled) {
         final sysIdx = apiMessages.indexWhere((m) => m['role'] == 'system');
         if (sysIdx != -1) {
           final oldContent = apiMessages[sysIdx]['content'];
@@ -1003,6 +1006,9 @@ Use search for:
         if (toolChoice != null) {
            requestData['tool_choice'] = toolChoice;
         }
+      }
+
+      if (_settings.isSearchEnabled) {
         final sysIdx = apiMessages.indexWhere((m) => m['role'] == 'system');
         if (sysIdx != -1) {
           final oldContent = apiMessages[sysIdx]['content'];

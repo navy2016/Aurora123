@@ -322,7 +322,8 @@ You have access to the following specialized agents. Delegate tasks to them when
 ## Registry
 $skillDescriptions
 
-To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `skill_name` and a detailed `query` for the worker agent.
+To invoke a skill, output a skill tag in this exact format:
+<skill name="skill_name">natural language task description</skill>
 ''';
         final systemMsg = messagesForApi.where((m) => m.role == 'system').firstOrNull;
         if (systemMsg != null) {
@@ -340,25 +341,8 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
           ));
         }
         
-        // Add call_skill tool
-        final callSkillTool = {
-          'type': 'function',
-          'function': {
-            'name': 'call_skill',
-            'description': 'Route a complex task to a specialized worker agent with full documentation access.',
-            'parameters': {
-              'type': 'object',
-              'required': ['skill_name', 'query'],
-              'properties': {
-                'skill_name': {'type': 'string', 'description': 'The exact identifier of the skill from the registry'},
-                'query': {'type': 'string', 'description': 'The full natural language task description for the worker'}
-              }
-            }
-          }
-        };
-        // Merge with existing tools
-        tools ??= [];
-        tools.add(callSkillTool);
+      // Tools are now primarily tag-based for Search and Skills Routing.
+      // Physical tools are only used if explicitly provided or by sub-agents.
       }
       bool continueGeneration = true;
       int turns = 0;
@@ -485,11 +469,15 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
           // Check for text-based search pattern: <search>query</search>
           final searchPattern = RegExp(r'<search>(.*?)</search>', dotAll: true);
           final searchMatch = searchPattern.firstMatch(aiMsg.content);
+
+          // Check for skill tag pattern: <skill name="skill_name">query</skill>
+          final skillPattern = RegExp(r'''<skill\s+name=["'](.*?)["']>(.*?)</skill>''', dotAll: true);
+          final skillMatch = skillPattern.firstMatch(aiMsg.content);
+
           if (searchMatch != null) {
             final searchQuery = searchMatch.group(1)?.trim() ?? '';
             if (searchQuery.isNotEmpty) {
               continueGeneration = true;
-              // Remove the <search> tag from displayed content
               if (!mounted) break;
               final cleanedContent = aiMsg.content.replaceAll(searchPattern, '').trim();
               aiMsg = aiMsg.copyWith(content: cleanedContent);
@@ -500,7 +488,6 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
               newMessages.add(aiMsg);
               state = state.copyWith(messages: newMessages);
               
-              // Execute search
               String searchResult;
               try {
                 searchResult = await toolManager.executeTool('SearchWeb', {'query': searchQuery},
@@ -509,30 +496,81 @@ To invoke a skill, usage of the `call_skill` tool is mandatory. Provide the `ski
                 searchResult = jsonEncode({'error': e.toString()});
               }
               
-              // Create a tool call ID for display purposes
               final toolCallId = 'search_${const Uuid().v4().substring(0, 8)}';
-              
               if (!mounted) break;
-              // Display search results to user as tool message
               final toolMsg = Message.tool(searchResult, toolCallId: toolCallId);
               state = state.copyWith(messages: [...state.messages, toolMsg]);
               
-              // Add assistant message and search result to API messages
+              // Protocol: Wrap original call in tags, wrap result in <result> tags
               messagesForApi.add(aiMsg.copyWith(content: '<search>$searchQuery</search>'));
               messagesForApi.add(Message(
                 id: const Uuid().v4(),
                 role: 'user',
-                content: '## Search Results for "$searchQuery"\n$searchResult\n\nPlease synthesize the above search results and provide a comprehensive answer. Cite sources using [index](link) format.',
+                content: '<result name="SearchWeb">\n$searchResult\n</result>\n\nPlease synthesize the above results.',
                 timestamp: DateTime.now(),
                 isUser: false,
               ));
               
               if (!mounted) break;
-              // Create new AI message for final response
               aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
               state = state.copyWith(messages: [...state.messages, aiMsg]);
             }
+          } else if (skillMatch != null) {
+             final skillName = skillMatch.group(1)?.trim() ?? '';
+             final skillQuery = skillMatch.group(2)?.trim() ?? '';
+             
+             if (skillName.isNotEmpty) {
+                if (!mounted) break;
+                // Clean tag from display
+                final cleanedContent = aiMsg.content.replaceAll(skillPattern, '').trim();
+                aiMsg = aiMsg.copyWith(content: cleanedContent);
+                final newMessages = List<Message>.from(state.messages);
+                if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
+                   newMessages.removeLast();
+                }
+                newMessages.add(aiMsg);
+                state = state.copyWith(messages: newMessages);
+
+                // Get original user request from history
+                final originalUserMsg = state.messages.lastWhere((m) => m.isUser, orElse: () => Message.user(''));
+
+                String executionResult;
+                try {
+                  final skill = _ref.read(skillProvider).skills.firstWhere(
+                    (s) => s.name == skillName,
+                    orElse: () => throw Exception('Skill "$skillName" not found.'),
+                  );
+                  final workerService = WorkerService(llmService);
+                  executionResult = await workerService.executeSkillTask(
+                    skill, 
+                    skillQuery, 
+                    originalRequest: originalUserMsg.content,
+                    model: settings.executionModel,
+                    providerId: settings.executionProviderId
+                  );
+                } catch (e) {
+                  executionResult = "Error executing skill: $e";
+                }
+
+                if (!mounted) break;
+                
+                // Add the action and result to API history for the Decision Model to summarize
+                messagesForApi.add(aiMsg.copyWith(content: '<skill name="$skillName">$skillQuery</skill>'));
+                messagesForApi.add(Message(
+                  id: const Uuid().v4(),
+                  role: 'user',
+                  content: '<result name="$skillName">\n$executionResult\n</result>\n\nPlease provide a final human-readable response based on the above result.',
+                  timestamp: DateTime.now(),
+                  isUser: false,
+                ));
+
+                // Prepare for the final Summary call (Call 3)
+                continueGeneration = true;
+                aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
+                state = state.copyWith(messages: [...state.messages, aiMsg]);
+             }
           }
+
           // Legacy JSON-based tool calls (fallback)
           else if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
             continueGeneration = true;

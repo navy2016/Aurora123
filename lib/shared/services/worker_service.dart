@@ -12,19 +12,22 @@ class WorkerService {
 
   WorkerService(this._llmService);
 
-  Future<String> executeSkillTask(Skill skill, String userRequest, {String? model, String? providerId}) async {
+  Future<String> executeSkillTask(Skill skill, String skillQuery, {String? originalRequest, String? model, String? providerId}) async {
     final systemPrompt = '''
-You are an expert executor for the skill: ${skill.name}.
-Your goal is to fulfill the User Request by writing and executing scripts using the provided tools.
+# You are the Technical Executor for: ${skill.name}
+Your ONLY task is to look at the Manual and output the correct shell command to fulfill the request.
 
-# Manual for ${skill.name}
+## Manual
 ${skill.instructions}
 
-# Instructions
-1. Analyze the User Request.
-2. Refer to the Manual for how to use the skill (Instructions).
-3. USE the `run_shell` tool to execute the necessary commands.
-4. Output the final result based on the command output.
+## Context
+- **Routing Intent**: $skillQuery
+- **Original User Request**: ${originalRequest ?? 'Not provided'}
+
+## Strict Rules
+1. **No Chitchat**: Only output tool calls or direct answers.
+2. **Follow Examples**: Use the exact format and parameter conventions (e.g., English city names) shown in the Manual.
+3. **No Summary**: Do NOT summarize the result. Return the raw data or tool output.
 ''';
 
     final messages = [
@@ -38,7 +41,7 @@ ${skill.instructions}
       Message(
         id: const Uuid().v4(),
         role: 'user',
-        content: userRequest,
+        content: skillQuery,
         timestamp: DateTime.now(),
         isUser: true,
       ),
@@ -49,14 +52,14 @@ ${skill.instructions}
         'type': 'function',
         'function': {
           'name': 'run_shell',
-          'description': 'Execute a shell command. Use this to run the scripts mentioned in the manual.',
+          'description': 'Execute a shell command as per the manual.',
           'parameters': {
             'type': 'object',
             'required': ['command'],
             'properties': {
               'command': {
                 'type': 'string',
-                'description': 'The command to execute (e.g., python skills/script.py ...)',
+                'description': 'The exact command to execute.',
               },
             },
           },
@@ -73,52 +76,23 @@ ${skill.instructions}
       );
 
       if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
-        final chunk = response.toolCalls!.first;
-        if (chunk.name == 'run_shell') {
-          // Fix 1: Handle nullable arguments
-          final argsStr = chunk.arguments ?? '{}';
-          final args = jsonDecode(argsStr);
-          final command = args['command'] as String;
-
-          final result = await _executeShellCommand(command);
-
-          // Fix 2: Handle nullable ID
-          final toolCallId = chunk.id ?? '';
-          final toolMsg = Message.tool(result, toolCallId: toolCallId);
-          
-          // Fix 3: Convert ToolCallChunk list to ToolCall list
-          final convertedToolCalls = response.toolCalls?.map((c) => ToolCall(
-            id: c.id ?? '',
-            name: c.name ?? '',
-            arguments: c.arguments ?? '',
-            type: c.type ?? 'function'
-          )).toList();
-
-          messages.add(Message(
-             id: const Uuid().v4(),
-             role: 'assistant',
-             content: '',
-             toolCalls: convertedToolCalls,
-             timestamp: DateTime.now(),
-             isUser: false,
-          ));
-          messages.add(toolMsg);
-
-          // Optimization: Return result immediately instead of asking LLM to summarize
-          // This saves tokens and time, letting the main model handle the summary.
-          final outputJson = jsonDecode(result);
-          if (outputJson['exitCode'] == 0) {
-             return "Execution Success:\n${outputJson['stdout']}";
-          } else {
-             return "Execution Failed:\nStderr: ${outputJson['stderr']}\nStdout: ${outputJson['stdout']}";
-          }
+        final tc = response.toolCalls!.first;
+        if (tc.name == 'run_shell') {
+           try {
+              final args = jsonDecode(tc.arguments ?? '{}');
+              final command = args['command']?.toString();
+              if (command != null) {
+                return await _executeShellCommand(command);
+              }
+           } catch (e) {
+              return "Worker Error: Failed to parse tool arguments.";
+           }
         }
       }
-
-      return response.content ?? "No action taken by worker.";
-
+      
+      return response.content ?? "Worker: No action performed.";
     } catch (e) {
-      return "Worker Error: $e";
+      return "Worker Critical Error: $e";
     }
   }
 

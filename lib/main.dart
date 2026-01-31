@@ -147,6 +147,8 @@ void main() async {
           themeColor: appSettings?.themeColor ?? 'teal',
           backgroundColor: appSettings?.backgroundColor ?? 'default',
           closeBehavior: appSettings?.closeBehavior ?? 0,
+          executionModel: appSettings?.executionModel,
+          executionProviderId: appSettings?.executionProviderId,
         );
       }),
     ],

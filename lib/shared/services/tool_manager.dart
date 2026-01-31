@@ -10,26 +10,7 @@ class ToolManager {
   final Dio _dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 10)));
   
   List<Map<String, dynamic>> getTools({List<Skill> skills = const []}) {
-    final tools = <Map<String, dynamic>>[
-      {
-        'type': 'function',
-        'function': {
-          'name': 'SearchWeb',
-          'description':
-              'Search the web for current information. Use this when the user asks about up-to-date events, news, or specific knowledge that might be recent.',
-          'parameters': {
-            'type': 'object',
-            'required': ['query'],
-            'properties': {
-              'query': {
-                'type': 'string',
-                'description': 'The search query',
-              },
-            },
-          },
-        },
-      },
-    ];
+    final tools = <Map<String, dynamic>>[];
 
     for (final skill in skills) {
       if (!skill.isEnabled || !skill.forAI) continue;
