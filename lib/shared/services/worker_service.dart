@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:aurora/core/error/app_error_type.dart';
+import 'package:aurora/core/error/app_exception.dart';
 import 'package:aurora/features/chat/domain/message.dart';
 import 'package:aurora/shared/services/llm_service.dart';
 import 'package:aurora/features/skills/domain/skill_entity.dart';
@@ -12,7 +14,21 @@ class WorkerService {
 
   WorkerService(this._llmService);
 
-  Future<String> executeSkillTask(Skill skill, String skillQuery, {String? originalRequest, String? model, String? providerId}) async {
+  Future<String> executeSkillTask(
+    Skill skill,
+    String skillQuery, {
+    String? originalRequest,
+    String? model,
+    String? providerId,
+    void Function({
+      required bool success,
+      required int promptTokens,
+      required int completionTokens,
+      required int reasoningTokens,
+      required int durationMs,
+      AppErrorType? errorType,
+    })? onUsage,
+  }) async {
     final systemPrompt = '''
 # You are the Technical Executor for: ${skill.name}
 Your ONLY task is to look at the Manual and output the correct shell command to fulfill the request.
@@ -67,6 +83,7 @@ ${skill.instructions}
       }
     ];
 
+    final requestStartTime = DateTime.now();
     try {
       final response = await _llmService.getResponse(
         messages,
@@ -74,6 +91,17 @@ ${skill.instructions}
         model: model,
         providerId: providerId,
       );
+      
+      final durationMs = DateTime.now().difference(requestStartTime).inMilliseconds;
+      if (onUsage != null) {
+        onUsage(
+          success: true,
+          promptTokens: response.promptTokens ?? 0,
+          completionTokens: response.completionTokens ?? 0,
+          reasoningTokens: response.reasoningTokens ?? 0,
+          durationMs: durationMs,
+        );
+      }
 
       if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
         final tc = response.toolCalls!.first;
@@ -92,6 +120,21 @@ ${skill.instructions}
       
       return response.content ?? "Worker: No action performed.";
     } catch (e) {
+      final durationMs = DateTime.now().difference(requestStartTime).inMilliseconds;
+      if (onUsage != null) {
+        AppErrorType errorType = AppErrorType.unknown;
+        if (e is AppException) {
+          errorType = e.type;
+        }
+        onUsage(
+          success: false,
+          promptTokens: 0,
+          completionTokens: 0,
+          reasoningTokens: 0,
+          durationMs: durationMs,
+          errorType: errorType,
+        );
+      }
       return "Worker Critical Error: $e";
     }
   }

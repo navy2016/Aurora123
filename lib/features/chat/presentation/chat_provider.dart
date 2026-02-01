@@ -541,13 +541,34 @@ To invoke a skill, output a skill tag in this exact format:
                     orElse: () => throw Exception('Skill "$skillName" not found.'),
                   );
                   final workerService = WorkerService(llmService);
-                  executionResult = await workerService.executeSkillTask(
-                    skill, 
-                    skillQuery, 
-                    originalRequest: originalUserMsg.content,
-                    model: settings.executionModel,
-                    providerId: settings.executionProviderId
-                  );
+                    executionResult = await workerService.executeSkillTask(
+                      skill,
+                      skillQuery,
+                      originalRequest: originalUserMsg.content,
+                      model: settings.executionModel,
+                      providerId: settings.executionProviderId,
+                      onUsage: ({
+                        required bool success,
+                        required int promptTokens,
+                        required int completionTokens,
+                        required int reasoningTokens,
+                        required int durationMs,
+                        AppErrorType? errorType,
+                      }) {
+                        final execModel = settings.executionModel;
+                        if (execModel != null && execModel.isNotEmpty) {
+                          _ref.read(usageStatsProvider.notifier).incrementUsage(
+                                execModel,
+                                success: success,
+                                promptTokens: promptTokens,
+                                completionTokens: completionTokens,
+                                reasoningTokens: reasoningTokens,
+                                durationMs: durationMs,
+                                errorType: errorType,
+                              );
+                        }
+                      },
+                    );
                 } catch (e) {
                   executionResult = "Error executing skill: $e";
                 }
@@ -630,7 +651,32 @@ To invoke a skill, output a skill tag in this exact format:
                     final workerService = WorkerService(llmService);
                     final executionModel = settings.executionModel;
                     final executionProviderId = settings.executionProviderId;
-                    toolResult = await workerService.executeSkillTask(skill, query.toString(), model: executionModel, providerId: executionProviderId);
+                    toolResult = await workerService.executeSkillTask(
+                      skill,
+                      query.toString(),
+                      model: executionModel,
+                      providerId: executionProviderId,
+                      onUsage: ({
+                        required bool success,
+                        required int promptTokens,
+                        required int completionTokens,
+                        required int reasoningTokens,
+                        required int durationMs,
+                        AppErrorType? errorType,
+                      }) {
+                        if (executionModel != null && executionModel.isNotEmpty) {
+                          _ref.read(usageStatsProvider.notifier).incrementUsage(
+                                executionModel,
+                                success: success,
+                                promptTokens: promptTokens,
+                                completionTokens: completionTokens,
+                                reasoningTokens: reasoningTokens,
+                                durationMs: durationMs,
+                                errorType: errorType,
+                              );
+                        }
+                      },
+                    );
                 } else {
                   final args = jsonDecode(tc.arguments);
                   toolResult = await toolManager.executeTool(tc.name, args,
