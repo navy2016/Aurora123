@@ -456,6 +456,8 @@ Use search for:
       );
       final stream = response.data.stream as Stream<List<int>>;
       String lineBuffer = '';
+      bool isInThoughtTag = false;
+      
       await for (final chunk
           in stream.cast<List<int>>().transform(utf8.decoder)) {
         lineBuffer += chunk;
@@ -506,9 +508,54 @@ Use search for:
                 final delta = choices[0]['delta'];
                 if (delta != null) {
                   final finishReason = choices[0]['finish_reason'];
-                  final String? content = delta['content'];
-                  final String? reasoning =
+                  final String? rawContent = delta['content'];
+                  String? content = rawContent;
+                  String? reasoning =
                       delta['reasoning_content'] ?? delta['reasoning'];
+
+                  // 1. Handle Gemini Google Thinking Metadata
+                  final bool isGoogleThought = delta['extra_content']?['google']?['thought'] == true;
+                  if (isGoogleThought && content != null) {
+                    reasoning = (reasoning ?? '') + content;
+                    content = null;
+                  }
+
+                  // 2. Handle XML-style tags (<thought> or <think>)
+                  if (content != null) {
+                    // Check for start tags
+                    if (content.contains('<thought>')) {
+                       isInThoughtTag = true;
+                       final parts = content.split('<thought>');
+                       final before = parts[0];
+                       final after = parts.sublist(1).join('<thought>');
+                       content = before.isEmpty ? null : before;
+                       reasoning = (reasoning ?? '') + after;
+                    } else if (content.contains('<think>')) {
+                       isInThoughtTag = true;
+                       final parts = content.split('<think>');
+                       final before = parts[0];
+                       final after = parts.sublist(1).join('<think>');
+                       content = before.isEmpty ? null : before;
+                       reasoning = (reasoning ?? '') + after;
+                    }
+                    
+                    // Check for end tags
+                    if (content != null && (content.contains('</thought>') || content.contains('</think>'))) {
+                       final isEndThought = content.contains('</thought>');
+                       final tag = isEndThought ? '</thought>' : '</think>';
+                       final parts = content.split(tag);
+                       final inside = parts[0];
+                       final outside = parts.sublist(1).join(tag);
+                       
+                       reasoning = (reasoning ?? '') + inside;
+                       content = outside.isEmpty ? null : outside;
+                       isInThoughtTag = false;
+                    } else if (isInThoughtTag) {
+                       // If we are currently inside a tag, all content goes to reasoning
+                       reasoning = (reasoning ?? '') + content!;
+                       content = null;
+                    }
+                  }
                   final toolCalls = delta['tool_calls'];
 
                   String? imageUrl;
