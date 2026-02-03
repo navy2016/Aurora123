@@ -45,12 +45,16 @@ class CustomDropdownOverlay extends StatelessWidget {
   final LayerLink layerLink;
   final Widget child;
   final Offset offset;
+  final Alignment targetAnchor;
+  final Alignment followerAnchor;
   const CustomDropdownOverlay({
     super.key,
     required this.onDismiss,
     required this.layerLink,
     required this.child,
     this.offset = const Offset(0, 32),
+    this.targetAnchor = Alignment.topLeft,
+    this.followerAnchor = Alignment.topLeft,
   });
   @override
   Widget build(BuildContext context) {
@@ -67,8 +71,10 @@ class CustomDropdownOverlay extends StatelessWidget {
           link: layerLink,
           showWhenUnlinked: false,
           offset: offset,
+          targetAnchor: targetAnchor,
+          followerAnchor: followerAnchor,
           child: Align(
-            alignment: Alignment.topLeft,
+            alignment: followerAnchor,
             child: Material(
               color: Colors.transparent,
               type: MaterialType.transparency,

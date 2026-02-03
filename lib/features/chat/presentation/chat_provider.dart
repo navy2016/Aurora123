@@ -5,23 +5,26 @@ import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../settings/presentation/settings_provider.dart';
-import '../../settings/presentation/usage_stats_provider.dart';
+import 'package:aurora/shared/utils/platform_utils.dart';
+import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
+import 'package:aurora/features/assistant/domain/assistant.dart';
+import 'package:aurora/features/settings/presentation/settings_provider.dart';
+import 'package:aurora/features/settings/presentation/usage_stats_provider.dart';
+import 'package:aurora/features/chat/data/chat_storage.dart';
+import 'package:aurora/features/chat/data/session_entity.dart';
+import 'package:aurora/features/chat/presentation/topic_provider.dart';
+import 'package:aurora/features/skills/presentation/skill_provider.dart';
+import 'package:aurora/features/skills/domain/skill_entity.dart';
+import 'package:aurora/features/chat/domain/message.dart';
 import 'package:aurora/shared/services/openai_llm_service.dart';
-import '../domain/message.dart';
 import 'package:aurora/shared/services/llm_service.dart';
-import '../data/chat_storage.dart';
-import '../data/session_entity.dart';
 import 'package:aurora/shared/services/tool_manager.dart';
 import 'package:aurora/shared/services/worker_service.dart';
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:fluent_ui/fluent_ui.dart' hide Colors, Padding, StateSetter, ListBody;
 import 'package:uuid/uuid.dart';
-import 'topic_provider.dart';
-import '../../skills/presentation/skill_provider.dart';
-import '../../skills/domain/skill_entity.dart';
-import '../../../core/error/app_error_type.dart';
-import '../../../core/error/app_exception.dart';
-import 'package:aurora/shared/utils/platform_utils.dart';
+import 'package:aurora/core/error/app_error_type.dart';
+import 'package:aurora/core/error/app_exception.dart';
+import 'package:flutter/material.dart' show Colors, Padding, StateSetter, ListBody, VoidCallback, Image, CircleAvatar, FileImage;
 
 enum SearchEngine { duckduckgo, google, bing }
 
@@ -134,6 +137,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   bool _isDisposed = false;
   bool get mounted => !_isDisposed;
+  String get currentModel {
+    // Assistant specific model config removed per user request
+    return _ref.read(settingsProvider).activeProvider.selectedModel ?? '';
+  }
+
+  String get currentProvider {
+    // Assistant specific provider config removed per user request
+    return _ref.read(settingsProvider).activeProviderId;
+  }
 
   @override
   set state(ChatState value) {
@@ -184,27 +196,21 @@ class ChatNotifier extends StateNotifier<ChatState> {
     if (!mounted) return;
     String? restoredPresetName;
     final session = await _storage.getSession(_sessionId);
-    if (session?.presetId != null) {
-      if (session!.presetId!.isEmpty) {
-        restoredPresetName = null;
-      } else {
-        final presets = _ref.read(settingsProvider).presets;
-        final match = presets.where((p) => p.id == session.presetId);
-        if (match.isNotEmpty) {
-          restoredPresetName = match.first.name;
-        }
+    // Only restore Preset name for display purposes; Assistant is now global.
+    if (session?.presetId != null && session!.presetId!.isNotEmpty) {
+      final presets = _ref.read(settingsProvider).presets;
+      final match = presets.where((p) => p.id == session.presetId);
+      if (match.isNotEmpty) {
+        restoredPresetName = match.first.name;
       }
     } else {
+      // Fallback: try to match system prompt to a preset
       final systemMsg = messages.where((m) => m.role == 'system').firstOrNull;
       if (systemMsg != null) {
         final presets = _ref.read(settingsProvider).presets;
-        final appSettings =
-            await _ref.read(settingsStorageProvider).loadAppSettings();
-        if (appSettings?.lastPresetId != null) {
-          final match = presets.where((p) => p.id == appSettings!.lastPresetId);
-          if (match.isNotEmpty) {
-            restoredPresetName = match.first.name;
-          }
+        final match = presets.where((p) => p.systemPrompt == systemMsg.content);
+        if (match.isNotEmpty) {
+          restoredPresetName = match.first.name;
         }
       }
     }
@@ -233,10 +239,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
     if (text != null && (_sessionId == 'chat' || _sessionId == 'new_chat')) {
       final title = text.length > 15 ? '${text.substring(0, 15)}...' : text;
       final topicId = _ref.read(selectedTopicIdProvider);
+      final assistantId = _ref.read(assistantProvider).selectedAssistantId;
       
       // Don't use currentPresetId for new chats to avoid "leaking" presets
       final realId = await _storage.createSession(
-          title: title, topicId: topicId, presetId: '');
+          title: title, topicId: topicId, presetId: '', assistantId: assistantId);
       
       if (!mounted) return realId;
 
@@ -295,18 +302,61 @@ class ChatNotifier extends StateNotifier<ChatState> {
     try {
       final messagesForApi = List<Message>.from(state.messages);
       final settings = _ref.read(settingsProvider);
+      final assistantState = _ref.read(assistantProvider);
+      // Use global assistant selection, not local state
+      final assistant = assistantState.selectedAssistantId != null
+          ? assistantState.assistants
+              .where((a) => a.id == assistantState.selectedAssistantId)
+              .firstOrNull
+          : null;
+
       final llmService = _ref.read(llmServiceProvider);
       final toolManager = ToolManager();
+      
+      // Assistant specific model config removed per user request. Always use global settings.
       final currentModel = settings.activeProvider?.selectedModel;
-      final currentProvider = settings.activeProvider?.name;
+      final currentProviderId = settings.activeProvider?.id;
+      final currentProviderName = settings.activeProvider?.name ?? currentProviderId;
+      
       var aiMsg =
-          Message.ai('', model: currentModel, provider: currentProvider);
+          Message.ai('', model: currentModel, provider: currentProviderName);
       state = state.copyWith(messages: [...state.messages, aiMsg]);
+
+      // Inject Assistant System Prompt
+      if (assistant != null && assistant.systemPrompt.isNotEmpty) {
+        final systemMsg = messagesForApi.where((m) => m.role == 'system').firstOrNull;
+        if (systemMsg != null) {
+          final index = messagesForApi.indexOf(systemMsg);
+          messagesForApi[index] = systemMsg.copyWith(content: assistant.systemPrompt);
+        } else {
+          messagesForApi.insert(
+            0,
+            Message(
+              id: const Uuid().v4(),
+              role: 'system',
+              content: assistant.systemPrompt,
+              timestamp: DateTime.now(),
+              isUser: false,
+            ),
+          );
+        }
+      }
       final currentPlatform = Platform.operatingSystem;
       final isMobile = PlatformUtils.isMobile;
-      final activeSkills = isMobile 
+      var activeSkills = isMobile 
           ? <Skill>[] 
           : _ref.read(skillProvider).skills.where((s) => s.isEnabled && s.forAI && s.isCompatible(currentPlatform)).toList();
+      
+      // Filter skills if an assistant is selected
+      if (assistant != null) {
+        if (assistant.skillIds.isEmpty) {
+          // User requested: "otherwise it's just a simple prompt"
+          // So if no skills are configured, we disable all skills for this assistant.
+          activeSkills = [];
+        } else {
+          activeSkills = activeSkills.where((s) => assistant.skillIds.contains(s.id)).toList();
+        }
+      }
       List<Map<String, dynamic>>? tools;
       if (settings.isSearchEnabled || activeSkills.isNotEmpty) {
         tools = toolManager.getTools(skills: activeSkills);
@@ -701,6 +751,7 @@ To invoke a skill, output a skill tag in this exact format:
             cancelToken: _currentCancelToken,
           );
           firstContentTime ??= DateTime.now();
+          final durationMs = DateTime.now().difference(startTime).inMilliseconds;
           if (response.promptTokens != null) promptTokens = response.promptTokens!;
           if (response.completionTokens != null) completionTokens = response.completionTokens!;
           if (response.reasoningTokens != null) reasoningTokens = response.reasoningTokens!;
@@ -726,7 +777,9 @@ To invoke a skill, output a skill tag in this exact format:
                         type: tc.type ?? 'function',
                         name: tc.name ?? '',
                         arguments: tc.arguments ?? ''))
-                    .toList());
+                    .toList(),
+                durationMs: durationMs,
+            );
             final newMessages = List<Message>.from(state.messages);
             if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
               newMessages.removeLast();
@@ -1091,7 +1144,7 @@ To invoke a skill, output a skill tag in this exact format:
     _ref.read(settingsProvider.notifier).toggleSearchEnabled();
   }
 
-  Future<void> updateSystemPrompt(String template, [String? presetName]) async {
+  Future<void> _updateSystemMessageInternal(String template) async {
     final settingsState = _ref.read(settingsProvider);
     final user = settingsState.userName;
     final system = Platform.operatingSystem;
@@ -1131,29 +1184,46 @@ To invoke a skill, output a skill tag in this exact format:
       messages.insert(0, newMsg);
       await _storage.saveMessage(newMsg, _sessionId);
     }
+    state = state.copyWith(messages: messages);
+  }
+
+  Future<void> updateSystemPrompt(String template, [String? presetName]) async {
+    await _updateSystemMessageInternal(template);
+    
+    // Preset Mode: Activate Preset, Clear Assistant (use global provider)
     state = state.copyWith(
-      messages: messages,
       activePresetName: presetName,
     );
+    // Clear global assistant selection when a preset is chosen
+    if (presetName != null) {
+      _ref.read(assistantProvider.notifier).selectAssistant(null);
+    }
+    
     debugPrint(
         '[PresetSave] updateSystemPrompt called with presetName: $presetName, sessionId: $_sessionId');
     if (presetName != null) {
+      final settingsState = _ref.read(settingsProvider);
       final presets = settingsState.presets;
       final match = presets.where((p) => p.name == presetName);
       if (match.isNotEmpty) {
         final newPresetId = match.first.id;
-        // await _ref.read(settingsProvider.notifier).setLastPresetId(newPresetId);
         if (_sessionId != 'chat' && _sessionId != 'new_chat') {
           await _storage.updateSessionPreset(_sessionId, newPresetId);
+          // Also clear assistant association in storage
+          await _storage.updateSessionAssistant(_sessionId, null);
         }
       }
     } else {
-      // await _ref.read(settingsProvider.notifier).setLastPresetId(null);
       if (_sessionId != 'chat' && _sessionId != 'new_chat') {
-        await _storage.updateSessionPreset(_sessionId, '');
+         await _storage.updateSessionPreset(_sessionId, '');
+         await _storage.updateSessionAssistant(_sessionId, null);
       }
     }
+    // Force global trigger update for indicators
+    _ref.read(chatStateUpdateTriggerProvider.notifier).state++;
   }
+
+
 
   void setSearchEngine(SearchEngine engine) {
     _ref.read(settingsProvider.notifier).setSearchEngine(engine.name);

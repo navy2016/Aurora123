@@ -45,6 +45,7 @@ class AppSettingsEntity {
   String? lastTopicId;
   String language = 'zh';
   String? lastPresetId;
+  String? lastAssistantId;
   String? themeColor;
   String? backgroundColor;
   @Index()

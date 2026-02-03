@@ -1448,4 +1448,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get version => '版本';
+
+  @override
+  String get assistantSystem => '助理';
 }

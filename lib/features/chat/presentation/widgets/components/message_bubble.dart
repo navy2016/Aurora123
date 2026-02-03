@@ -22,6 +22,7 @@ import '../../../../../shared/utils/stats_calculator.dart';
 import 'package:aurora/shared/utils/number_format_utils.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
 import 'package:aurora/shared/theme/aurora_icons.dart';
+import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
 
 
 class MessageBubble extends ConsumerStatefulWidget {

@@ -7,18 +7,27 @@ import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:path/path.dart' as p;
 import 'package:aurora/l10n/app_localizations.dart';
-import '../../../settings/presentation/settings_content.dart';
-import '../../../settings/presentation/settings_provider.dart';
-import '../../../history/presentation/history_content.dart';
-import '../widgets/translation_content.dart';
-import '../widgets/window_buttons.dart';
-import '../widgets/model_selector.dart';
-import '../widgets/preset_selector.dart';
-import '../widgets/fade_indexed_stack.dart';
-import '../../../studio/presentation/studio_content.dart';
-import '../../../skills/presentation/skills_page.dart';
-import '../chat_provider.dart';
+import 'package:aurora/features/settings/presentation/settings_content.dart';
+import 'package:aurora/features/settings/presentation/settings_provider.dart';
+import 'package:aurora/features/history/presentation/history_content.dart';
+import 'package:aurora/features/chat/presentation/widgets/translation_content.dart';
+import 'package:aurora/features/chat/presentation/widgets/window_buttons.dart';
+import 'package:aurora/features/chat/presentation/widgets/model_selector.dart';
+import 'package:aurora/features/chat/presentation/widgets/preset_selector.dart';
+import 'package:aurora/features/chat/presentation/widgets/assistant_selector.dart';
+import 'package:aurora/features/chat/presentation/widgets/fade_indexed_stack.dart';
+import 'package:aurora/features/studio/presentation/studio_content.dart';
+import 'package:aurora/features/skills/presentation/skills_page.dart';
+import 'package:aurora/features/assistant/presentation/assistant_content.dart';
 import 'package:aurora/shared/theme/aurora_icons.dart';
+import 'package:aurora/features/assistant/presentation/widgets/assistant_avatar.dart';
+import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
+import 'package:aurora/features/assistant/domain/assistant.dart';
+import 'package:aurora/features/chat/data/session_entity.dart';
+import 'package:aurora/features/chat/presentation/widgets/chat_view.dart';
+import 'package:aurora/features/chat/presentation/widgets/components/chat_utils.dart';
+import 'package:aurora/features/chat/presentation/topic_provider.dart';
+import '../chat_provider.dart';
 
 class DesktopChatScreen extends ConsumerStatefulWidget {
   const DesktopChatScreen({super.key});
@@ -222,27 +231,32 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
       (
         icon: AuroraIcons.history,
         label: l10n.history,
-        body: const HistoryContent()
+        body: HistoryContent()
       ),
       (
         icon: AuroraIcons.translation,
         label: l10n.textTranslation,
-        body: const TranslationContent()
+        body: TranslationContent()
       ),
       (
         icon: AuroraIcons.skills,
         label: l10n.agentSkills,
-        body: const SkillSettingsPage()
+        body: SkillSettingsPage()
       ),
       (
         icon: AuroraIcons.studio,
         label: l10n.studio,
-        body: const StudioContent()
+        body: StudioContent()
       ),
       (
         icon: AuroraIcons.settings,
         label: l10n.settings,
-        body: const SettingsContent()
+        body: SettingsContent()
+      ),
+      (
+        icon: AuroraIcons.robot,
+        label: l10n.assistantSystem,
+        body: AssistantContent()
       ),
     ];
     String currentSessionId;
@@ -390,7 +404,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                     height: 32,
                     child: Center(
                       child: fluent.IconButton(
-                        icon: const fluent.Icon(
+                        icon: fluent.Icon(
                             AuroraIcons.globalNav,
                             size: 16),
                         onPressed: () {
@@ -408,9 +422,14 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                     const SizedBox(width: 8),
                     PresetSelector(sessionId: currentSessionId),
                   ],
-                  Expanded(
+                  const Expanded(
                       child: DragToMoveArea(
-                          child: Container(color: Colors.transparent))),
+                          child: SizedBox.expand())),
+                  if (currentSessionId.isNotEmpty &&
+                      currentSessionId != 'translation') ...[
+                    AssistantSelector(sessionId: currentSessionId),
+                    const SizedBox(width: 8),
+                  ],
                   const WindowButtons(),
                 ],
               ),
@@ -438,7 +457,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                               child: Column(
                                 children: [
                                   ...navItems
-                                      .take(navItems.length - 1)
+                                      .take(navItems.length - 2)
                                       .toList()
                                       .asMap()
                                       .entries
@@ -537,7 +556,68 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                   }),
                                   const Spacer(),
                                   Builder(builder: (context) {
-                                    final index = navItems.length - 1;
+                                    final index = navItems.length - 1; // Assistant
+                                    final item = navItems[index];
+                                    final isSelected = selectedIndex == index;
+                                    return fluent.HoverButton(
+                                      onPressed: () => ref
+                                          .read(desktopActiveTabProvider
+                                              .notifier)
+                                          .state = index,
+                                      builder: (context, states) {
+                                        return Container(
+                                          height: 40,
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 5, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: states.isHovering
+                                                ? theme.resources
+                                                    .subtleFillColorSecondary
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                width: 30,
+                                                child: Center(
+                                                  child: fluent.Icon(item.icon,
+                                                      size: 16,
+                                                      color: isSelected
+                                                          ? theme.accentColor
+                                                          : null),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 0.0),
+                                                  child: Text(item.label,
+                                                      style: TextStyle(
+                                                          color: isSelected
+                                                              ? theme
+                                                                  .accentColor
+                                                              : null,
+                                                          fontWeight: isSelected
+                                                              ? FontWeight.w600
+                                                              : FontWeight
+                                                                  .normal),
+                                                      overflow: TextOverflow
+                                                          .ellipsis),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  }),
+                                  Builder(builder: (context) {
+                                    final index = navItems.length - 2; // Settings
                                     final item = navItems[index];
                                     final isSelected = selectedIndex == index;
                                     return fluent.HoverButton(
@@ -680,7 +760,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                           child: FadeIndexedStack(
                             index: selectedIndex,
                             children:
-                                navItems.map((item) => item.body).toList(),
+                                navItems.map<Widget>((item) => item.body).toList(),
                           ),
                         ),
                       ),
@@ -695,3 +775,4 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
     );
   }
 }
+

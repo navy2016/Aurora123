@@ -12,6 +12,8 @@ import '../../chat/data/message_entity.dart';
 import '../../chat/data/session_entity.dart';
 import '../../chat/data/topic_entity.dart';
 
+import '../../assistant/data/assistant_entity.dart';
+
 class SettingsStorage {
   late Isar _isar;
   Isar get isar => _isar;
@@ -33,6 +35,7 @@ class SettingsStorage {
         DailyUsageStatsEntitySchema,
         TopicEntitySchema,
         ChatPresetEntitySchema,
+        AssistantEntitySchema,
       ],
       directory: supportDir.path,
     );
@@ -221,6 +224,7 @@ class SettingsStorage {
       ..lastTopicId = lastTopicId ?? existing?.lastTopicId
       ..language = language ?? existing?.language ?? 'zh'
       ..lastPresetId = existing?.lastPresetId
+      ..lastAssistantId = existing?.lastAssistantId
       ..themeColor = themeColor ?? existing?.themeColor
       ..backgroundColor = backgroundColor ?? existing?.backgroundColor
       ..closeBehavior = closeBehavior ?? existing?.closeBehavior ?? 0
@@ -615,6 +619,64 @@ class SettingsStorage {
       ..lastTopicId = existing.lastTopicId
       ..language = existing.language
       ..lastPresetId = presetId
+      ..lastAssistantId = existing.lastAssistantId
+      ..themeColor = existing.themeColor
+      ..backgroundColor = existing.backgroundColor
+      ..closeBehavior = existing.closeBehavior
+      ..executionModel = existing.executionModel
+      ..executionProviderId = existing.executionProviderId
+      ..fontSize = existing.fontSize
+      ..backgroundImagePath = existing.backgroundImagePath
+      ..backgroundBrightness = existing.backgroundBrightness
+      ..backgroundBlur = existing.backgroundBlur
+      ..useCustomTheme = existing.useCustomTheme;
+    await _isar.writeTxn(() async {
+      await _isar.appSettingsEntitys.clear();
+      await _isar.appSettingsEntitys.put(settings);
+    });
+  }
+
+  Future<void> saveAssistant(AssistantEntity assistant) async {
+    await _isar.writeTxn(() async {
+      await _isar.assistantEntitys.put(assistant);
+    });
+  }
+
+  Future<void> deleteAssistant(String assistantId) async {
+    await _isar.writeTxn(() async {
+      await _isar.assistantEntitys
+          .filter()
+          .assistantIdEqualTo(assistantId)
+          .deleteAll();
+    });
+  }
+
+  Future<List<AssistantEntity>> loadAssistants() async {
+    return await _isar.assistantEntitys.where().sortByUpdatedAtDesc().findAll();
+  }
+
+  Future<void> saveLastAssistantId(String? assistantId) async {
+    final existing = await loadAppSettings();
+    if (existing == null) return;
+    final settings = AppSettingsEntity()
+      ..activeProviderId = existing.activeProviderId
+      ..selectedModel = existing.selectedModel
+      ..availableModels = existing.availableModels
+      ..userName = existing.userName
+      ..userAvatar = existing.userAvatar
+      ..llmName = existing.llmName
+      ..llmAvatar = existing.llmAvatar
+      ..themeMode = existing.themeMode
+      ..isStreamEnabled = existing.isStreamEnabled
+      ..isSearchEnabled = existing.isSearchEnabled
+      ..searchEngine = existing.searchEngine
+      ..enableSmartTopic = existing.enableSmartTopic
+      ..topicGenerationModel = existing.topicGenerationModel
+      ..lastSessionId = existing.lastSessionId
+      ..lastTopicId = existing.lastTopicId
+      ..language = existing.language
+      ..lastPresetId = existing.lastPresetId
+      ..lastAssistantId = assistantId
       ..themeColor = existing.themeColor
       ..backgroundColor = existing.backgroundColor
       ..closeBehavior = existing.closeBehavior

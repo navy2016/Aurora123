@@ -287,17 +287,20 @@ class ChatStorage {
     });
   }
 
-  Future<String> createSession(
-      {required String title,
-      String? uuid,
-      int? topicId,
-      String? presetId}) async {
+  Future<String> createSession({
+    String title = 'New Chat',
+    String? uuid,
+    int? topicId,
+    String? presetId,
+    String? assistantId,
+  }) async {
     final session = SessionEntity()
       ..sessionId = uuid ?? DateTime.now().millisecondsSinceEpoch.toString()
       ..title = title
       ..lastMessageTime = DateTime.now()
       ..topicId = topicId
-      ..presetId = presetId;
+      ..presetId = presetId
+      ..assistantId = assistantId;
     await _isar.writeTxn(() async {
       await _isar.sessionEntitys.put(session);
     });
@@ -398,6 +401,19 @@ class ChatStorage {
           .findFirst();
       if (session != null) {
         session.presetId = presetId;
+        await _isar.sessionEntitys.put(session);
+      }
+    });
+  }
+
+  Future<void> updateSessionAssistant(String sessionId, String? assistantId) async {
+    await _isar.writeTxn(() async {
+      final session = await _isar.sessionEntitys
+          .filter()
+          .sessionIdEqualTo(sessionId)
+          .findFirst();
+      if (session != null) {
+        session.assistantId = assistantId;
         await _isar.sessionEntitys.put(session);
       }
     });

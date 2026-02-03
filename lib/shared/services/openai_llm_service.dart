@@ -230,7 +230,7 @@ class OpenAILLMService implements LLMService {
       apiMessages = await _compressApiMessagesIfNeeded(apiMessages);
       final now = DateTime.now();
       final dateStr = now.toIso8601String().split('T')[0];
-      final timeInstruction = 'Current Date: $dateStr. Today is ${now.year}.';
+      final timeInstruction = 'Current Date: $dateStr.';
       final systemMsgIndex =
           apiMessages.indexWhere((m) => m['role'] == 'system');
       if (systemMsgIndex != -1) {

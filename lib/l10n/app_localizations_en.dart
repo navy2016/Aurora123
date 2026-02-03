@@ -1478,4 +1478,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get version => 'Version';
+
+  @override
+  String get assistantSystem => 'Assistant';
 }

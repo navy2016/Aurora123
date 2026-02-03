@@ -15,6 +15,12 @@ import '../../../sync/presentation/mobile_sync_settings_page.dart';
 import '../mobile_translation_page.dart';
 import '../widgets/cached_page_stack.dart';
 import 'mobile_navigation_drawer.dart';
+import '../../../assistant/presentation/assistant_content.dart';
+import '../../../assistant/presentation/mobile_assistant_page.dart';
+import '../../../assistant/presentation/widgets/assistant_avatar.dart';
+import '../../../assistant/presentation/assistant_provider.dart';
+import '../../../assistant/domain/assistant.dart';
+import 'dart:io';
 import '../../../studio/presentation/pages/mobile_studio_page.dart';
 import '../../../../shared/widgets/custom_toast.dart';
 import 'package:aurora/l10n/app_localizations.dart';
@@ -34,6 +40,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   static const String keyUser = '__user__';
   static const String keyBackup = '__backup__';
   static const String keyStudio = '__studio__';
+  static const String keyAssistant = '__assistant__';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _currentViewKey = 'new_chat';
   String _lastSessionId = 'new_chat';
@@ -152,7 +159,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   }
 
   bool _isSpecialKey(String key) {
-    return key == keySettings || key == keyTranslation || key == keyUser || key == keyStudio || key == keyAppSettings || key == keyBackup;
+    return key == keySettings || key == keyTranslation || key == keyUser || key == keyStudio || key == keyAppSettings || key == keyBackup || key == keyAssistant;
   }
 
   @override
@@ -249,6 +256,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                     return MobileStudioPage(onBack: _navigateBackToSession);
                   } else if (key == keyBackup) {
                     return MobileSyncSettingsPage(onBack: _navigateBackToSession);
+                  } else if (key == keyAssistant) {
+                    return MobileAssistantPage(onBack: _navigateBackToSession);
                   } else {
                     return _buildSessionPage(
                         context,
@@ -334,6 +343,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
               },
               child: Row(
                 children: [
+                  _buildAssistantAvatar(ref, sessionId, size: 36),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,6 +433,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
 
   void _openModelSwitcher() {
     final settingsState = ref.read(settingsProvider);
+    final assistantState = ref.read(assistantProvider);
     final providers = settingsState.providers;
     final activeProvider = settingsState.activeProvider;
     final selectedModel = settingsState.selectedModel;
@@ -443,12 +455,78 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AuroraBottomSheet.buildTitle(context, '选择模型'),
+              AuroraBottomSheet.buildTitle(context, '配置会话'),
               const Divider(height: 1),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
                   children: [
+                    // Assistant Section
+                    ListTile(
+                      dense: true,
+                      enabled: false,
+                      title: const Text(
+                        '当前助理',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                    // Default Assistant Option
+                    AuroraBottomSheet.buildListItem(
+                      context: context,
+                      leading: Icon(
+                        assistantState.selectedAssistantId == null
+                            ? Icons.check_circle
+                            : Icons.autorenew,
+                        color: assistantState.selectedAssistantId == null
+                            ? Theme.of(context).primaryColor
+                            : null,
+                      ),
+                      title: const Text('Default'),
+                      onTap: () async {
+                        await ref.read(assistantProvider.notifier).selectAssistant(null);
+                        if (context.mounted) Navigator.pop(ctx);
+                      },
+                    ),
+                    // Custom Assistants
+                    for (final assistant in assistantState.assistants)
+                      AuroraBottomSheet.buildListItem(
+                        context: context,
+                        leading: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: assistantState.selectedAssistantId == assistant.id
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          child: AssistantAvatar(assistant: assistant, size: 24),
+                        ),
+                        title: Text(assistant.name),
+                        onTap: () async {
+                          await ref.read(assistantProvider.notifier).selectAssistant(assistant.id);
+                          if (context.mounted) Navigator.pop(ctx);
+                        },
+                      ),
+                    const Divider(),
+                    // Model Section
+                    ListTile(
+                      dense: true,
+                      enabled: false,
+                      title: const Text(
+                        '选择模型',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
                     for (final provider in providers) ...[
                       if (provider.isEnabled && provider.models.isNotEmpty) ...[
                         ListTile(
@@ -484,7 +562,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                                 await ref
                                     .read(settingsProvider.notifier)
                                     .setSelectedModel(model);
-                                Navigator.pop(ctx);
+                                if (context.mounted) Navigator.pop(ctx);
                               },
                             ),
                         if (provider !=
@@ -589,5 +667,15 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     final gradient = gradients[style];
     if (gradient == null) return isDark ? null : [const Color(0xFFE0F7FA), const Color(0xFFF1F8E9)];
     return isDark ? gradient.$1 : gradient.$2;
+  }
+
+  Widget _buildAssistantAvatar(WidgetRef ref, String sessionId,
+      {double size = 32}) {
+    // Always use global assistant selection
+    final selectedId = ref.watch(assistantProvider).selectedAssistantId;
+    final assistants = ref.watch(assistantProvider).assistants;
+    final assistant = assistants.where((a) => a.id == selectedId).firstOrNull;
+
+    return AssistantAvatar(assistant: assistant, size: size);
   }
 }

@@ -615,5 +615,6 @@
   "noOptionsSelected": "Please select at least one option to backup",
   "pressAgainToExit": "Press again to exit",
   "pleaseConfigureModel": "Please configure a model in settings first",
-  "version": "Version"
+  "version": "Version",
+  "assistantSystem": "Assistant"
 }

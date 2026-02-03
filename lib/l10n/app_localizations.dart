@@ -2905,6 +2905,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'版本'**
   String get version;
+
+  /// No description provided for @assistantSystem.
+  ///
+  /// In zh, this message translates to:
+  /// **'助理'**
+  String get assistantSystem;
 }
 
 class _AppLocalizationsDelegate

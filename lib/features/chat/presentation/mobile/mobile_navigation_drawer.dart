@@ -10,6 +10,9 @@ import '../widgets/topic_dropdown.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import '../../../sync/presentation/mobile_sync_settings_page.dart';
 import 'package:aurora/shared/theme/aurora_icons.dart';
+import 'package:aurora/features/assistant/presentation/widgets/assistant_avatar.dart';
+import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
+import 'package:aurora/features/assistant/domain/assistant.dart';
 
 class MobileNavigationDrawer extends ConsumerWidget {
   final SessionsState sessionsState;
@@ -40,6 +43,21 @@ class MobileNavigationDrawer extends ConsumerWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final selectedId = ref.watch(assistantProvider).selectedAssistantId;
+                      final assistants = ref.watch(assistantProvider).assistants;
+                      final assistant = assistants.where((a) => a.id == selectedId).firstOrNull;
+                      return InkWell(
+                        onTap: () => onNavigate('__assistant__'),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          child: AssistantAvatar(assistant: assistant, size: 28),
+                        ),
+                      );
+                    },
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Container(

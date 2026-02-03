@@ -615,5 +615,6 @@
   "noOptionsSelected": "请至少选择一项进行备份",
   "pressAgainToExit": "再按一次退出应用",
   "pleaseConfigureModel": "请先在设置中配置模型",
-  "version": "版本"
+  "version": "版本",
+  "assistantSystem": "助理"
 }
