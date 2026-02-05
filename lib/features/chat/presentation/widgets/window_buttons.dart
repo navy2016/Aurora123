@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -106,7 +105,7 @@ class _TrafficLightButton extends StatelessWidget {
             child: Icon(
               icon,
               size: 8,
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
           ),
         ),

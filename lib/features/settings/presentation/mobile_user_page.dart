@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,7 +9,6 @@ import 'settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
-import '../../sync/presentation/mobile_sync_settings_page.dart';
 import 'widgets/mobile_settings_widgets.dart';
 
 class MobileUserPage extends ConsumerStatefulWidget {
@@ -25,9 +23,7 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
   @override
   Widget build(BuildContext context) {
     final settingsState = ref.watch(settingsProvider);
-    final fluentTheme = fluent.FluentTheme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final isDark = fluentTheme.brightness == fluent.Brightness.dark;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -82,7 +78,6 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
               ),
             ],
           ),
-          
           MobileSettingsSection(
             title: l10n.aiInfo,
             children: [
@@ -146,7 +141,8 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AuroraBottomSheet.buildTitle(context, l10n.changeAvatarTitle(isUser ? l10n.user : 'AI')),
+            AuroraBottomSheet.buildTitle(
+                context, l10n.changeAvatarTitle(isUser ? l10n.user : 'AI')),
             const Divider(height: 1),
             AuroraBottomSheet.buildListItem(
               context: context,
@@ -173,13 +169,18 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
               AuroraBottomSheet.buildListItem(
                 context: context,
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: Text(l10n.removeAvatar, style: const TextStyle(color: Colors.red)),
+                title: Text(l10n.removeAvatar,
+                    style: const TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(ctx);
                   if (isUser) {
-                    ref.read(settingsProvider.notifier).setChatDisplaySettings(userAvatar: '');
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setChatDisplaySettings(userAvatar: '');
                   } else {
-                    ref.read(settingsProvider.notifier).setChatDisplaySettings(llmAvatar: '');
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setChatDisplaySettings(llmAvatar: '');
                   }
                 },
               ),
@@ -204,15 +205,19 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
     try {
       final XFile? image = await _picker.pickImage(source: source);
       if (image != null) {
+        if (!mounted) return;
         final croppedPath = await AvatarCropper.cropImage(context, image.path);
         if (croppedPath != null) {
           final appDir = await getApplicationDocumentsDirectory();
-          final avatarDir = Directory('${appDir.path}${Platform.pathSeparator}avatars');
+          final avatarDir =
+              Directory('${appDir.path}${Platform.pathSeparator}avatars');
           if (!await avatarDir.exists()) {
             await avatarDir.create(recursive: true);
           }
-          final fileName = 'avatar_${isUser ? "user" : "llm"}_${DateTime.now().millisecondsSinceEpoch}.png';
-          final persistentPath = '${avatarDir.path}${Platform.pathSeparator}$fileName';
+          final fileName =
+              'avatar_${isUser ? "user" : "llm"}_${DateTime.now().millisecondsSinceEpoch}.png';
+          final persistentPath =
+              '${avatarDir.path}${Platform.pathSeparator}$fileName';
           await File(croppedPath).copy(persistentPath);
 
           if (isUser) {
@@ -249,8 +254,4 @@ class _MobileUserPageState extends ConsumerState<MobileUserPage> {
       openAppSettings();
     }
   }
-
-
 }
-
-

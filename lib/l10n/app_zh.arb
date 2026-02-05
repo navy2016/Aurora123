@@ -20,6 +20,7 @@
   "closeComparison": "关闭对照",
   "bilingualComparison": "双语对照",
   "clear": "清空",
+  "reset": "重置",
   "translating": "翻译中...",
   "translationResultPlaceholder": "翻译结果将显示在这里",
   "selectModel": "选择模型",
@@ -408,7 +409,15 @@
   
   "streamOutput": "流式输出",
   "enableSearch": "启用搜索",
+  "searchSettings": "搜索设置",
   "searchEngine": "搜索引擎",
+  "searchRegion": "搜索地区",
+  "searchSafeSearch": "安全搜索",
+  "searchSafeSearchOff": "关闭过滤",
+  "searchSafeSearchModerate": "适度过滤",
+  "searchSafeSearchStrict": "严格过滤",
+  "searchMaxResults": "最大结果数",
+  "searchTimeoutSeconds": "超时（秒）",
   
   "clearContext": "清空上下文",
   "clearContextConfirm": "确定要清空当前对话的历史记录吗？此操作不可撤销。",
@@ -498,6 +507,9 @@
   "themeDark": "深色",
   "themeSystem": "跟随系统",
   "accentColor": "强调色",
+  "themeCustom": "自定义",
+  "customTheme": "自定义",
+  "customThemeDescription": "允许设置自定义背景图片、亮度和模糊度",
   "backgroundStyle": "背景风格",
   "renameSession": "重命名",
   "renameSessionHint": "输入新名称",
@@ -510,6 +522,12 @@
   "editApiKey": "编辑 API Key",
   "fontSize": "字体大小",
   "fontSizeHint": "调整全局文字显示大小",
+  "backgroundImage": "背景图片",
+  "backgroundBlur": "背景模糊",
+  "backgroundBrightness": "背景亮度",
+  "selectBackgroundImage": "选择背景图片",
+  "clearBackgroundImage": "清除背景图片",
+  "cropImage": "裁剪图片",
 
   "generationConfig": "生成配置",
   "customParams": "自定义参数",
@@ -605,5 +623,10 @@
   "noOptionsSelected": "请至少选择一项进行备份",
   "pressAgainToExit": "再按一次退出应用",
   "pleaseConfigureModel": "请先在设置中配置模型",
-  "version": "版本"
+  "version": "版本",
+  "assistantSystem": "助理",
+  "imagePayload": "图片参数",
+  "aspectRatio": "宽高比",
+  "imageSize": "图片分辨率",
+  "auto": "自动"
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../settings_provider.dart';
 
-class MobileSettingsSection extends StatelessWidget {
+class MobileSettingsSection extends ConsumerWidget {
   final String? title;
   final List<Widget> children;
   final Widget? trailing;
@@ -14,7 +15,20 @@ class MobileSettingsSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final hasBg = settings.useCustomTheme &&
+        settings.backgroundImagePath != null &&
+        settings.backgroundImagePath!.isNotEmpty;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg = hasBg
+        ? (isDark
+            ? Colors.black.withValues(alpha: 0.45)
+            : Colors.white.withValues(alpha: 0.45))
+        : theme.cardColor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -41,21 +55,20 @@ class MobileSettingsSection extends StatelessWidget {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: cardBg,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
+              if (!hasBg)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
             ],
           ),
           child: Column(
             children: children.asMap().entries.map((entry) {
-              final index = entry.key;
               final child = entry.value;
-              final isLast = index == children.length - 1;
 
               return Column(
                 children: [
@@ -95,7 +108,7 @@ class MobileSettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (child != null) {
-       return child!;
+      return child!;
     }
 
     final theme = Theme.of(context);
@@ -116,8 +129,8 @@ class MobileSettingsTile extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     color: isDestructive
-                        ? Colors.red.withOpacity(0.1)
-                        : primaryColor.withOpacity(0.1),
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: IconTheme(
@@ -139,7 +152,9 @@ class MobileSettingsTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: isDestructive ? Colors.red : theme.textTheme.bodyLarge?.color,
+                        color: isDestructive
+                            ? Colors.red
+                            : theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                     if (subtitle != null) ...[

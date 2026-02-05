@@ -2,7 +2,7 @@ import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../settings/presentation/settings_provider.dart';
+import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import '../chat_provider.dart';
 
 import 'custom_dropdown_overlay.dart';
@@ -68,6 +68,10 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
     final settings = ref.watch(settingsProvider);
     final presets = settings.presets;
     final List<fluent.CommandBarItem> items = [];
+    // --- Assistants Section ---
+    // Removed to separate concerns based on user feedback.
+
+    // --- Presets Section ---
     items.add(fluent.CommandBarButton(
       onPressed: () {
         ref
@@ -82,9 +86,7 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
             style: const TextStyle(fontWeight: FontWeight.w500)),
       ),
     ));
-    if (presets.isNotEmpty) {
-      items.add(const fluent.CommandBarSeparator());
-    }
+
     for (final preset in presets) {
       items.add(fluent.CommandBarButton(
         onPressed: () {
@@ -113,9 +115,8 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
         ),
       ));
     }
-    if (presets.isNotEmpty) {
-      items.add(const fluent.CommandBarSeparator());
-    }
+
+    items.add(const fluent.CommandBarSeparator());
     items.add(fluent.CommandBarButton(
       onPressed: () {
         _removeOverlay();
@@ -165,7 +166,7 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: _isOpen || states.isHovering
+              color: _isOpen || states.isHovered
                   ? theme.resources.subtleFillColorSecondary
                   : fluent.Colors.transparent,
               borderRadius: BorderRadius.circular(4),
@@ -177,15 +178,14 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
                   constraints: const BoxConstraints(maxWidth: 160),
                   child: fluent.Text(
                     activePresetName ?? l10n.defaultPreset,
-                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 4),
                 fluent.Icon(
-                    _isOpen
-                        ? AuroraIcons.chevronUp
-                        : AuroraIcons.chevronDown,
+                    _isOpen ? AuroraIcons.chevronUp : AuroraIcons.chevronDown,
                     size: 8,
                     color: theme.typography.caption?.color),
               ],

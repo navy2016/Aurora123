@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
-import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import '../../settings/domain/chat_preset.dart';
 import '../../settings/presentation/settings_provider.dart';
 import '../../../../shared/widgets/aurora_bottom_sheet.dart';
@@ -54,7 +53,9 @@ class MobilePresetManagePage extends ConsumerWidget {
                         isDestructive: true,
                       );
                       if (confirmed == true) {
-                        ref.read(settingsProvider.notifier).deletePreset(preset.id);
+                        ref
+                            .read(settingsProvider.notifier)
+                            .deletePreset(preset.id);
                       }
                     },
                   ),

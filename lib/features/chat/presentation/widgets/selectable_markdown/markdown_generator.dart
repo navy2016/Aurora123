@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:file_selector/file_selector.dart';
 import 'dart:io';
 
-
 /// Generates a list of widgets from markdown text.
 /// Continuous inline/block text is merged into SelectableText.rich,
 /// while code blocks, tables, and images break the flow.
@@ -29,18 +28,59 @@ class MarkdownGenerator {
     final document = md.Document(
       extensionSet: md.ExtensionSet.gitHubWeb,
       encodeHtml: false,
-      blockSyntaxes: [const LatexBlockSyntax()],
+      blockSyntaxes: [
+        const LatexBlockSyntax(),
+        const FootnoteDefinitionSyntax(), // Added footnote definition support
+        md.HtmlBlockSyntax(), // Explicitly include HTML block syntax
+      ],
       inlineSyntaxes: [
-        CjkBoldSyntax(), 
+        GeneralBoldSyntax(), // General bold syntax for edge cases
+        CjkBoldSyntax(),
         CjkSuffixBoldSyntax(),
-        LatexInlineSyntax()
+        LatexInlineSyntax(),
+        FootnoteReferenceSyntax(), // Added footnote reference support
+        md.InlineHtmlSyntax(), // Explicitly include inline HTML syntax
       ],
     );
+    // Track footnotes for the document
+    final footnoteDefinitions = <String, md.Node>{};
+    final footnoteIndices = <String, int>{};
+    int nextFootnoteIndex = 1;
+
     final nodes = document.parseLines(preprocessedText.split('\n'));
 
+    // First pass: extract footnote definitions and map reference keys to indices
+    final List<md.Node> filteredNodes = [];
+    for (final node in nodes) {
+      if (node is md.Element && node.tag == 'footnote_def') {
+        final id = node.attributes['id'] ?? '';
+        if (id.isNotEmpty) {
+          footnoteDefinitions[id] = node;
+        }
+      } else {
+        filteredNodes.add(node);
+      }
+    }
+
+    final context = GeneratorContext(
+      footnoteIndices: footnoteIndices,
+      nextFootnoteIndex: () => nextFootnoteIndex++,
+    );
+
+    final widgets = _generateWidgets(filteredNodes, context);
+
+    // Append footnotes section if any references were found
+    if (footnoteIndices.isNotEmpty) {
+      widgets
+          .addAll(_buildFootnotesSection(footnoteIndices, footnoteDefinitions));
+    }
+
+    return widgets;
+  }
+
+  List<Widget> _generateWidgets(List<md.Node> nodes, GeneratorContext context) {
     final List<Widget> widgets = [];
     final List<InlineSpan> currentSpans = [];
-
     int widgetIndex = 0;
 
     void flushSpans() {
@@ -79,13 +119,11 @@ class MarkdownGenerator {
       final node = nodes[i];
       if (node is md.Element && _isHardBarrier(node.tag)) {
         flushSpans();
-        widgets.add(_buildBarrierWidget(node, widgetIndex++));
+        widgets.add(_buildBarrierWidget(node, context, widgetIndex++));
       } else {
-        // Use the new context-aware traversal
-        final spans = _visit(node, GeneratorContext());
+        final spans = _visit(node, context);
 
         // Remove trailing newline from the block's content itself
-        // (This handles the case where preprocessing added a hard break at the end of a block)
         if (spans.isNotEmpty) {
           if (spans.last is TextSpan && (spans.last as TextSpan).text == '\n') {
             spans.removeLast();
@@ -96,15 +134,10 @@ class MarkdownGenerator {
 
         // Add block separation if needed
         if (_isBlockElement(node is md.Element ? node.tag : '')) {
-          // Ensure double newline after top-level blocks for spacing,
-          // but check if we are not the last node
           if (i < nodes.length - 1) {
             currentSpans.add(const TextSpan(text: '\n\n'));
           }
         } else {
-          // For text nodes or others at top level, a single newline is usually implicit from split handling
-          // but standard markdown accumulates.
-          // We add a newline to simulate line break if it was a distinct line in source.
           currentSpans.add(const TextSpan(text: '\n'));
         }
       }
@@ -112,6 +145,82 @@ class MarkdownGenerator {
 
     flushSpans();
     return widgets;
+  }
+
+  List<Widget> _buildFootnotesSection(
+    Map<String, int> footnoteIndices,
+    Map<String, md.Node> footnoteDefinitions,
+  ) {
+    final List<InlineSpan> footnoteSpans = [
+      const TextSpan(text: '\n'),
+      TextSpan(
+        text: '脚注',
+        style: TextStyle(
+          fontSize: baseFontSize * 0.9,
+          fontWeight: FontWeight.bold,
+          color: textColor.withValues(alpha: 0.7),
+        ),
+      ),
+      const TextSpan(text: '\n'),
+    ];
+
+    // Sort by index to maintain appearance order
+    final sortedIds = footnoteIndices.keys.toList()
+      ..sort((a, b) => footnoteIndices[a]!.compareTo(footnoteIndices[b]!));
+
+    final context = GeneratorContext(
+      footnoteIndices: footnoteIndices,
+      nextFootnoteIndex: () => 0, // Not used here
+    );
+
+    for (final id in sortedIds) {
+      final index = footnoteIndices[id]!;
+      final defNode = footnoteDefinitions[id];
+
+      footnoteSpans.add(TextSpan(
+        text: '[$index] ',
+        style: TextStyle(
+          fontSize: baseFontSize * 0.85,
+          fontWeight: FontWeight.bold,
+          color: textColor.withValues(alpha: 0.6),
+        ),
+      ));
+
+      if (defNode != null && defNode is md.Element) {
+        final defSpans = _visit(
+            defNode,
+            context.copyWith(
+              currentStyle: TextStyle(
+                fontSize: baseFontSize * 0.85,
+                color: textColor.withValues(alpha: 0.8),
+              ),
+            ));
+        footnoteSpans.addAll(defSpans);
+      } else {
+        footnoteSpans.add(TextSpan(
+          text: '未定义脚注: $id',
+          style: TextStyle(
+            fontSize: baseFontSize * 0.85,
+            fontStyle: FontStyle.italic,
+            color: textColor.withValues(alpha: 0.5),
+          ),
+        ));
+      }
+      footnoteSpans.add(const TextSpan(text: '\n'));
+    }
+
+    return [
+      SelectionArea(
+        child: Text.rich(
+          TextSpan(children: footnoteSpans),
+          style: TextStyle(
+            color: textColor,
+            fontSize: baseFontSize,
+            height: 1.5,
+          ),
+        ),
+      )
+    ];
   }
 
   /// Preprocess markdown to enforce hard line breaks for single newlines,
@@ -150,15 +259,24 @@ class MarkdownGenerator {
 
         for (int j = 0; j < limit; j++) {
           String line = lines[j];
-          final isLastLineAndNoNewline = (j == limit - 1 && !segment.endsWith('\n'));
-          
+          final isLastLineAndNoNewline =
+              (j == limit - 1 && !segment.endsWith('\n'));
+
           if (isLastLineAndNoNewline) {
-            // This line connects directly to the following code block (e.g. valid indentation or inline code)
-            // Do not add forced newline or extra spaces.
             buffer.write(line);
           } else {
             // Regular line or last line that ended with \n
-            if (line.trim().isNotEmpty && !line.trimRight().endsWith('  ')) {
+            // AVOID adding "  " if line looks like it's part of an HTML tag or list
+            final trimmed = line.trim();
+            final isHtmlTag = trimmed.startsWith('<') &&
+                (trimmed.endsWith('>') || !trimmed.contains(' '));
+            final isListMarker =
+                RegExp(r'^(\s*)([*+-]|\d+\.)\s').hasMatch(line);
+
+            if (trimmed.isNotEmpty &&
+                !line.trimRight().endsWith('  ') &&
+                !isHtmlTag &&
+                !isListMarker) {
               buffer.write('$line  \n');
             } else {
               buffer.write('$line\n');
@@ -167,7 +285,7 @@ class MarkdownGenerator {
         }
       } else {
         // Inside code block: keep as is, just re-add the backticks we split by.
-        // We remove trailing whitespace (indentation) from the segment 
+        // We remove trailing whitespace (indentation) from the segment
         // to ensure the closing backticks appear at the start of the line.
         // This prevents issues where indented closing fences (e.g. inside lists)
         // are treated as content because they don't match the unindented opening fence.
@@ -179,7 +297,12 @@ class MarkdownGenerator {
   }
 
   bool _isHardBarrier(String tag) {
-    return tag == 'pre' || tag == 'table' || tag == 'img' || tag == 'hr' || tag == 'latex';
+    return tag == 'pre' ||
+        tag == 'table' ||
+        tag == 'img' ||
+        tag == 'hr' ||
+        tag == 'latex_block' ||
+        tag == 'blockquote';
   }
 
   bool _isBlockElement(String tag) {
@@ -194,7 +317,18 @@ class MarkdownGenerator {
       'blockquote',
       'ul',
       'ol',
-      'div'
+      'ol',
+      'div',
+      'span',
+      'section',
+      'header',
+      'footer',
+      'article',
+      'aside',
+      'nav',
+      'main',
+      'figure',
+      'figcaption'
     ].contains(tag);
   }
 
@@ -209,6 +343,15 @@ class MarkdownGenerator {
     if (node is md.Element) {
       final tag = node.tag;
 
+      if (_isHardBarrier(tag)) {
+        return [
+          WidgetSpan(
+            child: _buildBarrierWidget(node, context),
+            alignment: PlaceholderAlignment.middle,
+          ),
+        ];
+      }
+
       // --- Block Elements ---
 
       if (tag == 'ul' || tag == 'ol') {
@@ -221,7 +364,8 @@ class MarkdownGenerator {
         if (tag == 'ol') {
           final startAttr = node.attributes['start'];
           if (startAttr != null) {
-            startIndex = (int.tryParse(startAttr) ?? 1) - 1; // Convert to 0-indexed
+            startIndex =
+                (int.tryParse(startAttr) ?? 1) - 1; // Convert to 0-indexed
           }
         }
 
@@ -321,11 +465,11 @@ class MarkdownGenerator {
         ];
       }
 
-      if (tag == 'latex') {
+      if (tag == 'latex_inline') {
         final latex = node.textContent;
         final isBold = context.currentStyle?.fontWeight == FontWeight.bold;
         final displayLatex = isBold ? '\\boldsymbol{$latex}' : latex;
-        
+
         // Use WidgetSpan for inline math
         return [
           WidgetSpan(
@@ -336,14 +480,15 @@ class MarkdownGenerator {
                 // Render the math
                 Math.tex(
                   displayLatex,
-                  textStyle: (context.currentStyle ?? const TextStyle()).copyWith(
+                  textStyle:
+                      (context.currentStyle ?? const TextStyle()).copyWith(
                     // Ensure color is respected if not overridden by latex
-                    color: textColor, 
+                    color: textColor,
                     fontSize: baseFontSize,
                   ),
                 ),
                 // Invisible text overlay for selection/copying
-                // We use a small font size text that contains the source. 
+                // We use a small font size text that contains the source.
                 // Positioned.fill ensures it covers the area for selection hit-testing.
                 Semantics(
                   label: latex,
@@ -351,7 +496,8 @@ class MarkdownGenerator {
                     opacity: 0.0,
                     child: Text(
                       latex,
-                      style: const TextStyle(color: Colors.transparent, fontSize: 1),
+                      style: const TextStyle(
+                          color: Colors.transparent, fontSize: 1),
                     ),
                   ),
                 ),
@@ -361,8 +507,6 @@ class MarkdownGenerator {
         ];
       }
 
-
-
       final childContext = context.copyWith(currentStyle: style);
       final List<InlineSpan> childrenSpans = [];
 
@@ -371,12 +515,32 @@ class MarkdownGenerator {
       }
 
       // Post-process specific tags
-      if (tag == 'a') {
+      if (tag == 'footnote_ref') {
+        final id = node.attributes['id'] ?? '';
+        if (id.isEmpty) return [];
+
+        // Assign index if not already assigned
+        if (!context.footnoteIndices.containsKey(id)) {
+          context.footnoteIndices[id] = context.nextFootnoteIndex();
+        }
+        final index = context.footnoteIndices[id]!;
+
+        return [
+          TextSpan(
+            text: '[$index]',
+            style: (context.currentStyle ?? const TextStyle()).copyWith(
+              fontSize: (context.currentStyle?.fontSize ?? baseFontSize) * 0.75,
+              fontWeight: FontWeight.bold,
+              color: isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2),
+            ),
+          )
+        ];
+      } else if (tag == 'a') {
         final href = node.attributes['href'] ?? '';
         // Check if link text is a citation number (pure digits)
         final linkText = node.textContent.trim();
         final isCitationNumber = RegExp(r'^\d+$').hasMatch(linkText);
-        
+
         final tapRecognizer = TapGestureRecognizer()
           ..onTap = () async {
             if (href.isEmpty) return;
@@ -390,7 +554,7 @@ class MarkdownGenerator {
               await launchUrl(uri, mode: LaunchMode.externalApplication);
             }
           };
-        
+
         if (isCitationNumber) {
           // Wrap citation numbers in brackets: "5" -> "[5]"
           // Use text directly for proper tap recognition
@@ -398,12 +562,15 @@ class MarkdownGenerator {
             TextSpan(
               text: '[$linkText]',
               style: style?.copyWith(
-                fontSize: (style.fontSize ?? baseFontSize) * 0.75, // Slightly smaller
+                fontSize:
+                    (style.fontSize ?? baseFontSize) * 0.75, // Slightly smaller
                 decoration: TextDecoration.none, // Remove underline
                 fontWeight: FontWeight.w500,
-                color: isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2), // Better blue
+                color: isDark
+                    ? const Color(0xFF64B5F6)
+                    : const Color(0xFF1976D2), // Better blue
                 // Lift it slightly visually (not actual superscript but helps)
-                height: 1.0, 
+                height: 1.0,
               ),
               recognizer: tapRecognizer,
               mouseCursor: SystemMouseCursors.click,
@@ -433,13 +600,6 @@ class MarkdownGenerator {
           TextSpan(children: childrenSpans),
         ];
         // Note: we might want explicit \n here if not handled at top level?
-      } else if (tag == 'blockquote') {
-        // Wrap in a visual indicator?
-        // Hard to do in TextSpan.
-        // We can prefix lines with "> ".
-        // But children are flattened.
-        // Let's just return children with italic style logic above.
-        return childrenSpans;
       }
 
       // Default: return styled children
@@ -540,7 +700,8 @@ class MarkdownGenerator {
   }
 
   // ... _buildBarrierWidget methods (copy from original) ...
-  Widget _buildBarrierWidget(md.Element element, int index) {
+  Widget _buildBarrierWidget(md.Element element, GeneratorContext context,
+      [int index = 0]) {
     switch (element.tag) {
       case 'pre':
         return _buildCodeBlock(element, index);
@@ -550,11 +711,36 @@ class MarkdownGenerator {
         return _buildImage(element, index);
       case 'hr':
         return const Divider(height: 24, thickness: 1);
-      case 'latex':
+      case 'latex_block':
         return _buildLatex(element, index);
+      case 'blockquote':
+        return _buildBlockquote(element, context, index);
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildBlockquote(
+      md.Element element, GeneratorContext context, int index) {
+    final children = _generateWidgets(element.children ?? [], context);
+
+    return Container(
+      key: ValueKey('blockquote_$index'),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(left: 16, top: 2, bottom: 2),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: isDark ? const Color(0xFF424242) : const Color(0xFFE0E0E0),
+            width: 4,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
   }
 
   Widget _buildLatex(md.Element element, int index) {
@@ -639,7 +825,7 @@ class MarkdownGenerator {
         decoration: isHeader
             ? BoxDecoration(
                 color: isDark
-                    ? Colors.white10
+                    ? Colors.white.withValues(alpha: 0.1)
                     : Colors.black.withValues(alpha: 0.03),
               )
             : null,
@@ -731,12 +917,16 @@ class GeneratorContext {
   final String? listType; // 'ul' or 'ol'
   final int listIndex;
   final TextStyle? currentStyle;
+  final Map<String, int> footnoteIndices;
+  final int Function() nextFootnoteIndex;
 
   GeneratorContext({
     this.indentLevel = 0,
     this.listType,
     this.listIndex = 0,
     this.currentStyle,
+    required this.footnoteIndices,
+    required this.nextFootnoteIndex,
   });
 
   GeneratorContext copyWith({
@@ -744,12 +934,16 @@ class GeneratorContext {
     String? listType,
     int? listIndex,
     TextStyle? currentStyle,
+    Map<String, int>? footnoteIndices,
+    int Function()? nextFootnoteIndex,
   }) {
     return GeneratorContext(
       indentLevel: indentLevel ?? this.indentLevel,
       listType: listType ?? this.listType,
       listIndex: listIndex ?? this.listIndex,
       currentStyle: currentStyle ?? this.currentStyle,
+      footnoteIndices: footnoteIndices ?? this.footnoteIndices,
+      nextFootnoteIndex: nextFootnoteIndex ?? this.nextFootnoteIndex,
     );
   }
 }
@@ -811,45 +1005,70 @@ class _DownloadButton extends StatelessWidget {
 
   String _getFileExtension(String? language) {
     if (language == null) return '.txt';
-    
+
     switch (language.toLowerCase()) {
-      case 'dart': return '.dart';
-      case 'python': 
-      case 'py': return '.py';
+      case 'dart':
+        return '.dart';
+      case 'python':
+      case 'py':
+        return '.py';
       case 'javascript':
-      case 'js': return '.js';
+      case 'js':
+        return '.js';
       case 'typescript':
-      case 'ts': return '.ts';
-      case 'html': return '.html';
-      case 'css': return '.css';
-      case 'json': return '.json';
-      case 'xml': return '.xml';
+      case 'ts':
+        return '.ts';
+      case 'html':
+        return '.html';
+      case 'css':
+        return '.css';
+      case 'json':
+        return '.json';
+      case 'xml':
+        return '.xml';
       case 'yaml':
-      case 'yml': return '.yaml';
-      case 'c': return '.c';
+      case 'yml':
+        return '.yaml';
+      case 'c':
+        return '.c';
       case 'cpp':
-      case 'c++': return '.cpp';
-      case 'h': return '.h';
-      case 'hpp': return '.hpp';
-      case 'java': return '.java';
+      case 'c++':
+        return '.cpp';
+      case 'h':
+        return '.h';
+      case 'hpp':
+        return '.hpp';
+      case 'java':
+        return '.java';
       case 'kotlin':
-      case 'kt': return '.kt';
-      case 'swift': return '.swift';
-      case 'php': return '.php';
-      case 'go': return '.go';
+      case 'kt':
+        return '.kt';
+      case 'swift':
+        return '.swift';
+      case 'php':
+        return '.php';
+      case 'go':
+        return '.go';
       case 'rust':
-      case 'rs': return '.rs';
+      case 'rs':
+        return '.rs';
       case 'ruby':
-      case 'rb': return '.rb';
+      case 'rb':
+        return '.rb';
       case 'shell':
       case 'sh':
-      case 'bash': return '.sh';
+      case 'bash':
+        return '.sh';
       case 'powershell':
-      case 'ps1': return '.ps1';
-      case 'sql': return '.sql';
+      case 'ps1':
+        return '.ps1';
+      case 'sql':
+        return '.sql';
       case 'markdown':
-      case 'md': return '.md';
-      default: return '.txt';
+      case 'md':
+        return '.md';
+      default:
+        return '.txt';
     }
   }
 
@@ -859,7 +1078,7 @@ class _DownloadButton extends StatelessWidget {
       onTap: () async {
         final ext = _getFileExtension(language);
         final fileName = 'code$ext';
-        
+
         try {
           final FileSaveLocation? result = await getSaveLocation(
             suggestedName: fileName,
@@ -920,7 +1139,9 @@ class _ExpandableCodeBlockState extends State<_ExpandableCodeBlock> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: widget.isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
+        color: widget.isDark
+            ? const Color(0xFF1E1E1E).withValues(alpha: 0.6)
+            : const Color(0xFFF5F5F5).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: widget.isDark ? Colors.white24 : Colors.black12,
@@ -951,7 +1172,8 @@ class _ExpandableCodeBlockState extends State<_ExpandableCodeBlock> {
               onExit: (_) => setState(() => _isHovering = false),
               child: Container(
                 key: _headerKey,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: widget.isDark
                       ? (_isHovering ? Colors.white24 : Colors.white10)
@@ -964,49 +1186,49 @@ class _ExpandableCodeBlockState extends State<_ExpandableCodeBlock> {
                           _isExpanded ? Radius.zero : const Radius.circular(7)),
                 ),
                 child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.language ?? 'code',
-                      style: TextStyle(
-                        color: widget.textColor.withValues(alpha: 0.6),
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _DownloadButton(
-                        code: widget.code,
-                        language: widget.language,
-                        color: widget.textColor.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: 8),
-                      _CopyButton(
-                        text: widget.code,
-                        color: widget.textColor.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: 8),
-                      Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          _isExpanded
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          size: 16,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.language ?? 'code',
+                        style: TextStyle(
                           color: widget.textColor.withValues(alpha: 0.6),
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _DownloadButton(
+                          code: widget.code,
+                          language: widget.language,
+                          color: widget.textColor.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 8),
+                        _CopyButton(
+                          text: widget.code,
+                          color: widget.textColor.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            _isExpanded
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            size: 16,
+                            color: widget.textColor.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           ),
           if (_isExpanded)
             SelectionArea(
@@ -1038,13 +1260,16 @@ class _ExpandableCodeBlockState extends State<_ExpandableCodeBlock> {
 /// and force them to be parsed as Strong/Bold elements.
 class CjkBoldSyntax extends md.InlineSyntax {
   // Regex matches:
-  // Group 1: A CJK character (Unified Ideographs 4E00-9FFF) or Fullwidth Punctuation (FF00-FFEF).
+  // Group 1: A CJK character (Unified Ideographs 4E00-9FFF), Fullwidth Punctuation (FF00-FFEF),
+  //         or CJK Symbols and Punctuation (3000-303F, e.g. 、。).
   //         This ensures we only trigger this specific CJK fix and don't interfere with normal text.
   // Group 2: The content inside the bold markers (Lazy match).
   //         We use a negative lookahead `(?![...])` to ensure the content does NOT start with
   //         punctuation or whitespace. This prevents falsy matches where a confusing closing `**`
   //         (followed by a comma) is mistaken for a new opening `**`.
-  CjkBoldSyntax() : super(r'([\u4e00-\u9fff\uff00-\uffef])\*\*(?![，。、；：？！”’）》\],.\?!\s])(.+?)\*\*');
+  CjkBoldSyntax()
+      : super(
+            r'([\u4e00-\u9fff\u3000-\u303f\uff00-\uffef])\*\*(?![，。、；：？！”’）》\],.\?!\s])(.+?)\*\*');
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
@@ -1082,7 +1307,7 @@ class LatexBlockSyntax extends md.BlockSyntax {
     if (line.trim().length > 2 && line.trim().endsWith(r'$$')) {
       final content = line.trim().substring(2, line.trim().length - 2);
       parser.advance();
-      return md.Element('latex', [md.Text(content)]);
+      return md.Element('latex_block', [md.Text(content)]);
     }
 
     // Multiline
@@ -1099,7 +1324,7 @@ class LatexBlockSyntax extends md.BlockSyntax {
       parser.advance();
     }
 
-    return md.Element('latex', [md.Text(childLines.join('\n'))]);
+    return md.Element('latex_block', [md.Text(childLines.join('\n'))]);
   }
 }
 
@@ -1110,21 +1335,70 @@ class LatexInlineSyntax extends md.InlineSyntax {
   // Regex: \$[^$]+\$
   // To avoid matching $100, checking for non-digit might be too aggressive.
   // Standard latex in markdown often uses: (?<!\\)\$((?:\\.|[^\\$])*?)(?<!\\)\$
-  
+
   LatexInlineSyntax() : super(r'(?<!\\)\$((?:\\.|[^\\$])*?)(?<!\\)\$');
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
-    // If the match is empty or just $, ignore? 
+    // If the match is empty or just $, ignore?
     // The regex captures the content in group 1.
-    
+
     final content = match[1]!;
     // Avoid empty
     if (content.trim().isEmpty) return false;
-    
-    final element = md.Element('latex', [md.Text(content)]);
+
+    final element = md.Element('latex_inline', [md.Text(content)]);
     parser.addNode(element);
     return true;
+  }
+}
+
+/// Custom syntax for footnote references like `[^1]` or `[^label]`.
+class FootnoteReferenceSyntax extends md.InlineSyntax {
+  FootnoteReferenceSyntax() : super(r'\[\^([^\]]+)\]');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final id = match[1]!;
+    final element = md.Element.empty('footnote_ref');
+    element.attributes['id'] = id;
+    parser.addNode(element);
+    return true;
+  }
+}
+
+/// Custom syntax for footnote definitions like `[^1]: content`.
+/// This is a block syntax as it typically starts at the beginning of a line.
+class FootnoteDefinitionSyntax extends md.BlockSyntax {
+  const FootnoteDefinitionSyntax();
+
+  @override
+  RegExp get pattern => RegExp(r'^\[\^([^\]]+)\]:\s*(.*)$');
+
+  @override
+  md.Node? parse(md.BlockParser parser) {
+    final match = pattern.firstMatch(parser.current.content);
+    if (match == null) return null;
+
+    final id = match[1]!;
+    var content = match[2]!;
+    parser.advance();
+
+    // Collect subsequent lines if they are indented
+    final childLines = [content];
+    while (!parser.isDone &&
+        (parser.current.content.startsWith('    ') ||
+            parser.current.content.isEmpty)) {
+      childLines.add(parser.current.content.replaceFirst(RegExp(r'^    '), ''));
+      parser.advance();
+    }
+
+    // Parse the content as inline markdown for simplicity in this implementation
+    final inlineParser =
+        md.InlineParser(childLines.join('\n'), parser.document);
+    final element = md.Element('footnote_def', inlineParser.parse());
+    element.attributes['id'] = id;
+    return element;
   }
 }
 
@@ -1132,7 +1406,8 @@ class LatexInlineSyntax extends md.InlineSyntax {
 /// This fixes cases where standard markdown fails to recognize the closing `**` because
 /// the following CJK character is treated as a word character (making `**` left-flanking).
 class CjkSuffixBoldSyntax extends md.InlineSyntax {
-  CjkSuffixBoldSyntax() : super(r'\*\*(.+?)\*\*(?=[\u4e00-\u9fff\uff00-\uffef])');
+  CjkSuffixBoldSyntax()
+      : super(r'\*\*(.+?)\*\*(?=[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef])');
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
@@ -1145,6 +1420,26 @@ class CjkSuffixBoldSyntax extends md.InlineSyntax {
   }
 }
 
+/// General bold syntax that handles edge cases where standard markdown
+/// and CJK-specific syntaxes fail to match.
+/// This matches `**content**` where content does not start or end with whitespace.
+class GeneralBoldSyntax extends md.InlineSyntax {
+  GeneralBoldSyntax() : super(r'\*\*(?!\s)(.+?)(?<!\s)\*\*');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final innerContent = match[1]!;
+    // Don't match if it looks like it should be handled by other syntaxes
+    // or if content is empty
+    if (innerContent.trim().isEmpty) return false;
+
+    final innerParser = md.InlineParser(innerContent, parser.document);
+    final children = innerParser.parse();
+    final element = md.Element('strong', children);
+    parser.addNode(element);
+    return true;
+  }
+}
 
 class _LatexBlock extends StatefulWidget {
   final String latex;
@@ -1171,103 +1466,8 @@ class _LatexBlockState extends State<_LatexBlock> {
     super.dispose();
   }
 
-  /// Check if the latex contains an aligned-type environment
-  bool _hasAlignedEnvironment(String latex) {
-    return RegExp(r'\\begin\{(aligned|align\*?|eqnarray\*?|gather\*?|cases)\}')
-        .hasMatch(latex);
-  }
-
-  /// Extract lines from aligned environment, preserving structure
-  List<String> _extractAlignedLines(String latex) {
-    // Match the environment content
-    final alignedRegex = RegExp(
-      r'\\begin\{(aligned|align\*?|eqnarray\*?|gather\*?|cases)\}([\s\S]*?)\\end\{\1\}',
-      multiLine: true,
-    );
-    
-    final match = alignedRegex.firstMatch(latex);
-    if (match == null) return [latex];
-    
-    final envType = match.group(1);
-    final content = match.group(2) ?? '';
-    
-    // For 'cases' environment, handle differently
-    if (envType == 'cases') {
-      // cases uses & to separate condition from value
-      // We'll render the whole thing as-is but strip the environment wrapper
-      // and use array syntax instead
-      final lines = content.split(r'\\')
-          .map((line) => line.trim())
-          .where((line) => line.isNotEmpty)
-          .toList();
-      return lines.map((line) {
-        // Replace & with proper spacing
-        return line.replaceAll('&', r'\quad ');
-      }).toList();
-    }
-    
-    // Split by \\ (line breaks) - handle both \\ and \\[spacing]
-    final lines = content.split(RegExp(r'\\\\(\[.*?\])?'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
-    
-    // Process each line - remove alignment markers and clean up
-    return lines.map((line) {
-      // Remove & alignment markers but preserve the math
-      // & usually appears before = or at alignment points
-      // Replace with space to maintain readability
-      return line.replaceAll('&', ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
-    }).toList();
-  }
-
-  Widget _buildMathLine(String latex, {bool isLast = false}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
-      child: Math.tex(
-        latex,
-        textStyle: TextStyle(
-          fontSize: widget.baseFontSize + 2,
-          color: widget.textColor,
-        ),
-        onErrorFallback: (error) {
-          // Fallback for individual line - just show the line as text
-          return Text(
-            latex,
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: widget.baseFontSize,
-              color: widget.textColor.withOpacity(0.8),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Check if this is an aligned environment
-    if (_hasAlignedEnvironment(widget.latex)) {
-      final lines = _extractAlignedLines(widget.latex);
-      
-      if (lines.isEmpty) {
-        return const SizedBox.shrink();
-      }
-      
-      return Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: lines.asMap().entries.map((entry) {
-            return _buildMathLine(entry.value, isLast: entry.key == lines.length - 1);
-          }).toList(),
-        ),
-      );
-    }
-    
-    // Regular single-line or simple latex
     return LayoutBuilder(
       builder: (context, constraints) {
         return Container(
@@ -1280,7 +1480,8 @@ class _LatexBlockState extends State<_LatexBlock> {
             child: SingleChildScrollView(
               controller: _controller,
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 16),
+              padding: const EdgeInsets.only(
+                  left: 16, right: 16, top: 4, bottom: 16),
               child: Math.tex(
                 widget.latex,
                 textStyle: TextStyle(
@@ -1305,4 +1506,3 @@ class _LatexBlockState extends State<_LatexBlock> {
     );
   }
 }
-

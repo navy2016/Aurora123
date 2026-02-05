@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:aurora/l10n/app_localizations.dart';
 
-class ReasoningDisplay extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/features/settings/presentation/settings_provider.dart';
+
+class ReasoningDisplay extends ConsumerStatefulWidget {
   final String content;
   final bool isWindows;
   final bool isRunning;
@@ -19,10 +22,10 @@ class ReasoningDisplay extends StatefulWidget {
     this.startTime,
   });
   @override
-  State<ReasoningDisplay> createState() => _ReasoningDisplayState();
+  ConsumerState<ReasoningDisplay> createState() => _ReasoningDisplayState();
 }
 
-class _ReasoningDisplayState extends State<ReasoningDisplay>
+class _ReasoningDisplayState extends ConsumerState<ReasoningDisplay>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -100,16 +103,27 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
     if (widget.content.isEmpty) return const SizedBox.shrink();
     final isDark =
         fluent.FluentTheme.of(context).brightness == fluent.Brightness.dark;
-    final backgroundColor =
-        isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF5F5F5);
+    final settings = ref.watch(settingsProvider);
+    final hasBackground = settings.useCustomTheme &&
+        settings.backgroundImagePath != null &&
+        settings.backgroundImagePath!.isNotEmpty;
+
+    final backgroundColor = hasBackground
+        ? (isDark
+            ? Colors.black.withValues(alpha: 0.4)
+            : Colors.white.withValues(alpha: 0.4))
+        : (isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF5F5F5));
     final textColor = isDark ? Colors.white70 : Colors.black87;
     final iconColor = isDark ? Colors.white54 : Colors.black54;
+
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? Colors.white10 : Colors.black12,
+          color: hasBackground
+              ? (isDark ? Colors.white24 : Colors.black26)
+              : (isDark ? Colors.white10 : Colors.black12),
           width: 0.5,
         ),
       ),
@@ -124,11 +138,11 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
-                    Icon(
-                      AuroraIcons.lightbulb,
-                      size: 18,
-                      color: iconColor,
-                    ),
+                  Icon(
+                    AuroraIcons.lightbulb,
+                    size: 18,
+                    color: iconColor,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     widget.isRunning
@@ -186,8 +200,8 @@ class _ReasoningDisplayState extends State<ReasoningDisplay>
                           fontFamily: widget.isWindows ? 'Consolas' : null,
                           color: isDark ? Colors.white60 : Colors.black54,
                         ),
-                        selectionControls: widget.isWindows 
-                            ? fluent.fluentTextSelectionControls 
+                        selectionControls: widget.isWindows
+                            ? fluent.fluentTextSelectionControls
                             : null,
                       ),
                     ],

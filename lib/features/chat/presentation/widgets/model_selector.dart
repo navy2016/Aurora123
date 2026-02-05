@@ -107,8 +107,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
           isSelected: isSelected,
           textColor: isSelected ? theme.accentColor : null,
           icon: isSelected
-              ? Icon(AuroraIcons.check,
-                  size: 12, color: theme.accentColor)
+              ? Icon(AuroraIcons.check, size: 12, color: theme.accentColor)
               : null,
         ));
       }
@@ -149,7 +148,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: _isOpen || states.isHovering
+                color: _isOpen || states.isHovered
                     ? theme.resources.subtleFillColorSecondary
                     : fluent.Colors.transparent,
                 borderRadius: BorderRadius.circular(4),
@@ -157,7 +156,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
+                  SizedBox(
                     width: 200,
                     child: fluent.Text(
                       selected ?? AppLocalizations.of(context)!.selectModel,
@@ -169,7 +168,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
                     const SizedBox(width: 8),
                     fluent.Text('|',
                         style: TextStyle(
-                            color: fluent.Colors.grey.withOpacity(0.5))),
+                            color: fluent.Colors.grey.withValues(alpha: 0.5))),
                     const SizedBox(width: 8),
                     fluent.Text(
                       activeProvider.name.toUpperCase(),
@@ -182,9 +181,7 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
                   ],
                   const SizedBox(width: 4),
                   fluent.Icon(
-                      _isOpen
-                          ? AuroraIcons.chevronUp
-                          : AuroraIcons.chevronDown,
+                      _isOpen ? AuroraIcons.chevronUp : AuroraIcons.chevronDown,
                       size: 8,
                       color: theme.typography.caption?.color),
                 ],
@@ -195,7 +192,8 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
       );
     } else {
       return GestureDetector(
-        onTap: () => _showMobileModelBottomSheet(context, providers, activeProvider, selected, switchModel),
+        onTap: () => _showMobileModelBottomSheet(
+            context, providers, activeProvider, selected, switchModel),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
@@ -214,7 +212,8 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
               if (activeProvider.name.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Text('|',
-                    style: TextStyle(color: Colors.grey.withOpacity(0.5))),
+                    style:
+                        TextStyle(color: Colors.grey.withValues(alpha: 0.5))),
                 const SizedBox(width: 8),
                 Text(
                   activeProvider.name.toUpperCase(),

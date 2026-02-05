@@ -8,8 +8,9 @@ import '../../../settings/presentation/usage_stats_view.dart';
 import '../../../history/presentation/history_content.dart';
 import '../widgets/topic_dropdown.dart';
 import 'package:aurora/l10n/app_localizations.dart';
-import '../../../sync/presentation/mobile_sync_settings_page.dart';
 import 'package:aurora/shared/theme/aurora_icons.dart';
+import 'package:aurora/features/assistant/presentation/widgets/assistant_avatar.dart';
+import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
 
 class MobileNavigationDrawer extends ConsumerWidget {
   final SessionsState sessionsState;
@@ -40,6 +41,26 @@ class MobileNavigationDrawer extends ConsumerWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final selectedId =
+                          ref.watch(assistantProvider).selectedAssistantId;
+                      final assistants =
+                          ref.watch(assistantProvider).assistants;
+                      final assistant = assistants
+                          .where((a) => a.id == selectedId)
+                          .firstOrNull;
+                      return InkWell(
+                        onTap: () => onNavigate('__assistant__'),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          child:
+                              AssistantAvatar(assistant: assistant, size: 28),
+                        ),
+                      );
+                    },
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Container(
@@ -93,19 +114,19 @@ class MobileNavigationDrawer extends ConsumerWidget {
                 },
                 builder: (context, states) {
                   final theme = fluent.FluentTheme.of(context);
-                  final isHovering = states.isHovered;
+                  final isHovered = states.isHovered;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     width: double.infinity,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isHovering
+                      color: isHovered
                           ? theme.resources.subtleFillColorSecondary
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: isHovering
+                        color: isHovered
                             ? theme.resources.surfaceStrokeColorDefault
                             : Colors.transparent,
                       ),
@@ -121,7 +142,7 @@ class MobileNavigationDrawer extends ConsumerWidget {
                                 color: theme.typography.body?.color,
                                 fontWeight: FontWeight.w500)),
                         const Spacer(),
-                        if (isHovering)
+                        if (isHovered)
                           Icon(AuroraIcons.chevronRight,
                               size: 10,
                               color: theme.resources.textFillColorSecondary),
@@ -147,6 +168,7 @@ class MobileNavigationDrawer extends ConsumerWidget {
                     }
                     ref.read(selectedHistorySessionIdProvider.notifier).state =
                         sessionId;
+                    if (!context.mounted) return;
                     Navigator.pop(context);
                   },
                   onSessionDeleted: (sessionId) {
@@ -188,7 +210,8 @@ class MobileNavigationDrawer extends ConsumerWidget {
                         ),
                         Expanded(
                           child: _MobileDrawerNavItem(
-                            icon: _getThemeIcon(ref.watch(settingsProvider).themeMode),
+                            icon: _getThemeIcon(
+                                ref.watch(settingsProvider).themeMode),
                             label: AppLocalizations.of(context)!.theme,
                             onTap: onThemeCycle,
                           ),
@@ -281,7 +304,8 @@ class _MobileDrawerNavItem extends StatelessWidget {
           children: [
             Icon(icon, size: 22),
             const SizedBox(height: 4),
-            Text(label, 
+            Text(
+              label,
               style: const TextStyle(fontSize: 11),
               textAlign: TextAlign.center,
               maxLines: 1,

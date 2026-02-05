@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import '../chat_provider.dart';
@@ -132,8 +130,8 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
                     onChanged: (v) => setState(() => _sourceLang = v!)),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Icon(AuroraIcons.forward,
-                      size: 12, color: Colors.grey),
+                  child:
+                      Icon(AuroraIcons.forward, size: 12, color: Colors.grey),
                 ),
                 _buildLangSelector(
                     value: _targetLang,
@@ -179,19 +177,19 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
                       actions: [
                         if (_sourceController.text.isNotEmpty)
                           fluent.IconButton(
-                            icon:
-                                const Icon(AuroraIcons.close, size: 14),
+                            icon: const Icon(AuroraIcons.close, size: 14),
                             onPressed: () => _sourceController.clear(),
                           ),
                         const SizedBox(width: 8),
                         fluent.Button(
                           style: fluent.ButtonStyle(
-                            shape: fluent.ButtonState.all(
+                            shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(side: BorderSide.none)),
                             backgroundColor:
-                                fluent.ButtonState.resolveWith((states) {
-                              if (states.isHovering)
+                                WidgetStateProperty.resolveWith((states) {
+                              if (states.isHovered) {
                                 return theme.resources.subtleFillColorSecondary;
+                              }
                               return Colors.transparent;
                             }),
                           ),
@@ -272,9 +270,9 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
         value: value,
         items: items
             .map((e) => fluent.ComboBoxItem(
+                value: e,
                 child: Text(_getDisplayLanguage(context, e),
-                    style: const TextStyle(fontSize: 13)),
-                value: e))
+                    style: const TextStyle(fontSize: 13))))
             .toList(),
         onChanged: onChanged,
         placeholder: Text(AppLocalizations.of(context)!.selectLanguage,
@@ -401,8 +399,9 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
       itemBuilder: (context, index) {
         final src = index < sourceLines.length ? sourceLines[index] : '';
         final tgt = index < targetLines.length ? targetLines[index] : '';
-        if (src.trim().isEmpty && tgt.trim().isEmpty)
+        if (src.trim().isEmpty && tgt.trim().isEmpty) {
           return const SizedBox.shrink();
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

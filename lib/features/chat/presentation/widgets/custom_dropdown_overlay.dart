@@ -45,12 +45,16 @@ class CustomDropdownOverlay extends StatelessWidget {
   final LayerLink layerLink;
   final Widget child;
   final Offset offset;
+  final Alignment targetAnchor;
+  final Alignment followerAnchor;
   const CustomDropdownOverlay({
     super.key,
     required this.onDismiss,
     required this.layerLink,
     required this.child,
     this.offset = const Offset(0, 32),
+    this.targetAnchor = Alignment.topLeft,
+    this.followerAnchor = Alignment.topLeft,
   });
   @override
   Widget build(BuildContext context) {
@@ -67,8 +71,10 @@ class CustomDropdownOverlay extends StatelessWidget {
           link: layerLink,
           showWhenUnlinked: false,
           offset: offset,
+          targetAnchor: targetAnchor,
+          followerAnchor: followerAnchor,
           child: Align(
-            alignment: Alignment.topLeft,
+            alignment: followerAnchor,
             child: Material(
               color: Colors.transparent,
               type: MaterialType.transparency,
@@ -142,7 +148,7 @@ class _AnimatedDropdownListState extends State<AnimatedDropdownList>
             border: Border.all(color: widget.borderColor, width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -199,8 +205,8 @@ class _AnimatedDropdownListState extends State<AnimatedDropdownList>
   Widget _buildLegacyMenuItem(fluent.CommandBarButton item) {
     return _HoverSelectButton(
       onPressed: item.onPressed,
-      child: item.label ?? const SizedBox(),
       trailing: item.icon,
+      child: item.label ?? const SizedBox(),
     );
   }
 }
@@ -213,7 +219,7 @@ class _ColoredMenuItem extends StatefulWidget {
 }
 
 class _ColoredMenuItemState extends State<_ColoredMenuItem> {
-  bool isHovering = false;
+  bool isHovered = false;
   @override
   Widget build(BuildContext context) {
     final theme = fluent.FluentTheme.of(context);
@@ -221,12 +227,12 @@ class _ColoredMenuItemState extends State<_ColoredMenuItem> {
 
     Color resolveBackground() {
       if (bgColor != null) {
-        if (isHovering) {
-          return bgColor.withOpacity(0.25);
+        if (isHovered) {
+          return bgColor.withValues(alpha: 0.25);
         }
-        return bgColor.withOpacity(0.1);
+        return bgColor.withValues(alpha: 0.1);
       }
-      if (isHovering) {
+      if (isHovered) {
         return theme.resources.subtleFillColorSecondary;
       }
       return Colors.transparent;
@@ -235,8 +241,8 @@ class _ColoredMenuItemState extends State<_ColoredMenuItem> {
     return GestureDetector(
       onTap: widget.item.onPressed,
       child: MouseRegion(
-        onEnter: (_) => setState(() => isHovering = true),
-        onExit: (_) => setState(() => isHovering = false),
+        onEnter: (_) => setState(() => isHovered = true),
+        onExit: (_) => setState(() => isHovered = false),
         cursor: widget.item.onPressed != null
             ? SystemMouseCursors.click
             : SystemMouseCursors.basic,
@@ -291,19 +297,19 @@ class _HoverSelectButton extends StatefulWidget {
 }
 
 class _HoverSelectButtonState extends State<_HoverSelectButton> {
-  bool isHovering = false;
+  bool isHovered = false;
   @override
   Widget build(BuildContext context) {
     final theme = fluent.FluentTheme.of(context);
     return GestureDetector(
       onTap: widget.onPressed,
       child: MouseRegion(
-        onEnter: (_) => setState(() => isHovering = true),
-        onExit: (_) => setState(() => isHovering = false),
+        onEnter: (_) => setState(() => isHovered = true),
+        onExit: (_) => setState(() => isHovered = false),
         cursor: SystemMouseCursors.click,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: isHovering
+          color: isHovered
               ? theme.resources.subtleFillColorSecondary
               : Colors.transparent,
           child: Row(

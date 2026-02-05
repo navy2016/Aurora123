@@ -206,6 +206,12 @@ abstract class AppLocalizations {
   /// **'清空'**
   String get clear;
 
+  /// No description provided for @reset.
+  ///
+  /// In zh, this message translates to:
+  /// **'重置'**
+  String get reset;
+
   /// No description provided for @translating.
   ///
   /// In zh, this message translates to:
@@ -1850,11 +1856,59 @@ abstract class AppLocalizations {
   /// **'启用搜索'**
   String get enableSearch;
 
+  /// No description provided for @searchSettings.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索设置'**
+  String get searchSettings;
+
   /// No description provided for @searchEngine.
   ///
   /// In zh, this message translates to:
   /// **'搜索引擎'**
   String get searchEngine;
+
+  /// No description provided for @searchRegion.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索地区'**
+  String get searchRegion;
+
+  /// No description provided for @searchSafeSearch.
+  ///
+  /// In zh, this message translates to:
+  /// **'安全搜索'**
+  String get searchSafeSearch;
+
+  /// No description provided for @searchSafeSearchOff.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭过滤'**
+  String get searchSafeSearchOff;
+
+  /// No description provided for @searchSafeSearchModerate.
+  ///
+  /// In zh, this message translates to:
+  /// **'适度过滤'**
+  String get searchSafeSearchModerate;
+
+  /// No description provided for @searchSafeSearchStrict.
+  ///
+  /// In zh, this message translates to:
+  /// **'严格过滤'**
+  String get searchSafeSearchStrict;
+
+  /// No description provided for @searchMaxResults.
+  ///
+  /// In zh, this message translates to:
+  /// **'最大结果数'**
+  String get searchMaxResults;
+
+  /// No description provided for @searchTimeoutSeconds.
+  ///
+  /// In zh, this message translates to:
+  /// **'超时（秒）'**
+  String get searchTimeoutSeconds;
 
   /// No description provided for @clearContext.
   ///
@@ -2300,6 +2354,24 @@ abstract class AppLocalizations {
   /// **'强调色'**
   String get accentColor;
 
+  /// No description provided for @themeCustom.
+  ///
+  /// In zh, this message translates to:
+  /// **'自定义'**
+  String get themeCustom;
+
+  /// No description provided for @customTheme.
+  ///
+  /// In zh, this message translates to:
+  /// **'自定义'**
+  String get customTheme;
+
+  /// No description provided for @customThemeDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许设置自定义背景图片、亮度和模糊度'**
+  String get customThemeDescription;
+
   /// No description provided for @backgroundStyle.
   ///
   /// In zh, this message translates to:
@@ -2365,6 +2437,42 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'调整全局文字显示大小'**
   String get fontSizeHint;
+
+  /// No description provided for @backgroundImage.
+  ///
+  /// In zh, this message translates to:
+  /// **'背景图片'**
+  String get backgroundImage;
+
+  /// No description provided for @backgroundBlur.
+  ///
+  /// In zh, this message translates to:
+  /// **'背景模糊'**
+  String get backgroundBlur;
+
+  /// No description provided for @backgroundBrightness.
+  ///
+  /// In zh, this message translates to:
+  /// **'背景亮度'**
+  String get backgroundBrightness;
+
+  /// No description provided for @selectBackgroundImage.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择背景图片'**
+  String get selectBackgroundImage;
+
+  /// No description provided for @clearBackgroundImage.
+  ///
+  /// In zh, this message translates to:
+  /// **'清除背景图片'**
+  String get clearBackgroundImage;
+
+  /// No description provided for @cropImage.
+  ///
+  /// In zh, this message translates to:
+  /// **'裁剪图片'**
+  String get cropImage;
 
   /// No description provided for @generationConfig.
   ///
@@ -2845,6 +2953,36 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'版本'**
   String get version;
+
+  /// No description provided for @assistantSystem.
+  ///
+  /// In zh, this message translates to:
+  /// **'助理'**
+  String get assistantSystem;
+
+  /// No description provided for @imagePayload.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片参数'**
+  String get imagePayload;
+
+  /// No description provided for @aspectRatio.
+  ///
+  /// In zh, this message translates to:
+  /// **'宽高比'**
+  String get aspectRatio;
+
+  /// No description provided for @imageSize.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片分辨率'**
+  String get imageSize;
+
+  /// No description provided for @auto.
+  ///
+  /// In zh, this message translates to:
+  /// **'自动'**
+  String get auto;
 }
 
 class _AppLocalizationsDelegate

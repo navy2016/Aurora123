@@ -1,8 +1,8 @@
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../settings/presentation/settings_provider.dart';
-import '../../../settings/presentation/mobile_preset_manage_page.dart';
+import 'package:aurora/features/settings/presentation/settings_provider.dart';
+import 'package:aurora/features/settings/presentation/mobile_preset_manage_page.dart';
 import '../chat_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 
@@ -58,6 +58,21 @@ class MobilePresetSelector extends ConsumerWidget {
             child: ListView(
               shrinkWrap: true,
               children: [
+                // --- Assistants Section ---
+                // Removed to separate concerns based on user feedback.
+                // --- Presets Section ---
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    '预设 (Presets)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                  ),
+                ),
                 ListTile(
                   leading: Icon(
                     isDefault ? Icons.check_circle : Icons.circle_outlined,
@@ -72,7 +87,6 @@ class MobilePresetSelector extends ConsumerWidget {
                     Navigator.pop(ctx);
                   },
                 ),
-                if (presets.isNotEmpty) const Divider(),
                 for (final preset in presets)
                   ListTile(
                     leading: Icon(
@@ -84,6 +98,9 @@ class MobilePresetSelector extends ConsumerWidget {
                           : null,
                     ),
                     title: Text(preset.name),
+                    subtitle: preset.description.isNotEmpty
+                        ? Text(preset.description)
+                        : null,
                     onTap: () {
                       ref
                           .read(chatSessionManagerProvider)

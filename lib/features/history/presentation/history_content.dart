@@ -1,18 +1,21 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../chat/presentation/chat_provider.dart';
-import '../../chat/presentation/topic_provider.dart';
-import '../../chat/presentation/widgets/chat_view.dart';
-import '../../chat/presentation/widgets/topic_dropdown.dart';
-import '../../settings/presentation/settings_provider.dart';
+import 'package:aurora/features/chat/presentation/chat_provider.dart';
+import 'package:aurora/features/chat/presentation/topic_provider.dart';
+import 'package:aurora/features/chat/presentation/widgets/chat_view.dart';
+import 'package:aurora/features/chat/presentation/widgets/topic_dropdown.dart';
+import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/utils/number_format_utils.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
+import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
+import 'package:aurora/features/assistant/presentation/widgets/assistant_avatar.dart';
+import 'package:aurora/features/assistant/domain/assistant.dart';
+import 'package:aurora/features/chat/data/session_entity.dart';
 
 class HistoryContent extends ConsumerStatefulWidget {
   const HistoryContent({super.key});
@@ -207,19 +210,19 @@ class _SessionList extends ConsumerWidget {
                 },
                 builder: (context, states) {
                   final theme = fluent.FluentTheme.of(context);
-                  final isHovering = states.isHovered;
+                  final isHovered = states.isHovered;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     width: double.infinity,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isHovering
+                      color: isHovered
                           ? theme.resources.subtleFillColorSecondary
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: isHovering
+                        color: isHovered
                             ? theme.resources.surfaceStrokeColorDefault
                             : Colors.transparent,
                       ),
@@ -235,7 +238,7 @@ class _SessionList extends ConsumerWidget {
                                 color: theme.typography.body?.color,
                                 fontWeight: FontWeight.w500)),
                         const Spacer(),
-                        if (isHovering)
+                        if (isHovered)
                           Icon(AuroraIcons.chevronRight,
                               size: 10,
                               color: theme.resources.textFillColorSecondary),
@@ -329,8 +332,8 @@ class _SessionList extends ConsumerWidget {
   }
 }
 
-class _SessionItem extends StatefulWidget {
-  final dynamic session;
+class _SessionItem extends ConsumerStatefulWidget {
+  final SessionEntity session;
   final bool isSelected;
   final Color? statusColor;
   final VoidCallback onTap;
@@ -347,10 +350,10 @@ class _SessionItem extends StatefulWidget {
     this.isMobile = false,
   });
   @override
-  State<_SessionItem> createState() => _SessionItemState();
+  ConsumerState<_SessionItem> createState() => _SessionItemState();
 }
 
-class _SessionItemState extends State<_SessionItem> {
+class _SessionItemState extends ConsumerState<_SessionItem> {
   bool _isHovering = false;
   bool _isRenaming = false;
   late TextEditingController _renameController;
@@ -399,13 +402,6 @@ class _SessionItemState extends State<_SessionItem> {
     });
   }
 
-  void _cancelRenaming() {
-    if (!mounted) return;
-    setState(() {
-      _isRenaming = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = fluent.FluentTheme.of(context);
@@ -419,7 +415,7 @@ class _SessionItemState extends State<_SessionItem> {
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? theme.accentColor.normal.withOpacity(0.15)
+                ? theme.accentColor.normal.withValues(alpha: 0.15)
                 : (_isHovering
                     ? theme.resources.subtleFillColorSecondary
                     : Colors.transparent),
@@ -441,6 +437,11 @@ class _SessionItemState extends State<_SessionItem> {
                       ),
                     ),
                   ),
+                if (_buildAssistantAvatar(ref, widget.session, theme)
+                    case final avatar?) ...[
+                  avatar,
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,8 +494,7 @@ class _SessionItemState extends State<_SessionItem> {
                     onPressed: _startRenaming,
                   ),
                   fluent.IconButton(
-                    icon:
-                        const fluent.Icon(AuroraIcons.delete, size: 14),
+                    icon: const fluent.Icon(AuroraIcons.delete, size: 14),
                     onPressed: widget.onDelete,
                   ),
                 ],
@@ -506,8 +506,6 @@ class _SessionItemState extends State<_SessionItem> {
     );
   }
 }
-
-
 
 class SessionListWidget extends ConsumerWidget {
   final SessionsState sessionsState;
@@ -558,7 +556,12 @@ class SessionListWidget extends ConsumerWidget {
                 leading: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Icon(Icons.chat_bubble_outline, size: 20),
+                    if (_buildAssistantAvatar(ref, session, Theme.of(context),
+                            size: 28)
+                        case final avatar?)
+                      avatar
+                    else
+                      const SizedBox(width: 28, height: 28),
                     Positioned(
                       top: -1,
                       right: -1,
@@ -659,4 +662,21 @@ class _TapDetectorState extends State<_TapDetector> {
       child: widget.child,
     );
   }
+}
+
+Widget? _buildAssistantAvatar(
+    WidgetRef ref, SessionEntity session, dynamic theme,
+    {double size = 20}) {
+  final assistantState = ref.watch(assistantProvider);
+  Assistant? assistant;
+  if (session.assistantId != null) {
+    assistant = assistantState.assistants
+        .where((a) => a.id == session.assistantId)
+        .firstOrNull;
+  }
+
+  if (assistant?.avatar != null && assistant!.avatar!.isNotEmpty) {
+    return AssistantAvatar(assistant: assistant, size: size);
+  }
+  return null;
 }

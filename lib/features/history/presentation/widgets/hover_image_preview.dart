@@ -5,10 +5,10 @@ class HoverAttachmentPreview extends StatefulWidget {
   final String filePath;
   final Widget child;
   const HoverAttachmentPreview({
-    Key? key,
+    super.key,
     required this.filePath,
     required this.child,
-  }) : super(key: key);
+  });
   @override
   State<HoverAttachmentPreview> createState() => _HoverAttachmentPreviewState();
 }
@@ -105,7 +105,7 @@ class _HoverAttachmentPreviewState extends State<HoverAttachmentPreview> {
     return Container(
       height: 200,
       width: 234,
-      color: Colors.grey.withOpacity(0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
       alignment: Alignment.center,
       child: Icon(icon, color: Colors.white, size: 64),
     );
@@ -117,10 +117,12 @@ class _HoverAttachmentPreviewState extends State<HoverAttachmentPreview> {
       if (file.existsSync()) {
         final bytes = file.lengthSync();
         if (bytes < 1024) return '$bytes B';
-        if (bytes < 1024 * 1024)
+        if (bytes < 1024 * 1024) {
           return '${(bytes / 1024).toStringAsFixed(1)} KB';
-        if (bytes < 1024 * 1024 * 1024)
+        }
+        if (bytes < 1024 * 1024 * 1024) {
           return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+        }
         return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
       }
     } catch (_) {}

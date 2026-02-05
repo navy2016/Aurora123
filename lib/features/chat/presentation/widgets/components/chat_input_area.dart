@@ -1,4 +1,3 @@
-
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
@@ -8,6 +7,7 @@ import 'package:aurora/l10n/app_localizations.dart';
 import '../../chat_provider.dart';
 import '../../../../settings/presentation/settings_provider.dart';
 import '../custom_dropdown_overlay.dart'; // for generateColorFromString
+import 'payload_config_panel.dart';
 
 class ModelOption {
   final String providerId;
@@ -71,18 +71,19 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
   final ScrollController _scrollController = ScrollController();
   static const double _itemHeight = 40.0;
   int? _triggerIndex;
-  
+
   // Preset selector state
   OverlayEntry? _presetOverlayEntry;
   int _presetSelectedIndex = 0;
   List<PresetOption> _filteredPresets = [];
   final ScrollController _presetScrollController = ScrollController();
   int? _presetTriggerIndex;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   final FocusNode _focusNode = FocusNode();
+  final fluent.FlyoutController _flyoutController = fluent.FlyoutController();
 
   @override
   void initState() {
@@ -113,6 +114,7 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
     _presetScrollController.dispose();
     _animationController.dispose();
     _focusNode.dispose();
+    _flyoutController.dispose();
     super.dispose();
   }
 
@@ -123,7 +125,9 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
       final cursor = widget.controller.selection.baseOffset;
 
       // Close if cursor moves before trigger
-      if (cursor <= _triggerIndex! || text.length <= _triggerIndex! || text[_triggerIndex!] != '@') {
+      if (cursor <= _triggerIndex! ||
+          text.length <= _triggerIndex! ||
+          text[_triggerIndex!] != '@') {
         _animateClose();
         return;
       }
@@ -213,7 +217,7 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
   }
 
   // ========== Preset Overlay Methods ==========
-  
+
   void _removePresetOverlay() {
     _presetOverlayEntry?.remove();
     _presetOverlayEntry = null;
@@ -233,8 +237,10 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
         _presetTriggerIndex! < widget.controller.text.length) {
       final text = widget.controller.text;
       // Remove the '/' character
-      final newText = text.replaceRange(_presetTriggerIndex!, _presetTriggerIndex! + 1, '');
-      final newSelection = TextSelection.collapsed(offset: _presetTriggerIndex!);
+      final newText =
+          text.replaceRange(_presetTriggerIndex!, _presetTriggerIndex! + 1, '');
+      final newSelection =
+          TextSelection.collapsed(offset: _presetTriggerIndex!);
       widget.controller.value = TextEditingValue(
         text: newText,
         selection: newSelection,
@@ -248,12 +254,14 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
 
     final double targetOffset = index * _itemHeight;
     final double currentOffset = _presetScrollController.offset;
-    final double viewportHeight = _presetScrollController.position.viewportDimension;
+    final double viewportHeight =
+        _presetScrollController.position.viewportDimension;
 
     if (targetOffset < currentOffset) {
       _presetScrollController.jumpTo(targetOffset);
     } else if (targetOffset + _itemHeight > currentOffset + viewportHeight) {
-      _presetScrollController.jumpTo(targetOffset + _itemHeight - viewportHeight);
+      _presetScrollController
+          .jumpTo(targetOffset + _itemHeight - viewportHeight);
     }
   }
 
@@ -319,7 +327,8 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                               itemCount: _filteredPresets.length,
                               itemExtent: _itemHeight,
                               itemBuilder: (context, index) {
-                                final isSelected = index == _presetSelectedIndex;
+                                final isSelected =
+                                    index == _presetSelectedIndex;
                                 final preset = _filteredPresets[index];
                                 final theme = fluent.FluentTheme.of(context);
                                 return Container(
@@ -328,7 +337,8 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(6),
                                     color: isSelected
-                                        ? theme.accentColor.withOpacity(0.1)
+                                        ? theme.accentColor
+                                            .withValues(alpha: 0.1)
                                         : Colors.transparent,
                                   ),
                                   child: fluent.ListTile(
@@ -371,7 +381,8 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
       ref
           .read(chatSessionManagerProvider)
           .getOrCreate(sessionId)
-          .updateSystemPrompt(option.systemPrompt, option.id == null ? null : option.name);
+          .updateSystemPrompt(
+              option.systemPrompt, option.id == null ? null : option.name);
     }
 
     // Remove the '/' character using the captured trigger index
@@ -379,7 +390,8 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
         _presetTriggerIndex! < widget.controller.text.length &&
         widget.controller.text[_presetTriggerIndex!] == '/') {
       final text = widget.controller.text;
-      final newText = text.replaceRange(_presetTriggerIndex!, _presetTriggerIndex! + 1, '');
+      final newText =
+          text.replaceRange(_presetTriggerIndex!, _presetTriggerIndex! + 1, '');
 
       int newSelectionIndex = widget.controller.selection.baseOffset;
       if (newSelectionIndex > _presetTriggerIndex!) {
@@ -499,9 +511,10 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(6),
                                     color: isSelected
-                                        ? (itemColor?.withOpacity(0.3) ??
-                                            theme.accentColor.withOpacity(0.1))
-                                        : (itemColor?.withOpacity(0.1) ??
+                                        ? (itemColor?.withValues(alpha: 0.3) ??
+                                            theme.accentColor
+                                                .withValues(alpha: 0.1))
+                                        : (itemColor?.withValues(alpha: 0.1) ??
                                             Colors.transparent),
                                   ),
                                   child: fluent.ListTile(
@@ -582,8 +595,9 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
         if (colorValue == null || colorValue.isEmpty) {
           // Generate a hex color string from the provider ID
           final generatedColor = generateColorFromString(provider.id);
+          final argb32 = generatedColor.toARGB32();
           colorValue =
-              '#${generatedColor.value.toRadixString(16).substring(2).toUpperCase()}';
+              '#${argb32.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
         }
         for (final model in provider.models) {
           if (!provider.isModelEnabled(model)) continue;
@@ -601,15 +615,19 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
     final List<PresetOption> allPresets = [
       PresetOption(id: null, name: l10n.defaultPreset, systemPrompt: ''),
       ...settings.presets.map((p) => PresetOption(
-        id: p.id,
-        name: p.name,
-        systemPrompt: p.systemPrompt,
-      )),
+            id: p.id,
+            name: p.name,
+            systemPrompt: p.systemPrompt,
+          )),
     ];
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: settings.useCustomTheme &&
+                settings.backgroundImagePath != null &&
+                settings.backgroundImagePath!.isNotEmpty
+            ? theme.cardColor.withValues(alpha: 0.55)
+            : theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: theme.resources.dividerStrokeColorDefault,
@@ -623,8 +641,9 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
             child: Focus(
               onKeyEvent: (node, event) {
                 // Allow both KeyDownEvent and KeyRepeatEvent for continuous scrolling
-                if (event is! KeyDownEvent && event is! KeyRepeatEvent)
+                if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
                   return KeyEventResult.ignored;
+                }
 
                 final isControl = HardwareKeyboard.instance.isControlPressed;
                 final isShift = HardwareKeyboard.instance.isShiftPressed;
@@ -732,7 +751,8 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                   if (_presetOverlayEntry != null) {
                     // If preset overlay is already open, update trigger index
                     if (widget.controller.selection.isValid) {
-                      _presetTriggerIndex = widget.controller.selection.baseOffset;
+                      _presetTriggerIndex =
+                          widget.controller.selection.baseOffset;
                     }
                   } else if (allPresets.isNotEmpty) {
                     // Show preset selector for the first '/'
@@ -851,8 +871,9 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                 style: fluent.ButtonStyle(
                   backgroundColor:
                       fluent.WidgetStateProperty.resolveWith((states) {
-                    if (settings.isStreamEnabled)
-                      return theme.accentColor.withOpacity(0.1);
+                    if (settings.isStreamEnabled) {
+                      return theme.accentColor.withValues(alpha: 0.1);
+                    }
                     return Colors.transparent;
                   }),
                 ),
@@ -876,30 +897,73 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                 style: fluent.ButtonStyle(
                   backgroundColor:
                       fluent.WidgetStateProperty.resolveWith((states) {
-                    if (settings.isSearchEnabled)
-                      return theme.accentColor.withOpacity(0.1);
+                    if (settings.isSearchEnabled) {
+                      return theme.accentColor.withValues(alpha: 0.1);
+                    }
                     return Colors.transparent;
                   }),
+                ),
+              ),
+              const SizedBox(width: 4),
+              fluent.FlyoutTarget(
+                controller: _flyoutController,
+                child: fluent.IconButton(
+                  icon: Icon(
+                    AuroraIcons.parameter,
+                    size: 16,
+                    color: theme.resources.textFillColorSecondary,
+                  ),
+                  onPressed: () {
+                    _flyoutController.showFlyout(
+                      autoModeConfiguration: fluent.FlyoutAutoConfiguration(
+                        preferredMode: fluent.FlyoutPlacementMode.topCenter,
+                      ),
+                      barrierDismissible: true,
+                      builder: (context) {
+                        return fluent.MenuFlyout(
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          items: [
+                            fluent.MenuFlyoutItem(
+                              text: Text(settings.selectedModel ==
+                                      'gemini-3-pro-image-preview'
+                                  ? l10n.imagePayload
+                                  : l10n.thinkingConfig),
+                              onPressed: () {},
+                            ),
+                            fluent.MenuFlyoutSeparator(),
+                            fluent.MenuFlyoutItem(
+                              text: PayloadConfigPanel(
+                                providerId: settings.activeProviderId,
+                                modelName: settings.selectedModel ?? '',
+                              ),
+                              onPressed: () {},
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
               const Spacer(),
               if (widget.isLoading)
                 fluent.IconButton(
-                  icon: const Icon(AuroraIcons.stop,
-                      size: 16, color: Colors.red),
+                  icon:
+                      const Icon(AuroraIcons.stop, size: 16, color: Colors.red),
                   onPressed: () =>
                       ref.read(historyChatProvider).abortGeneration(),
                 )
               else
                 fluent.IconButton(
-                   icon: Icon(AuroraIcons.send,
+                  icon: Icon(AuroraIcons.send,
                       size: 16, color: theme.accentColor),
                   onPressed: widget.onSend,
                   style: fluent.ButtonStyle(
                     backgroundColor:
                         fluent.WidgetStateProperty.resolveWith((states) {
-                      if (states.isHovered || states.isPressed)
-                        return theme.accentColor.withOpacity(0.1);
+                      if (states.isHovered || states.isPressed) {
+                        return theme.accentColor.withValues(alpha: 0.1);
+                      }
                       return Colors.transparent;
                     }),
                   ),
@@ -934,10 +998,16 @@ class MobileChatInputArea extends ConsumerWidget {
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: settings.backgroundImagePath != null &&
+                settings.backgroundImagePath!.isNotEmpty
+            ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.55)
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+          color: Theme.of(context)
+              .colorScheme
+              .outlineVariant
+              .withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -1057,11 +1127,71 @@ class MobileChatInputArea extends ConsumerWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
+              InkWell(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    builder: (context) => Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
+                      ),
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 4,
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).colorScheme.outlineVariant,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          Text(
+                            settings.selectedModel ==
+                                    'gemini-3-pro-image-preview'
+                                ? l10n.imagePayload
+                                : l10n.thinkingConfig,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 20),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: PayloadConfigPanel(
+                              providerId: settings.activeProviderId,
+                              modelName: settings.selectedModel ?? '',
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.all(6.0),
+                  child: Icon(
+                    AuroraIcons.parameter,
+                    color: Theme.of(context).colorScheme.outline,
+                    size: 18,
+                  ),
+                ),
+              ),
               const Spacer(),
               if (isLoading)
                 IconButton(
-                  icon: const Icon(AuroraIcons.stop,
-                      color: Colors.red, size: 18),
+                  icon:
+                      const Icon(AuroraIcons.stop, color: Colors.red, size: 18),
                   onPressed: () =>
                       ref.read(historyChatProvider).abortGeneration(),
                 )

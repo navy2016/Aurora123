@@ -70,14 +70,15 @@ class ChatStorage {
         if (session != null) {
           // Calculate total tokens for this message
           int msgTotal = message.tokenCount ?? 0;
-          if (message.promptTokens != null || message.completionTokens != null) {
-             // Enforce P + C + R logic
-             final p = message.promptTokens ?? 0;
-             final c = message.completionTokens ?? 0;
-             final r = message.reasoningTokens ?? 0;
-             msgTotal = p + c + r;
+          if (message.promptTokens != null ||
+              message.completionTokens != null) {
+            // Enforce P + C + R logic
+            final p = message.promptTokens ?? 0;
+            final c = message.completionTokens ?? 0;
+            final r = message.reasoningTokens ?? 0;
+            msgTotal = p + c + r;
           }
-          
+
           session.totalTokens += msgTotal;
           await _isar.sessionEntitys.put(session);
         }
@@ -159,7 +160,7 @@ class ChatStorage {
             );
           }).toList();
         } catch (e) {
-          print('Error parsing toolCallsJson: $e');
+          debugPrint('Error parsing toolCallsJson: $e');
         }
       }
       return Message(
@@ -224,6 +225,23 @@ class ChatStorage {
   Future<void> updateMessage(Message message) async {
     final intId = int.tryParse(message.id);
     if (intId == null) return;
+
+    // Get existing message to compare attachments before transaction
+    final existing = await _isar.messageEntitys.get(intId);
+    if (existing != null) {
+      // Find attachments that were removed
+      final oldAttachments = existing.attachments;
+      final newAttachments = message.attachments;
+      final removedAttachments = oldAttachments
+          .where((path) => !newAttachments.contains(path))
+          .toList();
+
+      // Delete removed attachment files
+      if (removedAttachments.isNotEmpty) {
+        await _deleteAttachmentFiles(removedAttachments);
+      }
+    }
+
     await _isar.writeTxn(() async {
       final existing = await _isar.messageEntitys.get(intId);
       if (existing != null) {
@@ -287,17 +305,20 @@ class ChatStorage {
     });
   }
 
-  Future<String> createSession(
-      {required String title,
-      String? uuid,
-      int? topicId,
-      String? presetId}) async {
+  Future<String> createSession({
+    String title = 'New Chat',
+    String? uuid,
+    int? topicId,
+    String? presetId,
+    String? assistantId,
+  }) async {
     final session = SessionEntity()
       ..sessionId = uuid ?? DateTime.now().millisecondsSinceEpoch.toString()
       ..title = title
       ..lastMessageTime = DateTime.now()
       ..topicId = topicId
-      ..presetId = presetId;
+      ..presetId = presetId
+      ..assistantId = assistantId;
     await _isar.writeTxn(() async {
       await _isar.sessionEntitys.put(session);
     });
@@ -398,6 +419,20 @@ class ChatStorage {
           .findFirst();
       if (session != null) {
         session.presetId = presetId;
+        await _isar.sessionEntitys.put(session);
+      }
+    });
+  }
+
+  Future<void> updateSessionAssistant(
+      String sessionId, String? assistantId) async {
+    await _isar.writeTxn(() async {
+      final session = await _isar.sessionEntitys
+          .filter()
+          .sessionIdEqualTo(sessionId)
+          .findFirst();
+      if (session != null) {
+        session.assistantId = assistantId;
         await _isar.sessionEntitys.put(session);
       }
     });

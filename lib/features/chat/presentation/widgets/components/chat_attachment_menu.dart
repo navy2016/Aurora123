@@ -1,4 +1,3 @@
-import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 
@@ -12,8 +11,6 @@ class ChatAttachmentMenu {
     required VoidCallback onPickVideo,
     required VoidCallback onPickFile,
   }) async {
-    final theme = fluent.FluentTheme.of(context);
-    final isDark = theme.brightness == fluent.Brightness.dark;
     await AuroraBottomSheet.show(
       context: context,
       builder: (ctx) => Column(

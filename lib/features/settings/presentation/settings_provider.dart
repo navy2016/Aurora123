@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -25,20 +29,20 @@ class ProviderConfig {
   final List<String> models;
   final String? selectedModel;
   final bool isEnabled;
-  
+
   /// Returns the current API key based on currentKeyIndex (with bounds checking)
   String get apiKey {
     if (apiKeys.isEmpty) return '';
     final safeIndex = currentKeyIndex.clamp(0, apiKeys.length - 1);
     return apiKeys[safeIndex];
   }
-  
+
   /// Returns a safe current key index (clamped to valid range)
   int get safeCurrentKeyIndex {
     if (apiKeys.isEmpty) return 0;
     return currentKeyIndex.clamp(0, apiKeys.length - 1);
   }
-  
+
   ProviderConfig({
     required this.id,
     required this.name,
@@ -56,7 +60,7 @@ class ProviderConfig {
     this.selectedModel,
     this.isEnabled = true,
   });
-  
+
   ProviderConfig copyWith({
     String? name,
     String? color,
@@ -90,7 +94,7 @@ class ProviderConfig {
       isEnabled: isEnabled ?? this.isEnabled,
     );
   }
-  
+
   bool isModelEnabled(String modelId) {
     if (modelSettings.containsKey(modelId)) {
       final settings = modelSettings[modelId]!;
@@ -116,6 +120,10 @@ class SettingsState {
   final bool isStreamEnabled;
   final bool isSearchEnabled;
   final String searchEngine;
+  final String searchRegion;
+  final String searchSafeSearch;
+  final int searchMaxResults;
+  final int searchTimeoutSeconds;
   final bool enableSmartTopic;
   final String? topicGenerationModel;
   final String language;
@@ -127,6 +135,10 @@ class SettingsState {
   final String? executionModel;
   final String? executionProviderId;
   final double fontSize;
+  final String? backgroundImagePath;
+  final double backgroundBrightness;
+  final double backgroundBlur;
+  final bool useCustomTheme;
   SettingsState({
     required this.providers,
     required this.activeProviderId,
@@ -141,6 +153,10 @@ class SettingsState {
     this.isStreamEnabled = true,
     this.isSearchEnabled = false,
     this.searchEngine = 'duckduckgo',
+    this.searchRegion = 'us-en',
+    this.searchSafeSearch = 'moderate',
+    this.searchMaxResults = 5,
+    this.searchTimeoutSeconds = 15,
     this.enableSmartTopic = true,
     this.topicGenerationModel,
     this.language = 'zh',
@@ -152,6 +168,10 @@ class SettingsState {
     this.executionModel,
     this.executionProviderId,
     this.fontSize = 14.0,
+    this.backgroundImagePath,
+    this.backgroundBrightness = 0.5,
+    this.backgroundBlur = 0.0,
+    this.useCustomTheme = false,
   });
   ProviderConfig get activeProvider =>
       providers.firstWhere((p) => p.id == activeProviderId);
@@ -174,6 +194,10 @@ class SettingsState {
     bool? isStreamEnabled,
     bool? isSearchEnabled,
     String? searchEngine,
+    String? searchRegion,
+    String? searchSafeSearch,
+    int? searchMaxResults,
+    int? searchTimeoutSeconds,
     bool? enableSmartTopic,
     String? topicGenerationModel,
     String? language,
@@ -185,6 +209,10 @@ class SettingsState {
     String? executionModel,
     String? executionProviderId,
     double? fontSize,
+    Object? backgroundImagePath = _settingsSentinel,
+    double? backgroundBrightness,
+    double? backgroundBlur,
+    bool? useCustomTheme,
   }) {
     return SettingsState(
       providers: providers ?? this.providers,
@@ -200,6 +228,14 @@ class SettingsState {
       isStreamEnabled: isStreamEnabled ?? this.isStreamEnabled,
       isSearchEnabled: isSearchEnabled ?? this.isSearchEnabled,
       searchEngine: searchEngine ?? this.searchEngine,
+      searchRegion: searchRegion ?? this.searchRegion,
+      searchSafeSearch: searchSafeSearch ?? this.searchSafeSearch,
+      searchMaxResults: searchMaxResults != null
+          ? _clampInt(searchMaxResults, 1, 50)
+          : this.searchMaxResults,
+      searchTimeoutSeconds: searchTimeoutSeconds != null
+          ? _clampInt(searchTimeoutSeconds, 5, 60)
+          : this.searchTimeoutSeconds,
       enableSmartTopic: enableSmartTopic ?? this.enableSmartTopic,
       topicGenerationModel: topicGenerationModel ?? this.topicGenerationModel,
       language: language ?? this.language,
@@ -213,11 +249,45 @@ class SettingsState {
       executionModel: executionModel ?? this.executionModel,
       executionProviderId: executionProviderId ?? this.executionProviderId,
       fontSize: fontSize ?? this.fontSize,
+      backgroundImagePath: backgroundImagePath == _settingsSentinel
+          ? this.backgroundImagePath
+          : backgroundImagePath as String?,
+      backgroundBrightness: backgroundBrightness ?? this.backgroundBrightness,
+      backgroundBlur: backgroundBlur ?? this.backgroundBlur,
+      useCustomTheme: useCustomTheme ?? this.useCustomTheme,
     );
   }
 }
 
 const Object _settingsSentinel = Object();
+
+int _clampInt(int value, int min, int max) {
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
+String _normalizeSearchEngine(String engine) {
+  final normalized = engine.trim().toLowerCase();
+  return normalized.isEmpty ? 'duckduckgo' : normalized;
+}
+
+String _normalizeSearchRegion(String region) {
+  final normalized = region.trim().toLowerCase();
+  return normalized.isEmpty ? 'us-en' : normalized;
+}
+
+String _normalizeSafeSearch(String safeSearch) {
+  final normalized = safeSearch.trim().toLowerCase();
+  switch (normalized) {
+    case 'off':
+    case 'moderate':
+    case 'on':
+      return normalized;
+    default:
+      return 'moderate';
+  }
+}
 
 class SettingsNotifier extends StateNotifier<SettingsState> {
   final SettingsStorage _storage;
@@ -234,6 +304,10 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     bool isStreamEnabled = true,
     bool isSearchEnabled = false,
     String searchEngine = 'duckduckgo',
+    String searchRegion = 'us-en',
+    String searchSafeSearch = 'moderate',
+    int searchMaxResults = 5,
+    int searchTimeoutSeconds = 15,
     bool enableSmartTopic = true,
     String? topicGenerationModel,
     String language = 'zh',
@@ -243,6 +317,10 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     String? executionModel,
     String? executionProviderId,
     double fontSize = 14.0,
+    String? backgroundImagePath,
+    double backgroundBrightness = 0.5,
+    double backgroundBlur = 0.0,
+    bool useCustomTheme = false,
   })  : _storage = storage,
         super(SettingsState(
           providers: initialProviders,
@@ -255,7 +333,11 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           themeMode: themeMode,
           isStreamEnabled: isStreamEnabled,
           isSearchEnabled: isSearchEnabled,
-          searchEngine: searchEngine,
+          searchEngine: _normalizeSearchEngine(searchEngine),
+          searchRegion: _normalizeSearchRegion(searchRegion),
+          searchSafeSearch: _normalizeSafeSearch(searchSafeSearch),
+          searchMaxResults: _clampInt(searchMaxResults, 1, 50),
+          searchTimeoutSeconds: _clampInt(searchTimeoutSeconds, 5, 60),
           enableSmartTopic: enableSmartTopic,
           topicGenerationModel: topicGenerationModel,
           language: language,
@@ -266,7 +348,13 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           executionModel: executionModel,
           executionProviderId: executionProviderId,
           fontSize: fontSize,
+          backgroundImagePath: backgroundImagePath,
+          backgroundBrightness: backgroundBrightness,
+          backgroundBlur: backgroundBlur,
+          useCustomTheme: useCustomTheme,
         )) {
+    debugPrint(
+        'SettingsNotifier initialized with backgroundImagePath: $backgroundImagePath');
     loadPresets();
   }
 
@@ -309,7 +397,9 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           } catch (_) {}
         }
         List<String> apiKeys = e.apiKeys;
+        // ignore: deprecated_member_use_from_same_package
         if (apiKeys.isEmpty && e.apiKey.isNotEmpty) {
+          // ignore: deprecated_member_use_from_same_package
           apiKeys = [e.apiKey];
         }
         return ProviderConfig(
@@ -349,7 +439,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       themeMode: appSettings?.themeMode ?? 'system',
       isStreamEnabled: appSettings?.isStreamEnabled ?? true,
       isSearchEnabled: appSettings?.isSearchEnabled ?? false,
-      searchEngine: appSettings?.searchEngine ?? 'duckduckgo',
+      searchEngine: _normalizeSearchEngine(
+          appSettings?.searchEngine ?? 'duckduckgo'),
+      searchRegion: _normalizeSearchRegion(appSettings?.searchRegion ?? 'us-en'),
+      searchSafeSearch:
+          _normalizeSafeSearch(appSettings?.searchSafeSearch ?? 'moderate'),
+      searchMaxResults: _clampInt(appSettings?.searchMaxResults ?? 5, 1, 50),
+      searchTimeoutSeconds:
+          _clampInt(appSettings?.searchTimeoutSeconds ?? 15, 5, 60),
       enableSmartTopic: appSettings?.enableSmartTopic ?? true,
       topicGenerationModel: appSettings?.topicGenerationModel,
       language: appSettings?.language ?? 'zh',
@@ -359,11 +456,19 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       executionModel: appSettings?.executionModel,
       executionProviderId: appSettings?.executionProviderId,
       fontSize: appSettings?.fontSize ?? 14.0,
+      backgroundImagePath: appSettings?.backgroundImagePath,
+      backgroundBrightness: appSettings?.backgroundBrightness ?? 0.5,
+      backgroundBlur: appSettings?.backgroundBlur ?? 0.0,
+      useCustomTheme: appSettings?.useCustomTheme ?? false,
     );
-    print('DEBUG: refreshSettings loaded - executionModel: ${appSettings?.executionModel}, executionProviderId: ${appSettings?.executionProviderId}');
+    debugPrint(
+        'Settings reloaded with backgroundImagePath: ${appSettings?.backgroundImagePath}');
+    debugPrint(
+        'DEBUG: refreshSettings loaded - executionModel: ${appSettings?.executionModel}, executionProviderId: ${appSettings?.executionProviderId}');
 
     await loadPresets();
   }
+
   void viewProvider(String id) {
     if (state.viewingProviderId != id) {
       state = state.copyWith(viewingProviderId: id, error: null);
@@ -474,7 +579,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final lightness = 0.4 + random.nextDouble() * 0.2; // 0.4-0.6
     final color = HSLColor.fromAHSL(1.0, hue, saturation, lightness).toColor();
     final colorHex =
-        '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
+        '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
 
     final newProvider = ProviderConfig(
       id: newId,
@@ -532,9 +637,9 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final items = List<ProviderConfig>.from(state.providers);
     final item = items.removeAt(oldIndex);
     items.insert(newIndex, item);
-    
+
     state = state.copyWith(providers: items);
-    
+
     final orderIds = items.map((p) => p.id).toList();
     await _storage.saveProviderOrder(orderIds);
   }
@@ -543,32 +648,34 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final provider = state.providers.firstWhere((p) => p.id == providerId);
     final currentSettings = provider.modelSettings[modelId] ?? {};
     final isDisabled = currentSettings['_aurora_model_disabled'] == true;
-    
+
     final newSettings = Map<String, dynamic>.from(currentSettings);
     newSettings['_aurora_model_disabled'] = !isDisabled;
-    
-    final newModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+
+    final newModelSettings =
+        Map<String, Map<String, dynamic>>.from(provider.modelSettings);
     newModelSettings[modelId] = newSettings;
-    
+
     await updateProvider(id: providerId, modelSettings: newModelSettings);
   }
 
   Future<void> setAllModelsEnabled(String providerId, bool enabled) async {
     final provider = state.providers.firstWhere((p) => p.id == providerId);
-    final newModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
-    
+    final newModelSettings =
+        Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+
     for (final modelId in provider.models) {
       final currentSettings = newModelSettings[modelId] ?? {};
       final newSettings = Map<String, dynamic>.from(currentSettings);
       newSettings['_aurora_model_disabled'] = !enabled;
       newModelSettings[modelId] = newSettings;
     }
-    
+
     await updateProvider(id: providerId, modelSettings: newModelSettings);
   }
 
   // ==================== API Key Management Methods ====================
-  
+
   /// Add a new API key to a provider
   Future<void> addApiKey(String providerId, String key) async {
     if (key.trim().isEmpty) return;
@@ -586,11 +693,13 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     if (newIndex >= newKeys.length) {
       newIndex = newKeys.isEmpty ? 0 : newKeys.length - 1;
     }
-    await updateProvider(id: providerId, apiKeys: newKeys, currentKeyIndex: newIndex);
+    await updateProvider(
+        id: providerId, apiKeys: newKeys, currentKeyIndex: newIndex);
   }
 
   /// Update an API key at the specified index
-  Future<void> updateApiKeyAtIndex(String providerId, int index, String key) async {
+  Future<void> updateApiKeyAtIndex(
+      String providerId, int index, String key) async {
     final provider = state.providers.firstWhere((p) => p.id == providerId);
     if (index < 0 || index >= provider.apiKeys.length) return;
     final newKeys = List<String>.from(provider.apiKeys);
@@ -616,6 +725,32 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   /// Set auto-rotate keys option
   Future<void> setAutoRotateKeys(String providerId, bool enabled) async {
     await updateProvider(id: providerId, autoRotateKeys: enabled);
+  }
+
+  Map<String, dynamic> getModelSettings(String providerId, String modelName) {
+    try {
+      final provider = state.providers.firstWhere((p) => p.id == providerId);
+      return provider.modelSettings[modelName] ?? {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> updateModelSettings({
+    required String providerId,
+    required String modelName,
+    required Map<String, dynamic> settings,
+  }) async {
+    final provider = state.providers.firstWhere((p) => p.id == providerId);
+    final newModelSettings =
+        Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+    if (settings.isEmpty) {
+      newModelSettings.remove(modelName);
+    } else {
+      newModelSettings[modelName] = settings;
+    }
+
+    await updateProvider(id: providerId, modelSettings: newModelSettings);
   }
 
   Future<void> fetchModels() async {
@@ -684,10 +819,12 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   Future<void> setThemeMode(String mode) async {
-    state = state.copyWith(themeMode: mode);
+    final useCustom = mode == 'custom';
+    state = state.copyWith(themeMode: mode, useCustomTheme: useCustom);
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       themeMode: mode,
+      useCustomTheme: useCustom,
     );
   }
 
@@ -706,13 +843,17 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     );
   }
 
-  Future<void> toggleSearchEnabled() async {
-    final newValue = !state.isSearchEnabled;
-    state = state.copyWith(isSearchEnabled: newValue);
+  Future<void> setSearchEnabled(bool enabled) async {
+    if (state.isSearchEnabled == enabled) return;
+    state = state.copyWith(isSearchEnabled: enabled);
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
-      isSearchEnabled: newValue,
+      isSearchEnabled: enabled,
     );
+  }
+
+  Future<void> toggleSearchEnabled() async {
+    await setSearchEnabled(!state.isSearchEnabled);
   }
 
   Future<void> setSearchEngine(String engine) async {
@@ -720,6 +861,44 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       searchEngine: engine,
+    );
+  }
+
+  Future<void> setSearchRegion(String region) async {
+    final normalized = region.trim().toLowerCase();
+    if (normalized.isEmpty) return;
+    state = state.copyWith(searchRegion: normalized);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      searchRegion: normalized,
+    );
+  }
+
+  Future<void> setSearchSafeSearch(String safeSearch) async {
+    final normalized = safeSearch.trim().toLowerCase();
+    if (normalized.isEmpty) return;
+    state = state.copyWith(searchSafeSearch: normalized);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      searchSafeSearch: normalized,
+    );
+  }
+
+  Future<void> setSearchMaxResults(int maxResults) async {
+    final clamped = maxResults.clamp(1, 50);
+    state = state.copyWith(searchMaxResults: clamped);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      searchMaxResults: clamped,
+    );
+  }
+
+  Future<void> setSearchTimeoutSeconds(int seconds) async {
+    final clamped = seconds.clamp(5, 60);
+    state = state.copyWith(searchTimeoutSeconds: clamped);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      searchTimeoutSeconds: clamped,
     );
   }
 
@@ -772,6 +951,17 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await loadPresets();
   }
 
+  Future<void> setUseCustomTheme(bool value) async {
+    final mode =
+        value ? 'custom' : 'system'; // Fallback to system if disabling custom
+    state = state.copyWith(useCustomTheme: value, themeMode: mode);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      useCustomTheme: value,
+      themeMode: mode,
+    );
+  }
+
   Future<void> updatePreset(ChatPreset preset) async {
     final entity = ChatPresetEntity()
       ..presetId = preset.id
@@ -805,6 +995,87 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
       backgroundColor: color,
+    );
+  }
+
+  Future<void> setBackgroundImagePath(String? path) async {
+    debugPrint('Saving background image path: $path');
+
+    String? finalPath;
+    if (path != null && path.isNotEmpty) {
+      try {
+        final supportDir = await getApplicationSupportDirectory();
+        final bgDir = Directory(p.join(supportDir.path, 'backgrounds'));
+        if (!await bgDir.exists()) {
+          await bgDir.create(recursive: true);
+        }
+
+        // Clean up any existing background files before saving the new one
+        try {
+          final files = bgDir.listSync();
+          for (var file in files) {
+            if (p.basename(file.path).startsWith('custom_background')) {
+              await file.delete();
+            }
+          }
+        } catch (e) {
+          debugPrint('Error during background cleanup: $e');
+        }
+
+        final fileName =
+            'custom_background_${DateTime.now().millisecondsSinceEpoch}${p.extension(path)}';
+        final savedFile = File(p.join(bgDir.path, fileName));
+
+        // Copy file to persistent storage
+        await File(path).copy(savedFile.path);
+        finalPath = savedFile.path;
+        debugPrint('Background image persisted to: $finalPath');
+      } catch (e) {
+        debugPrint('Error persisting background image: $e');
+        finalPath = path; // Fallback to original path if copy fails
+      }
+    } else {
+      // If path is null, try to clean up the existing file
+      try {
+        final supportDir = await getApplicationSupportDirectory();
+        final bgDir = Directory(p.join(supportDir.path, 'backgrounds'));
+        if (await bgDir.exists()) {
+          final files = bgDir.listSync();
+          for (var file in files) {
+            if (p.basename(file.path).startsWith('custom_background')) {
+              await file.delete();
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    state = state.copyWith(backgroundImagePath: finalPath);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      backgroundImagePath: finalPath,
+      clearBackgroundImage: finalPath == null,
+    );
+
+    // If a new background image is set, automatically enable custom theme
+    if (finalPath != null && finalPath.isNotEmpty) {
+      await setUseCustomTheme(true);
+    }
+  }
+
+  Future<void> setBackgroundBrightness(double brightness) async {
+    state = state.copyWith(backgroundBrightness: brightness);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      backgroundBrightness: brightness,
+    );
+  }
+
+  Future<void> setBackgroundBlur(double blur) async {
+    state = state.copyWith(backgroundBlur: blur);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      backgroundBlur: blur,
     );
   }
 
@@ -842,7 +1113,6 @@ final settingsStorageProvider = Provider<SettingsStorage>((ref) {
 });
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, SettingsState>((ref) {
-  final storage = ref.watch(settingsStorageProvider);
   throw UnimplementedError(
       'settingsProvider must be overridden or dependencies provided');
 });

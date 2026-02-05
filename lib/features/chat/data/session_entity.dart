@@ -11,5 +11,6 @@ class SessionEntity {
   String? snippet;
   int? topicId;
   String? presetId;
+  String? assistantId;
   int totalTokens = 0;
 }

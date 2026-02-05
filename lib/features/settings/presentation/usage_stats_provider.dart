@@ -2,10 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/settings_storage.dart';
 
 import '../../../core/error/app_error_type.dart';
-import '../data/usage_stats_entity.dart';
 import '../data/daily_usage_stats_entity.dart';
 import 'settings_provider.dart';
-
 
 typedef UsageStatsRecord = ({
   int success,
@@ -53,7 +51,8 @@ class UsageStatsState {
       stats.values.fold(0, (sum, s) => sum + s.success + s.failure);
   int get totalSuccess => stats.values.fold(0, (sum, s) => sum + s.success);
   int get totalFailure => stats.values.fold(0, (sum, s) => sum + s.failure);
-  int get totalTokens => stats.values.fold(0, (sum, s) => sum + s.totalTokenCount);
+  int get totalTokens =>
+      stats.values.fold(0, (sum, s) => sum + s.totalTokenCount);
 }
 
 class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
@@ -61,12 +60,13 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
   UsageStatsNotifier(this._storage) : super(const UsageStatsState()) {
     _initAndMigrate();
   }
-  
+
   Future<void> _initAndMigrate() async {
     // Auto-migrate historical token count data
     await _storage.migrateTokenCounts();
     await loadStats();
   }
+
   Future<void> loadStats() async {
     state = state.copyWith(isLoading: true);
     final entities = await _storage.loadAllUsageStats();
@@ -94,7 +94,8 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
         errorUnknownCount: e.errorUnknownCount,
       );
     }
-    state = UsageStatsState(stats: statsMap, dailyStats: dailyParams, isLoading: false);
+    state = UsageStatsState(
+        stats: statsMap, dailyStats: dailyParams, isLoading: false);
   }
 
   Future<void> incrementUsage(String modelName,
@@ -136,15 +137,16 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
           errorUnknownCount: 0,
         );
     final newStats = Map<String, UsageStatsRecord>.from(state.stats);
-    final effectiveTotal = tokenCount > 0 ? tokenCount : (promptTokens + completionTokens + reasoningTokens);
-    
+    final effectiveTotal = tokenCount > 0
+        ? tokenCount
+        : (promptTokens + completionTokens + reasoningTokens);
+
     newStats[modelName] = (
       success: current.success + (success ? 1 : 0),
       failure: current.failure + (success ? 0 : 1),
       totalDurationMs:
           current.totalDurationMs + (durationMs > 0 ? durationMs : 0),
-      validDurationCount:
-          current.validDurationCount + (durationMs > 0 ? 1 : 0),
+      validDurationCount: current.validDurationCount + (durationMs > 0 ? 1 : 0),
       totalFirstTokenMs:
           current.totalFirstTokenMs + (firstTokenMs > 0 ? firstTokenMs : 0),
       validFirstTokenCount:
@@ -153,13 +155,20 @@ class UsageStatsNotifier extends StateNotifier<UsageStatsState> {
       promptTokenCount: current.promptTokenCount + promptTokens,
       completionTokenCount: current.completionTokenCount + completionTokens,
       reasoningTokenCount: current.reasoningTokenCount + reasoningTokens,
-      errorTimeoutCount: current.errorTimeoutCount + (errorType == AppErrorType.timeout ? 1 : 0),
-      errorNetworkCount: current.errorNetworkCount + (errorType == AppErrorType.network ? 1 : 0),
-      errorBadRequestCount: current.errorBadRequestCount + (errorType == AppErrorType.badRequest ? 1 : 0),
-      errorUnauthorizedCount: current.errorUnauthorizedCount + (errorType == AppErrorType.unauthorized ? 1 : 0),
-      errorServerCount: current.errorServerCount + (errorType == AppErrorType.serverError ? 1 : 0),
-      errorRateLimitCount: current.errorRateLimitCount + (errorType == AppErrorType.rateLimit ? 1 : 0),
-      errorUnknownCount: current.errorUnknownCount + (errorType == AppErrorType.unknown ? 1 : 0),
+      errorTimeoutCount: current.errorTimeoutCount +
+          (errorType == AppErrorType.timeout ? 1 : 0),
+      errorNetworkCount: current.errorNetworkCount +
+          (errorType == AppErrorType.network ? 1 : 0),
+      errorBadRequestCount: current.errorBadRequestCount +
+          (errorType == AppErrorType.badRequest ? 1 : 0),
+      errorUnauthorizedCount: current.errorUnauthorizedCount +
+          (errorType == AppErrorType.unauthorized ? 1 : 0),
+      errorServerCount: current.errorServerCount +
+          (errorType == AppErrorType.serverError ? 1 : 0),
+      errorRateLimitCount: current.errorRateLimitCount +
+          (errorType == AppErrorType.rateLimit ? 1 : 0),
+      errorUnknownCount: current.errorUnknownCount +
+          (errorType == AppErrorType.unknown ? 1 : 0),
     );
     // Reload to get fresh daily stats
     loadStats();

@@ -16,10 +16,12 @@ class MobileSyncSettingsPage extends ConsumerStatefulWidget {
   const MobileSyncSettingsPage({super.key, this.onBack});
 
   @override
-  ConsumerState<MobileSyncSettingsPage> createState() => _MobileSyncSettingsPageState();
+  ConsumerState<MobileSyncSettingsPage> createState() =>
+      _MobileSyncSettingsPageState();
 }
 
-class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage> {
+class _MobileSyncSettingsPageState
+    extends ConsumerState<MobileSyncSettingsPage> {
   late TextEditingController _urlController;
   late TextEditingController _usernameController;
   late TextEditingController _passwordController;
@@ -44,17 +46,16 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
 
   void _save() {
     ref.read(syncProvider.notifier).updateConfig(WebDavConfig(
-      url: _urlController.text.trim(),
-      username: _usernameController.text.trim(),
-      password: _passwordController.text.trim(),
-      remotePath: '/aurora_backup',
-    ));
+          url: _urlController.text.trim(),
+          username: _usernameController.text.trim(),
+          password: _passwordController.text.trim(),
+          remotePath: '/aurora_backup',
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(syncProvider);
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     ref.listen(syncProvider, (previous, next) {
@@ -84,7 +85,7 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
         SyncMessageKeys.restoreFailed: l10n.restoreFailed,
         SyncMessageKeys.fetchBackupListFailed: l10n.fetchBackupListFailed,
       };
-      
+
       for (final entry in translations.entries) {
         if (message.startsWith(entry.key)) {
           return message.replaceFirst(entry.key, entry.value);
@@ -110,21 +111,31 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (state.isBusy)
-            const LinearProgressIndicator(),
+          if (state.isBusy) const LinearProgressIndicator(),
           if (state.error != null)
-             MaterialBanner(
-                 content: Text(translateMessage(state.error!), style: const TextStyle(color: Colors.white)),
-                 backgroundColor: Colors.red,
-                 actions: [TextButton(onPressed: () => ref.refresh(syncProvider), child: const Text('DISMISS', style: TextStyle(color: Colors.white)))],
-             ),
-           if (state.successMessage != null)
-             MaterialBanner(
-                 content: Text(translateMessage(state.successMessage!), style: const TextStyle(color: Colors.white)),
-                 backgroundColor: Colors.green,
-                 actions: [TextButton(onPressed: () => ref.refresh(syncProvider), child: const Text('OK', style: TextStyle(color: Colors.white)))],
-             ),
-
+            MaterialBanner(
+              content: Text(translateMessage(state.error!),
+                  style: const TextStyle(color: Colors.white)),
+              backgroundColor: Colors.red,
+              actions: [
+                TextButton(
+                    onPressed: () => ref.refresh(syncProvider),
+                    child: const Text('DISMISS',
+                        style: TextStyle(color: Colors.white)))
+              ],
+            ),
+          if (state.successMessage != null)
+            MaterialBanner(
+              content: Text(translateMessage(state.successMessage!),
+                  style: const TextStyle(color: Colors.white)),
+              backgroundColor: Colors.green,
+              actions: [
+                TextButton(
+                    onPressed: () => ref.refresh(syncProvider),
+                    child:
+                        const Text('OK', style: TextStyle(color: Colors.white)))
+              ],
+            ),
           MobileSettingsSection(
             title: l10n.webdavConfig,
             children: [
@@ -139,7 +150,7 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
                         hintText: l10n.webdavUrlHint,
                         border: const OutlineInputBorder(),
                         isDense: true,
-                         prefixIcon: const Icon(Icons.link),
+                        prefixIcon: const Icon(Icons.link),
                       ),
                       onChanged: (_) => _save(),
                     ),
@@ -163,116 +174,142 @@ class _MobileSyncSettingsPageState extends ConsumerState<MobileSyncSettingsPage>
                         labelText: l10n.passwordOrToken,
                         border: const OutlineInputBorder(),
                         isDense: true,
-                         prefixIcon: const Icon(Icons.lock_outline),
+                        prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_showPassword ? AuroraIcons.visibilityOff : AuroraIcons.visibility),
-                          onPressed: () => setState(() => _showPassword = !_showPassword),
+                          icon: Icon(_showPassword
+                              ? AuroraIcons.visibilityOff
+                              : AuroraIcons.visibility),
+                          onPressed: () =>
+                              setState(() => _showPassword = !_showPassword),
                         ),
                       ),
                       onChanged: (_) => _save(),
                     ),
                     const SizedBox(height: 16),
                     Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: state.isBusy ? null : () => ref.read(syncProvider.notifier).testConnection(),
-                          child: Text(l10n.testConnection),
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: state.isBusy
+                                ? null
+                                : () => ref
+                                    .read(syncProvider.notifier)
+                                    .testConnection(),
+                            child: Text(l10n.testConnection),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: state.isBusy ? null : () async {
-                            BackupOptions selectedOptions = const BackupOptions();
-                            final confirmed = await AuroraBottomSheet.show(
-                              context: context,
-                              builder: (ctx) => StatefulBuilder(
-                                builder: (context, setModalState) {
-                                  return Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      AuroraBottomSheet.buildTitle(context, l10n.selectiveBackup),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        child: BackupOptionsSelector(
-                                          options: selectedOptions,
-                                          onChanged: (newOptions) {
-                                            setModalState(() {
-                                              selectedOptions = newOptions;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: SizedBox(
-                                          width: double.infinity,
-                                          child: FilledButton(
-                                            onPressed: selectedOptions.isNoneSelected 
-                                              ? null 
-                                              : () => Navigator.pop(ctx, true),
-                                            child: Text(l10n.confirm),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }
-                              ),
-                            );
-                            
-                            if (confirmed == true) {
-                              ref.read(syncProvider.notifier).backup(options: selectedOptions);
-                            }
-                          },
-                          child: Text(l10n.backupNow),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: state.isBusy
+                                ? null
+                                : () async {
+                                    BackupOptions selectedOptions =
+                                        const BackupOptions();
+                                    final confirmed =
+                                        await AuroraBottomSheet.show(
+                                      context: context,
+                                      builder: (ctx) => StatefulBuilder(
+                                          builder: (context, setModalState) {
+                                        return Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            AuroraBottomSheet.buildTitle(
+                                                context, l10n.selectiveBackup),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 16),
+                                              child: BackupOptionsSelector(
+                                                options: selectedOptions,
+                                                onChanged: (newOptions) {
+                                                  setModalState(() {
+                                                    selectedOptions =
+                                                        newOptions;
+                                                  });
+                                                },
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.all(16),
+                                              child: SizedBox(
+                                                width: double.infinity,
+                                                child: FilledButton(
+                                                  onPressed: selectedOptions
+                                                          .isNoneSelected
+                                                      ? null
+                                                      : () => Navigator.pop(
+                                                          ctx, true),
+                                                  child: Text(l10n.confirm),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }),
+                                    );
+
+                                    if (confirmed == true) {
+                                      ref
+                                          .read(syncProvider.notifier)
+                                          .backup(options: selectedOptions);
+                                    }
+                                  },
+                            child: Text(l10n.backupNow),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   ],
                 ),
               )
             ],
           ),
-
           const SizedBox(height: 32),
           MobileSettingsSection(
             title: l10n.cloudBackupList,
             trailing: IconButton(
-                     icon: const Icon(AuroraIcons.refresh, size: 20),
-                     onPressed: state.isBusy ? null : () => ref.read(syncProvider.notifier).refreshBackups(),
+              icon: const Icon(AuroraIcons.refresh, size: 20),
+              onPressed: state.isBusy
+                  ? null
+                  : () => ref.read(syncProvider.notifier).refreshBackups(),
             ),
             children: [
-               if (state.remoteBackups.isEmpty)
+              if (state.remoteBackups.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 32),
-                  child: Center(child: Text(l10n.noBackupsOrNotConnected, style: const TextStyle(color: Colors.grey))),
+                  child: Center(
+                      child: Text(l10n.noBackupsOrNotConnected,
+                          style: const TextStyle(color: Colors.grey))),
                 )
               else
                 ...state.remoteBackups.map((item) {
-                  final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(item.modified);
+                  final dateStr =
+                      DateFormat('yyyy-MM-dd HH:mm').format(item.modified);
                   final sizeMb = (item.size / 1024 / 1024).toStringAsFixed(2);
-                  
+
                   return MobileSettingsTile(
                     leading: const Icon(AuroraIcons.backup),
                     title: item.name,
                     subtitle: '$dateStr  •  $sizeMb MB',
                     showChevron: false,
                     trailing: TextButton(
-                      child: Text(l10n.restore, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      onPressed: state.isBusy ? null : () async {
-                          final confirmed = await AuroraBottomSheet.showConfirm(
-                            context: context,
-                            title: l10n.confirmRestore,
-                            content: l10n.restoreWarning,
-                            confirmText: l10n.confirmRestoreButton,
-                          );
-                          if (confirmed == true) {
-                            ref.read(syncProvider.notifier).restore(item);
-                          }
-                      },
+                      onPressed: state.isBusy
+                          ? null
+                          : () async {
+                              final confirmed =
+                                  await AuroraBottomSheet.showConfirm(
+                                context: context,
+                                title: l10n.confirmRestore,
+                                content: l10n.restoreWarning,
+                                confirmText: l10n.confirmRestoreButton,
+                              );
+                              if (confirmed == true) {
+                                ref.read(syncProvider.notifier).restore(item);
+                              }
+                            },
+                      child: Text(l10n.restore,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   );
                 }),

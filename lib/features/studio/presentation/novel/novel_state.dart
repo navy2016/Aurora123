@@ -24,7 +24,7 @@ class NovelModelConfig {
     required this.modelId,
     this.systemPrompt = '',
   });
-  
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -35,7 +35,7 @@ class NovelModelConfig {
 
   @override
   int get hashCode => Object.hash(providerId, modelId);
-  
+
   NovelModelConfig copyWith({
     String? providerId,
     String? modelId,
@@ -47,18 +47,19 @@ class NovelModelConfig {
       systemPrompt: systemPrompt ?? this.systemPrompt,
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
-    'providerId': providerId,
-    'modelId': modelId,
-    'systemPrompt': systemPrompt,
-  };
-  
-  factory NovelModelConfig.fromJson(Map<String, dynamic> json) => NovelModelConfig(
-    providerId: json['providerId'] as String,
-    modelId: json['modelId'] as String,
-    systemPrompt: json['systemPrompt'] as String? ?? '',
-  );
+        'providerId': providerId,
+        'modelId': modelId,
+        'systemPrompt': systemPrompt,
+      };
+
+  factory NovelModelConfig.fromJson(Map<String, dynamic> json) =>
+      NovelModelConfig(
+        providerId: json['providerId'] as String,
+        modelId: json['modelId'] as String,
+        systemPrompt: json['systemPrompt'] as String? ?? '',
+      );
 }
 
 /// Novel-specific prompt preset (contains prompts for all 4 roles)
@@ -115,22 +116,23 @@ class NovelPromptPreset {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'outlinePrompt': outlinePrompt,
-    'decomposePrompt': decomposePrompt,
-    'writerPrompt': writerPrompt,
-    'reviewerPrompt': reviewerPrompt,
-  };
+        'id': id,
+        'name': name,
+        'outlinePrompt': outlinePrompt,
+        'decomposePrompt': decomposePrompt,
+        'writerPrompt': writerPrompt,
+        'reviewerPrompt': reviewerPrompt,
+      };
 
-  factory NovelPromptPreset.fromJson(Map<String, dynamic> json) => NovelPromptPreset(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    outlinePrompt: json['outlinePrompt'] as String? ?? '',
-    decomposePrompt: json['decomposePrompt'] as String? ?? '',
-    writerPrompt: json['writerPrompt'] as String? ?? '',
-    reviewerPrompt: json['reviewerPrompt'] as String? ?? '',
-  );
+  factory NovelPromptPreset.fromJson(Map<String, dynamic> json) =>
+      NovelPromptPreset(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        outlinePrompt: json['outlinePrompt'] as String? ?? '',
+        decomposePrompt: json['decomposePrompt'] as String? ?? '',
+        writerPrompt: json['writerPrompt'] as String? ?? '',
+        reviewerPrompt: json['reviewerPrompt'] as String? ?? '',
+      );
 }
 
 class NovelTask {
@@ -167,30 +169,33 @@ class NovelTask {
       description: description ?? this.description,
       status: status ?? this.status,
       content: content == _sentinel ? this.content : content as String?,
-      reviewFeedback: reviewFeedback == _sentinel ? this.reviewFeedback : reviewFeedback as String?,
+      reviewFeedback: reviewFeedback == _sentinel
+          ? this.reviewFeedback
+          : reviewFeedback as String?,
       retryCount: retryCount ?? this.retryCount,
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'chapterId': chapterId,
-    'description': description,
-    'status': status.name,
-    'content': content,
-    'reviewFeedback': reviewFeedback,
-    'retryCount': retryCount,
-  };
-  
+        'id': id,
+        'chapterId': chapterId,
+        'description': description,
+        'status': status.name,
+        'content': content,
+        'reviewFeedback': reviewFeedback,
+        'retryCount': retryCount,
+      };
+
   factory NovelTask.fromJson(Map<String, dynamic> json) => NovelTask(
-    id: json['id'] as String,
-    chapterId: json['chapterId'] as String,
-    description: json['description'] as String,
-    status: TaskStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => TaskStatus.pending),
-    content: json['content'] as String?,
-    reviewFeedback: json['reviewFeedback'] as String?,
-    retryCount: json['retryCount'] as int? ?? 0,
-  );
+        id: json['id'] as String,
+        chapterId: json['chapterId'] as String,
+        description: json['description'] as String,
+        status: TaskStatus.values.firstWhere((e) => e.name == json['status'],
+            orElse: () => TaskStatus.pending),
+        content: json['content'] as String?,
+        reviewFeedback: json['reviewFeedback'] as String?,
+        retryCount: json['retryCount'] as int? ?? 0,
+      );
 }
 
 class NovelChapter {
@@ -211,23 +216,23 @@ class NovelChapter {
       order: order ?? this.order,
     );
   }
-  
+
   Map<String, dynamic> toJson() => {'id': id, 'title': title, 'order': order};
-  
+
   factory NovelChapter.fromJson(Map<String, dynamic> json) => NovelChapter(
-    id: json['id'] as String,
-    title: json['title'] as String,
-    order: json['order'] as int? ?? 0,
-  );
+        id: json['id'] as String,
+        title: json['title'] as String,
+        order: json['order'] as int? ?? 0,
+      );
 }
 
 /// Dynamic world context that evolves with the story
 class WorldContext {
-  final Map<String, String> characters;      // name -> description/status
-  final Map<String, String> relationships;   // "A->B" -> relationship description
-  final Map<String, String> locations;       // name -> description
-  final List<String> foreshadowing;          // active plot threads/foreshadowing
-  final Map<String, String> rules;           // world rules/magic systems
+  final Map<String, String> characters; // name -> description/status
+  final Map<String, String> relationships; // "A->B" -> relationship description
+  final Map<String, String> locations; // name -> description
+  final List<String> foreshadowing; // active plot threads/foreshadowing
+  final Map<String, String> rules; // world rules/magic systems
   final bool includeCharacters;
   final bool includeRelationships;
   final bool includeLocations;
@@ -274,59 +279,60 @@ class WorldContext {
   }
 
   Map<String, dynamic> toJson() => {
-    'characters': characters,
-    'relationships': relationships,
-    'locations': locations,
-    'foreshadowing': foreshadowing,
-    'rules': rules,
-    'includeCharacters': includeCharacters,
-    'includeRelationships': includeRelationships,
-    'includeLocations': includeLocations,
-    'includeForeshadowing': includeForeshadowing,
-    'includeRules': includeRules,
-  };
+        'characters': characters,
+        'relationships': relationships,
+        'locations': locations,
+        'foreshadowing': foreshadowing,
+        'rules': rules,
+        'includeCharacters': includeCharacters,
+        'includeRelationships': includeRelationships,
+        'includeLocations': includeLocations,
+        'includeForeshadowing': includeForeshadowing,
+        'includeRules': includeRules,
+      };
 
   factory WorldContext.fromJson(Map<String, dynamic> json) => WorldContext(
-    characters: Map<String, String>.from(json['characters'] as Map? ?? {}),
-    relationships: Map<String, String>.from(json['relationships'] as Map? ?? {}),
-    locations: Map<String, String>.from(json['locations'] as Map? ?? {}),
-    foreshadowing: List<String>.from(json['foreshadowing'] as List? ?? []),
-    rules: Map<String, String>.from(json['rules'] as Map? ?? {}),
-    includeCharacters: json['includeCharacters'] as bool? ?? true,
-    includeRelationships: json['includeRelationships'] as bool? ?? true,
-    includeLocations: json['includeLocations'] as bool? ?? true,
-    includeForeshadowing: json['includeForeshadowing'] as bool? ?? true,
-    includeRules: json['includeRules'] as bool? ?? true,
-  );
+        characters: Map<String, String>.from(json['characters'] as Map? ?? {}),
+        relationships:
+            Map<String, String>.from(json['relationships'] as Map? ?? {}),
+        locations: Map<String, String>.from(json['locations'] as Map? ?? {}),
+        foreshadowing: List<String>.from(json['foreshadowing'] as List? ?? []),
+        rules: Map<String, String>.from(json['rules'] as Map? ?? {}),
+        includeCharacters: json['includeCharacters'] as bool? ?? true,
+        includeRelationships: json['includeRelationships'] as bool? ?? true,
+        includeLocations: json['includeLocations'] as bool? ?? true,
+        includeForeshadowing: json['includeForeshadowing'] as bool? ?? true,
+        includeRules: json['includeRules'] as bool? ?? true,
+      );
 
   /// Format context for LLM prompt
   String toPromptString() {
     final buffer = StringBuffer();
-    
+
     if (includeRules && rules.isNotEmpty) {
       buffer.writeln('【世界规则】');
       rules.forEach((k, v) => buffer.writeln('- $k: $v'));
       buffer.writeln();
     }
-    
+
     if (includeCharacters && characters.isNotEmpty) {
       buffer.writeln('【人物设定】');
       characters.forEach((k, v) => buffer.writeln('- $k: $v'));
       buffer.writeln();
     }
-    
+
     if (includeRelationships && relationships.isNotEmpty) {
       buffer.writeln('【人物关系】');
       relationships.forEach((k, v) => buffer.writeln('- $k: $v'));
       buffer.writeln();
     }
-    
+
     if (includeLocations && locations.isNotEmpty) {
       buffer.writeln('【场景地点】');
       locations.forEach((k, v) => buffer.writeln('- $k: $v'));
       buffer.writeln();
     }
-    
+
     if (includeForeshadowing && foreshadowing.isNotEmpty) {
       buffer.writeln('【伏笔/线索】');
       for (final f in foreshadowing) {
@@ -334,7 +340,7 @@ class WorldContext {
       }
       buffer.writeln();
     }
-    
+
     return buffer.toString();
   }
 }
@@ -342,8 +348,8 @@ class WorldContext {
 class NovelProject {
   final String id;
   final String name;
-  final String? outline;  // Generated outline text (user-editable)
-  final WorldContext worldContext;  // Dynamic context that evolves with story
+  final String? outline; // Generated outline text (user-editable)
+  final WorldContext worldContext; // Dynamic context that evolves with story
   final List<NovelChapter> chapters;
   final DateTime createdAt;
 
@@ -373,7 +379,7 @@ class NovelProject {
       createdAt: createdAt ?? this.createdAt,
     );
   }
-  
+
   static NovelProject create(String name, {WorldContext? worldContext}) {
     return NovelProject(
       id: const Uuid().v4(),
@@ -382,26 +388,31 @@ class NovelProject {
       chapters: [], // No default chapter - user generates from outline
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'outline': outline,
-    'worldContext': worldContext.toJson(),
-    'chapters': chapters.map((c) => c.toJson()).toList(),
-    'createdAt': createdAt.toIso8601String(),
-  };
-  
+        'id': id,
+        'name': name,
+        'outline': outline,
+        'worldContext': worldContext.toJson(),
+        'chapters': chapters.map((c) => c.toJson()).toList(),
+        'createdAt': createdAt.toIso8601String(),
+      };
+
   factory NovelProject.fromJson(Map<String, dynamic> json) => NovelProject(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    outline: json['outline'] as String?,
-    worldContext: json['worldContext'] != null 
-        ? WorldContext.fromJson(json['worldContext'] as Map<String, dynamic>) 
-        : const WorldContext(),
-    chapters: (json['chapters'] as List<dynamic>?)?.map((c) => NovelChapter.fromJson(c as Map<String, dynamic>)).toList() ?? [],
-    createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-  );
+        id: json['id'] as String,
+        name: json['name'] as String,
+        outline: json['outline'] as String?,
+        worldContext: json['worldContext'] != null
+            ? WorldContext.fromJson(
+                json['worldContext'] as Map<String, dynamic>)
+            : const WorldContext(),
+        chapters: (json['chapters'] as List<dynamic>?)
+                ?.map((c) => NovelChapter.fromJson(c as Map<String, dynamic>))
+                .toList() ??
+            [],
+        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+            DateTime.now(),
+      );
 }
 
 class NovelWritingState {
@@ -413,8 +424,8 @@ class NovelWritingState {
   final bool isRunning;
   final bool isPaused;
   final bool isReviewEnabled;
-  final bool isDecomposing;  // 新增：拆解中状态
-  final bool isGeneratingOutline;  // 新增：生成大纲中状态
+  final bool isDecomposing; // 新增：拆解中状态
+  final bool isGeneratingOutline; // 新增：生成大纲中状态
 
   // Model Configurations
   final NovelModelConfig? outlineModel;
@@ -445,17 +456,18 @@ class NovelWritingState {
     this.activePromptPresetId,
   });
 
-  NovelProject? get selectedProject => 
-    projects.where((p) => p.id == selectedProjectId).firstOrNull;
+  NovelProject? get selectedProject =>
+      projects.where((p) => p.id == selectedProjectId).firstOrNull;
 
-  NovelChapter? get selectedChapter => 
-    selectedProject?.chapters.where((c) => c.id == selectedChapterId).firstOrNull;
-    
+  NovelChapter? get selectedChapter => selectedProject?.chapters
+      .where((c) => c.id == selectedChapterId)
+      .firstOrNull;
+
   NovelTask? get selectedTask =>
-    allTasks.where((t) => t.id == selectedTaskId).firstOrNull;
+      allTasks.where((t) => t.id == selectedTaskId).firstOrNull;
 
   List<NovelTask> tasksForChapter(String chapterId) =>
-    allTasks.where((t) => t.chapterId == chapterId).toList();
+      allTasks.where((t) => t.chapterId == chapterId).toList();
 
   NovelWritingState copyWith({
     List<NovelProject>? projects,
@@ -491,37 +503,62 @@ class NovelWritingState {
       writerModel: writerModel ?? this.writerModel,
       reviewerModel: reviewerModel ?? this.reviewerModel,
       promptPresets: promptPresets ?? this.promptPresets,
-      activePromptPresetId: activePromptPresetId == _sentinel ? this.activePromptPresetId : activePromptPresetId as String?,
+      activePromptPresetId: activePromptPresetId == _sentinel
+          ? this.activePromptPresetId
+          : activePromptPresetId as String?,
     );
   }
-  
+
   Map<String, dynamic> toJson() => {
-    'projects': projects.map((p) => p.toJson()).toList(),
-    'selectedProjectId': selectedProjectId,
-    'selectedChapterId': selectedChapterId,
-    'selectedTaskId': selectedTaskId,
-    'allTasks': allTasks.map((t) => t.toJson()).toList(),
-    'isReviewEnabled': isReviewEnabled,
-    'outlineModel': outlineModel?.toJson(),
-    'decomposeModel': decomposeModel?.toJson(),
-    'writerModel': writerModel?.toJson(),
-    'reviewerModel': reviewerModel?.toJson(),
-    'promptPresets': promptPresets.map((p) => p.toJson()).toList(),
-    'activePromptPresetId': activePromptPresetId,
-  };
-  
-  factory NovelWritingState.fromJson(Map<String, dynamic> json) => NovelWritingState(
-    projects: (json['projects'] as List<dynamic>?)?.map((p) => NovelProject.fromJson(p as Map<String, dynamic>)).toList() ?? [],
-    selectedProjectId: json['selectedProjectId'] as String?,
-    selectedChapterId: json['selectedChapterId'] as String?,
-    selectedTaskId: json['selectedTaskId'] as String?,
-    allTasks: (json['allTasks'] as List<dynamic>?)?.map((t) => NovelTask.fromJson(t as Map<String, dynamic>)).toList() ?? [],
-    isReviewEnabled: json['isReviewEnabled'] as bool? ?? false,
-    outlineModel: json['outlineModel'] != null ? NovelModelConfig.fromJson(json['outlineModel'] as Map<String, dynamic>) : null,
-    decomposeModel: json['decomposeModel'] != null ? NovelModelConfig.fromJson(json['decomposeModel'] as Map<String, dynamic>) : null,
-    writerModel: json['writerModel'] != null ? NovelModelConfig.fromJson(json['writerModel'] as Map<String, dynamic>) : null,
-    reviewerModel: json['reviewerModel'] != null ? NovelModelConfig.fromJson(json['reviewerModel'] as Map<String, dynamic>) : null,
-    promptPresets: (json['promptPresets'] as List<dynamic>?)?.map((p) => NovelPromptPreset.fromJson(p as Map<String, dynamic>)).toList() ?? [],
-    activePromptPresetId: json['activePromptPresetId'] as String?,
-  );
+        'projects': projects.map((p) => p.toJson()).toList(),
+        'selectedProjectId': selectedProjectId,
+        'selectedChapterId': selectedChapterId,
+        'selectedTaskId': selectedTaskId,
+        'allTasks': allTasks.map((t) => t.toJson()).toList(),
+        'isReviewEnabled': isReviewEnabled,
+        'outlineModel': outlineModel?.toJson(),
+        'decomposeModel': decomposeModel?.toJson(),
+        'writerModel': writerModel?.toJson(),
+        'reviewerModel': reviewerModel?.toJson(),
+        'promptPresets': promptPresets.map((p) => p.toJson()).toList(),
+        'activePromptPresetId': activePromptPresetId,
+      };
+
+  factory NovelWritingState.fromJson(Map<String, dynamic> json) =>
+      NovelWritingState(
+        projects: (json['projects'] as List<dynamic>?)
+                ?.map((p) => NovelProject.fromJson(p as Map<String, dynamic>))
+                .toList() ??
+            [],
+        selectedProjectId: json['selectedProjectId'] as String?,
+        selectedChapterId: json['selectedChapterId'] as String?,
+        selectedTaskId: json['selectedTaskId'] as String?,
+        allTasks: (json['allTasks'] as List<dynamic>?)
+                ?.map((t) => NovelTask.fromJson(t as Map<String, dynamic>))
+                .toList() ??
+            [],
+        isReviewEnabled: json['isReviewEnabled'] as bool? ?? false,
+        outlineModel: json['outlineModel'] != null
+            ? NovelModelConfig.fromJson(
+                json['outlineModel'] as Map<String, dynamic>)
+            : null,
+        decomposeModel: json['decomposeModel'] != null
+            ? NovelModelConfig.fromJson(
+                json['decomposeModel'] as Map<String, dynamic>)
+            : null,
+        writerModel: json['writerModel'] != null
+            ? NovelModelConfig.fromJson(
+                json['writerModel'] as Map<String, dynamic>)
+            : null,
+        reviewerModel: json['reviewerModel'] != null
+            ? NovelModelConfig.fromJson(
+                json['reviewerModel'] as Map<String, dynamic>)
+            : null,
+        promptPresets: (json['promptPresets'] as List<dynamic>?)
+                ?.map((p) =>
+                    NovelPromptPreset.fromJson(p as Map<String, dynamic>))
+                .toList() ??
+            [],
+        activePromptPresetId: json['activePromptPresetId'] as String?,
+      );
 }

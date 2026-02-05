@@ -42,7 +42,8 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
     if (widget.isMobile) {
       return LayoutBuilder(builder: (context, constraints) {
         return GestureDetector(
-          onTap: () => _showMobileTopicBottomSheet(context, topicsAsync, selectedTopicId, theme, l10n),
+          onTap: () => _showMobileTopicBottomSheet(
+              context, topicsAsync, selectedTopicId, theme, l10n),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -102,8 +103,7 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                               fluent.Navigator.of(context).pop();
                             },
                             trailing: selectedTopicId == null
-                                ? Icon(AuroraIcons.check,
-                                    size: 12)
+                                ? Icon(AuroraIcons.check, size: 12)
                                 : null,
                           ),
                           const fluent.MenuFlyoutSeparator(),
@@ -126,8 +126,7 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                                   fluent.Navigator.of(context).pop();
                                 },
                                 trailing: selectedTopicId == topic.id
-                                    ? Icon(AuroraIcons.check,
-                                        size: 12)
+                                    ? Icon(AuroraIcons.check, size: 12)
                                     : null,
                               );
                             }),
@@ -145,8 +144,7 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                           const fluent.MenuFlyoutSeparator(),
                           fluent.MenuFlyoutItem(
                             text: Text(l10n.createTopic),
-                            leading:
-                                Icon(AuroraIcons.add, size: 14),
+                            leading: Icon(AuroraIcons.add, size: 14),
                             onPressed: () {
                               fluent.Navigator.of(context).pop();
                               _showCreateDialog(context, ref);
@@ -154,8 +152,7 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                           ),
                           fluent.MenuFlyoutItem(
                             text: Text(l10n.topics),
-                            leading: Icon(AuroraIcons.settings,
-                                size: 14),
+                            leading: Icon(AuroraIcons.settings, size: 14),
                             onPressed: () {
                               fluent.Navigator.of(context).pop();
                               _showManageTopicsDialog(context, ref);
@@ -167,27 +164,26 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                   });
             },
             builder: (context, states) {
-              final isHovering = states.isHovered;
+              final isHovered = states.isHovered;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 width: double.infinity,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isHovering
+                  color: isHovered
                       ? theme.resources.subtleFillColorSecondary
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: isHovering
+                    color: isHovered
                         ? theme.resources.surfaceStrokeColorDefault
                         : Colors.transparent,
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(AuroraIcons.tag,
-                        size: 14, color: theme.accentColor),
+                    Icon(AuroraIcons.tag, size: 14, color: theme.accentColor),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -311,10 +307,15 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
     } else {
       showDialog(
         context: context,
-        builder: (context) => TopicManagementDialog(
-          onConfirm: (name) {
-            ref.read(topicNotifierProvider.notifier).createTopic(name);
-          },
+        builder: (context) => Dialog(
+          child: SizedBox(
+            width: 350,
+            child: TopicManagementDialog(
+              onConfirm: (name) {
+                ref.read(topicNotifierProvider.notifier).createTopic(name);
+              },
+            ),
+          ),
         ),
       );
     }
@@ -336,8 +337,9 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                   final topicsAsync = ref.watch(topicsProvider);
                   return topicsAsync.when(
                     data: (topics) {
-                      if (topics.isEmpty)
+                      if (topics.isEmpty) {
                         return Center(child: Text(l10n.noCustomParams));
+                      }
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: topics.map((topic) {
@@ -435,12 +437,19 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
     } else {
       showDialog(
         context: context,
-        builder: (context) => TopicManagementDialog(
-          existingTopicId: id,
-          initialName: name,
-          onConfirm: (newName) {
-            ref.read(topicNotifierProvider.notifier).updateTopic(id, newName);
-          },
+        builder: (context) => Dialog(
+          child: SizedBox(
+            width: 350,
+            child: TopicManagementDialog(
+              existingTopicId: id,
+              initialName: name,
+              onConfirm: (newName) {
+                ref
+                    .read(topicNotifierProvider.notifier)
+                    .updateTopic(id, newName);
+              },
+            ),
+          ),
         ),
       );
     }
@@ -474,7 +483,9 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                   Expanded(
                     child: FilledButton(
                       onPressed: () {
-                        ref.read(topicNotifierProvider.notifier).deleteTopic(id);
+                        ref
+                            .read(topicNotifierProvider.notifier)
+                            .deleteTopic(id);
                         if (ref.read(selectedTopicIdProvider) == id) {
                           ref.read(selectedTopicIdProvider.notifier).state =
                               null;
@@ -528,8 +539,6 @@ class _TopicItem extends StatefulWidget {
   final VoidCallback onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-  final bool isAction;
-  final IconData? icon;
   final bool isMobile;
   const _TopicItem({
     required this.name,
@@ -537,8 +546,6 @@ class _TopicItem extends StatefulWidget {
     this.isSelected = false,
     this.onEdit,
     this.onDelete,
-    this.isAction = false,
-    this.icon,
     required this.isMobile,
   });
   @override
@@ -550,9 +557,8 @@ class _TopicItemState extends State<_TopicItem> {
   @override
   Widget build(BuildContext context) {
     final theme = fluent.FluentTheme.of(context);
-    final showButtons = (_isHovering || widget.isMobile) &&
-        !widget.isAction &&
-        widget.onEdit != null;
+    final showButtons =
+        (_isHovering || widget.isMobile) && widget.onEdit != null;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
@@ -562,7 +568,7 @@ class _TopicItemState extends State<_TopicItem> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? theme.accentColor.withOpacity(0.1)
+                ? theme.accentColor.withValues(alpha: 0.1)
                 : (_isHovering
                     ? theme.resources.subtleFillColorSecondary
                     : Colors.transparent),
@@ -570,15 +576,7 @@ class _TopicItemState extends State<_TopicItem> {
           ),
           child: Row(
             children: [
-              if (widget.icon != null)
-                fluent.Icon(widget.icon!,
-                    size: 12,
-                    color: widget.isAction
-                        ? theme.accentColor
-                        : theme.typography.caption?.color)
-              else
-                const SizedBox(width: 12),
-              if (widget.icon != null) const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   widget.name,

@@ -63,6 +63,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clear => 'Clear';
 
   @override
+  String get reset => 'Reset';
+
+  @override
   String get translating => 'Translating...';
 
   @override
@@ -932,7 +935,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enableSearch => 'Enable Search';
 
   @override
+  String get searchSettings => 'Search Settings';
+
+  @override
   String get searchEngine => 'Search Engine';
+
+  @override
+  String get searchRegion => 'Search Region';
+
+  @override
+  String get searchSafeSearch => 'Safe Search';
+
+  @override
+  String get searchSafeSearchOff => 'Off';
+
+  @override
+  String get searchSafeSearchModerate => 'Moderate';
+
+  @override
+  String get searchSafeSearchStrict => 'Strict';
+
+  @override
+  String get searchMaxResults => 'Max Results';
+
+  @override
+  String get searchTimeoutSeconds => 'Timeout (seconds)';
 
   @override
   String get clearContext => 'Clear Context';
@@ -1163,6 +1190,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accentColor => 'Accent Color';
 
   @override
+  String get themeCustom => 'Custom';
+
+  @override
+  String get customTheme => 'Custom';
+
+  @override
+  String get customThemeDescription =>
+      'Allow setting custom background image, brightness and blur';
+
+  @override
   String get backgroundStyle => 'Background Style';
 
   @override
@@ -1194,6 +1231,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fontSizeHint => 'Adjust global text display size';
+
+  @override
+  String get backgroundImage => 'Background Image';
+
+  @override
+  String get backgroundBlur => 'Background Blur';
+
+  @override
+  String get backgroundBrightness => 'Background Brightness';
+
+  @override
+  String get selectBackgroundImage => 'Select Background';
+
+  @override
+  String get clearBackgroundImage => 'Clear Background';
+
+  @override
+  String get cropImage => 'Crop Image';
 
   @override
   String get generationConfig => 'Generation Config';
@@ -1447,4 +1502,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get version => 'Version';
+
+  @override
+  String get assistantSystem => 'Assistant';
+
+  @override
+  String get imagePayload => 'Image Parameters';
+
+  @override
+  String get aspectRatio => 'Aspect Ratio';
+
+  @override
+  String get imageSize => 'Image Size';
+
+  @override
+  String get auto => 'Auto';
 }

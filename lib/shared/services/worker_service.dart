@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:aurora/core/error/app_error_type.dart';
+import 'package:aurora/core/error/app_exception.dart';
 import 'package:aurora/features/chat/domain/message.dart';
 import 'package:aurora/shared/services/llm_service.dart';
 import 'package:aurora/features/skills/domain/skill_entity.dart';
-import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
 
@@ -12,7 +13,21 @@ class WorkerService {
 
   WorkerService(this._llmService);
 
-  Future<String> executeSkillTask(Skill skill, String skillQuery, {String? originalRequest, String? model, String? providerId}) async {
+  Future<String> executeSkillTask(
+    Skill skill,
+    String skillQuery, {
+    String? originalRequest,
+    String? model,
+    String? providerId,
+    void Function({
+      required bool success,
+      required int promptTokens,
+      required int completionTokens,
+      required int reasoningTokens,
+      required int durationMs,
+      AppErrorType? errorType,
+    })? onUsage,
+  }) async {
     final systemPrompt = '''
 # You are the Technical Executor for: ${skill.name}
 Your ONLY task is to look at the Manual and output the correct shell command to fulfill the request.
@@ -67,6 +82,7 @@ ${skill.instructions}
       }
     ];
 
+    final requestStartTime = DateTime.now();
     try {
       final response = await _llmService.getResponse(
         messages,
@@ -75,42 +91,71 @@ ${skill.instructions}
         providerId: providerId,
       );
 
+      final durationMs =
+          DateTime.now().difference(requestStartTime).inMilliseconds;
+      if (onUsage != null) {
+        onUsage(
+          success: true,
+          promptTokens: response.promptTokens ?? 0,
+          completionTokens: response.completionTokens ?? 0,
+          reasoningTokens: response.reasoningTokens ?? 0,
+          durationMs: durationMs,
+        );
+      }
+
       if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
         final tc = response.toolCalls!.first;
         if (tc.name == 'run_shell') {
-           try {
-              final args = jsonDecode(tc.arguments ?? '{}');
-              final command = args['command']?.toString();
-              if (command != null) {
-                return await _executeShellCommand(command);
-              }
-           } catch (e) {
-              return "Worker Error: Failed to parse tool arguments.";
-           }
+          try {
+            final args = jsonDecode(tc.arguments ?? '{}');
+            final command = args['command']?.toString();
+            if (command != null) {
+              return await _executeShellCommand(command);
+            }
+          } catch (e) {
+            return "Worker Error: Failed to parse tool arguments.";
+          }
         }
       }
-      
+
       return response.content ?? "Worker: No action performed.";
     } catch (e) {
+      final durationMs =
+          DateTime.now().difference(requestStartTime).inMilliseconds;
+      if (onUsage != null) {
+        AppErrorType errorType = AppErrorType.unknown;
+        if (e is AppException) {
+          errorType = e.type;
+        }
+        onUsage(
+          success: false,
+          promptTokens: 0,
+          completionTokens: 0,
+          reasoningTokens: 0,
+          durationMs: durationMs,
+          errorType: errorType,
+        );
+      }
       return "Worker Critical Error: $e";
     }
   }
 
   Future<String> _executeShellCommand(String command) async {
     try {
-        ProcessResult result;
+      ProcessResult result;
 
-        if (PlatformUtils.isWindows) {
-          result = await Process.run('powershell.exe', ['-NoProfile', '-Command', command]);
-        } else {
-          result = await Process.run('sh', ['-c', command], runInShell: true);
-        }
-        
-        return jsonEncode({
-          'stdout': result.stdout.toString(),
-          'stderr': result.stderr.toString(),
-          'exitCode': result.exitCode,
-        });
+      if (PlatformUtils.isWindows) {
+        result = await Process.run(
+            'powershell.exe', ['-NoProfile', '-Command', command]);
+      } else {
+        result = await Process.run('sh', ['-c', command], runInShell: true);
+      }
+
+      return jsonEncode({
+        'stdout': result.stdout.toString(),
+        'stderr': result.stderr.toString(),
+        'exitCode': result.exitCode,
+      });
     } catch (e) {
       return jsonEncode({'error': e.toString()});
     }

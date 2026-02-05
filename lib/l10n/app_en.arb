@@ -20,6 +20,7 @@
   "closeComparison": "Close Comparison",
   "bilingualComparison": "Bilingual Comparison",
   "clear": "Clear",
+  "reset": "Reset",
   "translating": "Translating...",
   "translationResultPlaceholder": "Translation result will be shown here",
   "selectModel": "Select Model",
@@ -408,7 +409,15 @@
   
   "streamOutput": "Stream Output",
   "enableSearch": "Enable Search",
+  "searchSettings": "Search Settings",
   "searchEngine": "Search Engine",
+  "searchRegion": "Search Region",
+  "searchSafeSearch": "Safe Search",
+  "searchSafeSearchOff": "Off",
+  "searchSafeSearchModerate": "Moderate",
+  "searchSafeSearchStrict": "Strict",
+  "searchMaxResults": "Max Results",
+  "searchTimeoutSeconds": "Timeout (seconds)",
   
   "clearContext": "Clear Context",
   "clearContextConfirm": "Are you sure you want to clear the context? This cannot be undone.",
@@ -498,6 +507,9 @@
   "themeDark": "Dark",
   "themeSystem": "System",
   "accentColor": "Accent Color",
+  "themeCustom": "Custom",
+  "customTheme": "Custom",
+  "customThemeDescription": "Allow setting custom background image, brightness and blur",
   "backgroundStyle": "Background Style",
   "renameSession": "Rename",
   "renameSessionHint": "Enter new name",
@@ -510,6 +522,12 @@
   "editApiKey": "Edit API Key",
   "fontSize": "Font Size",
   "fontSizeHint": "Adjust global text display size",
+  "backgroundImage": "Background Image",
+  "backgroundBlur": "Background Blur",
+  "backgroundBrightness": "Background Brightness",
+  "selectBackgroundImage": "Select Background",
+  "clearBackgroundImage": "Clear Background",
+  "cropImage": "Crop Image",
 
   "generationConfig": "Generation Config",
   "customParams": "Custom Parameters",
@@ -605,5 +623,10 @@
   "noOptionsSelected": "Please select at least one option to backup",
   "pressAgainToExit": "Press again to exit",
   "pleaseConfigureModel": "Please configure a model in settings first",
-  "version": "Version"
+  "version": "Version",
+  "assistantSystem": "Assistant",
+  "imagePayload": "Image Parameters",
+  "aspectRatio": "Aspect Ratio",
+  "imageSize": "Image Size",
+  "auto": "Auto"
 }

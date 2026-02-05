@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 
@@ -14,9 +13,6 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:image_picker/image_picker.dart';
 import '../chat_provider.dart';
 
-
-
-import '../../../settings/presentation/settings_provider.dart';
 import '../../../history/presentation/widgets/hover_image_preview.dart';
 
 import 'components/chat_utils.dart';
@@ -37,7 +33,7 @@ class ChatView extends ConsumerStatefulWidget {
 class ChatViewState extends ConsumerState<ChatView> {
   final TextEditingController _controller = TextEditingController();
   late final ScrollController _scrollController;
-  List<String> _attachments = [];
+  final List<String> _attachments = [];
   String get _sessionId => widget.sessionId;
   bool _toastVisible = false;
   String _toastMessage = '';
@@ -74,7 +70,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -116,8 +112,7 @@ class ChatViewState extends ConsumerState<ChatView> {
         try {
           final fileName =
               '${DateTime.now().millisecondsSinceEpoch}_${file.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '')}';
-          final newPath =
-              '${attachDir.path}${Platform.pathSeparator}$fileName';
+          final newPath = '${attachDir.path}${Platform.pathSeparator}$fileName';
           await file.saveTo(newPath);
           savedPaths.add(newPath);
         } catch (e) {
@@ -207,8 +202,7 @@ class ChatViewState extends ConsumerState<ChatView> {
     if (!_scrollController.hasClients) return;
     final currentScroll = _scrollController.position.pixels;
     final autoScroll = currentScroll < 100;
-    _notifier!
-        .setAutoScrollEnabled(autoScroll);
+    _notifier!.setAutoScrollEnabled(autoScroll);
   }
 
   @override
@@ -236,12 +230,11 @@ class ChatViewState extends ConsumerState<ChatView> {
     final List<XFile> files =
         await openFiles(acceptedTypeGroups: <XTypeGroup>[typeGroup]);
     if (files.isEmpty) return;
-    
+
     final savedPaths = await _saveFilesToAppDir(files);
-    final newPaths = savedPaths
-        .where((path) => !_attachments.contains(path))
-        .toList();
-        
+    final newPaths =
+        savedPaths.where((path) => !_attachments.contains(path)).toList();
+
     if (newPaths.isNotEmpty) {
       setState(() {
         _attachments.addAll(newPaths);
@@ -430,7 +423,10 @@ class ChatViewState extends ConsumerState<ChatView> {
       _controller.clear();
       _attachments.clear();
     });
-    ref.read(chatSessionManagerProvider).getOrCreate(_sessionId).setAutoScrollEnabled(true);
+    ref
+        .read(chatSessionManagerProvider)
+        .getOrCreate(_sessionId)
+        .setAutoScrollEnabled(true);
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         0,
@@ -439,13 +435,15 @@ class ChatViewState extends ConsumerState<ChatView> {
       );
     }
     final effectiveSessionId = widget.sessionId;
-    
+
     // Always get the freshest notifier for sending to avoid using disposed instances
-    final activeNotifier = ref.read(chatSessionNotifierProvider(effectiveSessionId));
+    final activeNotifier =
+        ref.read(chatSessionNotifierProvider(effectiveSessionId));
     if (!activeNotifier.mounted) return;
 
-    final finalSessionId = await activeNotifier.sendMessage(text, attachments: attachmentsCopy);
-    
+    final finalSessionId =
+        await activeNotifier.sendMessage(text, attachments: attachmentsCopy);
+
     if (!mounted) return;
     if (effectiveSessionId == 'new_chat' && finalSessionId != 'new_chat') {
       ref.read(selectedHistorySessionIdProvider.notifier).state =
@@ -466,7 +464,6 @@ class ChatViewState extends ConsumerState<ChatView> {
     final isLoading = chatState.isLoading;
     final hasUnreadResponse = chatState.hasUnreadResponse;
     final isLoadingHistory = chatState.isLoadingHistory;
-    final settings = ref.watch(settingsProvider);
     _restoreScrollPosition();
     if (isLoading && !_wasLoading && chatState.isAutoScrollEnabled) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -564,10 +561,10 @@ class ChatViewState extends ConsumerState<ChatView> {
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (notification) {
                     if (notification is ScrollEndNotification) {
-                      if (_sessionId != null && _scrollController.hasClients) {
+                      if (_scrollController.hasClients) {
                         ref
                             .read(chatSessionManagerProvider)
-                            .getOrCreate(_sessionId!)
+                            .getOrCreate(_sessionId)
                             .saveScrollOffset(_scrollController.offset);
                       }
                     }
@@ -684,8 +681,7 @@ class ChatViewState extends ConsumerState<ChatView> {
                                     Builder(builder: (context) {
                                       final reversedIndex =
                                           displayItems.length - 1 - index;
-                                      final item =
-                                          displayItems[reversedIndex];
+                                      final item = displayItems[reversedIndex];
                                       final isLatest = index == 0;
                                       final isGenerating =
                                           isLatest && isLoading;
@@ -697,11 +693,9 @@ class ChatViewState extends ConsumerState<ChatView> {
                                           isGenerating: isGenerating,
                                         );
                                         if (isLatest) {
-                                          return TweenAnimationBuilder<
-                                              double>(
+                                          return TweenAnimationBuilder<double>(
                                             key: ValueKey(item.id),
-                                            tween:
-                                                Tween(begin: 0.0, end: 1.0),
+                                            tween: Tween(begin: 0.0, end: 1.0),
                                             duration: const Duration(
                                                 milliseconds: 300),
                                             curve: Curves.easeOutCubic,
@@ -726,8 +720,9 @@ class ChatViewState extends ConsumerState<ChatView> {
                                           final prevItem =
                                               displayItems[reversedIndex - 1];
                                           if (prevItem is SingleMessageItem &&
-                                              prevItem.message.isUser)
+                                              prevItem.message.isUser) {
                                             mergeTop = true;
+                                          }
                                         }
                                         bool mergeBottom = false;
                                         if (reversedIndex <
@@ -735,8 +730,9 @@ class ChatViewState extends ConsumerState<ChatView> {
                                           final nextItem =
                                               displayItems[reversedIndex + 1];
                                           if (nextItem is SingleMessageItem &&
-                                              nextItem.message.isUser)
+                                              nextItem.message.isUser) {
                                             mergeBottom = true;
+                                          }
                                         }
                                         bool showAvatar = !mergeTop;
                                         final bubble = MessageBubble(
@@ -749,11 +745,9 @@ class ChatViewState extends ConsumerState<ChatView> {
                                           mergeBottom: mergeBottom,
                                         );
                                         if (isLatest) {
-                                          return TweenAnimationBuilder<
-                                              double>(
+                                          return TweenAnimationBuilder<double>(
                                             key: ValueKey(msg.id),
-                                            tween:
-                                                Tween(begin: 0.0, end: 1.0),
+                                            tween: Tween(begin: 0.0, end: 1.0),
                                             duration: const Duration(
                                                 milliseconds: 300),
                                             curve: Curves.easeOutCubic,
@@ -792,7 +786,8 @@ class ChatViewState extends ConsumerState<ChatView> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         child: ListView.builder(
-                          primary: false, // Prevent ListView from stealing focus
+                          primary:
+                              false, // Prevent ListView from stealing focus
                           scrollDirection: Axis.horizontal,
                           itemCount: _attachments.length,
                           itemBuilder: (context, index) {
@@ -816,7 +811,8 @@ class ChatViewState extends ConsumerState<ChatView> {
                                   children: [
                                     const Icon(Icons.attach_file, size: 14),
                                     const SizedBox(width: 4),
-                                    Text(path.split(Platform.pathSeparator).last,
+                                    Text(
+                                        path.split(Platform.pathSeparator).last,
                                         style: const TextStyle(fontSize: 12)),
                                     const SizedBox(width: 4),
                                     GestureDetector(
@@ -841,7 +837,8 @@ class ChatViewState extends ConsumerState<ChatView> {
                     PlatformUtils.isDesktop ? 12 : 0),
                 child: PlatformUtils.isDesktop
                     ? DesktopChatInputArea(
-                        key: const ValueKey('desktop_chat_input'), // Preserve State across rebuilds
+                        key: const ValueKey(
+                            'desktop_chat_input'), // Preserve State across rebuilds
                         controller: _controller,
                         isLoading: isLoading,
                         onSend: _sendMessage,

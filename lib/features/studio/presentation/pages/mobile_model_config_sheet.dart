@@ -13,14 +13,16 @@ class MobileModelConfigSheet extends ConsumerStatefulWidget {
   const MobileModelConfigSheet({super.key});
 
   @override
-  ConsumerState<MobileModelConfigSheet> createState() => _MobileModelConfigSheetState();
+  ConsumerState<MobileModelConfigSheet> createState() =>
+      _MobileModelConfigSheetState();
 }
 
-class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet> {
+class _MobileModelConfigSheetState
+    extends ConsumerState<MobileModelConfigSheet> {
   late Map<String, TextEditingController> _controllers;
   bool _isInitialized = false;
   String? _lastActivePresetId;
-  
+
   bool _toastVisible = false;
   String _toastMessage = '';
   IconData? _toastIcon;
@@ -57,13 +59,13 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
                 border: Border.all(
-                  color: theme.dividerColor.withOpacity(0.1),
+                  color: theme.dividerColor.withValues(alpha: 0.1),
                 ),
               ),
               child: Row(
@@ -92,7 +94,6 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
     );
   }
 
-
   @override
   void initState() {
     super.initState();
@@ -114,7 +115,6 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final novelNotifier = ref.read(novelProvider.notifier);
     final novelState = ref.watch(novelProvider);
     final settingsState = ref.watch(settingsProvider);
@@ -124,25 +124,32 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
       if (provider.isEnabled && provider.models.isNotEmpty) {
         for (final model in provider.models) {
           if (provider.isModelEnabled(model)) {
-            allModels.add(NovelModelConfig(providerId: provider.id, modelId: model));
+            allModels
+                .add(NovelModelConfig(providerId: provider.id, modelId: model));
           }
         }
       }
     }
 
     if (!_isInitialized) {
-      _controllers['outline']!.text = novelState.outlineModel?.systemPrompt ?? '';
-      _controllers['decompose']!.text = novelState.decomposeModel?.systemPrompt ?? '';
+      _controllers['outline']!.text =
+          novelState.outlineModel?.systemPrompt ?? '';
+      _controllers['decompose']!.text =
+          novelState.decomposeModel?.systemPrompt ?? '';
       _controllers['writer']!.text = novelState.writerModel?.systemPrompt ?? '';
-      _controllers['reviewer']!.text = novelState.reviewerModel?.systemPrompt ?? '';
+      _controllers['reviewer']!.text =
+          novelState.reviewerModel?.systemPrompt ?? '';
       _isInitialized = true;
       _lastActivePresetId = novelState.activePromptPresetId;
     } else if (_lastActivePresetId != novelState.activePromptPresetId) {
       // 检查是否发生了预设切换
-      _controllers['outline']!.text = novelState.outlineModel?.systemPrompt ?? '';
-      _controllers['decompose']!.text = novelState.decomposeModel?.systemPrompt ?? '';
+      _controllers['outline']!.text =
+          novelState.outlineModel?.systemPrompt ?? '';
+      _controllers['decompose']!.text =
+          novelState.decomposeModel?.systemPrompt ?? '';
       _controllers['writer']!.text = novelState.writerModel?.systemPrompt ?? '';
-      _controllers['reviewer']!.text = novelState.reviewerModel?.systemPrompt ?? '';
+      _controllers['reviewer']!.text =
+          novelState.reviewerModel?.systemPrompt ?? '';
       _lastActivePresetId = novelState.activePromptPresetId;
     }
 
@@ -150,7 +157,9 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
       mainAxisSize: MainAxisSize.min,
       children: [
         AppBar(
-          title: Text(l10n.modelConfig, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          title: Text(l10n.modelConfig,
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           automaticallyImplyLeading: false,
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -272,17 +281,23 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
   ) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    
-    final selectedBase = currentConfig != null 
+
+    final selectedBase = currentConfig != null
         ? allModels.firstWhere(
-            (m) => m.providerId == currentConfig.providerId && m.modelId == currentConfig.modelId, 
-            orElse: () => NovelModelConfig(providerId: currentConfig.providerId, modelId: currentConfig.modelId))
+            (m) =>
+                m.providerId == currentConfig.providerId &&
+                m.modelId == currentConfig.modelId,
+            orElse: () => NovelModelConfig(
+                providerId: currentConfig.providerId,
+                modelId: currentConfig.modelId))
         : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+        Text(label,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         InkWell(
           onTap: () => _showModelPicker(
@@ -297,15 +312,16 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+              border:
+                  Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
               borderRadius: BorderRadius.circular(8),
-              color: theme.cardColor.withOpacity(0.5),
+              color: theme.cardColor.withValues(alpha: 0.5),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    selectedBase != null 
+                    selectedBase != null
                         ? '${settingsState.providers.firstWhere((p) => p.id == selectedBase.providerId, orElse: () => ProviderConfig(id: '', name: 'Unknown')).name} - ${selectedBase.modelId}'
                         : l10n.selectModel,
                     style: TextStyle(
@@ -324,14 +340,17 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(l10n.systemPrompt, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(l10n.systemPrompt,
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             // 恢复默认
             TextButton(
               onPressed: () {
                 _controllers[key]!.text = presetPrompt;
                 onPromptChanged(presetPrompt);
               },
-              child: Text(l10n.defaultPreset, style: const TextStyle(fontSize: 12)),
+              child: Text(l10n.defaultPreset,
+                  style: const TextStyle(fontSize: 12)),
             ),
           ],
         ),
@@ -387,7 +406,8 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
                     novelNotifier.setWriterPrompt(NovelPromptPresets.writer);
                     _controllers['reviewer']!.text =
                         NovelPromptPresets.reviewer;
-                    novelNotifier.setReviewerPrompt(NovelPromptPresets.reviewer);
+                    novelNotifier
+                        .setReviewerPrompt(NovelPromptPresets.reviewer);
                     novelNotifier.setActivePromptPresetId(null);
                     _showToast(l10n.systemDefaultRestored,
                         Icons.settings_backup_restore);
@@ -395,15 +415,17 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
                   },
                 ),
                 if (novelState.promptPresets.isNotEmpty) const Divider(),
-                ...novelState.promptPresets.map((preset) =>
-                    AuroraBottomSheet.buildListItem(
+                ...novelState.promptPresets
+                    .map((preset) => AuroraBottomSheet.buildListItem(
                         context: context,
                         title: Text(preset.name),
                         selected: novelState.activePromptPresetId == preset.id,
                         onTap: () {
                           if (preset.outlinePrompt.isNotEmpty) {
-                            _controllers['outline']!.text = preset.outlinePrompt;
-                            novelNotifier.setOutlinePrompt(preset.outlinePrompt);
+                            _controllers['outline']!.text =
+                                preset.outlinePrompt;
+                            novelNotifier
+                                .setOutlinePrompt(preset.outlinePrompt);
                           }
                           if (preset.decomposePrompt.isNotEmpty) {
                             _controllers['decompose']!.text =
@@ -422,8 +444,8 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
                                 .setReviewerPrompt(preset.reviewerPrompt);
                           }
                           novelNotifier.setActivePromptPresetId(preset.id);
-                          _showToast(
-                              l10n.presetLoaded(preset.name), Icons.check_circle);
+                          _showToast(l10n.presetLoaded(preset.name),
+                              Icons.check_circle);
                           Navigator.pop(ctx);
                         },
                         trailing: IconButton(
@@ -450,8 +472,6 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
     void Function(NovelModelConfig?) onModelChanged,
     String key,
   ) {
-    final l10n = AppLocalizations.of(context)!;
-    
     AuroraBottomSheet.show(
       context: context,
       builder: (ctx) => Column(
@@ -515,7 +535,6 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
 
   void _showSavePresetSheet(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final nameController = TextEditingController();
 
     AuroraBottomSheet.show(
@@ -560,7 +579,8 @@ class _MobileModelConfigSheetState extends ConsumerState<MobileModelConfigSheet>
                           if (name.isNotEmpty) {
                             final preset = NovelPromptPreset.create(
                               name: name,
-                              outlinePrompt: _controllers['outline']?.text ?? '',
+                              outlinePrompt:
+                                  _controllers['outline']?.text ?? '',
                               decomposePrompt:
                                   _controllers['decompose']?.text ?? '',
                               writerPrompt: _controllers['writer']?.text ?? '',

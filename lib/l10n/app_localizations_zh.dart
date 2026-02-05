@@ -63,6 +63,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clear => '清空';
 
   @override
+  String get reset => '重置';
+
+  @override
   String get translating => '翻译中...';
 
   @override
@@ -915,7 +918,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enableSearch => '启用搜索';
 
   @override
+  String get searchSettings => '搜索设置';
+
+  @override
   String get searchEngine => '搜索引擎';
+
+  @override
+  String get searchRegion => '搜索地区';
+
+  @override
+  String get searchSafeSearch => '安全搜索';
+
+  @override
+  String get searchSafeSearchOff => '关闭过滤';
+
+  @override
+  String get searchSafeSearchModerate => '适度过滤';
+
+  @override
+  String get searchSafeSearchStrict => '严格过滤';
+
+  @override
+  String get searchMaxResults => '最大结果数';
+
+  @override
+  String get searchTimeoutSeconds => '超时（秒）';
 
   @override
   String get clearContext => '清空上下文';
@@ -1143,6 +1170,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accentColor => '强调色';
 
   @override
+  String get themeCustom => '自定义';
+
+  @override
+  String get customTheme => '自定义';
+
+  @override
+  String get customThemeDescription => '允许设置自定义背景图片、亮度和模糊度';
+
+  @override
   String get backgroundStyle => '背景风格';
 
   @override
@@ -1174,6 +1210,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get fontSizeHint => '调整全局文字显示大小';
+
+  @override
+  String get backgroundImage => '背景图片';
+
+  @override
+  String get backgroundBlur => '背景模糊';
+
+  @override
+  String get backgroundBrightness => '背景亮度';
+
+  @override
+  String get selectBackgroundImage => '选择背景图片';
+
+  @override
+  String get clearBackgroundImage => '清除背景图片';
+
+  @override
+  String get cropImage => '裁剪图片';
 
   @override
   String get generationConfig => '生成配置';
@@ -1418,4 +1472,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get version => '版本';
+
+  @override
+  String get assistantSystem => '助理';
+
+  @override
+  String get imagePayload => '图片参数';
+
+  @override
+  String get aspectRatio => '宽高比';
+
+  @override
+  String get imageSize => '图片分辨率';
+
+  @override
+  String get auto => '自动';
 }

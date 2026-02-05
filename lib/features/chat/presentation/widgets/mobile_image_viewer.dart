@@ -56,7 +56,7 @@ class _MobileImageViewerState extends State<MobileImageViewer>
     if (currentScale > 1.2) {
       endMatrix = Matrix4.identity();
     } else {
-      endMatrix = Matrix4.identity()..scale(2.0);
+      endMatrix = Matrix4.identity()..scaleByDouble(2.0, 2.0, 2.0, 1.0);
     }
     _animation = Matrix4Tween(
       begin: currentMatrix,
@@ -171,7 +171,7 @@ class _MobileImageViewerState extends State<MobileImageViewer>
               left: 0,
               right: 0,
               child: Container(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16.0, vertical: 12.0),
                 child: SafeArea(

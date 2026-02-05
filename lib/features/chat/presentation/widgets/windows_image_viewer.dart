@@ -140,7 +140,7 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
         children: [
           GestureDetector(
             onTap: widget.onClose ?? () => Navigator.pop(context),
-            child: Container(color: Colors.black.withOpacity(0.9)),
+            child: Container(color: Colors.black.withValues(alpha: 0.9)),
           ),
           GestureDetector(
             onScaleStart: (details) {},
@@ -160,9 +160,11 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
                     angle: _rotation,
                     child: Transform(
                       alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..scale(_flipHorizontal ? -1.0 : 1.0,
-                            _flipVertical ? -1.0 : 1.0),
+                      transform: Matrix4.diagonal3Values(
+                        _flipHorizontal ? -1.0 : 1.0,
+                        _flipVertical ? -1.0 : 1.0,
+                        1.0,
+                      ),
                       child: Image.memory(
                         widget.imageBytes,
                         fit: BoxFit.contain,
@@ -177,8 +179,7 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
             top: 16,
             right: 16,
             child: IconButton(
-              icon:
-                  Icon(AuroraIcons.close, size: 20, color: Colors.white),
+              icon: Icon(AuroraIcons.close, size: 20, color: Colors.white),
               onPressed: widget.onClose ?? () => Navigator.pop(context),
             ),
           ),
@@ -191,7 +192,7 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(32),
                 ),
                 child: Row(
@@ -278,7 +279,7 @@ class _ToolButton extends StatelessWidget {
     if (flipIcon) {
       iconWidget = Transform(
         alignment: Alignment.center,
-        transform: Matrix4.identity()..scale(-1.0, 1.0),
+        transform: Matrix4.diagonal3Values(-1.0, 1.0, 1.0),
         child: iconWidget,
       );
     }

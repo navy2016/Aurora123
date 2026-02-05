@@ -32,16 +32,22 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
 
+      - name: Get Version
+        run: |
+          VERSION_RAW=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | xargs)
+          VERSION=${VERSION_RAW%%+*}
+          echo "VERSION_RAW=$VERSION_RAW" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Detected Version: $VERSION_RAW"
+
       - name: Build Android APKs
-        run: flutter build apk --split-per-abi
+        run: |
+          mkdir -p "release_symbols/${VERSION_RAW}/android"
+          flutter build apk --release --split-per-abi --split-debug-info="release_symbols/${VERSION_RAW}/android"
 
       - name: Rename APKs
         run: |
           mkdir release_output
-          # Get version from pubspec.yaml
-          VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | sed 's/+.*//g' | xargs)
-          echo "Detected Version: $VERSION"
-          
           # Rename and move files
           mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk release_output/Aurora_Android_${VERSION}_arm64-v8a.apk
           mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk release_output/Aurora_Android_${VERSION}_armeabi-v7a.apk
@@ -52,6 +58,13 @@ jobs:
         with:
           name: android-apks
           path: release_output/*.apk
+
+      - name: Upload Symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-symbols
+          path: release_symbols/${{ env.VERSION_RAW }}/android/
+          retention-days: 30
 
   build-windows:
     name: Build Windows App
@@ -68,18 +81,46 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
 
+      - name: Get Version
+        run: |
+          $versionRaw = (Select-String -Path "pubspec.yaml" -Pattern "version: (.*)").Matches.Groups[1].Value.Trim()
+          $version = $versionRaw.Split('+')[0]
+          "VERSION_RAW=$versionRaw" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "Detected Version: $versionRaw"
+        shell: powershell
+
       - name: Build Windows Release
-        run: flutter build windows --release
+        run: |
+          $symbolsDir = "release_symbols\\$env:VERSION_RAW\\windows"
+          New-Item -ItemType Directory -Force -Path $symbolsDir | Out-Null
+          flutter build windows --release --split-debug-info="$symbolsDir"
+        shell: powershell
 
       - name: Package Windows
         run: |
-          $versionRaw = Select-String -Path "pubspec.yaml" -Pattern "version: (.*)"
-          $version = $versionRaw.Matches.Groups[1].Value.Trim().Split('+')[0]
-          echo "Detected Version: $version"
-          
           New-Item -ItemType Directory -Force -Path "release_output"
-          $zipPath = "release_output\Aurora_Windows_${version}.zip"
-          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath $zipPath
+          $zipPath = "release_output\\Aurora_Windows_$env:VERSION.zip"
+
+          $stagingDir = "release_output\\Aurora_Windows_Staging"
+          if (Test-Path $stagingDir) {
+            Remove-Item $stagingDir -Recurse -Force
+          }
+          New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
+
+          Copy-Item -Path "build\\windows\\x64\\runner\\Release\\*" -Destination $stagingDir -Recurse
+          if (Test-Path "skills") {
+            Copy-Item -Path "skills" -Destination $stagingDir -Recurse
+          }
+          Get-ChildItem -Path $stagingDir -Include *.pdb, *.lib, *.exp, kernel_blob.bin -Recurse -File | Remove-Item -Force -ErrorAction SilentlyContinue
+
+          $deprecatedExe = Join-Path $stagingDir "llm_trans.exe"
+          if (Test-Path $deprecatedExe) {
+            Remove-Item $deprecatedExe -Force
+          }
+
+          Compress-Archive -Path "$stagingDir\\*" -DestinationPath $zipPath -Force
+          Remove-Item $stagingDir -Recurse -Force
         shell: powershell
 
       - name: Upload Artifacts
@@ -87,6 +128,13 @@ jobs:
         with:
           name: windows-app
           path: release_output/*.zip
+
+      - name: Upload Symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-symbols
+          path: release_symbols/${{ env.VERSION_RAW }}/windows/
+          retention-days: 30
 
   build-linux:
     name: Build Linux App
@@ -104,11 +152,19 @@ jobs:
           sudo apt-get install -y libgtk-3-dev liblzma-dev pkg-config libayatana-appindicator3-dev
       - name: Get Dependencies
         run: flutter pub get
+      - name: Get Version
+        run: |
+          VERSION_RAW=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | xargs)
+          VERSION=${VERSION_RAW%%+*}
+          echo "VERSION_RAW=$VERSION_RAW" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Detected Version: $VERSION_RAW"
       - name: Build Linux Release
-        run: flutter build linux --release
+        run: |
+          mkdir -p "release_symbols/${VERSION_RAW}/linux"
+          flutter build linux --release --split-debug-info="release_symbols/${VERSION_RAW}/linux"
       - name: Package Linux
         run: |
-          VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | sed 's/+.*//g' | xargs)
           mkdir release_output
           tar -czf release_output/Aurora_Linux_${VERSION}.tar.gz -C build/linux/x64/release/bundle .
       - name: Upload Artifacts
@@ -116,6 +172,12 @@ jobs:
         with:
           name: linux-app
           path: release_output/*.tar.gz
+      - name: Upload Symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-symbols
+          path: release_symbols/${{ env.VERSION_RAW }}/linux/
+          retention-days: 30
 
   build-macos:
     name: Build macOS App
@@ -129,11 +191,19 @@ jobs:
           cache: true
       - name: Get Dependencies
         run: flutter pub get
+      - name: Get Version
+        run: |
+          VERSION_RAW=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | xargs)
+          VERSION=${VERSION_RAW%%+*}
+          echo "VERSION_RAW=$VERSION_RAW" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Detected Version: $VERSION_RAW"
       - name: Build macOS Release
-        run: flutter build macos --release
+        run: |
+          mkdir -p "release_symbols/${VERSION_RAW}/macos"
+          flutter build macos --release --split-debug-info="release_symbols/${VERSION_RAW}/macos"
       - name: Package macOS
         run: |
-          VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | sed 's/+.*//g' | xargs)
           mkdir release_output
           cd build/macos/Build/Products/Release
           zip -r ../../../../../release_output/Aurora_macOS_${VERSION}.zip Aurora.app
@@ -142,6 +212,12 @@ jobs:
         with:
           name: macos-app
           path: release_output/*.zip
+      - name: Upload Symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-symbols
+          path: release_symbols/${{ env.VERSION_RAW }}/macos/
+          retention-days: 30
 
   build-ios:
     name: Build iOS App
@@ -155,11 +231,19 @@ jobs:
           cache: true
       - name: Get Dependencies
         run: flutter pub get
+      - name: Get Version
+        run: |
+          VERSION_RAW=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | xargs)
+          VERSION=${VERSION_RAW%%+*}
+          echo "VERSION_RAW=$VERSION_RAW" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Detected Version: $VERSION_RAW"
       - name: Build iOS Release
-        run: flutter build ios --release --no-codesign
+        run: |
+          mkdir -p "release_symbols/${VERSION_RAW}/ios"
+          flutter build ios --release --no-codesign --split-debug-info="release_symbols/${VERSION_RAW}/ios"
       - name: Package iOS
         run: |
-          VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //g' | sed 's/+.*//g' | xargs)
           mkdir release_output
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
@@ -169,6 +253,12 @@ jobs:
         with:
           name: ios-app
           path: release_output/*.ipa
+      - name: Upload Symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-symbols
+          path: release_symbols/${{ env.VERSION_RAW }}/ios/
+          retention-days: 30
 
   create-release:
     name: Create Release
@@ -185,7 +275,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/*
+          files: |
+            artifacts/**/*.apk
+            artifacts/**/*.zip
+            artifacts/**/*.tar.gz
+            artifacts/**/*.ipa
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

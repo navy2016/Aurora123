@@ -39,12 +39,17 @@ class AppSettingsEntity {
   bool isStreamEnabled = true;
   bool isSearchEnabled = false;
   String searchEngine = 'duckduckgo';
+  String searchRegion = 'us-en';
+  String searchSafeSearch = 'moderate';
+  int searchMaxResults = 5;
+  int searchTimeoutSeconds = 15;
   bool enableSmartTopic = true;
   String? topicGenerationModel;
   String? lastSessionId;
   String? lastTopicId;
   String language = 'zh';
   String? lastPresetId;
+  String? lastAssistantId;
   String? themeColor;
   String? backgroundColor;
   @Index()
@@ -52,4 +57,8 @@ class AppSettingsEntity {
   String? executionModel;
   String? executionProviderId;
   double fontSize = 14.0;
+  String? backgroundImagePath;
+  double backgroundBrightness = 0.5;
+  double backgroundBlur = 0.0;
+  bool useCustomTheme = false;
 }

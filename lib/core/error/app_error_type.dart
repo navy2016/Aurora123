@@ -1,4 +1,3 @@
-
 enum AppErrorType {
   timeout,
   network,
