@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:aurora/shared/utils/platform_utils.dart';
 import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
-import 'package:aurora/features/assistant/domain/assistant.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/features/settings/presentation/usage_stats_provider.dart';
 import 'package:aurora/features/chat/data/chat_storage.dart';
@@ -20,11 +19,11 @@ import 'package:aurora/shared/services/openai_llm_service.dart';
 import 'package:aurora/shared/services/llm_service.dart';
 import 'package:aurora/shared/services/tool_manager.dart';
 import 'package:aurora/shared/services/worker_service.dart';
-import 'package:fluent_ui/fluent_ui.dart' hide Colors, Padding, StateSetter, ListBody;
+import 'package:fluent_ui/fluent_ui.dart'
+    hide Colors, Padding, StateSetter, ListBody;
 import 'package:uuid/uuid.dart';
 import 'package:aurora/core/error/app_error_type.dart';
 import 'package:aurora/core/error/app_exception.dart';
-import 'package:flutter/material.dart' show Colors, Padding, StateSetter, ListBody, VoidCallback, Image, CircleAvatar, FileImage;
 
 enum SearchEngine { duckduckgo, google, bing }
 
@@ -136,6 +135,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   bool _isDisposed = false;
+  @override
   bool get mounted => !_isDisposed;
   String get currentModel {
     // Assistant specific model config removed per user request
@@ -224,12 +224,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Future<String> sendMessage(String? text,
       {List<String> attachments = const [], String? apiContent}) async {
     if (!mounted) return _sessionId;
-    
+
     if (state.isLoading && text != null) {
       return _sessionId;
     }
-    if (text != null && text.trim().isEmpty && attachments.isEmpty)
+    if (text != null && text.trim().isEmpty && attachments.isEmpty) {
       return _sessionId;
+    }
     final myGenerationId = const Uuid().v4();
     _currentGenerationId = myGenerationId;
     _currentCancelToken?.cancel();
@@ -240,11 +241,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final title = text.length > 15 ? '${text.substring(0, 15)}...' : text;
       final topicId = _ref.read(selectedTopicIdProvider);
       final assistantId = _ref.read(assistantProvider).selectedAssistantId;
-      
+
       // Don't use currentPresetId for new chats to avoid "leaking" presets
       final realId = await _storage.createSession(
-          title: title, topicId: topicId, presetId: '', assistantId: assistantId);
-      
+          title: title,
+          topicId: topicId,
+          presetId: '',
+          assistantId: assistantId);
+
       if (!mounted) return realId;
 
       _sessionId = realId; // Update internal ID first to ensure consistency
@@ -260,7 +264,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       if (!mounted) return _sessionId;
       final title = text.length > 15 ? '${text.substring(0, 15)}...' : text;
       await _storage.updateSessionTitle(_sessionId, title);
-      
+
       if (!mounted) return _sessionId;
       _ref.read(sessionsProvider.notifier).loadSessions();
       final currentSessionId = _sessionId;
@@ -273,13 +277,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
         }
       });
     }
-    
+
     if (text != null) {
       if (!mounted) return _sessionId;
       final content = apiContent ?? text;
       final userMessage = Message.user(content, attachments: attachments);
       final dbId = await _storage.saveMessage(userMessage, _sessionId);
-      
+
       if (!mounted) return _sessionId;
       final userMessageWithDbId = userMessage.copyWith(id: dbId);
       state = state.copyWith(
@@ -312,24 +316,24 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       final llmService = _ref.read(llmServiceProvider);
       final toolManager = ToolManager();
-      
+
       // Assistant specific model config removed per user request. Always use global settings.
-      final currentModel = settings.activeProvider?.selectedModel;
-      final currentProviderId = settings.activeProvider?.id;
-      final currentProviderName = settings.activeProvider?.name ?? currentProviderId;
-      
+      final currentModel = settings.activeProvider.selectedModel;
+      final currentProviderName = settings.activeProvider.name;
+
       var aiMsg =
           Message.ai('', model: currentModel, provider: currentProviderName);
       state = state.copyWith(messages: [...state.messages, aiMsg]);
 
       // Inject Assistant System Prompt
       if (assistant != null && assistant.systemPrompt.isNotEmpty) {
-        final systemMsg = messagesForApi.where((m) => m.role == 'system').firstOrNull;
+        final systemMsg =
+            messagesForApi.where((m) => m.role == 'system').firstOrNull;
         if (systemMsg != null) {
           final index = messagesForApi.indexOf(systemMsg);
           // Merge preset prompt and assistant prompt
-          final combinedPrompt = systemMsg.content.isEmpty 
-              ? assistant.systemPrompt 
+          final combinedPrompt = systemMsg.content.isEmpty
+              ? assistant.systemPrompt
               : '${systemMsg.content}\n\n${assistant.systemPrompt}';
           messagesForApi[index] = systemMsg.copyWith(content: combinedPrompt);
         } else {
@@ -347,10 +351,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
       }
       final currentPlatform = Platform.operatingSystem;
       final isMobile = PlatformUtils.isMobile;
-      var activeSkills = isMobile 
-          ? <Skill>[] 
-          : _ref.read(skillProvider).skills.where((s) => s.isEnabled && s.forAI && s.isCompatible(currentPlatform)).toList();
-      
+      var activeSkills = isMobile
+          ? <Skill>[]
+          : _ref
+              .read(skillProvider)
+              .skills
+              .where((s) =>
+                  s.isEnabled && s.forAI && s.isCompatible(currentPlatform))
+              .toList();
+
       // Filter skills if an assistant is selected
       if (assistant != null) {
         if (assistant.skillIds.isEmpty) {
@@ -358,7 +367,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
           // So if no skills are configured, we disable all skills for this assistant.
           activeSkills = [];
         } else {
-          activeSkills = activeSkills.where((s) => assistant.skillIds.contains(s.id)).toList();
+          activeSkills = activeSkills
+              .where((s) => assistant.skillIds.contains(s.id))
+              .toList();
         }
       }
       List<Map<String, dynamic>>? tools;
@@ -368,7 +379,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       // Inject ONLY Descriptions for Routing
       if (activeSkills.isNotEmpty) {
-        final skillDescriptions = activeSkills.map((s) => '- [${s.name}]: ${s.description}').join('\n');
+        final skillDescriptions = activeSkills
+            .map((s) => '- [${s.name}]: ${s.description}')
+            .join('\n');
         final routingPrompt = '''
 # Specialized Skills
 You have access to the following specialized agents. Delegate tasks to them when the user's request matches their capabilities.
@@ -379,24 +392,26 @@ $skillDescriptions
 To invoke a skill, output a skill tag in this exact format:
 <skill name="skill_name">natural language task description</skill>
 ''';
-        final systemMsg = messagesForApi.where((m) => m.role == 'system').firstOrNull;
+        final systemMsg =
+            messagesForApi.where((m) => m.role == 'system').firstOrNull;
         if (systemMsg != null) {
           final index = messagesForApi.indexOf(systemMsg);
           messagesForApi[index] = systemMsg.copyWith(
-            content: '${systemMsg.content}\n\n$routingPrompt'
-          );
+              content: '${systemMsg.content}\n\n$routingPrompt');
         } else {
-          messagesForApi.insert(0, Message(
-            id: const Uuid().v4(),
-            role: 'system',
-            content: routingPrompt,
-            timestamp: DateTime.now(),
-            isUser: false,
-          ));
+          messagesForApi.insert(
+              0,
+              Message(
+                id: const Uuid().v4(),
+                role: 'system',
+                content: routingPrompt,
+                timestamp: DateTime.now(),
+                isUser: false,
+              ));
         }
-        
-      // Tools are now primarily tag-based for Search and Skills Routing.
-      // Physical tools are only used if explicitly provided or by sub-agents.
+
+        // Tools are now primarily tag-based for Search and Skills Routing.
+        // Physical tools are only used if explicitly provided or by sub-agents.
       }
       bool continueGeneration = true;
       int turns = 0;
@@ -417,8 +432,12 @@ To invoke a skill, output a skill tag in this exact format:
           await for (final chunk in responseStream) {
             if (_currentGenerationId != myGenerationId || !mounted) break;
             if (chunk.promptTokens != null) promptTokens = chunk.promptTokens!;
-            if (chunk.completionTokens != null) completionTokens = chunk.completionTokens!;
-            if (chunk.reasoningTokens != null) reasoningTokens = chunk.reasoningTokens!;
+            if (chunk.completionTokens != null) {
+              completionTokens = chunk.completionTokens!;
+            }
+            if (chunk.reasoningTokens != null) {
+              reasoningTokens = chunk.reasoningTokens!;
+            }
             if (chunk.reasoning != null && chunk.reasoning!.isNotEmpty) {
               reasoningStartTime ??= DateTime.now();
               firstContentTime ??= DateTime.now();
@@ -439,7 +458,7 @@ To invoke a skill, output a skill tag in this exact format:
               final hasImages = chunk.images.isNotEmpty;
               final hasToolCalls =
                   chunk.toolCalls != null && chunk.toolCalls!.isNotEmpty;
-              
+
               /*
               print('DEBUG: chunk received. hasContent=$hasContent, '
                   'hasReasoning=$hasReasoning, hasImages=$hasImages, '
@@ -452,10 +471,12 @@ To invoke a skill, output a skill tag in this exact format:
               }
             }
             if (chunk.finishReason == 'malformed_function_call') {
-               aiMsg = Message(
+              aiMsg = Message(
                 id: aiMsg.id,
-                content: aiMsg.content + (chunk.content ?? '') + '\n\n> ⚠️ **System Error**: The AI backend returned a "malformed_function_call" error. This usually means the model tried to call a tool but failed to generate a valid request format. Please try again or switch models.',
-                reasoningContent: (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
+                content:
+                    '${aiMsg.content}${chunk.content ?? ''}\n\n> ⚠️ **System Error**: The AI backend returned a "malformed_function_call" error. This usually means the model tried to call a tool but failed to generate a valid request format. Please try again or switch models.',
+                reasoningContent:
+                    (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
                 isUser: false,
                 timestamp: aiMsg.timestamp,
                 attachments: aiMsg.attachments,
@@ -464,10 +485,16 @@ To invoke a skill, output a skill tag in this exact format:
                 provider: aiMsg.provider,
                 reasoningDurationSeconds: duration,
                 tokenCount: chunk.usage ?? aiMsg.tokenCount,
-                promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
-                completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
-                reasoningTokens: reasoningTokens > 0 ? reasoningTokens : aiMsg.reasoningTokens,
-                firstTokenMs: firstContentTime != null ? firstContentTime.difference(startTime).inMilliseconds : null,
+                promptTokens:
+                    promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
+                completionTokens: completionTokens > 0
+                    ? completionTokens
+                    : aiMsg.completionTokens,
+                reasoningTokens: reasoningTokens > 0
+                    ? reasoningTokens
+                    : aiMsg.reasoningTokens,
+                firstTokenMs:
+                    firstContentTime?.difference(startTime).inMilliseconds,
                 toolCalls: _mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
               );
               if (!mounted) break;
@@ -478,7 +505,7 @@ To invoke a skill, output a skill tag in this exact format:
               newMessages.add(aiMsg);
               state = state.copyWith(messages: newMessages);
               continueGeneration = false;
-              break; 
+              break;
             }
             aiMsg = Message(
               id: aiMsg.id,
@@ -493,10 +520,15 @@ To invoke a skill, output a skill tag in this exact format:
               provider: aiMsg.provider,
               reasoningDurationSeconds: duration,
               tokenCount: chunk.usage ?? aiMsg.tokenCount,
-              promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
-              completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
-              reasoningTokens: reasoningTokens > 0 ? reasoningTokens : aiMsg.reasoningTokens,
-              firstTokenMs: firstContentTime != null ? firstContentTime.difference(startTime).inMilliseconds : null,
+              promptTokens:
+                  promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
+              completionTokens: completionTokens > 0
+                  ? completionTokens
+                  : aiMsg.completionTokens,
+              reasoningTokens:
+                  reasoningTokens > 0 ? reasoningTokens : aiMsg.reasoningTokens,
+              firstTokenMs:
+                  firstContentTime?.difference(startTime).inMilliseconds,
               toolCalls: _mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
             );
             final newMessages = List<Message>.from(state.messages);
@@ -525,7 +557,9 @@ To invoke a skill, output a skill tag in this exact format:
           final searchMatch = searchPattern.firstMatch(aiMsg.content);
 
           // Check for skill tag pattern: <skill name="skill_name">query</skill>
-          final skillPattern = RegExp(r'''<skill\s+name=["'](.*?)["']>(.*?)</skill>''', dotAll: true);
+          final skillPattern = RegExp(
+              r'''<skill\s+name=["'](.*?)["']>(.*?)</skill>''',
+              dotAll: true);
           final skillMatch = skillPattern.firstMatch(aiMsg.content);
 
           if (searchMatch != null) {
@@ -533,7 +567,8 @@ To invoke a skill, output a skill tag in this exact format:
             if (searchQuery.isNotEmpty) {
               continueGeneration = true;
               if (!mounted) break;
-              final cleanedContent = aiMsg.content.replaceAll(searchPattern, '').trim();
+              final cleanedContent =
+                  aiMsg.content.replaceAll(searchPattern, '').trim();
               aiMsg = aiMsg.copyWith(content: cleanedContent);
               final newMessages = List<Message>.from(state.messages);
               if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
@@ -541,109 +576,121 @@ To invoke a skill, output a skill tag in this exact format:
               }
               newMessages.add(aiMsg);
               state = state.copyWith(messages: newMessages);
-              
+
               String searchResult;
               try {
-                searchResult = await toolManager.executeTool('SearchWeb', {'query': searchQuery},
-                    preferredEngine: settings.searchEngine, skills: activeSkills);
+                searchResult = await toolManager.executeTool(
+                    'SearchWeb', {'query': searchQuery},
+                    preferredEngine: settings.searchEngine,
+                    skills: activeSkills);
               } catch (e) {
                 searchResult = jsonEncode({'error': e.toString()});
               }
-              
+
               final toolCallId = 'search_${const Uuid().v4().substring(0, 8)}';
               if (!mounted) break;
-              final toolMsg = Message.tool(searchResult, toolCallId: toolCallId);
+              final toolMsg =
+                  Message.tool(searchResult, toolCallId: toolCallId);
               state = state.copyWith(messages: [...state.messages, toolMsg]);
-              
+
               // Protocol: Wrap original call in tags, wrap result in <result> tags
-              messagesForApi.add(aiMsg.copyWith(content: '<search>$searchQuery</search>'));
+              messagesForApi.add(
+                  aiMsg.copyWith(content: '<search>$searchQuery</search>'));
               messagesForApi.add(Message(
                 id: const Uuid().v4(),
                 role: 'user',
-                content: '<result name="SearchWeb">\n$searchResult\n</result>\n\nPlease synthesize the above results.',
+                content:
+                    '<result name="SearchWeb">\n$searchResult\n</result>\n\nPlease synthesize the above results.',
                 timestamp: DateTime.now(),
                 isUser: false,
               ));
-              
+
               if (!mounted) break;
-              aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
+              aiMsg = Message.ai('',
+                  model: currentModel, provider: currentProvider);
               state = state.copyWith(messages: [...state.messages, aiMsg]);
             }
           } else if (skillMatch != null) {
-             final skillName = skillMatch.group(1)?.trim() ?? '';
-             final skillQuery = skillMatch.group(2)?.trim() ?? '';
-             
-             if (skillName.isNotEmpty) {
-                if (!mounted) break;
-                // Clean tag from display
-                final cleanedContent = aiMsg.content.replaceAll(skillPattern, '').trim();
-                aiMsg = aiMsg.copyWith(content: cleanedContent);
-                final newMessages = List<Message>.from(state.messages);
-                if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
-                   newMessages.removeLast();
-                }
-                newMessages.add(aiMsg);
-                state = state.copyWith(messages: newMessages);
+            final skillName = skillMatch.group(1)?.trim() ?? '';
+            final skillQuery = skillMatch.group(2)?.trim() ?? '';
 
-                // Get original user request from history
-                final originalUserMsg = state.messages.lastWhere((m) => m.isUser, orElse: () => Message.user(''));
+            if (skillName.isNotEmpty) {
+              if (!mounted) break;
+              // Clean tag from display
+              final cleanedContent =
+                  aiMsg.content.replaceAll(skillPattern, '').trim();
+              aiMsg = aiMsg.copyWith(content: cleanedContent);
+              final newMessages = List<Message>.from(state.messages);
+              if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
+                newMessages.removeLast();
+              }
+              newMessages.add(aiMsg);
+              state = state.copyWith(messages: newMessages);
 
-                String executionResult;
-                try {
-                  final skill = _ref.read(skillProvider).skills.firstWhere(
-                    (s) => s.name == skillName,
-                    orElse: () => throw Exception('Skill "$skillName" not found.'),
-                  );
-                  final workerService = WorkerService(llmService);
-                    executionResult = await workerService.executeSkillTask(
-                      skill,
-                      skillQuery,
-                      originalRequest: originalUserMsg.content,
-                      model: settings.executionModel,
-                      providerId: settings.executionProviderId,
-                      onUsage: ({
-                        required bool success,
-                        required int promptTokens,
-                        required int completionTokens,
-                        required int reasoningTokens,
-                        required int durationMs,
-                        AppErrorType? errorType,
-                      }) {
-                        final execModel = settings.executionModel;
-                        if (execModel != null && execModel.isNotEmpty) {
-                          _ref.read(usageStatsProvider.notifier).incrementUsage(
-                                execModel,
-                                success: success,
-                                promptTokens: promptTokens,
-                                completionTokens: completionTokens,
-                                reasoningTokens: reasoningTokens,
-                                durationMs: durationMs,
-                                errorType: errorType,
-                              );
-                        }
-                      },
+              // Get original user request from history
+              final originalUserMsg = state.messages
+                  .lastWhere((m) => m.isUser, orElse: () => Message.user(''));
+
+              String executionResult;
+              try {
+                final skill = _ref.read(skillProvider).skills.firstWhere(
+                      (s) => s.name == skillName,
+                      orElse: () =>
+                          throw Exception('Skill "$skillName" not found.'),
                     );
-                } catch (e) {
-                  executionResult = "Error executing skill: $e";
-                }
+                final workerService = WorkerService(llmService);
+                executionResult = await workerService.executeSkillTask(
+                  skill,
+                  skillQuery,
+                  originalRequest: originalUserMsg.content,
+                  model: settings.executionModel,
+                  providerId: settings.executionProviderId,
+                  onUsage: ({
+                    required bool success,
+                    required int promptTokens,
+                    required int completionTokens,
+                    required int reasoningTokens,
+                    required int durationMs,
+                    AppErrorType? errorType,
+                  }) {
+                    final execModel = settings.executionModel;
+                    if (execModel != null && execModel.isNotEmpty) {
+                      _ref.read(usageStatsProvider.notifier).incrementUsage(
+                            execModel,
+                            success: success,
+                            promptTokens: promptTokens,
+                            completionTokens: completionTokens,
+                            reasoningTokens: reasoningTokens,
+                            durationMs: durationMs,
+                            errorType: errorType,
+                          );
+                    }
+                  },
+                );
+              } catch (e) {
+                executionResult = "Error executing skill: $e";
+              }
 
-                if (!mounted) break;
-                
-                // Add the action and result to API history for the Decision Model to summarize
-                messagesForApi.add(aiMsg.copyWith(content: '<skill name="$skillName">$skillQuery</skill>'));
-                messagesForApi.add(Message(
-                  id: const Uuid().v4(),
-                  role: 'user',
-                  content: '<result name="$skillName">\n$executionResult\n</result>\n\nPlease provide a final human-readable response based on the above result.',
-                  timestamp: DateTime.now(),
-                  isUser: false,
-                ));
+              if (!mounted) break;
 
-                // Prepare for the final Summary call (Call 3)
-                continueGeneration = true;
-                aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
-                state = state.copyWith(messages: [...state.messages, aiMsg]);
-             }
+              // Add the action and result to API history for the Decision Model to summarize
+              messagesForApi.add(aiMsg.copyWith(
+                  content: '<skill name="$skillName">$skillQuery</skill>'));
+              messagesForApi.add(Message(
+                id: const Uuid().v4(),
+                role: 'user',
+                content:
+                    '<result name="$skillName">\n$executionResult\n</result>\n\nPlease provide a final human-readable response based on the above result.',
+                timestamp: DateTime.now(),
+                isUser: false,
+              ));
+
+              // Prepare for the final Summary call (Call 3)
+              continueGeneration = true;
+              aiMsg = Message.ai('',
+                  model: currentModel, provider: currentProvider);
+              state = state.copyWith(messages: [...state.messages, aiMsg]);
+            }
           }
 
           // Legacy JSON-based tool calls (fallback)
@@ -655,84 +702,87 @@ To invoke a skill, output a skill tag in this exact format:
               try {
                 if (tc.name == 'call_skill') {
                   final activeSkills = _ref.read(skillProvider).skills;
-                   Map<String, dynamic> args;
-                   if (tc.arguments.startsWith('{')) {
+                  Map<String, dynamic> args;
+                  if (tc.arguments.startsWith('{')) {
+                    args = jsonDecode(tc.arguments);
+                  } else {
+                    // Handle hallucinated nested json strings or malformed args
+                    try {
                       args = jsonDecode(tc.arguments);
-                   } else {
-                      // Handle hallucinated nested json strings or malformed args
-                      try {
-                        args = jsonDecode(tc.arguments);
-                      } catch (e) {
-                         args = {'query': tc.arguments, 'skill_name': 'unknown'};
-                      }
-                   }
-                   
-                   var skillName = args['skill_name'];
-                   // Fallback if skill_name is missing but might be inferred? 
-                   // No, we need skill_name. 
-                   if (skillName == null) {
-                      // Try to fix hallucination where everything is in 'skill_args'
-                      if (args.containsKey('skill_args')) {
-                        final nested = args['skill_args'];
-                        if (nested is Map) {
-                           skillName = nested['skill_name'];
-                        } else if (nested is String) {
-                           try {
-                             final nMap = jsonDecode(nested);
-                             skillName = nMap['skill_name'];
-                           } catch (_) {}
-                        }
-                      }
-                   }
+                    } catch (e) {
+                      args = {'query': tc.arguments, 'skill_name': 'unknown'};
+                    }
+                  }
 
-                   var query = args['query'] ?? args['request'] ?? args['task'] ?? args['content'];
-                   if (query == null) {
-                      // If query is missing, dump arguments as query (excluding skill_name)
-                      final copy = Map<String, dynamic>.from(args);
-                      copy.remove('skill_name');
-                      query = jsonEncode(copy);
-                   }
-                   
-                   final skill = activeSkills.firstWhere(
-                      (s) => s.name == skillName, 
-                      orElse: () {
-                        throw Exception('Skill "$skillName" not found. Available: ${activeSkills.map((s) => s.name).join(", ")}');
+                  var skillName = args['skill_name'];
+                  // Fallback if skill_name is missing but might be inferred?
+                  // No, we need skill_name.
+                  if (skillName == null) {
+                    // Try to fix hallucination where everything is in 'skill_args'
+                    if (args.containsKey('skill_args')) {
+                      final nested = args['skill_args'];
+                      if (nested is Map) {
+                        skillName = nested['skill_name'];
+                      } else if (nested is String) {
+                        try {
+                          final nMap = jsonDecode(nested);
+                          skillName = nMap['skill_name'];
+                        } catch (_) {}
                       }
-                   );
-                   
-                    final workerService = WorkerService(llmService);
-                    final executionModel = settings.executionModel;
-                    final executionProviderId = settings.executionProviderId;
-                    toolResult = await workerService.executeSkillTask(
-                      skill,
-                      query.toString(),
-                      model: executionModel,
-                      providerId: executionProviderId,
-                      onUsage: ({
-                        required bool success,
-                        required int promptTokens,
-                        required int completionTokens,
-                        required int reasoningTokens,
-                        required int durationMs,
-                        AppErrorType? errorType,
-                      }) {
-                        if (executionModel != null && executionModel.isNotEmpty) {
-                          _ref.read(usageStatsProvider.notifier).incrementUsage(
-                                executionModel,
-                                success: success,
-                                promptTokens: promptTokens,
-                                completionTokens: completionTokens,
-                                reasoningTokens: reasoningTokens,
-                                durationMs: durationMs,
-                                errorType: errorType,
-                              );
-                        }
-                      },
-                    );
+                    }
+                  }
+
+                  var query = args['query'] ??
+                      args['request'] ??
+                      args['task'] ??
+                      args['content'];
+                  if (query == null) {
+                    // If query is missing, dump arguments as query (excluding skill_name)
+                    final copy = Map<String, dynamic>.from(args);
+                    copy.remove('skill_name');
+                    query = jsonEncode(copy);
+                  }
+
+                  final skill = activeSkills
+                      .firstWhere((s) => s.name == skillName, orElse: () {
+                    throw Exception(
+                        'Skill "$skillName" not found. Available: ${activeSkills.map((s) => s.name).join(", ")}');
+                  });
+
+                  final workerService = WorkerService(llmService);
+                  final executionModel = settings.executionModel;
+                  final executionProviderId = settings.executionProviderId;
+                  toolResult = await workerService.executeSkillTask(
+                    skill,
+                    query.toString(),
+                    model: executionModel,
+                    providerId: executionProviderId,
+                    onUsage: ({
+                      required bool success,
+                      required int promptTokens,
+                      required int completionTokens,
+                      required int reasoningTokens,
+                      required int durationMs,
+                      AppErrorType? errorType,
+                    }) {
+                      if (executionModel != null && executionModel.isNotEmpty) {
+                        _ref.read(usageStatsProvider.notifier).incrementUsage(
+                              executionModel,
+                              success: success,
+                              promptTokens: promptTokens,
+                              completionTokens: completionTokens,
+                              reasoningTokens: reasoningTokens,
+                              durationMs: durationMs,
+                              errorType: errorType,
+                            );
+                      }
+                    },
+                  );
                 } else {
                   final args = jsonDecode(tc.arguments);
                   toolResult = await toolManager.executeTool(tc.name, args,
-                      preferredEngine: settings.searchEngine, skills: _ref.read(skillProvider).skills);
+                      preferredEngine: settings.searchEngine,
+                      skills: _ref.read(skillProvider).skills);
                 }
               } catch (e) {
                 toolResult = jsonEncode({'error': e.toString()});
@@ -753,34 +803,42 @@ To invoke a skill, output a skill tag in this exact format:
             cancelToken: _currentCancelToken,
           );
           firstContentTime ??= DateTime.now();
-          final durationMs = DateTime.now().difference(startTime).inMilliseconds;
-          if (response.promptTokens != null) promptTokens = response.promptTokens!;
-          if (response.completionTokens != null) completionTokens = response.completionTokens!;
-          if (response.reasoningTokens != null) reasoningTokens = response.reasoningTokens!;
+          final durationMs =
+              DateTime.now().difference(startTime).inMilliseconds;
+          if (response.promptTokens != null) {
+            promptTokens = response.promptTokens!;
+          }
+          if (response.completionTokens != null) {
+            completionTokens = response.completionTokens!;
+          }
+          if (response.reasoningTokens != null) {
+            reasoningTokens = response.reasoningTokens!;
+          }
           if (_currentGenerationId == myGenerationId && mounted) {
             aiMsg = Message(
-                id: aiMsg.id,
-                content: response.content ?? '',
-                reasoningContent: response.reasoning,
-                isUser: false,
-                timestamp: aiMsg.timestamp,
-                attachments: aiMsg.attachments,
-                images: response.images,
-                model: aiMsg.model,
-                provider: aiMsg.provider,
-                tokenCount: response.usage,
-                promptTokens: response.promptTokens,
-                completionTokens: response.completionTokens,
-                reasoningTokens: response.reasoningTokens,
-                firstTokenMs: firstContentTime != null ? firstContentTime.difference(startTime).inMilliseconds : null,
-                toolCalls: response.toolCalls
-                    ?.map((tc) => ToolCall(
-                        id: tc.id ?? '',
-                        type: tc.type ?? 'function',
-                        name: tc.name ?? '',
-                        arguments: tc.arguments ?? ''))
-                    .toList(),
-                durationMs: durationMs,
+              id: aiMsg.id,
+              content: response.content ?? '',
+              reasoningContent: response.reasoning,
+              isUser: false,
+              timestamp: aiMsg.timestamp,
+              attachments: aiMsg.attachments,
+              images: response.images,
+              model: aiMsg.model,
+              provider: aiMsg.provider,
+              tokenCount: response.usage,
+              promptTokens: response.promptTokens,
+              completionTokens: response.completionTokens,
+              reasoningTokens: response.reasoningTokens,
+              firstTokenMs:
+                  firstContentTime.difference(startTime).inMilliseconds,
+              toolCalls: response.toolCalls
+                  ?.map((tc) => ToolCall(
+                      id: tc.id ?? '',
+                      type: tc.type ?? 'function',
+                      name: tc.name ?? '',
+                      arguments: tc.arguments ?? ''))
+                  .toList(),
+              durationMs: durationMs,
             );
             final newMessages = List<Message>.from(state.messages);
             if (newMessages.isNotEmpty && newMessages.last.id == aiMsg.id) {
@@ -789,41 +847,49 @@ To invoke a skill, output a skill tag in this exact format:
             newMessages.add(aiMsg);
             state = state.copyWith(messages: newMessages);
             // Check for text-based search pattern in non-streaming mode
-            final searchPattern = RegExp(r'<search>(.*?)</search>', dotAll: true);
+            final searchPattern =
+                RegExp(r'<search>(.*?)</search>', dotAll: true);
             final searchMatch = searchPattern.firstMatch(aiMsg.content);
             if (searchMatch != null) {
               final searchQuery = searchMatch.group(1)?.trim() ?? '';
               if (searchQuery.isNotEmpty) {
                 continueGeneration = true;
-                final cleanedContent = aiMsg.content.replaceAll(searchPattern, '').trim();
+                final cleanedContent =
+                    aiMsg.content.replaceAll(searchPattern, '').trim();
                 aiMsg = aiMsg.copyWith(content: cleanedContent);
-                
+
                 String searchResult;
                 try {
-                  searchResult = await toolManager.executeTool('SearchWeb', {'query': searchQuery},
-                      preferredEngine: settings.searchEngine, skills: activeSkills);
+                  searchResult = await toolManager.executeTool(
+                      'SearchWeb', {'query': searchQuery},
+                      preferredEngine: settings.searchEngine,
+                      skills: activeSkills);
                 } catch (e) {
                   searchResult = jsonEncode({'error': e.toString()});
                 }
-                
-                final toolCallId = 'search_${const Uuid().v4().substring(0, 8)}';
-                final toolMsg = Message.tool(searchResult, toolCallId: toolCallId);
+
+                final toolCallId =
+                    'search_${const Uuid().v4().substring(0, 8)}';
+                final toolMsg =
+                    Message.tool(searchResult, toolCallId: toolCallId);
                 state = state.copyWith(messages: [...state.messages, toolMsg]);
-                
-                messagesForApi.add(aiMsg.copyWith(content: '<search>$searchQuery</search>'));
+
+                messagesForApi.add(
+                    aiMsg.copyWith(content: '<search>$searchQuery</search>'));
                 messagesForApi.add(Message(
                   id: const Uuid().v4(),
                   role: 'user',
-                  content: '## Search Results for "$searchQuery"\n$searchResult\n\nPlease synthesize the above search results and provide a comprehensive answer. Cite sources using [index](link) format.',
+                  content:
+                      '## Search Results for "$searchQuery"\n$searchResult\n\nPlease synthesize the above search results and provide a comprehensive answer. Cite sources using [index](link) format.',
                   timestamp: DateTime.now(),
                   isUser: false,
                 ));
-                
-                aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
+
+                aiMsg = Message.ai('',
+                    model: currentModel, provider: currentProvider);
                 state = state.copyWith(messages: [...state.messages, aiMsg]);
               }
-            }
-            else if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
+            } else if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
               continueGeneration = true;
               messagesForApi.add(aiMsg);
               for (final tc in aiMsg.toolCalls!) {
@@ -831,7 +897,8 @@ To invoke a skill, output a skill tag in this exact format:
                 try {
                   final args = jsonDecode(tc.arguments);
                   toolResult = await toolManager.executeTool(tc.name, args,
-                      preferredEngine: settings.searchEngine, skills: activeSkills);
+                      preferredEngine: settings.searchEngine,
+                      skills: activeSkills);
                 } catch (e) {
                   toolResult = jsonEncode({'error': e.toString()});
                 }
@@ -846,13 +913,15 @@ To invoke a skill, output a skill tag in this exact format:
           }
         }
       }
-      if (_currentGenerationId == myGenerationId && 
-          mounted && 
-          turns >= 3 && 
+      if (_currentGenerationId == myGenerationId &&
+          mounted &&
+          turns >= 3 &&
           (aiMsg.content.isEmpty || aiMsg.content.contains('<search>'))) {
-        final cleanedContent = aiMsg.content.replaceAll(RegExp(r'<search>.*?</search>', dotAll: true), '').trim();
+        final cleanedContent = aiMsg.content
+            .replaceAll(RegExp(r'<search>.*?</search>', dotAll: true), '')
+            .trim();
         aiMsg = aiMsg.copyWith(content: cleanedContent);
-        
+
         messagesForApi.add(Message(
           id: const Uuid().v4(),
           role: 'user',
@@ -860,15 +929,17 @@ To invoke a skill, output a skill tag in this exact format:
           timestamp: DateTime.now(),
           isUser: false,
         ));
-        
+
         aiMsg = Message.ai('', model: currentModel, provider: currentProvider);
         final newMessages = List<Message>.from(state.messages);
-        while (newMessages.isNotEmpty && !newMessages.last.isUser && newMessages.last.content.isEmpty) {
+        while (newMessages.isNotEmpty &&
+            !newMessages.last.isUser &&
+            newMessages.last.content.isEmpty) {
           newMessages.removeLast();
         }
         newMessages.add(aiMsg);
         state = state.copyWith(messages: newMessages);
-        
+
         final finalStream = llmService.streamResponse(
           messagesForApi,
           tools: null,
@@ -877,24 +948,34 @@ To invoke a skill, output a skill tag in this exact format:
         await for (final chunk in finalStream) {
           if (_currentGenerationId != myGenerationId || !mounted) break;
           if (chunk.promptTokens != null) promptTokens = chunk.promptTokens!;
-          if (chunk.completionTokens != null) completionTokens = chunk.completionTokens!;
-          if (chunk.reasoningTokens != null) reasoningTokens = chunk.reasoningTokens!;
-          if (firstContentTime == null && (chunk.content != null || chunk.reasoning != null)) {
+          if (chunk.completionTokens != null) {
+            completionTokens = chunk.completionTokens!;
+          }
+          if (chunk.reasoningTokens != null) {
+            reasoningTokens = chunk.reasoningTokens!;
+          }
+          if (firstContentTime == null &&
+              (chunk.content != null || chunk.reasoning != null)) {
             firstContentTime = DateTime.now();
           }
           aiMsg = Message(
             id: aiMsg.id,
             content: aiMsg.content + (chunk.content ?? ''),
-            reasoningContent: (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
+            reasoningContent:
+                (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
             isUser: false,
             timestamp: aiMsg.timestamp,
             model: aiMsg.model,
             provider: aiMsg.provider,
             tokenCount: chunk.usage ?? aiMsg.tokenCount,
             promptTokens: promptTokens > 0 ? promptTokens : aiMsg.promptTokens,
-            completionTokens: completionTokens > 0 ? completionTokens : aiMsg.completionTokens,
-            reasoningTokens: reasoningTokens > 0 ? reasoningTokens : aiMsg.reasoningTokens,
-            firstTokenMs: firstContentTime != null ? firstContentTime.difference(startTime).inMilliseconds : null,
+            completionTokens: completionTokens > 0
+                ? completionTokens
+                : aiMsg.completionTokens,
+            reasoningTokens:
+                reasoningTokens > 0 ? reasoningTokens : aiMsg.reasoningTokens,
+            firstTokenMs:
+                firstContentTime?.difference(startTime).inMilliseconds,
           );
           final updateMessages = List<Message>.from(state.messages);
           if (updateMessages.isNotEmpty && updateMessages.last.id == aiMsg.id) {
@@ -908,9 +989,8 @@ To invoke a skill, output a skill tag in this exact format:
         final messages = state.messages;
         // Calculate timing metrics before saving
         final durationMs = DateTime.now().difference(startTime).inMilliseconds;
-        final firstTokenMs = firstContentTime != null
-            ? firstContentTime.difference(startTime).inMilliseconds
-            : null;
+        final firstTokenMs =
+            firstContentTime?.difference(startTime).inMilliseconds;
         if (messages.length > startSaveIndex) {
           final unsaved = messages.sublist(startSaveIndex);
           final updatedMessages = List<Message>.from(state.messages);
@@ -924,8 +1004,8 @@ To invoke a skill, output a skill tag in this exact format:
                 promptTokens: promptTokens,
                 completionTokens: completionTokens,
                 reasoningTokens: reasoningTokens,
-                tokenCount: (promptTokens > 0 || completionTokens > 0) 
-                    ? (promptTokens + completionTokens + reasoningTokens) 
+                tokenCount: (promptTokens > 0 || completionTokens > 0)
+                    ? (promptTokens + completionTokens + reasoningTokens)
                     : m.tokenCount,
                 durationMs: durationMs,
                 firstTokenMs: firstTokenMs,
@@ -951,8 +1031,9 @@ To invoke a skill, output a skill tag in this exact format:
             _ref.read(sessionsProvider.notifier).loadSessions();
           }
         } else {
-          if (mounted)
+          if (mounted) {
             state = state.copyWith(isLoading: false, hasUnreadResponse: true);
+          }
         }
         if (currentModel != null && currentModel.isNotEmpty) {
           final tokenCount = aiMsg.tokenCount ?? 0;
@@ -965,14 +1046,15 @@ To invoke a skill, output a skill tag in this exact format:
               completionTokens: completionTokens,
               reasoningTokens: reasoningTokens);
         }
-        
+
         // Auto-rotate API key after successful request if enabled
         final activeProvider = settings.activeProvider;
-        if (activeProvider.autoRotateKeys && activeProvider.apiKeys.length > 1) {
+        if (activeProvider.autoRotateKeys &&
+            activeProvider.apiKeys.length > 1) {
           _ref.read(settingsProvider.notifier).rotateApiKey(activeProvider.id);
         }
       }
-    } catch (e, stack) {
+    } catch (e) {
       if (_currentGenerationId == myGenerationId && mounted) {
         String errorMessage = e.toString();
         if (errorMessage.startsWith('Exception: ')) {
@@ -996,10 +1078,10 @@ To invoke a skill, output a skill tag in this exact format:
               messages: messages, isLoading: false, error: errorMessage);
         }
         final currentModel =
-            _ref.read(settingsProvider).activeProvider?.selectedModel;
+            _ref.read(settingsProvider).activeProvider.selectedModel;
         if (currentModel != null && currentModel.isNotEmpty) {
           final duration = DateTime.now().difference(startTime).inMilliseconds;
-          
+
           AppErrorType errorType = AppErrorType.unknown;
           if (e is AppException) {
             errorType = e.type;
@@ -1007,7 +1089,7 @@ To invoke a skill, output a skill tag in this exact format:
 
           _ref.read(usageStatsProvider.notifier).incrementUsage(currentModel,
               success: false, durationMs: duration, errorType: errorType);
-          
+
           // Rotate API key on auth/rate-limit errors if multiple keys available
           if (e is AppException) {
             final shouldRotate = errorType == AppErrorType.unauthorized ||
@@ -1088,7 +1170,7 @@ To invoke a skill, output a skill tag in this exact format:
     await Future.delayed(const Duration(milliseconds: 100));
     final rootMsg = state.messages[index];
     List<Message> historyToKeep;
-    
+
     // Determine the user message to update
     Message? userMsgToUpdate;
 
@@ -1102,8 +1184,9 @@ To invoke a skill, output a skill tag in this exact format:
       userMsgToUpdate = historyToKeep.last;
     }
 
-    if (userMsgToUpdate != null && userMsgToUpdate.isUser) {
-      final updatedUserMsg = userMsgToUpdate.copyWith(timestamp: DateTime.now());
+    if (userMsgToUpdate.isUser) {
+      final updatedUserMsg =
+          userMsgToUpdate.copyWith(timestamp: DateTime.now());
       await _storage.updateMessage(updatedUserMsg);
       historyToKeep[historyToKeep.length - 1] = updatedUserMsg;
     }
@@ -1180,12 +1263,12 @@ To invoke a skill, output a skill tag in this exact format:
 
   Future<void> updateSystemPrompt(String template, [String? presetName]) async {
     await _updateSystemMessageInternal(template);
-    
+
     // Preset Mode: Activate Preset
     state = state.copyWith(
       activePresetName: presetName,
     );
-    
+
     debugPrint(
         '[PresetSave] updateSystemPrompt called with presetName: $presetName, sessionId: $_sessionId');
     if (presetName != null) {
@@ -1200,14 +1283,12 @@ To invoke a skill, output a skill tag in this exact format:
       }
     } else {
       if (_sessionId != 'chat' && _sessionId != 'new_chat') {
-         await _storage.updateSessionPreset(_sessionId, '');
+        await _storage.updateSessionPreset(_sessionId, '');
       }
     }
     // Force global trigger update for indicators
     _ref.read(chatStateUpdateTriggerProvider.notifier).state++;
   }
-
-
 
   void setSearchEngine(SearchEngine engine) {
     _ref.read(settingsProvider.notifier).setSearchEngine(engine.name);
@@ -1377,9 +1458,9 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     await _storage.deleteSession(id);
     // Explicitly reset the session in manager to clear memory and cache
     _ref.read(chatSessionManagerProvider).resetSession(id);
-    
+
     await loadSessions();
-    
+
     // If we deleted the currently active session, move to the next best one
     if (selectedId == id || selectedId == null) {
       if (state.sessions.isNotEmpty) {
@@ -1417,7 +1498,8 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
 
     // Create new session with branch name
     final newTitle = '$originalTitle$branchSuffix';
-    final newSessionId = await _storage.createSession(title: newTitle, topicId: topicId);
+    final newSessionId =
+        await _storage.createSession(title: newTitle, topicId: topicId);
 
     // Save copied messages to new session
     await _storage.saveHistory(messagesToCopy, newSessionId);
@@ -1428,7 +1510,6 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     return newSessionId;
   }
 }
-
 
 final sessionsProvider =
     StateNotifierProvider<SessionsNotifier, SessionsState>((ref) {
@@ -1512,7 +1593,8 @@ final historyChatStateProvider = Provider<ChatState>((ref) {
   ref.watch(chatStateUpdateTriggerProvider);
   return notifier.currentState;
 });
-final chatSessionNotifierProvider = Provider.family<ChatNotifier, String>((ref, sessionId) {
+final chatSessionNotifierProvider =
+    Provider.family<ChatNotifier, String>((ref, sessionId) {
   final manager = ref.watch(chatSessionManagerProvider);
   ref.watch(chatStateUpdateTriggerProvider);
   return manager.getOrCreate(sessionId);

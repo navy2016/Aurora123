@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
-import '../chat_provider.dart';
 
 import 'custom_dropdown_overlay.dart';
 import 'package:aurora/l10n/app_localizations.dart';
@@ -85,7 +84,8 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
           children: [
             AssistantAvatar(assistant: null, size: 24),
             const SizedBox(width: 8),
-            const Text('Default', style: TextStyle(fontWeight: FontWeight.w500)),
+            const Text('Default',
+                style: TextStyle(fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -133,7 +133,7 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
         ),
       ));
     }
-    
+
     return items;
   }
 
@@ -142,12 +142,8 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
     final theme = fluent.FluentTheme.of(context);
     final selectedId = ref.watch(assistantProvider).selectedAssistantId;
     final assistants = ref.watch(assistantProvider).assistants;
-    final selectedAssistant = assistants
-        .where((a) => a.id == selectedId)
-        .firstOrNull;
-
-    final settings = ref.watch(settingsProvider);
-    final llmAvatar = settings.llmAvatar;
+    final selectedAssistant =
+        assistants.where((a) => a.id == selectedId).firstOrNull;
 
     return CompositedTransformTarget(
       link: _layerLink,
@@ -157,7 +153,7 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: _isOpen || states.isHovering
+              color: _isOpen || states.isHovered
                   ? theme.resources.subtleFillColorSecondary
                   : fluent.Colors.transparent,
               borderRadius: BorderRadius.circular(4),
@@ -174,15 +170,14 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
                   constraints: const BoxConstraints(maxWidth: 120),
                   child: fluent.Text(
                     selectedAssistant?.name ?? 'Default',
-                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 4),
                 fluent.Icon(
-                    _isOpen
-                        ? AuroraIcons.chevronUp
-                        : AuroraIcons.chevronDown,
+                    _isOpen ? AuroraIcons.chevronUp : AuroraIcons.chevronDown,
                     size: 8,
                     color: theme.typography.caption?.color),
               ],

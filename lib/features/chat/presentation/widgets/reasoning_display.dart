@@ -104,10 +104,14 @@ class _ReasoningDisplayState extends ConsumerState<ReasoningDisplay>
     final isDark =
         fluent.FluentTheme.of(context).brightness == fluent.Brightness.dark;
     final settings = ref.watch(settingsProvider);
-    final hasBackground = settings.useCustomTheme && settings.backgroundImagePath != null && settings.backgroundImagePath!.isNotEmpty;
+    final hasBackground = settings.useCustomTheme &&
+        settings.backgroundImagePath != null &&
+        settings.backgroundImagePath!.isNotEmpty;
 
     final backgroundColor = hasBackground
-        ? (isDark ? Colors.black.withOpacity(0.4) : Colors.white.withOpacity(0.4))
+        ? (isDark
+            ? Colors.black.withValues(alpha: 0.4)
+            : Colors.white.withValues(alpha: 0.4))
         : (isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF5F5F5));
     final textColor = isDark ? Colors.white70 : Colors.black87;
     final iconColor = isDark ? Colors.white54 : Colors.black54;
@@ -117,7 +121,7 @@ class _ReasoningDisplayState extends ConsumerState<ReasoningDisplay>
         color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: hasBackground 
+          color: hasBackground
               ? (isDark ? Colors.white24 : Colors.black26)
               : (isDark ? Colors.white10 : Colors.black12),
           width: 0.5,
@@ -134,11 +138,11 @@ class _ReasoningDisplayState extends ConsumerState<ReasoningDisplay>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
-                    Icon(
-                      AuroraIcons.lightbulb,
-                      size: 18,
-                      color: iconColor,
-                    ),
+                  Icon(
+                    AuroraIcons.lightbulb,
+                    size: 18,
+                    color: iconColor,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     widget.isRunning
@@ -196,8 +200,8 @@ class _ReasoningDisplayState extends ConsumerState<ReasoningDisplay>
                           fontFamily: widget.isWindows ? 'Consolas' : null,
                           color: isDark ? Colors.white60 : Colors.black54,
                         ),
-                        selectionControls: widget.isWindows 
-                            ? fluent.fluentTextSelectionControls 
+                        selectionControls: widget.isWindows
+                            ? fluent.fluentTextSelectionControls
                             : null,
                       ),
                     ],

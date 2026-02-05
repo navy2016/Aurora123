@@ -16,16 +16,20 @@ class AuroraBottomSheet {
       builder: (context) {
         final screenIsDark = theme.brightness == Brightness.dark;
         // If the theme background is transparent (custom background), used a more opaque background for safety
-        final bgColor = theme.scaffoldBackgroundColor.opacity < 0.8
-            ? (screenIsDark ? Colors.black.withOpacity(0.7) : Colors.white.withOpacity(0.7))
+        final bgColor = theme.scaffoldBackgroundColor.a < 0.8
+            ? (screenIsDark
+                ? Colors.black.withValues(alpha: 0.7)
+                : Colors.white.withValues(alpha: 0.7))
             : theme.scaffoldBackgroundColor;
-            
+
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Container(
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -60,14 +64,16 @@ class AuroraBottomSheet {
           children: [
             Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             if (content != null) ...[
               const SizedBox(height: 12),
               Text(
                 content,
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.hintColor),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -129,7 +135,8 @@ class AuroraBottomSheet {
             children: [
               Text(
                 title,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -140,7 +147,7 @@ class AuroraBottomSheet {
                   hintText: hintText,
                   border: const OutlineInputBorder(),
                   filled: true,
-                  fillColor: theme.cardColor.withOpacity(0.5),
+                  fillColor: theme.cardColor.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(height: 24),
@@ -155,7 +162,8 @@ class AuroraBottomSheet {
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
-                      onPressed: () => Navigator.pop(context, controller.text.trim()),
+                      onPressed: () =>
+                          Navigator.pop(context, controller.text.trim()),
                       child: Text(confirmText ?? '确定'),
                     ),
                   ),
@@ -168,7 +176,8 @@ class AuroraBottomSheet {
     );
   }
 
-  static Widget buildTitle(BuildContext context, String title, {Widget? trailing}) {
+  static Widget buildTitle(BuildContext context, String title,
+      {Widget? trailing}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Stack(
@@ -178,7 +187,10 @@ class AuroraBottomSheet {
             width: double.infinity,
             child: Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
           ),

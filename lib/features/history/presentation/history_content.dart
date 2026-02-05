@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
@@ -211,19 +210,19 @@ class _SessionList extends ConsumerWidget {
                 },
                 builder: (context, states) {
                   final theme = fluent.FluentTheme.of(context);
-                  final isHovering = states.isHovered;
+                  final isHovered = states.isHovered;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     width: double.infinity,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isHovering
+                      color: isHovered
                           ? theme.resources.subtleFillColorSecondary
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: isHovering
+                        color: isHovered
                             ? theme.resources.surfaceStrokeColorDefault
                             : Colors.transparent,
                       ),
@@ -239,7 +238,7 @@ class _SessionList extends ConsumerWidget {
                                 color: theme.typography.body?.color,
                                 fontWeight: FontWeight.w500)),
                         const Spacer(),
-                        if (isHovering)
+                        if (isHovered)
                           Icon(AuroraIcons.chevronRight,
                               size: 10,
                               color: theme.resources.textFillColorSecondary),
@@ -403,13 +402,6 @@ class _SessionItemState extends ConsumerState<_SessionItem> {
     });
   }
 
-  void _cancelRenaming() {
-    if (!mounted) return;
-    setState(() {
-      _isRenaming = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = fluent.FluentTheme.of(context);
@@ -423,7 +415,7 @@ class _SessionItemState extends ConsumerState<_SessionItem> {
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? theme.accentColor.normal.withOpacity(0.15)
+                ? theme.accentColor.normal.withValues(alpha: 0.15)
                 : (_isHovering
                     ? theme.resources.subtleFillColorSecondary
                     : Colors.transparent),
@@ -502,8 +494,7 @@ class _SessionItemState extends ConsumerState<_SessionItem> {
                     onPressed: _startRenaming,
                   ),
                   fluent.IconButton(
-                    icon:
-                        const fluent.Icon(AuroraIcons.delete, size: 14),
+                    icon: const fluent.Icon(AuroraIcons.delete, size: 14),
                     onPressed: widget.onDelete,
                   ),
                 ],
@@ -515,8 +506,6 @@ class _SessionItemState extends ConsumerState<_SessionItem> {
     );
   }
 }
-
-
 
 class SessionListWidget extends ConsumerWidget {
   final SessionsState sessionsState;
@@ -675,7 +664,8 @@ class _TapDetectorState extends State<_TapDetector> {
   }
 }
 
-Widget? _buildAssistantAvatar(WidgetRef ref, SessionEntity session, dynamic theme,
+Widget? _buildAssistantAvatar(
+    WidgetRef ref, SessionEntity session, dynamic theme,
     {double size = 20}) {
   final assistantState = ref.watch(assistantProvider);
   Assistant? assistant;

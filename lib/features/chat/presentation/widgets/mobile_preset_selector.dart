@@ -62,7 +62,8 @@ class MobilePresetSelector extends ConsumerWidget {
                 // Removed to separate concerns based on user feedback.
                 // --- Presets Section ---
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
                     '预设 (Presets)',
                     style: TextStyle(
@@ -97,7 +98,9 @@ class MobilePresetSelector extends ConsumerWidget {
                           : null,
                     ),
                     title: Text(preset.name),
-                    subtitle: preset.description.isNotEmpty ? Text(preset.description) : null,
+                    subtitle: preset.description.isNotEmpty
+                        ? Text(preset.description)
+                        : null,
                     onTap: () {
                       ref
                           .read(chatSessionManagerProvider)

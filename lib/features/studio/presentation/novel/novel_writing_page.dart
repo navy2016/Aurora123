@@ -23,7 +23,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
   final _taskInputController = TextEditingController();
   final _newChapterController = TextEditingController();
   final _projectFlyoutController = FlyoutController();
-  
+
   int _selectedNavIndex = 0; // 0: Writing, 1: Context, 2: Preview
 
   @override
@@ -48,7 +48,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
           // Custom Header
           _buildCustomHeader(context, l10n, theme, state, notifier),
           const Divider(),
-          
+
           // Content Body
           Expanded(
             child: _buildBodyContent(context, l10n, theme, state, notifier),
@@ -58,7 +58,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildCustomHeader(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildCustomHeader(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -74,7 +75,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                 onPressed: widget.onBack,
               ),
             ),
-          
+
           // Navigation Tabs (Left Aligned)
           _buildNavTab(context, theme, 0, l10n.writing, AuroraIcons.edit),
           const SizedBox(width: 4),
@@ -83,7 +84,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
           _buildNavTab(context, theme, 2, l10n.preview, AuroraIcons.print),
           const SizedBox(width: 8),
           // Preset Dropdown
-          _buildPresetDropdown(context, theme, state, ref.read(novelProvider.notifier), l10n),
+          _buildPresetDropdown(
+              context, theme, state, ref.read(novelProvider.notifier), l10n),
 
           const Spacer(),
 
@@ -95,25 +97,28 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
             content: Text(l10n.reviewModel),
           ),
           const SizedBox(width: 16),
-          
+
           // Execution Controls
           if (state.isRunning) ...[
             FilledButton(
               onPressed: () => notifier.stopQueue(),
-              style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
+              style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(Colors.red)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(AuroraIcons.stop, size: 12, color: Colors.white),
                   const SizedBox(width: 4),
-                  Text(l10n.stopTask, style: const TextStyle(color: Colors.white)),
+                  Text(l10n.stopTask,
+                      style: const TextStyle(color: Colors.white)),
                 ],
               ),
             ),
             const SizedBox(width: 8),
             Button(
               onPressed: () => notifier.togglePause(),
-              child: Icon(state.isPaused ? AuroraIcons.play : AuroraIcons.pause, size: 12),
+              child: Icon(state.isPaused ? AuroraIcons.play : AuroraIcons.pause,
+                  size: 12),
             ),
           ] else ...[
             Tooltip(
@@ -121,9 +126,10 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                   ? '按顺序执行所有待办任务'
                   : '没有可执行的待办任务',
               child: FilledButton(
-                onPressed: state.allTasks.any((t) => t.status == TaskStatus.pending)
-                    ? () => notifier.startQueue()
-                    : null,
+                onPressed:
+                    state.allTasks.any((t) => t.status == TaskStatus.pending)
+                        ? () => notifier.startQueue()
+                        : null,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -135,7 +141,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               ),
             ),
             // Restart button - only show when there are completed/failed tasks
-            if (state.allTasks.any((t) => t.status == TaskStatus.success || t.status == TaskStatus.failed)) ...[
+            if (state.allTasks.any((t) =>
+                t.status == TaskStatus.success ||
+                t.status == TaskStatus.failed)) ...[
               const SizedBox(width: 8),
               Tooltip(
                 message: '重置所有任务状态，从头开始重新生成',
@@ -145,14 +153,17 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                       context: context,
                       builder: (ctx) => ContentDialog(
                         title: const Text('重新执行所有任务'),
-                        content: const Text('确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。'),
+                        content:
+                            const Text('确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。'),
                         actions: [
                           Button(
                             child: Text(l10n.cancel),
                             onPressed: () => Navigator.pop(ctx),
                           ),
                           FilledButton(
-                            style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.orange)),
+                            style: ButtonStyle(
+                                backgroundColor:
+                                    WidgetStateProperty.all(Colors.orange)),
                             child: const Text('重新执行'),
                             onPressed: () {
                               notifier.restartAllTasks();
@@ -175,9 +186,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               ),
             ],
           ],
-          
+
           const SizedBox(width: 12),
-          
+
           // Settings
           IconButton(
             icon: const Icon(AuroraIcons.settings, size: 16),
@@ -193,7 +204,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildProjectSelector(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildProjectSelector(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     if (state.projects.isEmpty) {
       return SizedBox(
         width: 150,
@@ -206,8 +218,6 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
 
     final projectName = state.selectedProject?.name ?? l10n.selectProject;
 
-
-    
     return Container(
       decoration: BoxDecoration(
         color: theme.resources.controlAltFillColorSecondary,
@@ -228,29 +238,33 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                     ),
                     builder: (context) {
                       return MenuFlyout(
-                        items: state.projects.map((p) => MenuFlyoutItem(
-                          text: Text(p.name),
-                          selected: state.selectedProjectId == p.id,
-                          onPressed: () {
-                            notifier.selectProject(p.id);
-                          },
-                        )).toList(),
+                        items: state.projects
+                            .map((p) => MenuFlyoutItem(
+                                  text: Text(p.name),
+                                  selected: state.selectedProjectId == p.id,
+                                  onPressed: () {
+                                    notifier.selectProject(p.id);
+                                  },
+                                ))
+                            .toList(),
                       );
                     },
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Row(
                     children: [
-                       const Icon(AuroraIcons.file, size: 14),
-                       const SizedBox(width: 8),
+                      const Icon(AuroraIcons.file, size: 14),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           projectName,
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -261,7 +275,10 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               ),
             ),
           ),
-          Container(width: 1, height: 20, color: theme.resources.dividerStrokeColorDefault),
+          Container(
+              width: 1,
+              height: 20,
+              color: theme.resources.dividerStrokeColorDefault),
           Tooltip(
             message: l10n.createProject,
             child: IconButton(
@@ -286,7 +303,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                         onPressed: () => Navigator.pop(context),
                       ),
                       FilledButton(
-                        style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
+                        style: ButtonStyle(
+                            backgroundColor:
+                                WidgetStateProperty.all(Colors.red)),
                         child: Text(l10n.delete),
                         onPressed: () {
                           if (state.selectedProjectId != null) {
@@ -307,7 +326,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildNavTab(BuildContext context, FluentThemeData theme, int index, String title, IconData icon) {
+  Widget _buildNavTab(BuildContext context, FluentThemeData theme, int index,
+      String title, IconData icon) {
     final isSelected = _selectedNavIndex == index;
     if (isSelected) {
       return FilledButton(
@@ -317,7 +337,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
           children: [
             Icon(icon, size: 14, color: Colors.white),
             const SizedBox(width: 6),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+            Text(title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, color: Colors.white)),
           ],
         ),
       );
@@ -327,7 +349,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: theme.typography.body?.color?.withOpacity(0.8)),
+            Icon(icon,
+                size: 14,
+                color: theme.typography.body?.color?.withValues(alpha: 0.8)),
             const SizedBox(width: 6),
             Text(title, style: TextStyle(color: theme.typography.body?.color)),
           ],
@@ -336,20 +360,27 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     }
   }
 
-  Widget _buildPresetDropdown(BuildContext context, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier, AppLocalizations l10n) {
+  Widget _buildPresetDropdown(BuildContext context, FluentThemeData theme,
+      NovelWritingState state, NovelNotifier notifier, AppLocalizations l10n) {
     final presets = state.promptPresets;
     final activePresetId = state.activePromptPresetId;
-    
+
     // Find active preset name
     String selectedLabel = l10n.systemDefault;
     if (activePresetId != null) {
       final active = presets.firstWhere(
         (p) => p.id == activePresetId,
-        orElse: () => NovelPromptPreset(id: '', name: l10n.systemDefault, outlinePrompt: '', decomposePrompt: '', writerPrompt: '', reviewerPrompt: ''),
+        orElse: () => NovelPromptPreset(
+            id: '',
+            name: l10n.systemDefault,
+            outlinePrompt: '',
+            decomposePrompt: '',
+            writerPrompt: '',
+            reviewerPrompt: ''),
       );
       if (active.id.isNotEmpty) selectedLabel = active.name;
     }
-    
+
     return DropDownButton(
       title: Row(
         mainAxisSize: MainAxisSize.min,
@@ -361,7 +392,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       ),
       items: [
         MenuFlyoutItem(
-          text: Text(l10n.systemDefault, style: const TextStyle(fontWeight: FontWeight.bold)),
+          text: Text(l10n.systemDefault,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           onPressed: () {
             notifier.setOutlinePrompt(NovelPromptPresets.outline);
             notifier.setDecomposePrompt(NovelPromptPresets.decompose);
@@ -372,20 +404,29 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
         ),
         if (presets.isNotEmpty) const MenuFlyoutSeparator(),
         ...presets.map((preset) => MenuFlyoutItem(
-          text: Text(preset.name),
-          onPressed: () {
-            if (preset.outlinePrompt.isNotEmpty) notifier.setOutlinePrompt(preset.outlinePrompt);
-            if (preset.decomposePrompt.isNotEmpty) notifier.setDecomposePrompt(preset.decomposePrompt);
-            if (preset.writerPrompt.isNotEmpty) notifier.setWriterPrompt(preset.writerPrompt);
-            if (preset.reviewerPrompt.isNotEmpty) notifier.setReviewerPrompt(preset.reviewerPrompt);
-            notifier.setActivePromptPresetId(preset.id);
-          },
-        )),
+              text: Text(preset.name),
+              onPressed: () {
+                if (preset.outlinePrompt.isNotEmpty) {
+                  notifier.setOutlinePrompt(preset.outlinePrompt);
+                }
+                if (preset.decomposePrompt.isNotEmpty) {
+                  notifier.setDecomposePrompt(preset.decomposePrompt);
+                }
+                if (preset.writerPrompt.isNotEmpty) {
+                  notifier.setWriterPrompt(preset.writerPrompt);
+                }
+                if (preset.reviewerPrompt.isNotEmpty) {
+                  notifier.setReviewerPrompt(preset.reviewerPrompt);
+                }
+                notifier.setActivePromptPresetId(preset.id);
+              },
+            )),
       ],
     );
   }
 
-  Widget _buildBodyContent(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildBodyContent(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     switch (_selectedNavIndex) {
       case 0:
         return _buildWritingView(context, l10n, theme, state, notifier);
@@ -398,13 +439,6 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     }
   }
 
-  Widget _mapProjectName(String name) {
-    if (name.length > 20) {
-      return Text('${name.substring(0, 20)}...', overflow: TextOverflow.ellipsis);
-    }
-    return Text(name);
-  }
-
   Widget _buildCard(FluentThemeData theme, Widget child) {
     return Container(
       decoration: BoxDecoration(
@@ -412,7 +446,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
@@ -424,7 +458,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildWritingView(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildWritingView(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     return Container(
       color: Colors.transparent,
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
@@ -459,10 +494,11 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildOutlinePanel(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildOutlinePanel(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     final outline = state.selectedProject?.outline ?? '';
     final hasOutline = outline.isNotEmpty;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -477,7 +513,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                   Text(l10n.outlineSettings, style: theme.typography.subtitle),
                   const Spacer(),
                   if (hasOutline)
-                     Tooltip(
+                    Tooltip(
                       message: l10n.clearOutline,
                       child: IconButton(
                         icon: const Icon(AuroraIcons.delete, size: 14),
@@ -490,157 +526,182 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildProjectSelector(context, l10n, theme, state, notifier),
+                    child: _buildProjectSelector(
+                        context, l10n, theme, state, notifier),
                   ),
                 ],
               ),
             ],
           ),
         ),
-              const Divider(),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: !hasOutline ? _buildOutlineEmptyState(theme, l10n, notifier, state) : _buildOutlineEditor(theme, l10n, notifier, outline),
-                ),
-              ),
-              if (hasOutline)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.resources.layerFillColorAlt,
-                    border: Border(top: BorderSide(color: theme.resources.dividerStrokeColorDefault)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: state.isDecomposing ? null : () => _handleDecompose(context, l10n, state, notifier),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (state.isDecomposing)
-                                  const SizedBox(
-                                    width: 16, 
-                                    height: 16, 
-                                    child: ProgressRing(strokeWidth: 2),
-                                  )
-                                else
-                                  Icon(state.selectedProject!.chapters.isEmpty ? AuroraIcons.add : AuroraIcons.refresh, size: 16),
-                                const SizedBox(width: 8),
-                                Text(state.isDecomposing 
-                                    ? l10n.generating 
-                                    : (state.selectedProject!.chapters.isEmpty ? l10n.generateChapters : l10n.regenerateChapters)),
-                              ],
-                            ),
-                          ),
-                        ),
+        const Divider(),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: !hasOutline
+                ? _buildOutlineEmptyState(theme, l10n, notifier, state)
+                : _buildOutlineEditor(theme, l10n, notifier, outline),
+          ),
+        ),
+        if (hasOutline)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.resources.layerFillColorAlt,
+              border: Border(
+                  top: BorderSide(
+                      color: theme.resources.dividerStrokeColorDefault)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: state.isDecomposing
+                        ? null
+                        : () =>
+                            _handleDecompose(context, l10n, state, notifier),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (state.isDecomposing)
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: ProgressRing(strokeWidth: 2),
+                            )
+                          else
+                            Icon(
+                                state.selectedProject!.chapters.isEmpty
+                                    ? AuroraIcons.add
+                                    : AuroraIcons.refresh,
+                                size: 16),
+                          const SizedBox(width: 8),
+                          Text(state.isDecomposing
+                              ? l10n.generating
+                              : (state.selectedProject!.chapters.isEmpty
+                                  ? l10n.generateChapters
+                                  : l10n.regenerateChapters)),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-            ],
-          );
-        }
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 
-        Widget _buildOutlineEmptyState(FluentThemeData theme, AppLocalizations l10n, NovelNotifier notifier, NovelWritingState state) {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(AuroraIcons.edit, size: 48, color: theme.accentColor),
-              const SizedBox(height: 16),
-              Text(l10n.startConceiving, style: theme.typography.bodyStrong),
-              const SizedBox(height: 8),
-              Text(l10n.outlineHint, style: theme.typography.caption, textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              TextBox(
-                controller: _taskInputController,
-                placeholder: l10n.outlinePlaceholder,
-                minLines: 3,
-                maxLines: 6,
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: state.isGeneratingOutline ? null : () {
+  Widget _buildOutlineEmptyState(FluentThemeData theme, AppLocalizations l10n,
+      NovelNotifier notifier, NovelWritingState state) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(AuroraIcons.edit, size: 48, color: theme.accentColor),
+        const SizedBox(height: 16),
+        Text(l10n.startConceiving, style: theme.typography.bodyStrong),
+        const SizedBox(height: 8),
+        Text(l10n.outlineHint,
+            style: theme.typography.caption, textAlign: TextAlign.center),
+        const SizedBox(height: 24),
+        TextBox(
+          controller: _taskInputController,
+          placeholder: l10n.outlinePlaceholder,
+          minLines: 3,
+          maxLines: 6,
+        ),
+        const SizedBox(height: 16),
+        FilledButton(
+          onPressed: state.isGeneratingOutline
+              ? null
+              : () {
                   final text = _taskInputController.text.trim();
                   if (text.isNotEmpty) {
                     notifier.generateOutline(text);
                     _taskInputController.clear();
                   }
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (state.isGeneratingOutline)
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: ProgressRing(strokeWidth: 2),
-                        )
-                      else
-                        const SizedBox.shrink(),
-                      if (state.isGeneratingOutline) const SizedBox(width: 8),
-                      Text(state.isGeneratingOutline ? l10n.generating : l10n.generateOutline),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (state.isGeneratingOutline)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: ProgressRing(strokeWidth: 2),
+                  )
+                else
+                  const SizedBox.shrink(),
+                if (state.isGeneratingOutline) const SizedBox(width: 8),
+                Text(state.isGeneratingOutline
+                    ? l10n.generating
+                    : l10n.generateOutline),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-        Widget _buildOutlineEditor(FluentThemeData theme, AppLocalizations l10n, NovelNotifier notifier, String outline) {
-          return TextBox(
-            controller: TextEditingController(text: outline),
-            expands: true,
-            maxLines: null,
-            decoration: WidgetStateProperty.all(const BoxDecoration(color: Colors.transparent)),
-            placeholder: l10n.editOutlinePlaceholder,
-            style: const TextStyle(fontSize: 14, height: 1.5),
-            onChanged: (value) => notifier.updateProjectOutline(value),
-          );
-        }
+  Widget _buildOutlineEditor(FluentThemeData theme, AppLocalizations l10n,
+      NovelNotifier notifier, String outline) {
+    return TextBox(
+      controller: TextEditingController(text: outline),
+      expands: true,
+      maxLines: null,
+      decoration: WidgetStateProperty.all(
+          const BoxDecoration(color: Colors.transparent)),
+      placeholder: l10n.editOutlinePlaceholder,
+      style: const TextStyle(fontSize: 14, height: 1.5),
+      onChanged: (value) => notifier.updateProjectOutline(value),
+    );
+  }
 
-        void _handleDecompose(BuildContext context, AppLocalizations l10n, NovelWritingState state, NovelNotifier notifier) {
-          if (state.selectedProject?.chapters.isNotEmpty ?? false) {
-            showDialog(
-              context: context,
-              builder: (context) => ContentDialog(
-                title: Text(l10n.clearAndRegenerate),
-                content: Text(l10n.clearChaptersWarning),
-                actions: [
-                  Button(
-                    child: Text(l10n.cancel),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  FilledButton(
-                    style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
-                    child: Text(l10n.clearAndRegenerate),
-                    onPressed: () {
-                      notifier.clearChaptersAndTasks();
-                      notifier.decomposeFromOutline();
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-            );
-          } else {
-            notifier.decomposeFromOutline();
-          }
-        }
+  void _handleDecompose(BuildContext context, AppLocalizations l10n,
+      NovelWritingState state, NovelNotifier notifier) {
+    if (state.selectedProject?.chapters.isNotEmpty ?? false) {
+      showDialog(
+        context: context,
+        builder: (context) => ContentDialog(
+          title: Text(l10n.clearAndRegenerate),
+          content: Text(l10n.clearChaptersWarning),
+          actions: [
+            Button(
+              child: Text(l10n.cancel),
+              onPressed: () => Navigator.pop(context),
+            ),
+            FilledButton(
+              style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(Colors.red)),
+              child: Text(l10n.clearAndRegenerate),
+              onPressed: () {
+                notifier.clearChaptersAndTasks();
+                notifier.decomposeFromOutline();
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      );
+    } else {
+      notifier.decomposeFromOutline();
+    }
+  }
 
-  Widget _buildContextView(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildContextView(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     if (state.selectedProject == null) {
       return Center(child: Text(l10n.selectProject));
     }
-    
+
     final ctx = state.selectedProject!.worldContext;
-    
+
     return Container(
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       child: _buildCard(
@@ -667,14 +728,17 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                           context: context,
                           builder: (ctx) => ContentDialog(
                             title: const Text('清空世界设定'),
-                            content: const Text('确定要清空所有世界设定数据吗？\n（人物设定、人物关系、场景地点、伏笔/线索等）'),
+                            content: const Text(
+                                '确定要清空所有世界设定数据吗？\n（人物设定、人物关系、场景地点、伏笔/线索等）'),
                             actions: [
                               Button(
                                 child: Text(l10n.cancel),
                                 onPressed: () => Navigator.pop(ctx),
                               ),
                               FilledButton(
-                                style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
+                                style: ButtonStyle(
+                                    backgroundColor:
+                                        WidgetStateProperty.all(Colors.red)),
                                 child: const Text('清空'),
                                 onPressed: () {
                                   notifier.clearWorldContext();
@@ -701,27 +765,32 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                     children: [
                       ToggleButton(
                         checked: ctx.includeRules,
-                        onChanged: (v) => notifier.toggleContextCategory('rules', v),
+                        onChanged: (v) =>
+                            notifier.toggleContextCategory('rules', v),
                         child: Text(l10n.worldRules),
                       ),
                       ToggleButton(
                         checked: ctx.includeCharacters,
-                        onChanged: (v) => notifier.toggleContextCategory('characters', v),
+                        onChanged: (v) =>
+                            notifier.toggleContextCategory('characters', v),
                         child: Text(l10n.characterSettings),
                       ),
                       ToggleButton(
                         checked: ctx.includeRelationships,
-                        onChanged: (v) => notifier.toggleContextCategory('relationships', v),
+                        onChanged: (v) =>
+                            notifier.toggleContextCategory('relationships', v),
                         child: Text(l10n.relationships),
                       ),
                       ToggleButton(
                         checked: ctx.includeLocations,
-                        onChanged: (v) => notifier.toggleContextCategory('locations', v),
+                        onChanged: (v) =>
+                            notifier.toggleContextCategory('locations', v),
                         child: Text(l10n.locations),
                       ),
                       ToggleButton(
                         checked: ctx.includeForeshadowing,
-                        onChanged: (v) => notifier.toggleContextCategory('foreshadowing', v),
+                        onChanged: (v) =>
+                            notifier.toggleContextCategory('foreshadowing', v),
                         child: Text(l10n.foreshadowing),
                       ),
                     ],
@@ -729,11 +798,14 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                   const SizedBox(height: 24),
                   _buildContextSection(l10n.worldRules, ctx.rules, theme, l10n),
                   const SizedBox(height: 16),
-                  _buildContextSection(l10n.characterSettings, ctx.characters, theme, l10n),
+                  _buildContextSection(
+                      l10n.characterSettings, ctx.characters, theme, l10n),
                   const SizedBox(height: 16),
-                  _buildContextSection(l10n.relationships, ctx.relationships, theme, l10n),
+                  _buildContextSection(
+                      l10n.relationships, ctx.relationships, theme, l10n),
                   const SizedBox(height: 16),
-                  _buildContextSection(l10n.locations, ctx.locations, theme, l10n),
+                  _buildContextSection(
+                      l10n.locations, ctx.locations, theme, l10n),
                   const SizedBox(height: 16),
                   _buildForeshadowingSection(ctx.foreshadowing, theme, l10n),
                 ],
@@ -745,7 +817,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildContextSection(String title, Map<String, String> data, FluentThemeData theme, AppLocalizations l10n) {
+  Widget _buildContextSection(String title, Map<String, String> data,
+      FluentThemeData theme, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -755,20 +828,22 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
           Text(l10n.noDataYet, style: theme.typography.caption)
         else
           ...data.entries.map((e) => Padding(
-            padding: const EdgeInsets.only(left: 12, bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('• ${e.key}: ', style: const TextStyle(fontWeight: FontWeight.w600)),
-                Expanded(child: Text(e.value)),
-              ],
-            ),
-          )),
+                padding: const EdgeInsets.only(left: 12, bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('• ${e.key}: ',
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Expanded(child: Text(e.value)),
+                  ],
+                ),
+              )),
       ],
     );
   }
 
-  Widget _buildForeshadowingSection(List<String> data, FluentThemeData theme, AppLocalizations l10n) {
+  Widget _buildForeshadowingSection(
+      List<String> data, FluentThemeData theme, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -778,14 +853,15 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
           Text(l10n.noDataYet, style: theme.typography.caption)
         else
           ...data.map((f) => Padding(
-            padding: const EdgeInsets.only(left: 12, bottom: 4),
-            child: Text('• $f'),
-          )),
+                padding: const EdgeInsets.only(left: 12, bottom: 4),
+                child: Text('• $f'),
+              )),
       ],
     );
   }
 
-  Widget _buildExportView(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildExportView(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     if (state.selectedProject == null) {
       return Center(child: Text(l10n.selectProject));
     }
@@ -796,7 +872,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     final totalChapters = stats['totalChapters'] ?? 0;
     final completedChapters = stats['completedChapters'] ?? 0;
     final totalWords = stats['totalWords'] ?? 0;
-    
+
     return Container(
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       child: _buildCard(
@@ -811,11 +887,13 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${l10n.preview}: $projectName', style: theme.typography.subtitle),
+                      Text('${l10n.preview}: $projectName',
+                          style: theme.typography.subtitle),
                       const SizedBox(height: 4),
                       Text(
                         '$completedChapters/$totalChapters 章完成 · $totalWords 字',
-                        style: theme.typography.caption?.copyWith(color: theme.inactiveColor),
+                        style: theme.typography.caption
+                            ?.copyWith(color: theme.inactiveColor),
                       ),
                     ],
                   ),
@@ -845,7 +923,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                 padding: const EdgeInsets.all(24),
                 child: SelectableText(
                   content.isEmpty ? l10n.noContentYet : content,
-                  style: theme.typography.body?.copyWith(fontSize: 16, height: 1.6),
+                  style: theme.typography.body
+                      ?.copyWith(fontSize: 16, height: 1.6),
                 ),
               ),
             ),
@@ -855,11 +934,13 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildChapterTaskTree(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildChapterTaskTree(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     if (state.selectedProject == null) {
-      return Center(child: Text(l10n.selectProject, style: theme.typography.body));
+      return Center(
+          child: Text(l10n.selectProject, style: theme.typography.body));
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -875,7 +956,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                 message: l10n.addChapter,
                 child: IconButton(
                   icon: const Icon(AuroraIcons.add, size: 14),
-                  onPressed: () => _showNewChapterDialog(context, l10n, notifier),
+                  onPressed: () =>
+                      _showNewChapterDialog(context, l10n, notifier),
                 ),
               ),
             ],
@@ -889,7 +971,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
             itemBuilder: (context, index) {
               final chapter = state.selectedProject!.chapters[index];
               final tasks = state.tasksForChapter(chapter.id);
-              
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Column(
@@ -897,7 +979,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                   children: [
                     // Chapter header - flat style, no folding
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
                         color: theme.resources.layerFillColorAlt,
                         borderRadius: BorderRadius.circular(4),
@@ -906,28 +989,36 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                         children: [
                           Expanded(
                             child: Text(
-                              chapter.title, 
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              chapter.title,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           IconButton(
                             icon: const Icon(AuroraIcons.add, size: 12),
-                            onPressed: () => _showNewTaskDialog(context, l10n, notifier, chapter.id),
+                            onPressed: () => _showNewTaskDialog(
+                                context, l10n, notifier, chapter.id),
                           ),
                           IconButton(
                             icon: const Icon(AuroraIcons.delete, size: 12),
                             onPressed: () {
-                               showDialog(
+                              showDialog(
                                 context: context,
                                 builder: (context) => ContentDialog(
                                   title: const Text('Delete Chapter'),
                                   content: Text(l10n.deleteChapterConfirm),
                                   actions: [
-                                    Button(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
+                                    Button(
+                                        child: Text(l10n.cancel),
+                                        onPressed: () =>
+                                            Navigator.pop(context)),
                                     FilledButton(
-                                      style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
+                                      style: ButtonStyle(
+                                          backgroundColor:
+                                              WidgetStateProperty.all(
+                                                  Colors.red)),
                                       child: Text(l10n.delete),
                                       onPressed: () {
                                         notifier.deleteChapter(chapter.id);
@@ -945,15 +1036,21 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                     // Tasks list - always visible
                     if (tasks.isEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
-                        child: Text(l10n.noTasks, style: theme.typography.caption?.copyWith(fontStyle: FontStyle.italic)),
+                        padding:
+                            const EdgeInsets.only(left: 16, top: 4, bottom: 4),
+                        child: Text(l10n.noTasks,
+                            style: theme.typography.caption
+                                ?.copyWith(fontStyle: FontStyle.italic)),
                       )
                     else
                       Padding(
                         padding: const EdgeInsets.only(left: 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: tasks.map((task) => _buildTaskListItem(context, theme, task, state, notifier)).toList(),
+                          children: tasks
+                              .map((task) => _buildTaskListItem(
+                                  context, theme, task, state, notifier))
+                              .toList(),
                         ),
                       ),
                   ],
@@ -966,7 +1063,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildTaskListItem(BuildContext context, FluentThemeData theme, NovelTask task, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildTaskListItem(BuildContext context, FluentThemeData theme,
+      NovelTask task, NovelWritingState state, NovelNotifier notifier) {
     final isSelected = task.id == state.selectedTaskId;
     return GestureDetector(
       onTap: () => notifier.selectTask(task.id),
@@ -974,7 +1072,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? theme.accentColor.withOpacity(0.1) : Colors.transparent,
+          color: isSelected
+              ? theme.accentColor.withValues(alpha: 0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -985,7 +1085,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               child: Text(
                 task.description,
                 style: task.status == TaskStatus.success
-                    ? TextStyle(decoration: TextDecoration.lineThrough, color: theme.inactiveColor)
+                    ? TextStyle(
+                        decoration: TextDecoration.lineThrough,
+                        color: theme.inactiveColor)
                     : null,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1001,7 +1103,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                       onPressed: () => notifier.runSingleTask(task.id),
                     ),
                   IconButton(
-                    icon: Icon(AuroraIcons.delete, size: 12, color: Colors.red.light),
+                    icon: Icon(AuroraIcons.delete,
+                        size: 12, color: Colors.red.light),
                     onPressed: () => notifier.deleteTask(task.id),
                   ),
                 ],
@@ -1012,49 +1115,60 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     );
   }
 
-  Widget _buildTaskDetailPanel(BuildContext context, AppLocalizations l10n, FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+  Widget _buildTaskDetailPanel(BuildContext context, AppLocalizations l10n,
+      FluentThemeData theme, NovelWritingState state, NovelNotifier notifier) {
     final task = state.selectedTask;
-    
+
     if (task == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(AuroraIcons.list, size: 48, color: theme.accentColor),
-              const SizedBox(height: 16),
-              Text(l10n.selectTaskToView, style: theme.typography.bodyStrong),
-            ],
-          ),
-        );
-      }
-      
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                const Icon(AuroraIcons.view, size: 16),
-                const SizedBox(width: 8),
-                Text(l10n.taskDetails, style: theme.typography.subtitle),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(task.status, theme).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: _getStatusColor(task.status, theme)),
-                  ),
-                  child: Text(
-                    _getStatusLabel(task.status, l10n),
-                    style: TextStyle(color: _getStatusColor(task.status, theme), fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ),
+            const SizedBox(height: 16),
+            Text(l10n.selectTaskToView, style: theme.typography.bodyStrong),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              const Icon(AuroraIcons.view, size: 16),
               const SizedBox(width: 8),
-              if (task.status == TaskStatus.running || task.status == TaskStatus.decomposing)
-                 const SizedBox(width: 20, height: 20, child: ProgressRing(strokeWidth: 2.5))
-              else if (task.status == TaskStatus.pending || task.status == TaskStatus.failed)
+              Text(l10n.taskDetails, style: theme.typography.subtitle),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(task.status, theme)
+                      .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border:
+                      Border.all(color: _getStatusColor(task.status, theme)),
+                ),
+                child: Text(
+                  _getStatusLabel(task.status, l10n),
+                  style: TextStyle(
+                      color: _getStatusColor(task.status, theme),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (task.status == TaskStatus.running ||
+                  task.status == TaskStatus.decomposing)
+                const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: ProgressRing(strokeWidth: 2.5))
+              else if (task.status == TaskStatus.pending ||
+                  task.status == TaskStatus.failed)
                 FilledButton(
                   onPressed: () => notifier.runSingleTask(task.id),
                   child: Text(l10n.executeTask),
@@ -1079,7 +1193,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                 TextBox(
                   controller: TextEditingController(text: task.description),
                   maxLines: null,
-                  onChanged: (value) => notifier.updateTaskDescription(task.id, value),
+                  onChanged: (value) =>
+                      notifier.updateTaskDescription(task.id, value),
                   decoration: WidgetStateProperty.all(BoxDecoration(
                     color: theme.resources.layerFillColorAlt,
                     borderRadius: BorderRadius.circular(4),
@@ -1088,7 +1203,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                 const SizedBox(height: 24),
                 Row(
                   children: [
-                    Text(l10n.generatedContent, style: theme.typography.bodyStrong),
+                    Text(l10n.generatedContent,
+                        style: theme.typography.bodyStrong),
                     const Spacer(),
                     if (task.content?.isNotEmpty ?? false)
                       Tooltip(
@@ -1096,7 +1212,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                         child: IconButton(
                           icon: const Icon(AuroraIcons.copy, size: 14),
                           onPressed: () {
-                            Clipboard.setData(ClipboardData(text: task.content ?? ''));
+                            Clipboard.setData(
+                                ClipboardData(text: task.content ?? ''));
                           },
                         ),
                       ),
@@ -1108,24 +1225,27 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      border: Border.all(color: theme.resources.dividerStrokeColorDefault),
+                      border: Border.all(
+                          color: theme.resources.dividerStrokeColorDefault),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Center(
-                      child: Text(l10n.waitingForGeneration, style: theme.typography.caption),
+                      child: Text(l10n.waitingForGeneration,
+                          style: theme.typography.caption),
                     ),
                   )
                 else
                   TextBox(
-                     controller: TextEditingController(text: task.content),
-                     maxLines: null,
-                     readOnly: true,
-                     decoration: WidgetStateProperty.all(BoxDecoration(
-                       color: theme.resources.layerFillColorAlt,
-                       borderRadius: BorderRadius.circular(4),
-                     )),
+                    controller: TextEditingController(text: task.content),
+                    maxLines: null,
+                    readOnly: true,
+                    decoration: WidgetStateProperty.all(BoxDecoration(
+                      color: theme.resources.layerFillColorAlt,
+                      borderRadius: BorderRadius.circular(4),
+                    )),
                   ),
-                if (task.reviewFeedback != null && task.reviewFeedback!.isNotEmpty) ...[
+                if (task.reviewFeedback != null &&
+                    task.reviewFeedback!.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   Text(l10n.reviewFeedback, style: theme.typography.bodyStrong),
                   const SizedBox(height: 8),
@@ -1133,8 +1253,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.05),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      color: Colors.red.withValues(alpha: 0.05),
+                      border:
+                          Border.all(color: Colors.red.withValues(alpha: 0.3)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(task.reviewFeedback!),
@@ -1147,11 +1268,13 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                     children: [
                       Button(
                         onPressed: () => notifier.runSingleTask(task.id),
-                        child: Text('${l10n.reject} (${l10n.regenerate})', style: TextStyle(color: Colors.red.light)),
+                        child: Text('${l10n.reject} (${l10n.regenerate})',
+                            style: TextStyle(color: Colors.red.light)),
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
-                        onPressed: () => notifier.updateTaskStatus(task.id, TaskStatus.success),
+                        onPressed: () => notifier.updateTaskStatus(
+                            task.id, TaskStatus.success),
                         child: Text(l10n.approve),
                       ),
                     ],
@@ -1167,51 +1290,75 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
 
   Widget _buildStatusIcon(TaskStatus status, FluentThemeData theme) {
     switch (status) {
-      case TaskStatus.pending: return const Icon(AuroraIcons.pending, size: 16);
+      case TaskStatus.pending:
+        return const Icon(AuroraIcons.pending, size: 16);
       case TaskStatus.decomposing:
       case TaskStatus.running:
-      case TaskStatus.reviewing: return const SizedBox(width: 16, height: 16, child: ProgressRing(strokeWidth: 2));
-      case TaskStatus.needsRevision: return Icon(AuroraIcons.warning, size: 16, color: Colors.orange);
-      case TaskStatus.success: return Icon(AuroraIcons.success, size: 16, color: Colors.green);
-      case TaskStatus.failed: return Icon(AuroraIcons.error, size: 16, color: Colors.red);
-      case TaskStatus.paused: return const Icon(AuroraIcons.pause, size: 16);
+      case TaskStatus.reviewing:
+        return const SizedBox(
+            width: 16, height: 16, child: ProgressRing(strokeWidth: 2));
+      case TaskStatus.needsRevision:
+        return Icon(AuroraIcons.warning, size: 16, color: Colors.orange);
+      case TaskStatus.success:
+        return Icon(AuroraIcons.success, size: 16, color: Colors.green);
+      case TaskStatus.failed:
+        return Icon(AuroraIcons.error, size: 16, color: Colors.red);
+      case TaskStatus.paused:
+        return const Icon(AuroraIcons.pause, size: 16);
     }
   }
-  
+
   Color _getStatusColor(TaskStatus status, FluentThemeData theme) {
     switch (status) {
-      case TaskStatus.pending: return theme.inactiveColor;
+      case TaskStatus.pending:
+        return theme.inactiveColor;
       case TaskStatus.decomposing:
-      case TaskStatus.running: return Colors.blue;
-      case TaskStatus.reviewing: return Colors.orange;
-      case TaskStatus.needsRevision: return Colors.orange;
-      case TaskStatus.success: return Colors.green;
-      case TaskStatus.failed: return Colors.red;
-      case TaskStatus.paused: return Colors.grey;
+      case TaskStatus.running:
+        return Colors.blue;
+      case TaskStatus.reviewing:
+        return Colors.orange;
+      case TaskStatus.needsRevision:
+        return Colors.orange;
+      case TaskStatus.success:
+        return Colors.green;
+      case TaskStatus.failed:
+        return Colors.red;
+      case TaskStatus.paused:
+        return Colors.grey;
     }
   }
 
   String _getStatusLabel(TaskStatus status, AppLocalizations l10n) {
     switch (status) {
-      case TaskStatus.pending: return l10n.pending;
-      case TaskStatus.decomposing: return l10n.decomposing;
-      case TaskStatus.running: return l10n.running;
-      case TaskStatus.needsRevision: return '待重试';
-      case TaskStatus.success: return l10n.success;
-      case TaskStatus.failed: return l10n.failed;
-      case TaskStatus.paused: return l10n.paused;
-      case TaskStatus.reviewing: return l10n.reviewing;
+      case TaskStatus.pending:
+        return l10n.pending;
+      case TaskStatus.decomposing:
+        return l10n.decomposing;
+      case TaskStatus.running:
+        return l10n.running;
+      case TaskStatus.needsRevision:
+        return '待重试';
+      case TaskStatus.success:
+        return l10n.success;
+      case TaskStatus.failed:
+        return l10n.failed;
+      case TaskStatus.paused:
+        return l10n.paused;
+      case TaskStatus.reviewing:
+        return l10n.reviewing;
     }
   }
 
-  void _showNewProjectDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) {
+  void _showNewProjectDialog(
+      BuildContext context, AppLocalizations l10n, NovelNotifier notifier) {
     showDialog(
       context: context,
       builder: (ctx) => const CreateProjectDialog(),
     );
   }
 
-  void _showNewChapterDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier) async {
+  void _showNewChapterDialog(BuildContext context, AppLocalizations l10n,
+      NovelNotifier notifier) async {
     final title = await AuroraBottomSheet.showInput(
       context: context,
       title: l10n.addChapter,
@@ -1222,7 +1369,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     }
   }
 
-  void _showNewTaskDialog(BuildContext context, AppLocalizations l10n, NovelNotifier notifier, String chapterId) async {
+  void _showNewTaskDialog(BuildContext context, AppLocalizations l10n,
+      NovelNotifier notifier, String chapterId) async {
     final task = await AuroraBottomSheet.showInput(
       context: context,
       title: l10n.createTask,

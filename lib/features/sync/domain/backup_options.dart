@@ -20,7 +20,8 @@ class BackupOptions {
     return BackupOptions(
       includeChatHistory: includeChatHistory ?? this.includeChatHistory,
       includeChatPresets: includeChatPresets ?? this.includeChatPresets,
-      includeProviderConfigs: includeProviderConfigs ?? this.includeProviderConfigs,
+      includeProviderConfigs:
+          includeProviderConfigs ?? this.includeProviderConfigs,
       includeStudioContent: includeStudioContent ?? this.includeStudioContent,
     );
   }

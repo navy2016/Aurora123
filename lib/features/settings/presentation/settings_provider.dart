@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -28,20 +29,20 @@ class ProviderConfig {
   final List<String> models;
   final String? selectedModel;
   final bool isEnabled;
-  
+
   /// Returns the current API key based on currentKeyIndex (with bounds checking)
   String get apiKey {
     if (apiKeys.isEmpty) return '';
     final safeIndex = currentKeyIndex.clamp(0, apiKeys.length - 1);
     return apiKeys[safeIndex];
   }
-  
+
   /// Returns a safe current key index (clamped to valid range)
   int get safeCurrentKeyIndex {
     if (apiKeys.isEmpty) return 0;
     return currentKeyIndex.clamp(0, apiKeys.length - 1);
   }
-  
+
   ProviderConfig({
     required this.id,
     required this.name,
@@ -59,7 +60,7 @@ class ProviderConfig {
     this.selectedModel,
     this.isEnabled = true,
   });
-  
+
   ProviderConfig copyWith({
     String? name,
     String? color,
@@ -93,7 +94,7 @@ class ProviderConfig {
       isEnabled: isEnabled ?? this.isEnabled,
     );
   }
-  
+
   bool isModelEnabled(String modelId) {
     if (modelSettings.containsKey(modelId)) {
       final settings = modelSettings[modelId]!;
@@ -296,7 +297,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           backgroundBlur: backgroundBlur,
           useCustomTheme: useCustomTheme,
         )) {
-    print('SettingsNotifier initialized with backgroundImagePath: $backgroundImagePath');
+    debugPrint(
+        'SettingsNotifier initialized with backgroundImagePath: $backgroundImagePath');
     loadPresets();
   }
 
@@ -339,7 +341,9 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           } catch (_) {}
         }
         List<String> apiKeys = e.apiKeys;
+        // ignore: deprecated_member_use_from_same_package
         if (apiKeys.isEmpty && e.apiKey.isNotEmpty) {
+          // ignore: deprecated_member_use_from_same_package
           apiKeys = [e.apiKey];
         }
         return ProviderConfig(
@@ -394,11 +398,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       backgroundBlur: appSettings?.backgroundBlur ?? 0.0,
       useCustomTheme: appSettings?.useCustomTheme ?? false,
     );
-    print('Settings reloaded with backgroundImagePath: ${appSettings?.backgroundImagePath}');
-    print('DEBUG: refreshSettings loaded - executionModel: ${appSettings?.executionModel}, executionProviderId: ${appSettings?.executionProviderId}');
+    debugPrint(
+        'Settings reloaded with backgroundImagePath: ${appSettings?.backgroundImagePath}');
+    debugPrint(
+        'DEBUG: refreshSettings loaded - executionModel: ${appSettings?.executionModel}, executionProviderId: ${appSettings?.executionProviderId}');
 
     await loadPresets();
   }
+
   void viewProvider(String id) {
     if (state.viewingProviderId != id) {
       state = state.copyWith(viewingProviderId: id, error: null);
@@ -509,7 +516,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final lightness = 0.4 + random.nextDouble() * 0.2; // 0.4-0.6
     final color = HSLColor.fromAHSL(1.0, hue, saturation, lightness).toColor();
     final colorHex =
-        '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
+        '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
 
     final newProvider = ProviderConfig(
       id: newId,
@@ -567,9 +574,9 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final items = List<ProviderConfig>.from(state.providers);
     final item = items.removeAt(oldIndex);
     items.insert(newIndex, item);
-    
+
     state = state.copyWith(providers: items);
-    
+
     final orderIds = items.map((p) => p.id).toList();
     await _storage.saveProviderOrder(orderIds);
   }
@@ -578,32 +585,34 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final provider = state.providers.firstWhere((p) => p.id == providerId);
     final currentSettings = provider.modelSettings[modelId] ?? {};
     final isDisabled = currentSettings['_aurora_model_disabled'] == true;
-    
+
     final newSettings = Map<String, dynamic>.from(currentSettings);
     newSettings['_aurora_model_disabled'] = !isDisabled;
-    
-    final newModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+
+    final newModelSettings =
+        Map<String, Map<String, dynamic>>.from(provider.modelSettings);
     newModelSettings[modelId] = newSettings;
-    
+
     await updateProvider(id: providerId, modelSettings: newModelSettings);
   }
 
   Future<void> setAllModelsEnabled(String providerId, bool enabled) async {
     final provider = state.providers.firstWhere((p) => p.id == providerId);
-    final newModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
-    
+    final newModelSettings =
+        Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+
     for (final modelId in provider.models) {
       final currentSettings = newModelSettings[modelId] ?? {};
       final newSettings = Map<String, dynamic>.from(currentSettings);
       newSettings['_aurora_model_disabled'] = !enabled;
       newModelSettings[modelId] = newSettings;
     }
-    
+
     await updateProvider(id: providerId, modelSettings: newModelSettings);
   }
 
   // ==================== API Key Management Methods ====================
-  
+
   /// Add a new API key to a provider
   Future<void> addApiKey(String providerId, String key) async {
     if (key.trim().isEmpty) return;
@@ -621,11 +630,13 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     if (newIndex >= newKeys.length) {
       newIndex = newKeys.isEmpty ? 0 : newKeys.length - 1;
     }
-    await updateProvider(id: providerId, apiKeys: newKeys, currentKeyIndex: newIndex);
+    await updateProvider(
+        id: providerId, apiKeys: newKeys, currentKeyIndex: newIndex);
   }
 
   /// Update an API key at the specified index
-  Future<void> updateApiKeyAtIndex(String providerId, int index, String key) async {
+  Future<void> updateApiKeyAtIndex(
+      String providerId, int index, String key) async {
     final provider = state.providers.firstWhere((p) => p.id == providerId);
     if (index < 0 || index >= provider.apiKeys.length) return;
     final newKeys = List<String>.from(provider.apiKeys);
@@ -668,13 +679,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     required Map<String, dynamic> settings,
   }) async {
     final provider = state.providers.firstWhere((p) => p.id == providerId);
-    final newModelSettings = Map<String, Map<String, dynamic>>.from(provider.modelSettings);
+    final newModelSettings =
+        Map<String, Map<String, dynamic>>.from(provider.modelSettings);
     if (settings.isEmpty) {
       newModelSettings.remove(modelName);
     } else {
       newModelSettings[modelName] = settings;
     }
-    
+
     await updateProvider(id: providerId, modelSettings: newModelSettings);
   }
 
@@ -835,7 +847,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   Future<void> setUseCustomTheme(bool value) async {
-    final mode = value ? 'custom' : 'system'; // Fallback to system if disabling custom
+    final mode =
+        value ? 'custom' : 'system'; // Fallback to system if disabling custom
     state = state.copyWith(useCustomTheme: value, themeMode: mode);
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
@@ -843,6 +856,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       themeMode: mode,
     );
   }
+
   Future<void> updatePreset(ChatPreset preset) async {
     final entity = ChatPresetEntity()
       ..presetId = preset.id
@@ -880,8 +894,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   Future<void> setBackgroundImagePath(String? path) async {
-    print('Saving background image path: $path');
-    
+    debugPrint('Saving background image path: $path');
+
     String? finalPath;
     if (path != null && path.isNotEmpty) {
       try {
@@ -890,7 +904,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
         if (!await bgDir.exists()) {
           await bgDir.create(recursive: true);
         }
-        
+
         // Clean up any existing background files before saving the new one
         try {
           final files = bgDir.listSync();
@@ -900,18 +914,19 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
             }
           }
         } catch (e) {
-          print('Error during background cleanup: $e');
+          debugPrint('Error during background cleanup: $e');
         }
 
-        final fileName = 'custom_background_${DateTime.now().millisecondsSinceEpoch}${p.extension(path)}';
+        final fileName =
+            'custom_background_${DateTime.now().millisecondsSinceEpoch}${p.extension(path)}';
         final savedFile = File(p.join(bgDir.path, fileName));
-        
+
         // Copy file to persistent storage
         await File(path).copy(savedFile.path);
         finalPath = savedFile.path;
-        print('Background image persisted to: $finalPath');
+        debugPrint('Background image persisted to: $finalPath');
       } catch (e) {
-        print('Error persisting background image: $e');
+        debugPrint('Error persisting background image: $e');
         finalPath = path; // Fallback to original path if copy fails
       }
     } else {
@@ -993,7 +1008,6 @@ final settingsStorageProvider = Provider<SettingsStorage>((ref) {
 });
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, SettingsState>((ref) {
-  final storage = ref.watch(settingsStorageProvider);
   throw UnimplementedError(
       'settingsProvider must be overridden or dependencies provided');
 });

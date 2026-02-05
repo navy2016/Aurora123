@@ -40,10 +40,10 @@ class _BackupOptionsDialogState extends State<BackupOptionsDialog> {
           onPressed: () => Navigator.pop(context),
         ),
         fluent.FilledButton(
-          child: Text(l10n.confirm),
           onPressed: _options.isNoneSelected
               ? null
               : () => Navigator.pop(context, _options),
+          child: Text(l10n.confirm),
         ),
       ],
     );

@@ -14,7 +14,8 @@ class SyncSettingsSection extends ConsumerStatefulWidget {
   const SyncSettingsSection({super.key});
 
   @override
-  ConsumerState<SyncSettingsSection> createState() => _SyncSettingsSectionState();
+  ConsumerState<SyncSettingsSection> createState() =>
+      _SyncSettingsSectionState();
 }
 
 class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
@@ -42,11 +43,11 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
 
   void _save() {
     ref.read(syncProvider.notifier).updateConfig(WebDavConfig(
-      url: _urlController.text.trim(),
-      username: _usernameController.text.trim(),
-      password: _passwordController.text.trim(),
-      remotePath: '/aurora_backup', // Fixed for now
-    ));
+          url: _urlController.text.trim(),
+          username: _usernameController.text.trim(),
+          password: _passwordController.text.trim(),
+          remotePath: '/aurora_backup', // Fixed for now
+        ));
   }
 
   Future<void> _handleExport() async {
@@ -54,26 +55,29 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
     try {
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final fileName = 'aurora_backup_$timestamp.zip';
-      
+
       final location = await getSaveLocation(suggestedName: fileName);
       if (location == null) return;
-      
+
       if (mounted) {
         final options = await showDialog<BackupOptions>(
           context: context,
-          builder: (context) => BackupOptionsDialog(title: l10n.selectiveBackup),
+          builder: (context) =>
+              BackupOptionsDialog(title: l10n.selectiveBackup),
         );
         if (options == null) return;
-        
-        await ref.read(backupServiceProvider).exportToLocalFile(location.path, options: options);
+
+        await ref
+            .read(backupServiceProvider)
+            .exportToLocalFile(location.path, options: options);
       }
-      
+
       if (mounted) {
-         _showDialog(l10n.exportSuccess, isError: false);
+        _showDialog(l10n.exportSuccess, isError: false);
       }
     } catch (e) {
       if (mounted) {
-         _showDialog('${l10n.exportFailed}: $e', isError: true);
+        _showDialog('${l10n.exportFailed}: $e', isError: true);
       }
     }
   }
@@ -87,7 +91,7 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
 
       await ref.read(backupServiceProvider).importFromLocalFile(file.path);
       await ref.read(syncProvider.notifier).refreshAllStates();
-      
+
       if (mounted) {
         _showDialog(l10n.importSuccess, isError: false);
       }
@@ -99,44 +103,57 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
   }
 
   Future<void> _handleClearAll() async {
-     final l10n = AppLocalizations.of(context)!;
-     showDialog(context: context, builder: (context) {
-        return ContentDialog(
-          title: Text(l10n.clearDataConfirmTitle),
-          content: Text(l10n.clearDataConfirmContent),
-          actions: [
-            Button(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
-            FilledButton(
-                style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.red)),
-                child: Text(l10n.clearAllData), 
-                onPressed: () async {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+        context: context,
+        builder: (context) {
+          return ContentDialog(
+            title: Text(l10n.clearDataConfirmTitle),
+            content: Text(l10n.clearDataConfirmContent),
+            actions: [
+              Button(
+                  child: Text(l10n.cancel),
+                  onPressed: () => Navigator.pop(context)),
+              FilledButton(
+                  style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(Colors.red)),
+                  child: Text(l10n.clearAllData),
+                  onPressed: () async {
                     Navigator.pop(context);
                     try {
-                        await ref.read(backupServiceProvider).clearAllData();
-                        await ref.read(syncProvider.notifier).refreshAllStates();
-                        if (mounted) _showDialog(l10n.clearDataSuccess, isError: false);
-                    } catch(e) {
-                        if (mounted) _showDialog('${l10n.clearDataFailed}: $e', isError: true);
+                      await ref.read(backupServiceProvider).clearAllData();
+                      await ref.read(syncProvider.notifier).refreshAllStates();
+                      if (mounted) {
+                        _showDialog(l10n.clearDataSuccess, isError: false);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        _showDialog('${l10n.clearDataFailed}: $e',
+                            isError: true);
+                      }
                     }
-                }
-            ),
-          ],
-        );
-     });
+                  }),
+            ],
+          );
+        });
   }
 
   void _showDialog(String message, {bool isError = false}) {
-     showDialog(context: context, builder: (context) {
-        return ContentDialog(
-           title: isError 
-               ? Text('Error', style: TextStyle(color: Colors.red))
-               : Icon(AuroraIcons.check, color: Colors.green),
-           content: Text(message),
-           actions: [
-              Button(child: const Text('OK'), onPressed: () => Navigator.pop(context)),
-           ],
-        );
-     });
+    showDialog(
+        context: context,
+        builder: (context) {
+          return ContentDialog(
+            title: isError
+                ? Text('Error', style: TextStyle(color: Colors.red))
+                : Icon(AuroraIcons.check, color: Colors.green),
+            content: Text(message),
+            actions: [
+              Button(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.pop(context)),
+            ],
+          );
+        });
   }
 
   @override
@@ -154,10 +171,10 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
     });
 
     if (!state.isConfigLoaded) {
-       return const SizedBox(
-         height: 300,
-         child: Center(child: ProgressRing()),
-       );
+      return const SizedBox(
+        height: 300,
+        child: Center(child: ProgressRing()),
+      );
     }
 
     // Helper to translate message keys
@@ -172,7 +189,7 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
         SyncMessageKeys.restoreFailed: l10n.restoreFailed,
         SyncMessageKeys.fetchBackupListFailed: l10n.fetchBackupListFailed,
       };
-      
+
       // Check if message starts with a known key
       for (final entry in translations.entries) {
         if (message.startsWith(entry.key)) {
@@ -189,7 +206,9 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(l10n.cloudSync, style: theme.typography.subtitle),
-            if (state.isBusy) const ProgressRing(strokeWidth: 2, activeColor: null /* default accent */),
+            if (state.isBusy)
+              const ProgressRing(
+                  strokeWidth: 2, activeColor: null /* default accent */),
           ],
         ),
         const SizedBox(height: 16),
@@ -223,8 +242,11 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
                   placeholder: 'Password',
                   obscureText: !_showPassword,
                   suffix: IconButton(
-                    icon: Icon(_showPassword ? AuroraIcons.visibilityOff : AuroraIcons.visibility),
-                    onPressed: () => setState(() => _showPassword = !_showPassword),
+                    icon: Icon(_showPassword
+                        ? AuroraIcons.visibilityOff
+                        : AuroraIcons.visibility),
+                    onPressed: () =>
+                        setState(() => _showPassword = !_showPassword),
                   ),
                   onChanged: (_) => _save(),
                 ),
@@ -238,19 +260,26 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
           runSpacing: 12,
           children: [
             FilledButton(
-              onPressed: state.isBusy ? null : () => ref.read(syncProvider.notifier).testConnection(),
+              onPressed: state.isBusy
+                  ? null
+                  : () => ref.read(syncProvider.notifier).testConnection(),
               child: Text(l10n.testConnection),
             ),
             Button(
-              onPressed: state.isBusy ? null : () async {
-                final options = await showDialog<BackupOptions>(
-                  context: context,
-                  builder: (context) => BackupOptionsDialog(title: l10n.selectiveBackup),
-                );
-                if (options != null) {
-                  ref.read(syncProvider.notifier).backup(options: options);
-                }
-              },
+              onPressed: state.isBusy
+                  ? null
+                  : () async {
+                      final options = await showDialog<BackupOptions>(
+                        context: context,
+                        builder: (context) =>
+                            BackupOptionsDialog(title: l10n.selectiveBackup),
+                      );
+                      if (options != null) {
+                        ref
+                            .read(syncProvider.notifier)
+                            .backup(options: options);
+                      }
+                    },
               child: Text(l10n.backupNow),
             ),
             Button(
@@ -263,21 +292,23 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
             ),
             Button(
               onPressed: state.isBusy ? null : _handleClearAll,
-              child: Text(l10n.clearAllData, style: TextStyle(color: Colors.red)),
+              child:
+                  Text(l10n.clearAllData, style: TextStyle(color: Colors.red)),
             ),
           ],
         ),
         if (state.error != null)
-           Padding(
-             padding: const EdgeInsets.only(top: 8.0),
-             child: Text(translateMessage(state.error!), style: TextStyle(color: Colors.red)),
-           ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(translateMessage(state.error!),
+                style: TextStyle(color: Colors.red)),
+          ),
         if (state.successMessage != null)
-           Padding(
-             padding: const EdgeInsets.only(top: 8.0),
-             child: Text(translateMessage(state.successMessage!), style: TextStyle(color: Colors.green)),
-           ),
-
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(translateMessage(state.successMessage!),
+                style: TextStyle(color: Colors.green)),
+          ),
         const SizedBox(height: 24),
         const Divider(),
         const SizedBox(height: 16),
@@ -286,12 +317,13 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
         if (state.remoteBackups.isEmpty)
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(l10n.noBackupsOrNotConnected, style: const TextStyle(color: Colors.grey)),
+            child: Text(l10n.noBackupsOrNotConnected,
+                style: const TextStyle(color: Colors.grey)),
           )
         else
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(4),
             ),
             child: ListView.separated(
@@ -300,30 +332,43 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
               separatorBuilder: (_, __) => const Divider(),
               itemBuilder: (context, index) {
                 final item = state.remoteBackups[index];
-                final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(item.modified);
+                final dateStr =
+                    DateFormat('yyyy-MM-dd HH:mm').format(item.modified);
                 final sizeMb = (item.size / 1024 / 1024).toStringAsFixed(2);
-                
+
                 return ListTile(
                   leading: const Icon(AuroraIcons.folderOpen),
                   title: Text(item.name),
                   subtitle: Text('$dateStr  •  $sizeMb MB'),
                   trailing: Button(
+                    onPressed: state.isBusy
+                        ? null
+                        : () async {
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return ContentDialog(
+                                    title: Text(l10n.confirmRestore),
+                                    content: Text(l10n.restoreWarning),
+                                    actions: [
+                                      Button(
+                                          child: Text(l10n.cancel),
+                                          onPressed: () =>
+                                              Navigator.pop(context)),
+                                      FilledButton(
+                                          child:
+                                              Text(l10n.confirmRestoreButton),
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            ref
+                                                .read(syncProvider.notifier)
+                                                .restore(item);
+                                          }),
+                                    ],
+                                  );
+                                });
+                          },
                     child: Text(l10n.restore),
-                    onPressed: state.isBusy ? null : () async {
-                        showDialog(context: context, builder: (context) {
-                            return ContentDialog(
-                                title: Text(l10n.confirmRestore),
-                                content: Text(l10n.restoreWarning),
-                                actions: [
-                                    Button(child: Text(l10n.cancel), onPressed: () => Navigator.pop(context)),
-                                    FilledButton(child: Text(l10n.confirmRestoreButton), onPressed: () {
-                                        Navigator.pop(context);
-                                        ref.read(syncProvider.notifier).restore(item);
-                                    }),
-                                ],
-                            );
-                        });
-                    },
                   ),
                 );
               },

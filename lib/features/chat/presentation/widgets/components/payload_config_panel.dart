@@ -1,6 +1,5 @@
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
-import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,10 +29,13 @@ class _PayloadConfigPanelState extends ConsumerState<PayloadConfigPanel> {
     _loadSettings();
     final thinkingConfig = _modelSettings['_aurora_thinking_config'] ?? {};
     final generationConfig = _modelSettings['_aurora_generation_config'] ?? {};
-    
-    _budgetController = TextEditingController(text: thinkingConfig['budget']?.toString() ?? '');
-    _tempController = TextEditingController(text: generationConfig['temperature']?.toString() ?? '');
-    _ctxLenController = TextEditingController(text: generationConfig['context_length']?.toString() ?? '');
+
+    _budgetController =
+        TextEditingController(text: thinkingConfig['budget']?.toString() ?? '');
+    _tempController = TextEditingController(
+        text: generationConfig['temperature']?.toString() ?? '');
+    _ctxLenController = TextEditingController(
+        text: generationConfig['context_length']?.toString() ?? '');
   }
 
   @override
@@ -75,8 +77,10 @@ class _PayloadConfigPanelState extends ConsumerState<PayloadConfigPanel> {
 
   Widget _buildImageConfig(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final Map<String, dynamic> imageConfig =
-        Map<String, dynamic>.from(_modelSettings['_aurora_image_config'] ?? _modelSettings['image_config'] ?? {});
+    final Map<String, dynamic> imageConfig = Map<String, dynamic>.from(
+        _modelSettings['_aurora_image_config'] ??
+            _modelSettings['image_config'] ??
+            {});
 
     final String currentSize = imageConfig['image_size'] ?? '2K';
 
@@ -143,7 +147,8 @@ class _PayloadConfigPanelState extends ConsumerState<PayloadConfigPanel> {
                   onChanged: (v) {
                     final newSize = sizes[v.toInt()];
                     imageConfig['image_size'] = newSize;
-                    final newSettings = Map<String, dynamic>.from(_modelSettings);
+                    final newSettings =
+                        Map<String, dynamic>.from(_modelSettings);
                     // Remove old key if present to migrate
                     newSettings.remove('image_config');
                     newSettings['_aurora_image_config'] = imageConfig;
@@ -152,7 +157,8 @@ class _PayloadConfigPanelState extends ConsumerState<PayloadConfigPanel> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(currentSize, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(currentSize,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -162,10 +168,10 @@ class _PayloadConfigPanelState extends ConsumerState<PayloadConfigPanel> {
 
   Widget _buildReasoningConfig(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final Map<String, dynamic> thinkingConfig =
-        Map<String, dynamic>.from(_modelSettings['_aurora_thinking_config'] ?? {});
-    final Map<String, dynamic> generationConfig =
-        Map<String, dynamic>.from(_modelSettings['_aurora_generation_config'] ?? {});
+    final Map<String, dynamic> thinkingConfig = Map<String, dynamic>.from(
+        _modelSettings['_aurora_thinking_config'] ?? {});
+    final Map<String, dynamic> generationConfig = Map<String, dynamic>.from(
+        _modelSettings['_aurora_generation_config'] ?? {});
 
     final bool thinkingEnabled = thinkingConfig['enabled'] == true;
     final String thinkingMode = thinkingConfig['mode']?.toString() ?? 'auto';
@@ -211,8 +217,11 @@ class _PayloadConfigPanelState extends ConsumerState<PayloadConfigPanel> {
               isExpanded: true,
               items: [
                 ComboBoxItem(value: 'auto', child: Text(l10n.modeAuto)),
-                ComboBoxItem(value: 'extra_body', child: Text(l10n.modeExtraBody)),
-                ComboBoxItem(value: 'reasoning_effort', child: Text(l10n.modeReasoningEffort)),
+                ComboBoxItem(
+                    value: 'extra_body', child: Text(l10n.modeExtraBody)),
+                ComboBoxItem(
+                    value: 'reasoning_effort',
+                    child: Text(l10n.modeReasoningEffort)),
               ],
               onChanged: (v) {
                 if (v != null) {

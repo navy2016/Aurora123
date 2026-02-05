@@ -52,18 +52,20 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
     state = state.copyWith(isLoading: true);
     final storage = _ref.read(settingsStorageProvider);
     final entities = await storage.loadAssistants();
-    
-    final assistants = entities.map((e) => Assistant(
-      id: e.assistantId,
-      name: e.name,
-      avatar: e.avatar,
-      description: e.description ?? '',
-      systemPrompt: e.systemPrompt,
-      preferredModel: e.preferredModel,
-      providerId: e.providerId,
-      skillIds: e.skillIds,
-      enableMemory: e.enableMemory,
-    )).toList();
+
+    final assistants = entities
+        .map((e) => Assistant(
+              id: e.assistantId,
+              name: e.name,
+              avatar: e.avatar,
+              description: e.description ?? '',
+              systemPrompt: e.systemPrompt,
+              preferredModel: e.preferredModel,
+              providerId: e.providerId,
+              skillIds: e.skillIds,
+              enableMemory: e.enableMemory,
+            ))
+        .toList();
 
     final appSettings = await storage.loadAppSettings();
     final lastId = appSettings?.lastAssistantId;
@@ -94,7 +96,7 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
       ..skillIds = assistant.skillIds
       ..enableMemory = assistant.enableMemory
       ..updatedAt = DateTime.now();
-    
+
     await storage.saveAssistant(entity);
     await loadAssistants();
   }
@@ -124,7 +126,8 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
   }
 }
 
-final assistantProvider = StateNotifierProvider<AssistantNotifier, AssistantState>((ref) {
+final assistantProvider =
+    StateNotifierProvider<AssistantNotifier, AssistantState>((ref) {
   return AssistantNotifier(ref);
 });
 

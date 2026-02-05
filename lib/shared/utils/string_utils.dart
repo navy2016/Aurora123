@@ -8,7 +8,7 @@ class StringUtils {
     if (text.isEmpty) return 0;
 
     int total = 0;
-    
+
     // 统计中文字符、韩文、日文等
     // \u4e00-\u9fa5: 中文
     // \u3040-\u30ff: 日文 (平假名 & 片假名)

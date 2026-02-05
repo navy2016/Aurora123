@@ -182,7 +182,9 @@ class QwantImagesEngine extends BaseSearchEngine<ImagesResult> {
           }
         }
       }
-    } catch (e) {}
+    } catch (_) {
+      return results;
+    }
     return results;
   }
 }
@@ -259,7 +261,9 @@ class QwantNewsEngine extends BaseSearchEngine<NewsResult> {
           }
         }
       }
-    } catch (e) {}
+    } catch (_) {
+      return results;
+    }
     return results;
   }
 }

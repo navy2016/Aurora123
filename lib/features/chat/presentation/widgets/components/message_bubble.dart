@@ -22,8 +22,6 @@ import '../../../../../shared/utils/stats_calculator.dart';
 import 'package:aurora/shared/utils/number_format_utils.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
 import 'package:aurora/shared/theme/aurora_icons.dart';
-import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
-
 
 class MessageBubble extends ConsumerStatefulWidget {
   final Message message;
@@ -46,7 +44,6 @@ class MessageBubble extends ConsumerStatefulWidget {
 }
 
 class MessageBubbleState extends ConsumerState<MessageBubble> {
-  bool _isHovering = false;
   bool _isEditing = false;
   late TextEditingController _editController;
 
@@ -245,18 +242,21 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
         final sessionId = ref.read(selectedHistorySessionIdProvider);
         if (sessionId == null) break;
         final sessions = ref.read(sessionsProvider).sessions;
-        final session = sessions.where((s) => s.sessionId == sessionId).firstOrNull;
+        final session =
+            sessions.where((s) => s.sessionId == sessionId).firstOrNull;
         if (session == null) break;
         final l10n = AppLocalizations.of(context);
         final branchSuffix = l10n?.branch ?? 'Branch';
-        final newSessionId = await ref.read(sessionsProvider.notifier).createBranchSession(
-          originalSessionId: sessionId,
-          originalTitle: session.title,
-          upToMessageId: msg.id,
-          branchSuffix: '-$branchSuffix',
-        );
+        final newSessionId =
+            await ref.read(sessionsProvider.notifier).createBranchSession(
+                  originalSessionId: sessionId,
+                  originalTitle: session.title,
+                  upToMessageId: msg.id,
+                  branchSuffix: '-$branchSuffix',
+                );
         if (newSessionId != null) {
-          ref.read(selectedHistorySessionIdProvider.notifier).state = newSessionId;
+          ref.read(selectedHistorySessionIdProvider.notifier).state =
+              newSessionId;
         }
         break;
     }
@@ -282,10 +282,6 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
     final settingsState = ref.watch(settingsProvider);
     final theme = fluent.FluentTheme.of(context);
     return MouseRegion(
-      onEnter: (_) =>
-          PlatformUtils.isDesktop ? setState(() => _isHovering = true) : null,
-      onExit: (_) =>
-          PlatformUtils.isDesktop ? setState(() => _isHovering = false) : null,
       child: Container(
         margin: EdgeInsets.only(
           top: widget.mergeTop ? 2 : 8,
@@ -328,33 +324,37 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: [
-                                if (isUser) ...[
-                                  Text(
-                                    settingsState.userName.isNotEmpty
-                                        ? settingsState.userName
-                                        : AppLocalizations.of(context)!.user,
-                                    style: TextStyle(
-                                      color: (settingsState.useCustomTheme &&
-                                              settingsState.backgroundImagePath != null &&
-                                              settingsState.backgroundImagePath!.isNotEmpty)
-                                          ? Colors.white.withValues(alpha: 0.7)
-                                          : Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
+                              if (isUser) ...[
+                                Text(
+                                  settingsState.userName.isNotEmpty
+                                      ? settingsState.userName
+                                      : AppLocalizations.of(context)!.user,
+                                  style: TextStyle(
+                                    color: (settingsState.useCustomTheme &&
+                                            settingsState.backgroundImagePath !=
+                                                null &&
+                                            settingsState.backgroundImagePath!
+                                                .isNotEmpty)
+                                        ? Colors.white.withValues(alpha: 0.7)
+                                        : Colors.grey[600],
+                                    fontSize: 12,
                                   ),
-                                ] else ...[
-                                  Text(
-                                    '${message.model ?? settingsState.selectedModel} | ${message.provider ?? settingsState.activeProvider?.name ?? 'AI'}',
-                                    style: TextStyle(
-                                      color: (settingsState.useCustomTheme &&
-                                              settingsState.backgroundImagePath != null &&
-                                              settingsState.backgroundImagePath!.isNotEmpty)
-                                          ? Colors.white.withValues(alpha: 0.7)
-                                          : Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
+                                ),
+                              ] else ...[
+                                Text(
+                                  '${message.model ?? settingsState.selectedModel} | ${message.provider ?? settingsState.activeProvider.name}',
+                                  style: TextStyle(
+                                    color: (settingsState.useCustomTheme &&
+                                            settingsState.backgroundImagePath !=
+                                                null &&
+                                            settingsState.backgroundImagePath!
+                                                .isNotEmpty)
+                                        ? Colors.white.withValues(alpha: 0.7)
+                                        : Colors.grey[600],
+                                    fontSize: 12,
                                   ),
-                                ],
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -367,10 +367,12 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                           decoration: BoxDecoration(
                             color: _isEditing
                                 ? fluent.Colors.transparent
-                                  : (settingsState.useCustomTheme &&
-                                         settingsState.backgroundImagePath != null &&
-                                         settingsState.backgroundImagePath!.isNotEmpty
-                                     ? theme.cardColor.withValues(alpha: 0.55)
+                                : (settingsState.useCustomTheme &&
+                                        settingsState.backgroundImagePath !=
+                                            null &&
+                                        settingsState
+                                            .backgroundImagePath!.isNotEmpty
+                                    ? theme.cardColor.withValues(alpha: 0.55)
                                     : theme.cardColor),
                             borderRadius: BorderRadius.circular(12),
                             border: _isEditing
@@ -405,7 +407,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                         '${AppLocalizations.of(context)!.thinking}...',
                                         style: TextStyle(
                                           color: theme.typography.body?.color
-                                              ?.withOpacity(0.6),
+                                              ?.withValues(alpha: 0.6),
                                           fontSize: 14,
                                         ),
                                       ),
@@ -457,8 +459,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                                 }
                                                 if (event.logicalKey ==
                                                     LogicalKeyboardKey.enter) {
-                                                  if (HardwareKeyboard
-                                                      .instance.isShiftPressed) {
+                                                  if (HardwareKeyboard.instance
+                                                      .isShiftPressed) {
                                                     // Shift+Enter: Insert newline
                                                     return KeyEventResult
                                                         .ignored;
@@ -466,7 +468,12 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                                     // Enter: Save edit (and regenerate if user)
                                                     _saveEdit();
                                                     if (widget.message.isUser) {
-                                                        ref.read(historyChatProvider).regenerateResponse(widget.message.id);
+                                                      ref
+                                                          .read(
+                                                              historyChatProvider)
+                                                          .regenerateResponse(
+                                                              widget
+                                                                  .message.id);
                                                     }
                                                     return KeyEventResult
                                                         .handled;
@@ -477,42 +484,46 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                               child: SizedBox(
                                                 width: double.infinity,
                                                 child: fluent.TextBox(
-                                                    key: ValueKey(
-                                                        'edit_box_${widget.message.id}'),
-                                                    controller: _editController,
-                                                    scrollController:
-                                                        _editScrollController,
-                                                    focusNode: _focusNode,
-                                                    maxLines: 15,
-                                                    minLines: 1,
-                                                    placeholder: '编辑消息...',
-                                                    decoration: const fluent
-                                                        .WidgetStatePropertyAll(
-                                                        fluent.BoxDecoration(
-                                                      color: Colors.transparent,
-                                                      border: Border.fromBorderSide(
-                                                          BorderSide.none),
-                                                    )),
-                                                    highlightColor:
-                                                        fluent.Colors.transparent,
-                                                    unfocusedColor:
-                                                        fluent.Colors.transparent,
-                                                    foregroundDecoration: const fluent
-                                                        .WidgetStatePropertyAll(
-                                                        fluent.BoxDecoration(
-                                                      border: Border.fromBorderSide(
-                                                          BorderSide.none),
-                                                    )),
-                                                    style: TextStyle(
-                                                        fontSize: 14,
-                                                        height: 1.5,
-                                                        color: theme
-                                                            .typography.body?.color),
-                                                    cursorColor: theme.accentColor,
-                                                    textInputAction:
-                                                        TextInputAction.send,
-                                                    // onSubmitted removed as we handle it in Focus manually now for finer control
-                                                  // onSubmitted: (_) => _saveEdit(), 
+                                                  key: ValueKey(
+                                                      'edit_box_${widget.message.id}'),
+                                                  controller: _editController,
+                                                  scrollController:
+                                                      _editScrollController,
+                                                  focusNode: _focusNode,
+                                                  maxLines: 15,
+                                                  minLines: 1,
+                                                  placeholder: '编辑消息...',
+                                                  decoration: const fluent
+                                                      .WidgetStatePropertyAll(
+                                                      fluent.BoxDecoration(
+                                                    color: Colors.transparent,
+                                                    border:
+                                                        Border.fromBorderSide(
+                                                            BorderSide.none),
+                                                  )),
+                                                  highlightColor:
+                                                      fluent.Colors.transparent,
+                                                  unfocusedColor:
+                                                      fluent.Colors.transparent,
+                                                  foregroundDecoration:
+                                                      const fluent
+                                                          .WidgetStatePropertyAll(
+                                                          fluent.BoxDecoration(
+                                                    border:
+                                                        Border.fromBorderSide(
+                                                            BorderSide.none),
+                                                  )),
+                                                  style: TextStyle(
+                                                      fontSize: 14,
+                                                      height: 1.5,
+                                                      color: theme.typography
+                                                          .body?.color),
+                                                  cursorColor:
+                                                      theme.accentColor,
+                                                  textInputAction:
+                                                      TextInputAction.send,
+                                                  // onSubmitted removed as we handle it in Focus manually now for finer control
+                                                  // onSubmitted: (_) => _saveEdit(),
                                                 ),
                                               ),
                                             ),
@@ -532,7 +543,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                                   padding:
                                                       const EdgeInsets.only(
                                                           right: 8),
-                                                  child: _buildFileAttachmentPill(
+                                                  child:
+                                                      _buildFileAttachmentPill(
                                                     _newAttachments[index],
                                                     theme,
                                                     onDelete: () => setState(
@@ -550,16 +562,16 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         fluent.IconButton(
-                                          icon: const Icon(
-                                              AuroraIcons.attach,
+                                          icon: const Icon(AuroraIcons.attach,
                                               size: 14),
                                           onPressed: _pickFiles,
                                           style: fluent.ButtonStyle(
                                             foregroundColor:
-                                                fluent.ButtonState.resolveWith(
+                                                WidgetStateProperty.resolveWith(
                                                     (states) {
-                                              if (states.isHovered)
+                                              if (states.isHovered) {
                                                 return fluent.Colors.blue;
+                                              }
                                               return fluent.Colors.grey;
                                             }),
                                           ),
@@ -567,13 +579,19 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                         const SizedBox(width: 8),
                                         ActionButton(
                                             icon: AuroraIcons.cancel,
-                                            tooltip: AppLocalizations.of(context)?.cancel ?? 'Cancel',
+                                            tooltip:
+                                                AppLocalizations.of(context)
+                                                        ?.cancel ??
+                                                    'Cancel',
                                             onPressed: () => setState(
                                                 () => _isEditing = false)),
                                         const SizedBox(width: 4),
                                         ActionButton(
                                             icon: AuroraIcons.save,
-                                            tooltip: AppLocalizations.of(context)?.save ?? 'Save',
+                                            tooltip:
+                                                AppLocalizations.of(context)
+                                                        ?.save ??
+                                                    'Save',
                                             onPressed: _saveEdit),
                                         if (message.isUser) ...[
                                           const SizedBox(width: 4),
@@ -602,7 +620,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     height: 1.5,
                                     color: theme.typography.body!.color,
                                   ),
-                                  selectionControls: fluent.fluentTextSelectionControls,
+                                  selectionControls:
+                                      fluent.fluentTextSelectionControls,
                                 )
                               else
                                 fluent.FluentTheme(
@@ -613,155 +632,181 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     textColor: theme.typography.body!.color!,
                                   ),
                                 ),
-                               if (message.attachments.isNotEmpty &&
-                                   !_isEditing) ...[
-                                 const SizedBox(height: 8),
-                                 Wrap(
-                                   spacing: 8,
-                                   runSpacing: 8,
-                                   children: message.attachments.map((path) {
-                                     final ext = path.toLowerCase();
-                                     final isImage = ext.endsWith('.png') ||
-                                         ext.endsWith('.jpg') ||
-                                         ext.endsWith('.jpeg') ||
-                                         ext.endsWith('.webp') ||
-                                         ext.endsWith('.gif');
-                                     if (isImage) {
-                                       return ChatImageBubble(
-                                         key: ValueKey(path.hashCode),
-                                         imageUrl: path,
-                                       );
-                                     }
-                                     return _buildFileAttachmentPill(path, theme);
-                                   }).toList(),
-                                 ),
-                               ],
-                               if (message.images.isNotEmpty &&
-                                   !(isUser && _isEditing)) ...[
-                                 const SizedBox(height: 8),
-                                 Wrap(
-                                   spacing: 8,
-                                   runSpacing: 8,
-                                   children: message.images
-                                       .map((img) => ChatImageBubble(
-                                             key: ValueKey(img.hashCode),
-                                             imageUrl: img,
-                                           ))
-                                       .toList(),
-                                 ),
-                             ],
-                             if (message.tokenCount != null && message.tokenCount! > 0 || message.durationMs != null)
-                                 Padding(
-                                   padding: const EdgeInsets.only(top: 4.0),
-                                   child: Row(
-                                     mainAxisSize: MainAxisSize.min,
-                                     mainAxisAlignment: MainAxisAlignment.end,
-                                     children: [
-                                       if (message.tokenCount != null && message.tokenCount! > 0) ...[
-                                         Builder(builder: (context) {
-                                           final p = message.promptTokens ?? 0;
-                                           final c = message.completionTokens ?? 0;
-                                           final r = message.reasoningTokens ?? 0;
-                                           final total = message.tokenCount!;
-                                           
-                                           String tokenText = formatFullTokenCount(total);
+                              if (message.attachments.isNotEmpty &&
+                                  !_isEditing) ...[
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: message.attachments.map((path) {
+                                    final ext = path.toLowerCase();
+                                    final isImage = ext.endsWith('.png') ||
+                                        ext.endsWith('.jpg') ||
+                                        ext.endsWith('.jpeg') ||
+                                        ext.endsWith('.webp') ||
+                                        ext.endsWith('.gif');
+                                    if (isImage) {
+                                      return ChatImageBubble(
+                                        key: ValueKey(path.hashCode),
+                                        imageUrl: path,
+                                      );
+                                    }
+                                    return _buildFileAttachmentPill(
+                                        path, theme);
+                                  }).toList(),
+                                ),
+                              ],
+                              if (message.images.isNotEmpty &&
+                                  !(isUser && _isEditing)) ...[
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: message.images
+                                      .map((img) => ChatImageBubble(
+                                            key: ValueKey(img.hashCode),
+                                            imageUrl: img,
+                                          ))
+                                      .toList(),
+                                ),
+                              ],
+                              if (message.tokenCount != null &&
+                                      message.tokenCount! > 0 ||
+                                  message.durationMs != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4.0),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      if (message.tokenCount != null &&
+                                          message.tokenCount! > 0) ...[
+                                        Builder(builder: (context) {
+                                          final total = message.tokenCount!;
 
-                                           
-                                           return Text(
-                                             '$tokenText Tokens',
-                                             style: TextStyle(
-                                               fontSize: 10,
-                                               color: theme.typography.body?.color?.withOpacity(0.5),
-                                             ),
-                                           );
-                                         }),
-                                       ],
-                                       if (message.firstTokenMs != null && message.firstTokenMs! > 0) ...[
-                                         Text(
-                                           ' | ',
-                                           style: TextStyle(
-                                             fontSize: 10,
-                                             color: theme.typography.body?.color?.withOpacity(0.5),
-                                           ),
-                                         ),
-                                         Text(
-                                           '${AppLocalizations.of(context)?.averageFirstToken((message.firstTokenMs! / 1000).toStringAsFixed(2)) ?? 'TTFT: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s'}',
-                                           style: TextStyle(
-                                             fontSize: 10,
-                                             color: theme.typography.body?.color?.withOpacity(0.5),
-                                           ),
-                                         ),
-                                       ],
-                                       if (message.durationMs != null && message.durationMs! > 0) ...[
-                                         Text(
-                                           ' | ',
-                                           style: TextStyle(
-                                             fontSize: 10,
-                                             color: theme.typography.body?.color?.withOpacity(0.5),
-                                           ),
-                                         ),
-                                         Builder(builder: (context) {
-                                           final c = message.completionTokens ?? 0;
-                                           final r = message.reasoningTokens ?? 0;
-                                           final p = message.promptTokens ?? 0;
-                                           
-                                           int effectiveGenerated = c + r;
-                                           if (effectiveGenerated == 0 && (message.tokenCount ?? 0) > 0) {
-                                             effectiveGenerated = (message.tokenCount! - p);
-                                           }
+                                          final tokenText =
+                                              formatFullTokenCount(total);
 
-                                           final tps = StatsCalculator.calculateTPS(
-                                             completionTokens: effectiveGenerated,
-                                             reasoningTokens: 0,
-                                             durationMs: message.durationMs ?? 0,
-                                             firstTokenMs: message.firstTokenMs ?? 0,
-                                           );
+                                          return Text(
+                                            '$tokenText Tokens',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: theme
+                                                  .typography.body?.color
+                                                  ?.withValues(alpha: 0.5),
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                      if (message.firstTokenMs != null &&
+                                          message.firstTokenMs! > 0) ...[
+                                        Text(
+                                          ' | ',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: theme.typography.body?.color
+                                                ?.withValues(alpha: 0.5),
+                                          ),
+                                        ),
+                                        Text(
+                                          AppLocalizations.of(context)
+                                                  ?.averageFirstToken((message
+                                                              .firstTokenMs! /
+                                                          1000)
+                                                      .toStringAsFixed(2)) ??
+                                              'TTFT: ${(message.firstTokenMs! / 1000).toStringAsFixed(2)}s',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: theme.typography.body?.color
+                                                ?.withValues(alpha: 0.5),
+                                          ),
+                                        ),
+                                      ],
+                                      if (message.durationMs != null &&
+                                          message.durationMs! > 0) ...[
+                                        Text(
+                                          ' | ',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: theme.typography.body?.color
+                                                ?.withValues(alpha: 0.5),
+                                          ),
+                                        ),
+                                        Builder(builder: (context) {
+                                          final c =
+                                              message.completionTokens ?? 0;
+                                          final r =
+                                              message.reasoningTokens ?? 0;
+                                          final p = message.promptTokens ?? 0;
 
-                                           if (tps <= 0) return const SizedBox.shrink();
-                                           
-                                           return Text(
-                                             '${tps.toStringAsFixed(2)} T/s',
-                                             style: TextStyle(
-                                               fontSize: 10,
-                                               color: theme.typography.body?.color?.withOpacity(0.5),
-                                             ),
-                                           );
-                                         }),
-                                       ],
-                                       Text(
-                                         ' | ',
-                                         style: TextStyle(
-                                           fontSize: 10,
-                                           color: theme.typography.body?.color?.withOpacity(0.5),
-                                         ),
-                                       ),
-                                       Text(
-                                         '${message.timestamp.month}/${message.timestamp.day} ${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-                                         style: TextStyle(
-                                           fontSize: 10,
-                                           color: theme.typography.body?.color?.withOpacity(0.5),
-                                         ),
-                                       ),
-                                     ],
-                                   ),
-                                 ),
-                             ],
-                           ),
-                         ),
-                       ),
-                     ],
-                   ),
-                 ),
-                 if (isUser) ...[
-                   const SizedBox(width: 8),
-                   _buildAvatar(
-                     avatarPath: settingsState.userAvatar,
-                     fallbackIcon: AuroraIcons.person,
-                     backgroundColor: Colors.blue,
-                   ),
-                 ],
-               ],
-             ),
+                                          int effectiveGenerated = c + r;
+                                          if (effectiveGenerated == 0 &&
+                                              (message.tokenCount ?? 0) > 0) {
+                                            effectiveGenerated =
+                                                (message.tokenCount! - p);
+                                          }
+
+                                          final tps =
+                                              StatsCalculator.calculateTPS(
+                                            completionTokens:
+                                                effectiveGenerated,
+                                            reasoningTokens: 0,
+                                            durationMs: message.durationMs ?? 0,
+                                            firstTokenMs:
+                                                message.firstTokenMs ?? 0,
+                                          );
+
+                                          if (tps <= 0) {
+                                            return const SizedBox.shrink();
+                                          }
+
+                                          return Text(
+                                            '${tps.toStringAsFixed(2)} T/s',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: theme
+                                                  .typography.body?.color
+                                                  ?.withValues(alpha: 0.5),
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                      Text(
+                                        ' | ',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: theme.typography.body?.color
+                                              ?.withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${message.timestamp.month}/${message.timestamp.day} ${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: theme.typography.body?.color
+                                              ?.withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isUser) ...[
+                  const SizedBox(width: 8),
+                  _buildAvatar(
+                    avatarPath: settingsState.userAvatar,
+                    fallbackIcon: AuroraIcons.person,
+                    backgroundColor: Colors.blue,
+                  ),
+                ],
+              ],
+            ),
             PlatformUtils.isDesktop
                 ? Visibility(
                     visible: !_isEditing,
@@ -796,7 +841,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                             const SizedBox(width: 4),
                             ActionButton(
                                 icon: AuroraIcons.branch,
-                                tooltip: AppLocalizations.of(context)?.branch ?? 'Branch',
+                                tooltip: AppLocalizations.of(context)?.branch ??
+                                    'Branch',
                                 onPressed: () => _handleAction('branch')),
                           ],
                           const SizedBox(width: 4),
@@ -823,43 +869,53 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                           children: [
                             MobileActionButton(
                               icon: AuroraIcons.retry,
-                              color: (settingsState.backgroundImagePath != null &&
-                                      settingsState.backgroundImagePath!.isNotEmpty)
-                                  ? Colors.white.withValues(alpha: 0.7)
-                                  : null,
+                              color:
+                                  (settingsState.backgroundImagePath != null &&
+                                          settingsState
+                                              .backgroundImagePath!.isNotEmpty)
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : null,
                               onPressed: () => _handleAction('retry'),
                             ),
                             MobileActionButton(
                               icon: AuroraIcons.edit,
-                              color: (settingsState.backgroundImagePath != null &&
-                                      settingsState.backgroundImagePath!.isNotEmpty)
-                                  ? Colors.white.withValues(alpha: 0.7)
-                                  : null,
+                              color:
+                                  (settingsState.backgroundImagePath != null &&
+                                          settingsState
+                                              .backgroundImagePath!.isNotEmpty)
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : null,
                               onPressed: () => _handleAction('edit'),
                             ),
                             MobileActionButton(
                               icon: AuroraIcons.copy,
-                              color: (settingsState.backgroundImagePath != null &&
-                                      settingsState.backgroundImagePath!.isNotEmpty)
-                                  ? Colors.white.withValues(alpha: 0.7)
-                                  : null,
+                              color:
+                                  (settingsState.backgroundImagePath != null &&
+                                          settingsState
+                                              .backgroundImagePath!.isNotEmpty)
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : null,
                               onPressed: () => _handleAction('copy'),
                             ),
                             if (!isUser)
                               MobileActionButton(
                                 icon: AuroraIcons.branch,
-                                color: (settingsState.backgroundImagePath != null &&
-                                        settingsState.backgroundImagePath!.isNotEmpty)
+                                color: (settingsState.backgroundImagePath !=
+                                            null &&
+                                        settingsState
+                                            .backgroundImagePath!.isNotEmpty)
                                     ? Colors.white.withValues(alpha: 0.7)
                                     : null,
                                 onPressed: () => _handleAction('branch'),
                               ),
                             MobileActionButton(
                               icon: AuroraIcons.delete,
-                              color: (settingsState.backgroundImagePath != null &&
-                                      settingsState.backgroundImagePath!.isNotEmpty)
-                                  ? Colors.white.withValues(alpha: 0.7)
-                                  : null,
+                              color:
+                                  (settingsState.backgroundImagePath != null &&
+                                          settingsState
+                                              .backgroundImagePath!.isNotEmpty)
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : null,
                               onPressed: () => _handleAction('delete'),
                             ),
                           ],
@@ -901,9 +957,10 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: theme.accentColor.withOpacity(0.1),
+              color: theme.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.accentColor.withOpacity(0.3)),
+              border:
+                  Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -920,8 +977,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                 ),
                 if (onDelete != null) ...[
                   const SizedBox(width: 4),
-                  Icon(AuroraIcons.close,
-                      size: 8, color: theme.accentColor),
+                  Icon(AuroraIcons.close, size: 8, color: theme.accentColor),
                 ],
               ],
             ),

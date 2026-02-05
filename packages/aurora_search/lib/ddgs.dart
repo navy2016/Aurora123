@@ -1,4 +1,4 @@
-library ddgs;
+library;
 
 export 'src/base_search_engine.dart';
 export 'src/ddgs_base.dart';

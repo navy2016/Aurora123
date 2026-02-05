@@ -34,15 +34,16 @@ class AssistantAvatar extends StatelessWidget {
     }
 
     final isFluent = fluent.FluentTheme.maybeOf(context) != null;
-    final color = fallbackColor ?? (isFluent 
-        ? fluent.FluentTheme.of(context).accentColor 
-        : Theme.of(context).primaryColor);
+    final color = fallbackColor ??
+        (isFluent
+            ? fluent.FluentTheme.of(context).accentColor
+            : Theme.of(context).primaryColor);
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(

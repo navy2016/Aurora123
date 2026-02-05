@@ -18,7 +18,8 @@ class AnimatedStreamingMarkdown extends StatefulWidget {
   });
 
   @override
-  State<AnimatedStreamingMarkdown> createState() => _AnimatedStreamingMarkdownState();
+  State<AnimatedStreamingMarkdown> createState() =>
+      _AnimatedStreamingMarkdownState();
 }
 
 class _AnimatedStreamingMarkdownState extends State<AnimatedStreamingMarkdown> {
@@ -73,13 +74,13 @@ class _AnimatedStreamingMarkdownState extends State<AnimatedStreamingMarkdown> {
       }
 
       final distance = totalLength - currentLength;
-      
+
       // Dynamic step size for smooth catch-up
       // Min 1 char, max proportional to distance (distance/20)
       // This creates an ease-out effect
       int step = max(1, (distance / 20).ceil());
       // Increase minimum speed slightly to avoid crawling at the end
-      if (step < 2) step = 2; 
+      if (step < 2) step = 2;
 
       final nextEnd = min(totalLength, currentLength + step);
       setState(() {

@@ -8,17 +8,17 @@ class AssistantEntity {
 
   @Index(unique: true, replace: true)
   late String assistantId;
-  
+
   late String name;
   String? avatar;
   String? description;
   late String systemPrompt;
-  
+
   String? preferredModel;
   String? providerId;
   List<String> skillIds = [];
   bool enableMemory = false;
-  
+
   @Index()
   DateTime? updatedAt;
 }

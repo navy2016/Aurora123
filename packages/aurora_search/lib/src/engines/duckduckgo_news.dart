@@ -107,7 +107,9 @@ class DuckDuckGoNewsEngine extends BaseSearchEngine<NewsResult> {
           ),
         );
       }
-    } catch (e) {}
+    } catch (_) {
+      return results;
+    }
     return results;
   }
 }

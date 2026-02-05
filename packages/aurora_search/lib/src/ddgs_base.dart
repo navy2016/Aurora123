@@ -176,7 +176,7 @@ class DDGS {
         seenProviders.add(engine.provider);
       }
     } catch (e) {
-      print('Error in engine ${engine.name}: $e');
+      stderr.writeln('Error in engine ${engine.name}: $e');
     }
   }
 

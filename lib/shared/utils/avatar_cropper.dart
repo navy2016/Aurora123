@@ -58,7 +58,7 @@ class _DesktopCropDialogState extends State<_DesktopCropDialog> {
     final l10n = AppLocalizations.of(context)!;
     return fluent.ContentDialog(
       title: Text(l10n.cropAvatar),
-      content: Container(
+      content: SizedBox(
         width: 500,
         height: 400,
         child: Column(

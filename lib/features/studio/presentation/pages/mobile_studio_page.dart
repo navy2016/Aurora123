@@ -114,7 +114,7 @@ class _MobileStudioPageState extends State<MobileStudioPage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: theme.dividerColor.withOpacity(0.1),
+          color: theme.dividerColor.withValues(alpha: 0.1),
         ),
       ),
       color: theme.cardColor,
@@ -128,9 +128,10 @@ class _MobileStudioPageState extends State<MobileStudioPage> {
             children: [
               if (comingSoon)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: theme.primaryColor.withOpacity(0.1),
+                    color: theme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

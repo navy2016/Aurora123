@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
@@ -11,7 +10,6 @@ import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
 import 'package:aurora/features/assistant/presentation/widgets/assistant_avatar.dart';
 import 'package:aurora/features/assistant/domain/assistant.dart';
 import 'package:aurora/features/assistant/presentation/mobile_assistant_page.dart';
-import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/features/skills/presentation/skill_provider.dart';
 
 class AssistantContent extends ConsumerStatefulWidget {
@@ -70,7 +68,8 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
             width: 200,
             decoration: BoxDecoration(
               border: Border(
-                right: BorderSide(color: theme.resources.dividerStrokeColorDefault),
+                right: BorderSide(
+                    color: theme.resources.dividerStrokeColorDefault),
               ),
             ),
             child: Column(
@@ -110,16 +109,19 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
                             _selectedAssistantId = assistant.id;
                           });
                           _loadAssistant(assistant);
-                          ref.read(assistantProvider.notifier).selectAssistant(assistant.id);
+                          ref
+                              .read(assistantProvider.notifier)
+                              .selectAssistant(assistant.id);
                         },
                         builder: (context, states) {
                           return Container(
                             height: 48,
-                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? theme.accentColor.withOpacity(0.1)
-                                  : states.isHovering
+                                  ? theme.accentColor.withValues(alpha: 0.1)
+                                  : states.isHovered
                                       ? theme.resources.subtleFillColorSecondary
                                       : Colors.transparent,
                               borderRadius: BorderRadius.circular(6),
@@ -135,14 +137,17 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: isSelected ? theme.accentColor : null,
-                                      fontWeight: isSelected ? FontWeight.bold : null,
+                                      color:
+                                          isSelected ? theme.accentColor : null,
+                                      fontWeight:
+                                          isSelected ? FontWeight.bold : null,
                                     ),
                                   ),
                                 ),
                                 if (isSelected)
                                   fluent.IconButton(
-                                    icon: const Icon(AuroraIcons.delete, size: 12),
+                                    icon: const Icon(AuroraIcons.delete,
+                                        size: 12),
                                     onPressed: () {
                                       _showDeleteDialog(assistant);
                                     },
@@ -165,17 +170,21 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(AuroraIcons.robot, size: 64, color: Colors.grey),
+                        const Icon(AuroraIcons.robot,
+                            size: 64, color: Colors.grey),
                         const SizedBox(height: 16),
                         Text(l10n.assistantSystem,
-                            style: theme.typography.title?.copyWith(color: Colors.grey)),
+                            style: theme.typography.title
+                                ?.copyWith(color: Colors.grey)),
                         const SizedBox(height: 8),
-                        const Text('选择或创建一个助理开始配置', style: TextStyle(color: Colors.grey)),
+                        const Text('选择或创建一个助理开始配置',
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   )
                 : _buildDetailView(
-                    assistantState.assistants.firstWhere((a) => a.id == _selectedAssistantId),
+                    assistantState.assistants
+                        .firstWhere((a) => a.id == _selectedAssistantId),
                     l10n,
                     theme,
                   ),
@@ -193,7 +202,8 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
     }
   }
 
-  Widget _buildDetailView(Assistant assistant, AppLocalizations l10n, fluent.FluentThemeData theme) {
+  Widget _buildDetailView(Assistant assistant, AppLocalizations l10n,
+      fluent.FluentThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -215,7 +225,8 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
                           color: theme.accentColor,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(AuroraIcons.edit, size: 12, color: Colors.white),
+                        child: const Icon(AuroraIcons.edit,
+                            size: 12, color: Colors.white),
                       ),
                     ),
                   ],
@@ -272,8 +283,8 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
                   onChanged: (v) {
                     if (v != null) {
                       ref.read(assistantProvider.notifier).saveAssistant(
-                        assistant.copyWith(enableMemory: v),
-                      );
+                            assistant.copyWith(enableMemory: v),
+                          );
                     }
                   },
                   content: const Text('启用长期记忆'),
@@ -286,51 +297,53 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
     );
   }
 
-  Widget _buildSkillSettings(Assistant assistant, fluent.FluentThemeData theme) {
-    final skills = ref.watch(skillProvider).skills.where((s) => s.isEnabled && s.forAI).toList();
-    
+  Widget _buildSkillSettings(
+      Assistant assistant, fluent.FluentThemeData theme) {
+    final skills = ref
+        .watch(skillProvider)
+        .skills
+        .where((s) => s.isEnabled && s.forAI)
+        .toList();
+
     return fluent.Expander(
       header: const Text('可用技能 (Skills)'),
-      content: skills.isEmpty 
-        ? const Padding(padding: EdgeInsets.all(8.0), child: Text('暂无可用技能'))
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: skills.map((skill) {
-              final isChecked = assistant.skillIds.contains(skill.id);
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: fluent.Checkbox(
-                  checked: isChecked,
-                  onChanged: (v) {
-                    final newIds = List<String>.from(assistant.skillIds);
-                    if (v == true) {
-                      newIds.add(skill.id);
-                    } else {
-                      newIds.remove(skill.id);
-                    }
-                    ref.read(assistantProvider.notifier).saveAssistant(
-                      assistant.copyWith(skillIds: newIds),
-                    );
-                  },
-                  content: fluent.Tooltip(
-                    message: skill.description,
-                    child: Text(skill.name),
+      content: skills.isEmpty
+          ? const Padding(padding: EdgeInsets.all(8.0), child: Text('暂无可用技能'))
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: skills.map((skill) {
+                final isChecked = assistant.skillIds.contains(skill.id);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: fluent.Checkbox(
+                    checked: isChecked,
+                    onChanged: (v) {
+                      final newIds = List<String>.from(assistant.skillIds);
+                      if (v == true) {
+                        newIds.add(skill.id);
+                      } else {
+                        newIds.remove(skill.id);
+                      }
+                      ref.read(assistantProvider.notifier).saveAssistant(
+                            assistant.copyWith(skillIds: newIds),
+                          );
+                    },
+                    content: fluent.Tooltip(
+                      message: skill.description,
+                      child: Text(skill.name),
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
+                );
+              }).toList(),
+            ),
     );
-  }
-
-  Widget _buildAvatar(Assistant assistant, {double size = 40}) {
-    return AssistantAvatar(assistant: assistant, size: size);
   }
 
   Future<void> _pickAvatar(Assistant assistant) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      if (!mounted) return;
       final croppedPath = await AvatarCropper.cropImage(context, image.path);
       if (croppedPath != null) {
         ref.read(assistantProvider.notifier).saveAssistant(
@@ -346,7 +359,7 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
       context: context,
       builder: (context) => fluent.ContentDialog(
         title: const Text('确认删除助理'),
-        content: Text('确认要删除助理 \"${assistant.name}\" 吗？此操作无法撤销。'),
+        content: Text('确认要删除助理 "${assistant.name}" 吗？此操作无法撤销。'),
         actions: [
           fluent.Button(
             onPressed: () => Navigator.pop(context),
@@ -354,7 +367,9 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
           ),
           fluent.FilledButton(
             onPressed: () {
-              ref.read(assistantProvider.notifier).deleteAssistant(assistant.id);
+              ref
+                  .read(assistantProvider.notifier)
+                  .deleteAssistant(assistant.id);
               if (_selectedAssistantId == assistant.id) {
                 setState(() {
                   _selectedAssistantId = null;
@@ -364,7 +379,8 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
               Navigator.pop(context);
             },
             style: fluent.ButtonStyle(
-              backgroundColor: fluent.WidgetStateProperty.all(fluent.Colors.red),
+              backgroundColor:
+                  fluent.WidgetStateProperty.all(fluent.Colors.red),
             ),
             child: Text(l10n.delete),
           ),

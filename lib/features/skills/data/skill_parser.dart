@@ -5,7 +5,7 @@ import '../domain/skill_entity.dart';
 class SkillParser {
   static Future<Skill?> parse(Directory directory, {String? language}) async {
     File skillMdFile;
-    
+
     if (language != null && language.isNotEmpty) {
       final langFile = File('${directory.path}/SKILL_$language.md');
       if (await langFile.exists()) {
@@ -20,24 +20,27 @@ class SkillParser {
     if (!await skillMdFile.exists()) return null;
 
     final content = await skillMdFile.readAsString();
-    
+
     // Simple Frontmatter Parser (between ---)
     final parts = content.split('---');
     if (parts.length < 3) return null;
 
     final yamlString = parts[1];
     final instructions = parts.sublist(2).join('---').trim();
-    
+
     final yaml = loadYaml(yamlString);
     if (yaml is! YamlMap) return null;
 
-    final id = yaml['id']?.toString() ?? directory.path.split(Platform.pathSeparator).last;
+    final id = yaml['id']?.toString() ??
+        directory.path.split(Platform.pathSeparator).last;
     final name = yaml['name']?.toString() ?? id;
     final description = yaml['description']?.toString() ?? '';
     final isEnabled = yaml['enabled'] is bool ? yaml['enabled'] as bool : true;
     final isLocked = yaml['locked'] is bool ? yaml['locked'] as bool : false;
     final forAI = yaml['for_ai'] is bool ? yaml['for_ai'] as bool : true;
-    final platforms = (yaml['platforms'] as YamlList?)?.map((e) => e.toString()).toList() ?? ['all'];
+    final platforms =
+        (yaml['platforms'] as YamlList?)?.map((e) => e.toString()).toList() ??
+            ['all'];
 
     // Parse tools if any
     final tools = <SkillTool>[];
@@ -48,12 +51,16 @@ class SkillParser {
           // Standard fields
           final tName = toolData['name']?.toString() ?? '';
           final tDesc = toolData['description']?.toString() ?? '';
-          final tSchema = toolData['input_schema'] as Map<String, dynamic>? ?? {};
+          final tSchema =
+              toolData['input_schema'] as Map<String, dynamic>? ?? {};
           final tType = toolData['type']?.toString() ?? 'shell';
           final tCommand = toolData['command']?.toString() ?? '';
-          
-          final inputExamples = (toolData['input_examples'] ?? toolData['examples'] ?? []) as List<dynamic>;
-          final parsedExamples = inputExamples.map((e) => e as Map<String, dynamic>).toList();
+
+          final inputExamples = (toolData['input_examples'] ??
+              toolData['examples'] ??
+              []) as List<dynamic>;
+          final parsedExamples =
+              inputExamples.map((e) => e as Map<String, dynamic>).toList();
 
           // Everything else goes to extra
           final extra = Map<String, dynamic>.from(toolData)
@@ -100,7 +107,9 @@ class SkillParser {
       if (value is YamlMap) {
         map[key.toString()] = _convertYamlMapToMap(value);
       } else if (value is YamlList) {
-        map[key.toString()] = value.map((e) => e is YamlMap ? _convertYamlMapToMap(e) : e).toList();
+        map[key.toString()] = value
+            .map((e) => e is YamlMap ? _convertYamlMapToMap(e) : e)
+            .toList();
       } else {
         map[key.toString()] = value;
       }

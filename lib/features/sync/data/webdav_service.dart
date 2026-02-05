@@ -13,7 +13,8 @@ class WebDavService {
 
   WebDavService(this.config);
 
-  String get _baseUrl => config.url.endsWith('/') ? config.url : '${config.url}/';
+  String get _baseUrl =>
+      config.url.endsWith('/') ? config.url : '${config.url}/';
 
   // Basic Auth Header
   String get _authHeader {
@@ -44,8 +45,10 @@ class WebDavService {
   }
 
   Future<void> uploadFile(File file, String remoteName) async {
-    final remoteUrl = '$_baseUrl${config.remotePath}/$remoteName'.replaceAll('//', '/').replaceFirst(':/', '://');
-    
+    final remoteUrl = '$_baseUrl${config.remotePath}/$remoteName'
+        .replaceAll('//', '/')
+        .replaceFirst(':/', '://');
+
     // Ensure directory exists
     await _ensureDirectory(config.remotePath);
 
@@ -63,7 +66,9 @@ class WebDavService {
   }
 
   Future<File> downloadFile(String remoteName, String localPath) async {
-    final remoteUrl = '$_baseUrl${config.remotePath}/$remoteName'.replaceAll('//', '/').replaceFirst(':/', '://');
+    final remoteUrl = '$_baseUrl${config.remotePath}/$remoteName'
+        .replaceAll('//', '/')
+        .replaceFirst(':/', '://');
     await _dio.download(
       remoteUrl,
       localPath,
@@ -73,14 +78,16 @@ class WebDavService {
   }
 
   Future<List<RemoteBackupFile>> listBackups() async {
-     // Ensure directory first
+    // Ensure directory first
     try {
       await _ensureDirectory(config.remotePath);
     } catch (e) {
-       // Ignore error if directory creation fails or exists
+      // Ignore error if directory creation fails or exists
     }
 
-    final remoteUrl = '$_baseUrl${config.remotePath}'.replaceAll('//', '/').replaceFirst(':/', '://');
+    final remoteUrl = '$_baseUrl${config.remotePath}'
+        .replaceAll('//', '/')
+        .replaceFirst(':/', '://');
     final response = await _dio.request(
       remoteUrl,
       options: _options.copyWith(
@@ -98,29 +105,39 @@ class WebDavService {
       final backups = <RemoteBackupFile>[];
 
       for (var resp in responses) {
-        final href = resp.findAllElements('d:href').first.text;
+        final href = resp.findAllElements('d:href').first.innerText;
         final prop = resp.findAllElements('d:prop').first;
-        
-        final displayNameElement = prop.findAllElements('d:displayname').isEmpty ? null : prop.findAllElements('d:displayname').first;
-        final getContentLengthElement = prop.findAllElements('d:getcontentlength').isEmpty ? null : prop.findAllElements('d:getcontentlength').first;
-        final getLastModifiedElement = prop.findAllElements('d:getlastmodified').isEmpty ? null : prop.findAllElements('d:getlastmodified').first;
-        final resourceTypeElement = prop.findAllElements('d:resourcetype').first;
+
+        final displayNameElement = prop.findAllElements('d:displayname').isEmpty
+            ? null
+            : prop.findAllElements('d:displayname').first;
+        final getContentLengthElement =
+            prop.findAllElements('d:getcontentlength').isEmpty
+                ? null
+                : prop.findAllElements('d:getcontentlength').first;
+        final getLastModifiedElement =
+            prop.findAllElements('d:getlastmodified').isEmpty
+                ? null
+                : prop.findAllElements('d:getlastmodified').first;
+        final resourceTypeElement =
+            prop.findAllElements('d:resourcetype').first;
 
         // Skip directories
         if (resourceTypeElement.findAllElements('d:collection').isNotEmpty) {
-           continue;
+          continue;
         }
 
-        final name = displayNameElement?.text ?? href.split('/').last;
+        final name = displayNameElement?.innerText ?? href.split('/').last;
         // Filter for our backup files
         if (!name.endsWith('.zip')) continue;
 
-        final size = int.tryParse(getContentLengthElement?.text ?? '0') ?? 0;
-        final modifiedStr = getLastModifiedElement?.text;
+        final size =
+            int.tryParse(getContentLengthElement?.innerText ?? '0') ?? 0;
+        final modifiedStr = getLastModifiedElement?.innerText;
         DateTime modified = DateTime.now();
         if (modifiedStr != null) {
           try {
-             modified = HttpDate.parse(modifiedStr);
+            modified = HttpDate.parse(modifiedStr);
           } catch (_) {}
         }
 
@@ -131,7 +148,7 @@ class WebDavService {
           size: size,
         ));
       }
-      
+
       // Sort by modified desc
       backups.sort((a, b) => b.modified.compareTo(a.modified));
       return backups;
@@ -142,9 +159,10 @@ class WebDavService {
   Future<void> _ensureDirectory(String path) async {
     // A simple implementation that tries to create the directory
     // In a real robust app, we might need to recursively create directories
-    final remoteUrl = '$_baseUrl$path'.replaceAll('//', '/').replaceFirst(':/', '://');
+    final remoteUrl =
+        '$_baseUrl$path'.replaceAll('//', '/').replaceFirst(':/', '://');
     try {
-       await _dio.request(
+      await _dio.request(
         remoteUrl,
         options: _options.copyWith(method: 'MKCOL'),
       );

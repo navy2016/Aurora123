@@ -55,7 +55,7 @@ class _StudioContentState extends ConsumerState<StudioContent> {
               ),
               const SizedBox(height: 10),
               Text(
-                l10n.studioDescription, 
+                l10n.studioDescription,
                 style: theme.typography.body,
               ),
               const SizedBox(height: 40),
@@ -115,24 +115,24 @@ class _StudioContentState extends ConsumerState<StudioContent> {
   }) {
     final theme = FluentTheme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Card(
       padding: EdgeInsets.zero,
       borderRadius: BorderRadius.circular(12),
-      backgroundColor: hasBackground
-          ? theme.cardColor.withValues(alpha: 0.7)
-          : null,
+      backgroundColor:
+          hasBackground ? theme.cardColor.withValues(alpha: 0.7) : null,
       child: HoverButton(
         onPressed: onTap,
-        cursor: comingSoon ? SystemMouseCursors.basic : SystemMouseCursors.click,
+        cursor:
+            comingSoon ? SystemMouseCursors.basic : SystemMouseCursors.click,
         builder: (context, states) {
           return Container(
             width: 220,
             height: 180,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: states.isHovered && !comingSoon 
-                  ? theme.accentColor.withAlpha(15) 
+              color: states.isHovered && !comingSoon
+                  ? theme.accentColor.withAlpha(15)
                   : Colors.transparent,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -142,15 +142,19 @@ class _StudioContentState extends ConsumerState<StudioContent> {
               children: [
                 // Badge or Placeholder for alignment
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: comingSoon ? theme.accentColor.withAlpha(30) : Colors.transparent,
+                    color: comingSoon
+                        ? theme.accentColor.withAlpha(30)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     l10n.comingSoon,
                     style: theme.typography.caption?.copyWith(
-                      color: comingSoon ? theme.accentColor : Colors.transparent,
+                      color:
+                          comingSoon ? theme.accentColor : Colors.transparent,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -158,16 +162,15 @@ class _StudioContentState extends ConsumerState<StudioContent> {
                 ),
                 const SizedBox(height: 8),
                 Icon(
-                  icon, 
-                  size: 32, 
-                  color: comingSoon 
-                      ? theme.inactiveColor 
-                      : theme.accentColor,
+                  icon,
+                  size: 32,
+                  color: comingSoon ? theme.inactiveColor : theme.accentColor,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  title, 
-                  style: theme.typography.bodyStrong?.copyWith( // Reduced from subtitle
+                  title,
+                  style: theme.typography.bodyStrong?.copyWith(
+                    // Reduced from subtitle
                     fontSize: 16,
                     color: comingSoon ? theme.inactiveColor : null,
                   ),
@@ -175,7 +178,8 @@ class _StudioContentState extends ConsumerState<StudioContent> {
                 ),
                 const SizedBox(height: 6),
                 Expanded(
-                  child: Center( // Center content vertically in remaining space
+                  child: Center(
+                    // Center content vertically in remaining space
                     child: Text(
                       description,
                       style: theme.typography.caption?.copyWith(

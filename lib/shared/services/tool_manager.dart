@@ -7,8 +7,9 @@ import 'package:aurora/shared/utils/platform_utils.dart';
 
 class ToolManager {
   final DDGS _ddgs = DDGS(timeout: const Duration(seconds: 15));
-  final Dio _dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 10)));
-  
+  final Dio _dio =
+      Dio(BaseOptions(connectTimeout: const Duration(seconds: 10)));
+
   List<Map<String, dynamic>> getTools({List<Skill> skills = const []}) {
     final tools = <Map<String, dynamic>>[];
 
@@ -18,7 +19,8 @@ class ToolManager {
       for (final skillTool in skill.tools) {
         var description = skillTool.description;
         if (skillTool.inputExamples.isNotEmpty) {
-          final examplesStr = skillTool.inputExamples.map((e) => jsonEncode(e)).join(', ');
+          final examplesStr =
+              skillTool.inputExamples.map((e) => jsonEncode(e)).join(', ');
           description += '\nExamples: $examplesStr';
         }
 
@@ -37,7 +39,8 @@ class ToolManager {
   }
 
   Future<String> executeTool(String name, Map<String, dynamic> args,
-      {String preferredEngine = 'duckduckgo', List<Skill> skills = const []}) async {
+      {String preferredEngine = 'duckduckgo',
+      List<Skill> skills = const []}) async {
     if (name == 'SearchWeb') {
       return await _searchWeb(args['query'] ?? '', preferredEngine);
     }
@@ -54,11 +57,13 @@ class ToolManager {
     return jsonEncode({'error': 'Unknown tool: $name'});
   }
 
-  Future<String> _executeSkillTool(SkillTool tool, Map<String, dynamic> args) async {
+  Future<String> _executeSkillTool(
+      SkillTool tool, Map<String, dynamic> args) async {
     if (tool.type == 'shell') {
       if (PlatformUtils.isMobile) {
         return jsonEncode({
-          'error': 'Shell tools are not supported on mobile platforms. Please use http tools for cross-platform support.',
+          'error':
+              'Shell tools are not supported on mobile platforms. Please use http tools for cross-platform support.',
         });
       }
       try {
@@ -71,7 +76,7 @@ class ToolManager {
             if (valStr.contains(r'\\') && !valStr.startsWith(r'\\')) {
               valStr = valStr.replaceAll(r'\\', r'\');
             }
-            // If the command is a PowerShell command using '{{path}}', 
+            // If the command is a PowerShell command using '{{path}}',
             // we must escape single quotes in the value to avoid syntax errors.
             if (tool.command.contains("'{{$key}}'")) {
               valStr = valStr.replaceAll("'", "''");
@@ -89,9 +94,10 @@ class ToolManager {
               .where((k) => k != null)
               .cast<String>()
               .toSet();
-          
+
           return jsonEncode({
-            'error': 'Template execution failed: Some placeholders were not provided.',
+            'error':
+                'Template execution failed: Some placeholders were not provided.',
             'missing_parameters': missingKeys.toList(),
             'received_args': args,
             'final_command_with_placeholders': command,
@@ -102,7 +108,8 @@ class ToolManager {
         if (PlatformUtils.isWindows) {
           // Use powershell.exe for all shell tools on Windows.
           // It's much more robust than cmd.exe for complex commands, pipes, and quoting.
-          result = await Process.run('powershell.exe', ['-NoProfile', '-Command', command]);
+          result = await Process.run(
+              'powershell.exe', ['-NoProfile', '-Command', command]);
         } else {
           result = await Process.run(command, [], runInShell: true);
         }
@@ -122,7 +129,8 @@ class ToolManager {
     } else if (tool.type == 'http' || tool.type == 'api') {
       try {
         var url = tool.command;
-        final method = (tool.extra['method']?.toString() ?? 'GET').toUpperCase();
+        final method =
+            (tool.extra['method']?.toString() ?? 'GET').toUpperCase();
         final Map<String, dynamic> queryParams = {};
         final Map<String, dynamic> bodyData = {};
 
@@ -148,9 +156,11 @@ class ToolManager {
         );
 
         if (method == 'GET') {
-          response = await _dio.get(url, queryParameters: queryParams, options: options);
+          response = await _dio.get(url,
+              queryParameters: queryParams, options: options);
         } else {
-          response = await _dio.post(url, data: bodyData, queryParameters: queryParams, options: options);
+          response = await _dio.post(url,
+              data: bodyData, queryParameters: queryParams, options: options);
         }
 
         return jsonEncode({

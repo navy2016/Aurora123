@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
-import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import '../domain/assistant.dart';
 import 'widgets/assistant_avatar.dart';
 import 'assistant_provider.dart';
-import '../../settings/presentation/settings_provider.dart';
 import '../../settings/presentation/widgets/mobile_settings_widgets.dart';
 import '../../skills/presentation/skill_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'dart:io';
 
 class MobileAssistantDetailPage extends ConsumerStatefulWidget {
   final Assistant assistant;
@@ -19,10 +16,12 @@ class MobileAssistantDetailPage extends ConsumerStatefulWidget {
   const MobileAssistantDetailPage({super.key, required this.assistant});
 
   @override
-  ConsumerState<MobileAssistantDetailPage> createState() => _MobileAssistantDetailPageState();
+  ConsumerState<MobileAssistantDetailPage> createState() =>
+      _MobileAssistantDetailPageState();
 }
 
-class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetailPage> {
+class _MobileAssistantDetailPageState
+    extends ConsumerState<MobileAssistantDetailPage> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _systemPromptController;
@@ -33,8 +32,10 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
     super.initState();
     _currentAssistant = widget.assistant;
     _nameController = TextEditingController(text: _currentAssistant.name);
-    _descriptionController = TextEditingController(text: _currentAssistant.description);
-    _systemPromptController = TextEditingController(text: _currentAssistant.systemPrompt);
+    _descriptionController =
+        TextEditingController(text: _currentAssistant.description);
+    _systemPromptController =
+        TextEditingController(text: _currentAssistant.systemPrompt);
   }
 
   @override
@@ -62,11 +63,10 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final settingsState = ref.watch(settingsProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.5),
+      backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
       appBar: AppBar(
         title: const Text(''),
         centerTitle: true,
@@ -84,7 +84,7 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
         children: [
           // Basic Info
           _buildHeroSection(context, theme, l10n),
-          
+
           MobileSettingsSection(
             title: '基本配置',
             children: [
@@ -109,7 +109,11 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.systemPrompt, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    Text(l10n.systemPrompt,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey)),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _systemPromptController,
@@ -117,9 +121,10 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
                       minLines: 3,
                       decoration: InputDecoration(
                         hintText: l10n.systemPromptPlaceholder,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         filled: true,
-                        fillColor: theme.cardColor.withOpacity(0.5),
+                        fillColor: theme.cardColor.withValues(alpha: 0.5),
                       ),
                       onChanged: (_) => _save(),
                     ),
@@ -145,11 +150,13 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
                 trailing: Switch.adaptive(
                   value: _currentAssistant.enableMemory,
                   onChanged: (v) {
-                    _updateAssistant(_currentAssistant.copyWith(enableMemory: v));
+                    _updateAssistant(
+                        _currentAssistant.copyWith(enableMemory: v));
                   },
                 ),
                 onTap: () {
-                  _updateAssistant(_currentAssistant.copyWith(enableMemory: !_currentAssistant.enableMemory));
+                  _updateAssistant(_currentAssistant.copyWith(
+                      enableMemory: !_currentAssistant.enableMemory));
                 },
               ),
             ],
@@ -159,7 +166,8 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
     );
   }
 
-  Widget _buildHeroSection(BuildContext context, ThemeData theme, AppLocalizations l10n) {
+  Widget _buildHeroSection(
+      BuildContext context, ThemeData theme, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Center(
@@ -178,7 +186,8 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                   ),
-                  child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                  child: const Icon(Icons.camera_alt,
+                      size: 16, color: Colors.white),
                 ),
               ),
             ],
@@ -199,13 +208,14 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
+          border: UnderlineInputBorder(
+              borderSide:
+                  BorderSide(color: Colors.grey.withValues(alpha: 0.3))),
         ),
         onChanged: onChanged,
       ),
     );
   }
-
 
   void _updateAssistant(Assistant updated) {
     setState(() {
@@ -215,7 +225,6 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
   }
 
   Future<void> _pickAvatar() async {
-    final l10n = AppLocalizations.of(context)!;
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file != null && mounted) {
@@ -236,7 +245,7 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
           ),
         ],
       );
-      
+
       if (croppedFile != null) {
         _updateAssistant(_currentAssistant.copyWith(avatar: croppedFile.path));
       }
@@ -244,67 +253,76 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
   }
 
   void _showSkillPicker(BuildContext context) {
-    final skills = ref.read(skillProvider).skills.where((s) => s.isEnabled && s.forAI).toList();
+    final skills = ref
+        .read(skillProvider)
+        .skills
+        .where((s) => s.isEnabled && s.forAI)
+        .toList();
     if (skills.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('暂无可用技能')));
-        return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('暂无可用技能')));
+      return;
     }
 
     AuroraBottomSheet.show(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setSheetState) {
-           return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AuroraBottomSheet.buildTitle(context, '配置技能'),
-              const Divider(height: 1),
-              Container(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-                child: ListView(
-                  shrinkWrap: true,
-                  children: skills.map((skill) {
-                    final isSelected = _currentAssistant.skillIds.contains(skill.id);
-                    return CheckboxListTile(
-                        title: Text(skill.name),
-                        subtitle: Text(skill.description, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        value: isSelected,
-                        onChanged: (v) {
-                             final newIds = List<String>.from(_currentAssistant.skillIds);
-                             if (v == true) {
-                               newIds.add(skill.id);
-                             } else {
-                               newIds.remove(skill.id);
-                             }
-                             // Update local state and parent state
-                             final updated = _currentAssistant.copyWith(skillIds: newIds);
-                             // Update the main page state
-                             setState(() {
-                               _currentAssistant = updated;
-                             });
-                             // Update the bottom sheet state
-                             setSheetState(() {});
-                             ref.read(assistantProvider.notifier).saveAssistant(updated);
-                        },
-                    );
-                  }).toList(),
-                ),
+      builder: (ctx) => StatefulBuilder(builder: (context, setSheetState) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AuroraBottomSheet.buildTitle(context, '配置技能'),
+            const Divider(height: 1),
+            Container(
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5),
+              child: ListView(
+                shrinkWrap: true,
+                children: skills.map((skill) {
+                  final isSelected =
+                      _currentAssistant.skillIds.contains(skill.id);
+                  return CheckboxListTile(
+                    title: Text(skill.name),
+                    subtitle: Text(skill.description,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    value: isSelected,
+                    onChanged: (v) {
+                      final newIds =
+                          List<String>.from(_currentAssistant.skillIds);
+                      if (v == true) {
+                        newIds.add(skill.id);
+                      } else {
+                        newIds.remove(skill.id);
+                      }
+                      // Update local state and parent state
+                      final updated =
+                          _currentAssistant.copyWith(skillIds: newIds);
+                      // Update the main page state
+                      setState(() {
+                        _currentAssistant = updated;
+                      });
+                      // Update the bottom sheet state
+                      setSheetState(() {});
+                      ref
+                          .read(assistantProvider.notifier)
+                          .saveAssistant(updated);
+                    },
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 16),
-            ],
-           );
-        }
-      ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        );
+      }),
     );
   }
-
 
   void _showDeleteDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('确认删除助理'),
-        content: Text('确认要删除助理 \"${_currentAssistant.name}\" 吗？此操作无法撤销。'),
+        content: Text('确认要删除助理 "${_currentAssistant.name}" 吗？此操作无法撤销。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -312,7 +330,9 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
           ),
           TextButton(
             onPressed: () {
-              ref.read(assistantProvider.notifier).deleteAssistant(_currentAssistant.id);
+              ref
+                  .read(assistantProvider.notifier)
+                  .deleteAssistant(_currentAssistant.id);
               Navigator.pop(context); // close dialog
               Navigator.pop(this.context); // close page
             },
@@ -323,7 +343,8 @@ class _MobileAssistantDetailPageState extends ConsumerState<MobileAssistantDetai
     );
   }
 
-  Widget _buildAvatar(BuildContext context, Assistant assistant, {double size = 40}) {
+  Widget _buildAvatar(BuildContext context, Assistant assistant,
+      {double size = 40}) {
     return AssistantAvatar(assistant: assistant, size: size);
   }
 }

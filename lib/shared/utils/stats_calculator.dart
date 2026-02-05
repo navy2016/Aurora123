@@ -1,13 +1,13 @@
 class StatsCalculator {
   /// Calculates Tokens Per Second (TPS) representing generation speed.
-  /// 
+  ///
   /// Formula: (Completion + Reasoning) / (Duration - TTFT)
-  /// 
+  ///
   /// [completionTokens]: Number of tokens in the final text response.
   /// [reasoningTokens]: Number of tokens used for reasoning (if applicable).
   /// [durationMs]: Total request duration in milliseconds.
   /// [firstTokenMs]: Time to first token in milliseconds (latency).
-  /// 
+  ///
   /// Returns 0.0 if duration is invalid or no tokens generated.
   static double calculateTPS({
     required int completionTokens,

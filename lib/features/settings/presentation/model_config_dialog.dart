@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'settings_provider.dart';
@@ -22,7 +21,7 @@ class ModelConfigDialog extends ConsumerStatefulWidget {
 
 class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
   late Map<String, dynamic> _modelSettings;
-  
+
   // Thinking config temporary state
   bool _thinkingEnabled = false;
   String _thinkingMode = 'auto';
@@ -37,20 +36,24 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
   void initState() {
     super.initState();
     _loadSettings();
-    
+
     // Initialize controllers with loaded values
     _thinkingBudgetController = TextEditingController(
-      text: _modelSettings['_aurora_thinking_config']?['budget']?.toString() ?? ''
-    );
+        text:
+            _modelSettings['_aurora_thinking_config']?['budget']?.toString() ??
+                '');
     _temperatureController = TextEditingController(
-      text: _modelSettings['_aurora_generation_config']?['temperature']?.toString() ?? ''
-    );
+        text: _modelSettings['_aurora_generation_config']?['temperature']
+                ?.toString() ??
+            '');
     _maxTokensController = TextEditingController(
-      text: _modelSettings['_aurora_generation_config']?['max_tokens']?.toString() ?? ''
-    );
+        text: _modelSettings['_aurora_generation_config']?['max_tokens']
+                ?.toString() ??
+            '');
     _contextLengthController = TextEditingController(
-      text: _modelSettings['_aurora_generation_config']?['context_length']?.toString() ?? ''
-    );
+        text: _modelSettings['_aurora_generation_config']?['context_length']
+                ?.toString() ??
+            '');
   }
 
   @override
@@ -66,7 +69,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     final liveProvider = ref.read(settingsProvider).providers.firstWhere(
         (p) => p.id == widget.provider.id,
         orElse: () => widget.provider);
-        
+
     final existingSettings = liveProvider.modelSettings[widget.modelName] ?? {};
     _modelSettings = Map<String, dynamic>.from(existingSettings);
 
@@ -91,7 +94,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
 
     // Construct new settings map
     final newSettings = Map<String, dynamic>.from(_modelSettings);
-    
+
     // Handle Thinking Config
     if (_thinkingEnabled) {
       newSettings['_aurora_thinking_config'] = {
@@ -131,10 +134,12 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     });
 
     // Save to provider
-    final liveProvider = ref.read(settingsProvider).providers
-        .firstWhere((p) => p.id == widget.provider.id, orElse: () => widget.provider);
-    
-    final allModelSettings = Map<String, Map<String, dynamic>>.from(liveProvider.modelSettings);
+    final liveProvider = ref.read(settingsProvider).providers.firstWhere(
+        (p) => p.id == widget.provider.id,
+        orElse: () => widget.provider);
+
+    final allModelSettings =
+        Map<String, Map<String, dynamic>>.from(liveProvider.modelSettings);
     if (newSettings.isEmpty) {
       allModelSettings.remove(widget.modelName);
     } else {
@@ -142,9 +147,9 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     }
 
     ref.read(settingsProvider.notifier).updateProvider(
-      id: widget.provider.id,
-      modelSettings: allModelSettings,
-    );
+          id: widget.provider.id,
+          modelSettings: allModelSettings,
+        );
   }
 
   @override
@@ -154,8 +159,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
 
     // Extract custom params for display (exclude _aurora_ keys)
     final customParams = Map<String, dynamic>.fromEntries(
-      _modelSettings.entries.where((e) => !e.key.startsWith('_aurora_'))
-    );
+        _modelSettings.entries.where((e) => !e.key.startsWith('_aurora_')));
 
     return ContentDialog(
       constraints: const BoxConstraints(maxWidth: 600, maxHeight: 800),
@@ -168,11 +172,14 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
             children: [
               Text(
                 widget.modelName,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
                 widget.provider.name,
-                style: TextStyle(fontSize: 12, color: theme.resources.textFillColorSecondary),
+                style: TextStyle(
+                    fontSize: 12,
+                    color: theme.resources.textFillColorSecondary),
               ),
             ],
           ),
@@ -185,43 +192,49 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
             _buildSectionCard(
               title: l10n.thinkingConfig,
               icon: AuroraIcons.lightbulb,
-
               headerAction: ToggleSwitch(
                 checked: _thinkingEnabled,
                 onChanged: (v) => _saveSettings(thinkingEnabled: v),
               ),
-              child: _thinkingEnabled ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 16),
-                  InfoLabel(
-                    label: l10n.thinkingBudget,
-                    child: TextBox(
-                      placeholder: l10n.thinkingBudgetHint,
-                      controller: _thinkingBudgetController,
-                      onChanged: (v) => _saveSettings(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InfoLabel(
-                    label: l10n.transmissionMode,
-                    child: ComboBox<String>(
-                      value: _thinkingMode,
-                      isExpanded: true,
-                      items: [
-                        ComboBoxItem(value: 'auto', child: Text(l10n.modeAuto)),
-                        ComboBoxItem(value: 'extra_body', child: Text(l10n.modeExtraBody)),
-                        ComboBoxItem(value: 'reasoning_effort', child: Text(l10n.modeReasoningEffort)),
+              child: _thinkingEnabled
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        InfoLabel(
+                          label: l10n.thinkingBudget,
+                          child: TextBox(
+                            placeholder: l10n.thinkingBudgetHint,
+                            controller: _thinkingBudgetController,
+                            onChanged: (v) => _saveSettings(),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        InfoLabel(
+                          label: l10n.transmissionMode,
+                          child: ComboBox<String>(
+                            value: _thinkingMode,
+                            isExpanded: true,
+                            items: [
+                              ComboBoxItem(
+                                  value: 'auto', child: Text(l10n.modeAuto)),
+                              ComboBoxItem(
+                                  value: 'extra_body',
+                                  child: Text(l10n.modeExtraBody)),
+                              ComboBoxItem(
+                                  value: 'reasoning_effort',
+                                  child: Text(l10n.modeReasoningEffort)),
+                            ],
+                            onChanged: (v) {
+                              if (v != null) _saveSettings(thinkingMode: v);
+                            },
+                          ),
+                        ),
                       ],
-                      onChanged: (v) {
-                        if (v != null) _saveSettings(thinkingMode: v);
-                      },
-                    ),
-                  ),
-                ],
-              ) : null,
+                    )
+                  : null,
             ),
 
             const SizedBox(height: 16),
@@ -281,22 +294,26 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                       padding: const EdgeInsets.all(24),
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        border: Border.all(color: theme.resources.dividerStrokeColorDefault),
+                        border: Border.all(
+                            color: theme.resources.dividerStrokeColorDefault),
                         borderRadius: BorderRadius.circular(8),
                         color: theme.scaffoldBackgroundColor,
                       ),
                       child: Column(
                         children: [
-                          Icon(AuroraIcons.parameter, size: 32, color: theme.resources.textFillColorTertiary),
+                          Icon(AuroraIcons.parameter,
+                              size: 32,
+                              color: theme.resources.textFillColorTertiary),
                           const SizedBox(height: 8),
                           Text(
                             l10n.noCustomParams,
-                            style: TextStyle(color: theme.resources.textFillColorSecondary),
+                            style: TextStyle(
+                                color: theme.resources.textFillColorSecondary),
                           ),
                           const SizedBox(height: 8),
                           Button(
                             child: Text(l10n.addCustomParam),
-                             onPressed: () => _addParam(customParams),
+                            onPressed: () => _addParam(customParams),
                           )
                         ],
                       ),
@@ -305,7 +322,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                     ...customParams.entries.map((e) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
-                        child: _buildParamItem(e.key, e.value, customParams, theme),
+                        child: _buildParamItem(
+                            e.key, e.value, customParams, theme),
                       );
                     }),
                 ],
@@ -339,7 +357,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
         border: Border.all(color: theme.resources.cardStrokeColorDefault),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -354,7 +372,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: theme.accentColor.withOpacity(0.1),
+                  color: theme.accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: theme.accentColor, size: 18),
@@ -363,12 +381,14 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600)),
                   if (subtitle != null)
-                    Text(subtitle, style: TextStyle(
-                      fontSize: 12, 
-                      color: theme.resources.textFillColorSecondary
-                    )),
+                    Text(subtitle,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: theme.resources.textFillColorSecondary)),
                 ],
               ),
               const Spacer(),
@@ -381,7 +401,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     );
   }
 
-  Widget _buildParamItem(String key, dynamic value, Map<String, dynamic> currentParams, FluentThemeData theme) {
+  Widget _buildParamItem(String key, dynamic value,
+      Map<String, dynamic> currentParams, FluentThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -397,10 +418,11 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
               color: theme.resources.controlFillColorSecondary,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text(
-              key, 
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.w600)
-            ),
+            child: Text(key,
+                style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
           ),
           const SizedBox(width: 12),
           const Icon(AuroraIcons.chevronRight, size: 10, color: Colors.grey),
@@ -410,7 +432,9 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
               _formatValue(value),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: theme.resources.textFillColorSecondary, fontFamily: 'monospace'),
+              style: TextStyle(
+                  color: theme.resources.textFillColorSecondary,
+                  fontFamily: 'monospace'),
             ),
           ),
           IconButton(
@@ -418,7 +442,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
             onPressed: () => _editParam(key, value, currentParams),
           ),
           IconButton(
-            icon: Icon(AuroraIcons.delete, size: 14, color: Colors.red.withOpacity(0.8)),
+            icon: Icon(AuroraIcons.delete,
+                size: 14, color: Colors.red.withValues(alpha: 0.8)),
             onPressed: () => _removeParam(key, currentParams),
           ),
         ],
@@ -443,10 +468,12 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     }
   }
 
-  void _editParam(String key, dynamic value, Map<String, dynamic> currentParams) async {
+  void _editParam(
+      String key, dynamic value, Map<String, dynamic> currentParams) async {
     final result = await showDialog<MapEntry<String, dynamic>>(
       context: context,
-      builder: (context) => _AddParamDialog(initialKey: key, initialValue: value),
+      builder: (context) =>
+          _AddParamDialog(initialKey: key, initialValue: value),
     );
     if (result != null) {
       final newParams = Map<String, dynamic>.from(currentParams);
@@ -496,7 +523,7 @@ class _AddParamDialogState extends State<_AddParamDialog> {
   Widget build(BuildContext context) {
     final isEditing = widget.initialKey != null;
     final l10n = AppLocalizations.of(context)!;
-    
+
     return ContentDialog(
       title: Text(isEditing ? l10n.editParam : l10n.addCustomParam),
       content: Column(

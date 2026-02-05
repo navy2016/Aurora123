@@ -25,10 +25,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
   String? _lastActivePresetId;
   final _presetFlyoutController = FlyoutController();
   final _addPresetFlyoutController = FlyoutController();
-  
+
   final _newPresetController = TextEditingController();
-
-
 
   void _showToast(String message, IconData icon) {
     _toastTimer?.cancel();
@@ -61,7 +59,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -74,8 +72,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_toastIcon != null) ...[
-                    Icon(_toastIcon,
-                        size: 18, color: theme.accentColor),
+                    Icon(_toastIcon, size: 18, color: theme.accentColor),
                     const SizedBox(width: 10),
                   ],
                   Text(
@@ -94,7 +91,6 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
       ),
     );
   }
-
 
   @override
   void initState() {
@@ -131,7 +127,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
       if (provider.isEnabled && provider.models.isNotEmpty) {
         for (final model in provider.models) {
           if (provider.isModelEnabled(model)) {
-            allModels.add(NovelModelConfig(providerId: provider.id, modelId: model));
+            allModels
+                .add(NovelModelConfig(providerId: provider.id, modelId: model));
           }
         }
       }
@@ -139,18 +136,24 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
 
     // Initialize controllers with current state (only on first build)
     if (!_isInitialized) {
-      _controllers['outline']!.text = novelState.outlineModel?.systemPrompt ?? '';
-      _controllers['decompose']!.text = novelState.decomposeModel?.systemPrompt ?? '';
+      _controllers['outline']!.text =
+          novelState.outlineModel?.systemPrompt ?? '';
+      _controllers['decompose']!.text =
+          novelState.decomposeModel?.systemPrompt ?? '';
       _controllers['writer']!.text = novelState.writerModel?.systemPrompt ?? '';
-      _controllers['reviewer']!.text = novelState.reviewerModel?.systemPrompt ?? '';
+      _controllers['reviewer']!.text =
+          novelState.reviewerModel?.systemPrompt ?? '';
       _isInitialized = true;
       _lastActivePresetId = novelState.activePromptPresetId;
     } else if (_lastActivePresetId != novelState.activePromptPresetId) {
       // 检查是否发生了预设切换
-      _controllers['outline']!.text = novelState.outlineModel?.systemPrompt ?? '';
-      _controllers['decompose']!.text = novelState.decomposeModel?.systemPrompt ?? '';
+      _controllers['outline']!.text =
+          novelState.outlineModel?.systemPrompt ?? '';
+      _controllers['decompose']!.text =
+          novelState.decomposeModel?.systemPrompt ?? '';
       _controllers['writer']!.text = novelState.writerModel?.systemPrompt ?? '';
-      _controllers['reviewer']!.text = novelState.reviewerModel?.systemPrompt ?? '';
+      _controllers['reviewer']!.text =
+          novelState.reviewerModel?.systemPrompt ?? '';
       _lastActivePresetId = novelState.activePromptPresetId;
     }
 
@@ -163,8 +166,12 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
     ) {
       final selectedBase = currentConfig != null
           ? allModels.firstWhere(
-              (m) => m.providerId == currentConfig.providerId && m.modelId == currentConfig.modelId,
-              orElse: () => NovelModelConfig(providerId: currentConfig.providerId, modelId: currentConfig.modelId))
+              (m) =>
+                  m.providerId == currentConfig.providerId &&
+                  m.modelId == currentConfig.modelId,
+              orElse: () => NovelModelConfig(
+                  providerId: currentConfig.providerId,
+                  modelId: currentConfig.modelId))
           : null;
 
       return Padding(
@@ -178,11 +185,14 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                 placeholder: Text(l10n.selectModel),
                 items: allModels.map((item) {
                   final providerName = settingsState.providers
-                      .firstWhere((p) => p.id == item.providerId, orElse: () => ProviderConfig(id: item.providerId, name: 'Unknown'))
+                      .firstWhere((p) => p.id == item.providerId,
+                          orElse: () => ProviderConfig(
+                              id: item.providerId, name: 'Unknown'))
                       .name;
                   return ComboBoxItem<NovelModelConfig>(
                     value: item,
-                    child: Text('$providerName - ${item.modelId}', overflow: TextOverflow.ellipsis),
+                    child: Text('$providerName - ${item.modelId}',
+                        overflow: TextOverflow.ellipsis),
                   );
                 }).toList(),
                 value: allModels.contains(selectedBase) ? selectedBase : null,
@@ -201,7 +211,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
             const SizedBox(height: 20),
             Row(
               children: [
-                Text('系统提示词 (System Prompt)', style: theme.typography.bodyStrong),
+                Text('系统提示词 (System Prompt)',
+                    style: theme.typography.bodyStrong),
                 const Spacer(),
                 Tooltip(
                   message: '将提示词恢复为系统默认预设',
@@ -225,7 +236,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                 textAlignVertical: TextAlignVertical.top,
                 placeholder: '在此输入自定义 Prompt...',
                 onChanged: onPromptChanged,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 13, height: 1.4),
+                style: const TextStyle(
+                    fontFamily: 'monospace', fontSize: 13, height: 1.4),
               ),
             ),
           ],
@@ -238,7 +250,9 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
       title: Container(
         height: 48,
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: theme.resources.dividerStrokeColorDefault)),
+          border: Border(
+              bottom:
+                  BorderSide(color: theme.resources.dividerStrokeColorDefault)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
@@ -247,12 +261,13 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
             const SizedBox(width: 12),
             Text(l10n.modelConfig, style: theme.typography.subtitle),
             const Spacer(),
-            
+
             // Integrated Preset Toolbar
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: theme.resources.controlStrokeColorDefault),
+                border: Border.all(
+                    color: theme.resources.controlStrokeColorDefault),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -262,7 +277,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                     controller: _presetFlyoutController,
                     child: GestureDetector(
                       onTap: () {
-                         _presetFlyoutController.showFlyout(
+                        _presetFlyoutController.showFlyout(
                           autoModeConfiguration: FlyoutAutoConfiguration(
                             preferredMode: FlyoutPlacementMode.bottomCenter,
                           ),
@@ -270,70 +285,109 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                             return MenuFlyout(
                               items: [
                                 MenuFlyoutItem(
-                                  text: Text(l10n.systemDefault, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  text: Text(l10n.systemDefault,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
                                   onPressed: () {
-                                    _controllers['outline']!.text = NovelPromptPresets.outline;
-                                    novelNotifier.setOutlinePrompt(NovelPromptPresets.outline);
-                                    _controllers['decompose']!.text = NovelPromptPresets.decompose;
-                                    novelNotifier.setDecomposePrompt(NovelPromptPresets.decompose);
-                                    _controllers['writer']!.text = NovelPromptPresets.writer;
-                                    novelNotifier.setWriterPrompt(NovelPromptPresets.writer);
-                                    _controllers['reviewer']!.text = NovelPromptPresets.reviewer;
-                                    novelNotifier.setReviewerPrompt(NovelPromptPresets.reviewer);
+                                    _controllers['outline']!.text =
+                                        NovelPromptPresets.outline;
+                                    novelNotifier.setOutlinePrompt(
+                                        NovelPromptPresets.outline);
+                                    _controllers['decompose']!.text =
+                                        NovelPromptPresets.decompose;
+                                    novelNotifier.setDecomposePrompt(
+                                        NovelPromptPresets.decompose);
+                                    _controllers['writer']!.text =
+                                        NovelPromptPresets.writer;
+                                    novelNotifier.setWriterPrompt(
+                                        NovelPromptPresets.writer);
+                                    _controllers['reviewer']!.text =
+                                        NovelPromptPresets.reviewer;
+                                    novelNotifier.setReviewerPrompt(
+                                        NovelPromptPresets.reviewer);
                                     novelNotifier.setActivePromptPresetId(null);
-                                    _showToast(l10n.systemDefaultRestored, AuroraIcons.reset);
+                                    _showToast(l10n.systemDefaultRestored,
+                                        AuroraIcons.reset);
                                   },
                                 ),
                                 const MenuFlyoutSeparator(),
                                 if (novelState.promptPresets.isEmpty)
                                   MenuFlyoutItem(
-                                    text: Text(l10n.noCustomPresets, style: const TextStyle(fontStyle: FontStyle.italic)),
+                                    text: Text(l10n.noCustomPresets,
+                                        style: const TextStyle(
+                                            fontStyle: FontStyle.italic)),
                                     onPressed: () {},
                                   )
                                 else
-                                  ...novelState.promptPresets.map((preset) => MenuFlyoutItem(
-                                    text: Text(preset.name),
-                                    selected: novelState.activePromptPresetId == preset.id,
-                                    onPressed: () {
-                                      _loadPreset(preset, novelNotifier, l10n);
-                                    },
-                                    trailing: IconButton(
-                                      icon: const Icon(AuroraIcons.delete, size: 10),
-                                      onPressed: () {
-                                        novelNotifier.deletePromptPreset(preset.id);
-                                        // Close flyout to refresh state
-                                        Navigator.of(context).pop();
-                                        _showToast(l10n.delete, AuroraIcons.delete);
-                                      },
-                                    ),
-                                  )),
+                                  ...novelState.promptPresets.map((preset) =>
+                                      MenuFlyoutItem(
+                                        text: Text(preset.name),
+                                        selected:
+                                            novelState.activePromptPresetId ==
+                                                preset.id,
+                                        onPressed: () {
+                                          _loadPreset(
+                                              preset, novelNotifier, l10n);
+                                        },
+                                        trailing: IconButton(
+                                          icon: const Icon(AuroraIcons.delete,
+                                              size: 10),
+                                          onPressed: () {
+                                            novelNotifier
+                                                .deletePromptPreset(preset.id);
+                                            // Close flyout to refresh state
+                                            Navigator.of(context).pop();
+                                            _showToast(l10n.delete,
+                                                AuroraIcons.delete);
+                                          },
+                                        ),
+                                      )),
                               ],
                             );
                           },
                         );
                       },
                       child: Padding(
-                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                         child: Row(
-                           children: [
-                             Icon(AuroraIcons.bookmark, size: 14, color: theme.typography.caption?.color),
-                             const SizedBox(width: 8),
-                             Text(
-                               novelState.activePromptPresetId != null 
-                                 ? novelState.promptPresets.firstWhere((p) => p.id == novelState.activePromptPresetId, orElse: () => NovelPromptPreset(id: '', name: 'Unknown', outlinePrompt: '', decomposePrompt: '', writerPrompt: '', reviewerPrompt: '')).name
-                                 : l10n.systemDefault,
-                               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                             ),
-                             const SizedBox(width: 8),
-                             const Icon(AuroraIcons.chevronDown, size: 8),
-                           ],
-                         ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        child: Row(
+                          children: [
+                            Icon(AuroraIcons.bookmark,
+                                size: 14,
+                                color: theme.typography.caption?.color),
+                            const SizedBox(width: 8),
+                            Text(
+                              novelState.activePromptPresetId != null
+                                  ? novelState.promptPresets
+                                      .firstWhere(
+                                          (p) =>
+                                              p.id ==
+                                              novelState.activePromptPresetId,
+                                          orElse: () => NovelPromptPreset(
+                                              id: '',
+                                              name: 'Unknown',
+                                              outlinePrompt: '',
+                                              decomposePrompt: '',
+                                              writerPrompt: '',
+                                              reviewerPrompt: ''))
+                                      .name
+                                  : l10n.systemDefault,
+                              style: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(AuroraIcons.chevronDown, size: 8),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  
-                  Container(width: 1, height: 16, color: theme.resources.dividerStrokeColorDefault),
-                  
+
+                  Container(
+                      width: 1,
+                      height: 16,
+                      color: theme.resources.dividerStrokeColorDefault),
+
                   // New Preset Flyout Button
                   FlyoutTarget(
                     controller: _addPresetFlyoutController,
@@ -348,14 +402,16 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                             ),
                             builder: (context) {
                               return FlyoutContent(
-                                constraints: const BoxConstraints(maxWidth: 200),
+                                constraints:
+                                    const BoxConstraints(maxWidth: 200),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       l10n.newNovelPreset,
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 8),
                                     const Divider(),
@@ -386,27 +442,36 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
 
                   // Save Overwrite Button
                   Tooltip(
-                    message: novelState.activePromptPresetId != null 
-                      ? '${l10n.save} "${novelState.promptPresets.firstWhere((p) => p.id == novelState.activePromptPresetId).name}"'
-                      : l10n.savePresetOverrideHint,
+                    message: novelState.activePromptPresetId != null
+                        ? '${l10n.save} "${novelState.promptPresets.firstWhere((p) => p.id == novelState.activePromptPresetId).name}"'
+                        : l10n.savePresetOverrideHint,
                     child: IconButton(
-                      icon: Icon(
-                        FluentIcons.save, 
-                        size: 14, 
-                        color: novelState.activePromptPresetId != null ? theme.accentColor : theme.resources.textFillColorDisabled.withOpacity(0.5)
-                      ),
-                      onPressed: novelState.activePromptPresetId == null ? null : () {
-                        final activeId = novelState.activePromptPresetId!;
-                        final currentPreset = novelState.promptPresets.firstWhere((p) => p.id == activeId);
-                        final updatedPreset = currentPreset.copyWith(
-                          outlinePrompt: _controllers['outline']?.text ?? '',
-                          decomposePrompt: _controllers['decompose']?.text ?? '',
-                          writerPrompt: _controllers['writer']?.text ?? '',
-                          reviewerPrompt: _controllers['reviewer']?.text ?? '',
-                        );
-                        novelNotifier.updatePromptPreset(updatedPreset);
-                        _showToast(l10n.presetSaved(updatedPreset.name), AuroraIcons.save);
-                      },
+                      icon: Icon(FluentIcons.save,
+                          size: 14,
+                          color: novelState.activePromptPresetId != null
+                              ? theme.accentColor
+                              : theme.resources.textFillColorDisabled
+                                  .withValues(alpha: 0.5)),
+                      onPressed: novelState.activePromptPresetId == null
+                          ? null
+                          : () {
+                              final activeId = novelState.activePromptPresetId!;
+                              final currentPreset = novelState.promptPresets
+                                  .firstWhere((p) => p.id == activeId);
+                              final updatedPreset = currentPreset.copyWith(
+                                outlinePrompt:
+                                    _controllers['outline']?.text ?? '',
+                                decomposePrompt:
+                                    _controllers['decompose']?.text ?? '',
+                                writerPrompt:
+                                    _controllers['writer']?.text ?? '',
+                                reviewerPrompt:
+                                    _controllers['reviewer']?.text ?? '',
+                              );
+                              novelNotifier.updatePromptPreset(updatedPreset);
+                              _showToast(l10n.presetSaved(updatedPreset.name),
+                                  AuroraIcons.save);
+                            },
                     ),
                   ),
                 ],
@@ -421,7 +486,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
             width: 900,
             height: 600,
             decoration: BoxDecoration(
-              border: Border.all(color: theme.resources.dividerStrokeColorDefault),
+              border:
+                  Border.all(color: theme.resources.dividerStrokeColorDefault),
               borderRadius: BorderRadius.circular(8),
               color: theme.scaffoldBackgroundColor,
             ),
@@ -514,8 +580,8 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
               ],
             ),
           ),
-        _buildToastWidget(),
-      ],
+          _buildToastWidget(),
+        ],
       ),
       actions: [
         Button(
@@ -525,7 +591,6 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
       ],
     );
   }
-
 
   void _saveNewPreset() {
     final name = _newPresetController.text.trim();
@@ -538,15 +603,17 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
         reviewerPrompt: _controllers['reviewer']?.text ?? '',
       );
       ref.read(novelProvider.notifier).addPromptPreset(preset);
-      
+
       final l10n = AppLocalizations.of(context)!;
       _showToast(l10n.presetSaved(name), AuroraIcons.save);
-      
+
       _addPresetFlyoutController.close();
       _newPresetController.clear();
     }
   }
-  void _loadPreset(NovelPromptPreset preset, NovelNotifier notifier, AppLocalizations l10n) {
+
+  void _loadPreset(
+      NovelPromptPreset preset, NovelNotifier notifier, AppLocalizations l10n) {
     if (preset.outlinePrompt.isNotEmpty) {
       _controllers['outline']!.text = preset.outlinePrompt;
       notifier.setOutlinePrompt(preset.outlinePrompt);

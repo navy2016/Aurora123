@@ -5,7 +5,6 @@ import 'package:aurora/core/error/app_exception.dart';
 import 'package:aurora/features/chat/domain/message.dart';
 import 'package:aurora/shared/services/llm_service.dart';
 import 'package:aurora/features/skills/domain/skill_entity.dart';
-import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
 
@@ -91,8 +90,9 @@ ${skill.instructions}
         model: model,
         providerId: providerId,
       );
-      
-      final durationMs = DateTime.now().difference(requestStartTime).inMilliseconds;
+
+      final durationMs =
+          DateTime.now().difference(requestStartTime).inMilliseconds;
       if (onUsage != null) {
         onUsage(
           success: true,
@@ -106,21 +106,22 @@ ${skill.instructions}
       if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
         final tc = response.toolCalls!.first;
         if (tc.name == 'run_shell') {
-           try {
-              final args = jsonDecode(tc.arguments ?? '{}');
-              final command = args['command']?.toString();
-              if (command != null) {
-                return await _executeShellCommand(command);
-              }
-           } catch (e) {
-              return "Worker Error: Failed to parse tool arguments.";
-           }
+          try {
+            final args = jsonDecode(tc.arguments ?? '{}');
+            final command = args['command']?.toString();
+            if (command != null) {
+              return await _executeShellCommand(command);
+            }
+          } catch (e) {
+            return "Worker Error: Failed to parse tool arguments.";
+          }
         }
       }
-      
+
       return response.content ?? "Worker: No action performed.";
     } catch (e) {
-      final durationMs = DateTime.now().difference(requestStartTime).inMilliseconds;
+      final durationMs =
+          DateTime.now().difference(requestStartTime).inMilliseconds;
       if (onUsage != null) {
         AppErrorType errorType = AppErrorType.unknown;
         if (e is AppException) {
@@ -141,19 +142,20 @@ ${skill.instructions}
 
   Future<String> _executeShellCommand(String command) async {
     try {
-        ProcessResult result;
+      ProcessResult result;
 
-        if (PlatformUtils.isWindows) {
-          result = await Process.run('powershell.exe', ['-NoProfile', '-Command', command]);
-        } else {
-          result = await Process.run('sh', ['-c', command], runInShell: true);
-        }
-        
-        return jsonEncode({
-          'stdout': result.stdout.toString(),
-          'stderr': result.stderr.toString(),
-          'exitCode': result.exitCode,
-        });
+      if (PlatformUtils.isWindows) {
+        result = await Process.run(
+            'powershell.exe', ['-NoProfile', '-Command', command]);
+      } else {
+        result = await Process.run('sh', ['-c', command], runInShell: true);
+      }
+
+      return jsonEncode({
+        'stdout': result.stdout.toString(),
+        'stderr': result.stderr.toString(),
+        'exitCode': result.exitCode,
+      });
     } catch (e) {
       return jsonEncode({'error': e.toString()});
     }

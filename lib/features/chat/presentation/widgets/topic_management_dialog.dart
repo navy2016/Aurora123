@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';

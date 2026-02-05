@@ -27,12 +27,11 @@ class UsageStatsView extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(AuroraIcons.stats,
-                size: 64,
-                color: theme.resources.textFillColorSecondary),
+                size: 64, color: theme.resources.textFillColorSecondary),
             const SizedBox(height: 16),
             Text(l10n.noUsageData,
-                style: TextStyle(
-                    color: theme.resources.textFillColorSecondary)),
+                style:
+                    TextStyle(color: theme.resources.textFillColorSecondary)),
           ],
         ),
       );
@@ -43,155 +42,149 @@ class UsageStatsView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          fluent.Text(l10n.usageStats,
-              style: theme.typography.subtitle),
+          fluent.Text(l10n.usageStats, style: theme.typography.subtitle),
           const SizedBox(height: 24),
-
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    _buildSummaryCardPC(
-                                        theme,
-                                        l10n.totalCalls,
-                                        statsState.totalCalls,
-                                        Colors.blue),
-                                    const SizedBox(height: 12),
-                                    Container(
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: theme.resources.dividerStrokeColorDefault),
-                                        borderRadius: BorderRadius.circular(4),
-                                        color: theme.cardColor,
-                                      ),
-                                      child: fluent.Button(
-                                        style: fluent.ButtonStyle(
-                                          // border: fluent.ButtonState.all(BorderSide.none), // Removed as invalid
-                                          padding: fluent.ButtonState.all(const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
-                                          backgroundColor: fluent.ButtonState.resolveWith((states) {
-                                             if (states.isHovering) return theme.resources.subtleFillColorSecondary;
-                                             return Colors.transparent;
-                                          }),
-                                        ),
-                                        onPressed: () async {
-                                          final confirmed = await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => fluent.ContentDialog(
-                                              title: Text(_getLoc(context, 'clearStats')),
-                                              content: Text(_getLoc(context, 'clearStatsConfirm')),
-                                              actions: [
-                                                fluent.Button(
-                                                  child: Text(l10n.cancel),
-                                                  onPressed: () =>
-                                                      Navigator.pop(context, false),
-                                                ),
-                                                fluent.FilledButton(
-                                                  child: Text(_getLoc(context, 'clearData')),
-                                                  onPressed: () =>
-                                                      Navigator.pop(context, true),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                          if (confirmed == true) {
-                                            ref.read(usageStatsProvider.notifier)
-                                                .clearStats();
-                                          }
-                                        },
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          mainAxisSize: MainAxisSize.max,
-                                          children: [
-                                            Icon(AuroraIcons.delete, size: 14, color: theme.resources.textFillColorSecondary),
-                                            const SizedBox(width: 6),
-                                            Text(_getLoc(context, 'clearData'), style: TextStyle(
-                                              fontSize: 12,
-                                              color: theme.resources.textFillColorSecondary
-                                            )),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )),
-                            const SizedBox(width: 16),
-                            Expanded(
-                                child: _buildSummaryCardPC(theme, l10n.success,
-                                    statsState.totalSuccess, Colors.green)),
-                            const SizedBox(width: 16),
-                            Expanded(
-                                child: _buildSummaryCardPC(theme, l10n.failed,
-                                    statsState.totalFailure, Colors.red)),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildSectionHeader(
-                                      context, l10n.modelCallDistribution, ref),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    padding: const EdgeInsets.only(
-                                        left: 16,
-                                        top: 16,
-                                        bottom: 16,
-                                        right: 24),
-                                    decoration: BoxDecoration(
-                                      color: theme.cardColor,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                          color: theme.resources
-                                              .dividerStrokeColorDefault),
-                                    ),
-                                    child: _ModelStatsList(
-                                        statsState: statsState,
-                                        isMobile: false),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(l10n.errorDistribution, 
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: theme.cardColor,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                          color: theme.resources
-                                              .dividerStrokeColorDefault),
-                                    ),
-                                    child: _ErrorDistributionList(
-                                        statsState: statsState),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        _buildChartSection(context, statsState, theme),
-                      ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                  child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildSummaryCardPC(theme, l10n.totalCalls,
+                      statsState.totalCalls, Colors.blue),
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 32,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: theme.resources.dividerStrokeColorDefault),
+                      borderRadius: BorderRadius.circular(4),
+                      color: theme.cardColor,
                     ),
+                    child: fluent.Button(
+                      style: fluent.ButtonStyle(
+                        // border: fluent.ButtonState.all(BorderSide.none), // Removed as invalid
+                        padding: WidgetStateProperty.all(
+                            const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4)),
+                        backgroundColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.isHovered) {
+                            return theme.resources.subtleFillColorSecondary;
+                          }
+                          return Colors.transparent;
+                        }),
+                      ),
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => fluent.ContentDialog(
+                            title: Text(_getLoc(context, 'clearStats')),
+                            content:
+                                Text(_getLoc(context, 'clearStatsConfirm')),
+                            actions: [
+                              fluent.Button(
+                                child: Text(l10n.cancel),
+                                onPressed: () => Navigator.pop(context, false),
+                              ),
+                              fluent.FilledButton(
+                                child: Text(_getLoc(context, 'clearData')),
+                                onPressed: () => Navigator.pop(context, true),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          ref.read(usageStatsProvider.notifier).clearStats();
+                        }
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          Icon(AuroraIcons.delete,
+                              size: 14,
+                              color: theme.resources.textFillColorSecondary),
+                          const SizedBox(width: 6),
+                          Text(_getLoc(context, 'clearData'),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      theme.resources.textFillColorSecondary)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: _buildSummaryCardPC(theme, l10n.success,
+                      statsState.totalSuccess, Colors.green)),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: _buildSummaryCardPC(
+                      theme, l10n.failed, statsState.totalFailure, Colors.red)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                        context, l10n.modelCallDistribution, ref),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.only(
+                          left: 16, top: 16, bottom: 16, right: 24),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: theme.resources.dividerStrokeColorDefault),
+                      ),
+                      child: _ModelStatsList(
+                          statsState: statsState, isMobile: false),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.errorDistribution,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: theme.resources.dividerStrokeColorDefault),
+                      ),
+                      child: _ErrorDistributionList(statsState: statsState),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildChartSection(context, statsState, theme),
+        ],
+      ),
     );
   }
 
@@ -202,10 +195,11 @@ class UsageStatsView extends ConsumerWidget {
       children: [
         Text(title,
             style: TextStyle(
-                fontSize: 20, 
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: fluent.FluentTheme.of(context).resources.textFillColorPrimary
-            )),
+                color: fluent.FluentTheme.of(context)
+                    .resources
+                    .textFillColorPrimary)),
       ],
     );
   }
@@ -234,8 +228,9 @@ class UsageStatsView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.callTrend, 
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(l10n.callTrend,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           Expanded(
             child: LineChart(
@@ -245,12 +240,12 @@ class UsageStatsView extends ConsumerWidget {
                   drawVerticalLine: true,
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: theme.resources.dividerStrokeColorDefault
-                        .withOpacity(0.5),
+                        .withValues(alpha: 0.5),
                     strokeWidth: 1,
                   ),
                   getDrawingVerticalLine: (value) => FlLine(
                     color: theme.resources.dividerStrokeColorDefault
-                        .withOpacity(0.5),
+                        .withValues(alpha: 0.5),
                     strokeWidth: 1,
                   ),
                 ),
@@ -271,13 +266,11 @@ class UsageStatsView extends ConsumerWidget {
                           final date = sortedDaily[index].date;
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child:
-                                Text(DateFormat('MM/dd').format(date),
-                                    style: TextStyle(
-                                      color: theme
-                                          .resources.textFillColorSecondary,
-                                      fontSize: 12,
-                                    )),
+                            child: Text(DateFormat('MM/dd').format(date),
+                                style: TextStyle(
+                                  color: theme.resources.textFillColorSecondary,
+                                  fontSize: 12,
+                                )),
                           );
                         }
                         return const Text('');
@@ -289,15 +282,15 @@ class UsageStatsView extends ConsumerWidget {
                       showTitles: true,
                       reservedSize: 40,
                       getTitlesWidget: (value, meta) {
-                         // Only show integer values
-                         if (value % 1 == 0) {
-                             return Text(value.toInt().toString(),
+                        // Only show integer values
+                        if (value % 1 == 0) {
+                          return Text(value.toInt().toString(),
                               style: TextStyle(
                                 color: theme.resources.textFillColorSecondary,
                                 fontSize: 12,
                               ));
-                         }
-                         return const SizedBox.shrink();
+                        }
+                        return const SizedBox.shrink();
                       },
                     ),
                   ),
@@ -313,7 +306,7 @@ class UsageStatsView extends ConsumerWidget {
                     dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                     ),
                   ),
                 ],
@@ -321,16 +314,17 @@ class UsageStatsView extends ConsumerWidget {
                   touchTooltipData: LineTouchTooltipData(
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((LineBarSpot touchedSpot) {
-                         final index = touchedSpot.x.toInt();
-                         if (index >= 0 && index < sortedDaily.length) {
-                             final stat = sortedDaily[index];
-                             final date = DateFormat('yyyy-MM-dd').format(stat.date);
-                             return LineTooltipItem(
-                               '$date\nCalls: ${stat.totalCalls}',
-                               const TextStyle(color: Colors.white),
-                             );
-                         }
-                         return null;
+                        final index = touchedSpot.x.toInt();
+                        if (index >= 0 && index < sortedDaily.length) {
+                          final stat = sortedDaily[index];
+                          final date =
+                              DateFormat('yyyy-MM-dd').format(stat.date);
+                          return LineTooltipItem(
+                            '$date\nCalls: ${stat.totalCalls}',
+                            const TextStyle(color: Colors.white),
+                          );
+                        }
+                        return null;
                       }).toList();
                     },
                   ),
@@ -353,7 +347,7 @@ class UsageStatsView extends ConsumerWidget {
         border: Border.all(color: theme.resources.dividerStrokeColorDefault),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
@@ -404,7 +398,9 @@ class UsageStatsView extends ConsumerWidget {
       case 'clearStats':
         return isZh ? '清除数据' : 'Clear Stats';
       case 'clearStatsConfirm':
-        return isZh ? '确定要清除所有统计数据吗？此操作无法撤销。' : 'Are you sure you want to clear all statistics? This cannot be undone.';
+        return isZh
+            ? '确定要清除所有统计数据吗？此操作无法撤销。'
+            : 'Are you sure you want to clear all statistics? This cannot be undone.';
       case 'clearData':
         return isZh ? '清除数据' : 'Clear Data';
       default:
@@ -450,11 +446,8 @@ class UsageStatsMobileSheet extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                          child: _buildSummaryCardMobile(
-                              theme,
-                              l10n.totalCalls,
-                              statsState.totalCalls,
-                              Colors.blue)),
+                          child: _buildSummaryCardMobile(theme, l10n.totalCalls,
+                              statsState.totalCalls, Colors.blue)),
                       const SizedBox(width: 12),
                       Expanded(
                           child: _buildSummaryCardMobile(theme, l10n.success,
@@ -481,9 +474,9 @@ class UsageStatsMobileSheet extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -514,9 +507,10 @@ class _ModelStatsList extends StatelessWidget {
         : sortedEntries
             .map((e) => e.value.success + e.value.failure)
             .reduce((a, b) => a > b ? a : b);
-    
+
     // Calculate grand total for percentage
-    final grandTotal = sortedEntries.fold<int>(0, (sum, e) => sum + e.value.success + e.value.failure);
+    final grandTotal = sortedEntries.fold<int>(
+        0, (sum, e) => sum + e.value.success + e.value.failure);
 
     if (isMobile) {
       return Column(
@@ -536,21 +530,17 @@ class _ModelStatsList extends StatelessWidget {
     }
   }
 
-  Widget _buildItem(
-      BuildContext context,
-      MapEntry<String, UsageStatsRecord> entry,
-      int maxTotal,
-      int grandTotal) {
+  Widget _buildItem(BuildContext context,
+      MapEntry<String, UsageStatsRecord> entry, int maxTotal, int grandTotal) {
     final modelName = entry.key;
     final stats = entry.value;
     final total = stats.success + stats.failure;
     final relativeFactor = grandTotal > 0 ? total / grandTotal : 0.0;
-    final percentage = grandTotal > 0 ? (total / grandTotal * 100).toStringAsFixed(1) : '0.0';
-    
+
     // Theme helpers
     final themeData = isMobile ? null : fluent.FluentTheme.of(context);
     final mobileTheme = isMobile ? Theme.of(context) : null;
-    
+
     final textColor = isMobile
         ? mobileTheme!.textTheme.bodyMedium?.color
         : themeData!.resources.textFillColorPrimary;
@@ -583,12 +573,15 @@ class _ModelStatsList extends StatelessWidget {
                 children: [
                   if (stats.success > 0)
                     Text(l10n.successCount(stats.success),
-                        style: const TextStyle(fontSize: 10, color: Colors.green)),
+                        style:
+                            const TextStyle(fontSize: 10, color: Colors.green)),
                   if (stats.success > 0 && stats.failure > 0)
-                    Text(' | ', style: TextStyle(fontSize: 10, color: subTextColor)),
+                    Text(' | ',
+                        style: TextStyle(fontSize: 10, color: subTextColor)),
                   if (stats.failure > 0)
                     Text(l10n.failureCount(stats.failure),
-                        style: const TextStyle(fontSize: 10, color: Colors.red)),
+                        style:
+                            const TextStyle(fontSize: 10, color: Colors.red)),
                 ],
               ),
             ],
@@ -633,7 +626,7 @@ class _ModelStatsList extends StatelessWidget {
                           height: 16,
                           margin: const EdgeInsets.only(left: 4),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
@@ -648,8 +641,8 @@ class _ModelStatsList extends StatelessWidget {
                     child: Text(
                       '${displayedPercentageText.toStringAsFixed(1)}%',
                       style: TextStyle(
-                        fontSize: 10, 
-                        color: subTextColor, 
+                        fontSize: 10,
+                        color: subTextColor,
                         height: 1.0,
                         fontWeight: FontWeight.bold,
                       ),
@@ -661,120 +654,150 @@ class _ModelStatsList extends StatelessWidget {
           }),
           const SizedBox(height: 8),
           LayoutBuilder(builder: (context, constraints) {
-             final avgDuration = stats.validDurationCount > 0 
-                ? ((stats.totalDurationMs - stats.totalFirstTokenMs) / stats.validDurationCount / 1000).toStringAsFixed(2) 
+            final avgDuration = stats.validDurationCount > 0
+                ? ((stats.totalDurationMs - stats.totalFirstTokenMs) /
+                        stats.validDurationCount /
+                        1000)
+                    .toStringAsFixed(2)
                 : '0.00';
-             final avgFirstToken = stats.validFirstTokenCount > 0 
-                ? (stats.totalFirstTokenMs / stats.validFirstTokenCount / 1000).toStringAsFixed(2) 
+            final avgFirstToken = stats.validFirstTokenCount > 0
+                ? (stats.totalFirstTokenMs / stats.validFirstTokenCount / 1000)
+                    .toStringAsFixed(2)
                 : '0.00';
-             final tps = StatsCalculator.calculateTPS(
-                completionTokens: stats.completionTokenCount,
-                reasoningTokens: stats.reasoningTokenCount,
-                durationMs: stats.totalDurationMs,
-                firstTokenMs: stats.totalFirstTokenMs,
-             ).toStringAsFixed(1);
+            final tps = StatsCalculator.calculateTPS(
+              completionTokens: stats.completionTokenCount,
+              reasoningTokens: stats.reasoningTokenCount,
+              durationMs: stats.totalDurationMs,
+              firstTokenMs: stats.totalFirstTokenMs,
+            ).toStringAsFixed(1);
 
-             // Thresholds for coloring (Green/Yellow/Red)
-             // TPS: 30/60/90. Large->Small: Green/Yellow/Red.
-             // Implies: >= 60 Green, >= 30 Orange, < 30 Red.
-             final tpsVal = double.tryParse(tps) ?? 0.0;
-             final tpsColor = tpsVal >= 60.0 ? Colors.green 
-                            : (tpsVal >= 30.0 ? Colors.orange : Colors.red);
+            // Thresholds for coloring (Green/Yellow/Red)
+            // TPS: 30/60/90. Large->Small: Green/Yellow/Red.
+            // Implies: >= 60 Green, >= 30 Orange, < 30 Red.
+            final tpsVal = double.tryParse(tps) ?? 0.0;
+            final tpsColor = tpsVal >= 60.0
+                ? Colors.green
+                : (tpsVal >= 30.0 ? Colors.orange : Colors.red);
 
-             // First Token: 5/10/15. Small->Large: Green/Yellow/Red.
-             // Implies: <= 5 Green, <= 10 Orange, > 10 Red.
-             final ftVal = double.tryParse(avgFirstToken) ?? 0.0;
-             final ftColor = ftVal <= 5.0 ? Colors.green 
-                           : (ftVal <= 10.0 ? Colors.orange : Colors.red);
+            // First Token: 5/10/15. Small->Large: Green/Yellow/Red.
+            // Implies: <= 5 Green, <= 10 Orange, > 10 Red.
+            final ftVal = double.tryParse(avgFirstToken) ?? 0.0;
+            final ftColor = ftVal <= 5.0
+                ? Colors.green
+                : (ftVal <= 10.0 ? Colors.orange : Colors.red);
 
-             // Duration: 30/60/90. Small->Large: Green/Yellow/Red.
-             // Implies: <= 30 Green, <= 60 Orange, > 60 Red.
-             final durationVal = double.tryParse(avgDuration) ?? 0.0;
-             final durationColor = durationVal <= 30.0 ? Colors.green 
-                                 : (durationVal <= 60.0 ? Colors.orange : Colors.red);
+            // Duration: 30/60/90. Small->Large: Green/Yellow/Red.
+            // Implies: <= 30 Green, <= 60 Orange, > 60 Red.
+            final durationVal = double.tryParse(avgDuration) ?? 0.0;
+            final durationColor = durationVal <= 30.0
+                ? Colors.green
+                : (durationVal <= 60.0 ? Colors.orange : Colors.red);
 
-
-             return Row(
-               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-               children: [
-                  _buildMetricItem(isMobile, themeData, mobileTheme, 
-                      _getLoc(context, 'cumulativeToken'), 
-                      RichText(
-                        text: TextSpan(
-                          style: TextStyle(
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildMetricItem(
+                    isMobile,
+                    themeData,
+                    mobileTheme,
+                    _getLoc(context, 'cumulativeToken'),
+                    RichText(
+                      text: TextSpan(
+                        style: TextStyle(
+                          fontSize: isMobile ? 12 : 14,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Segoe UI Variable',
+                          color: isMobile
+                              ? mobileTheme!.textTheme.bodyMedium?.color
+                              : themeData!.resources.textFillColorPrimary,
+                        ),
+                        children: [
+                          TextSpan(
+                              text:
+                                  '${formatTokenCount(stats.totalTokenCount)} '),
+                          TextSpan(
+                            style: TextStyle(
+                              fontSize: isMobile ? 10 : 12,
+                              color: isMobile
+                                  ? mobileTheme!.textTheme.bodySmall?.color
+                                  : themeData!.resources.textFillColorSecondary,
+                              fontWeight: FontWeight.normal,
+                            ),
+                            children: [
+                              TextSpan(
+                                  text:
+                                      '(↑ ${formatTokenCount(stats.promptTokenCount)} / '),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: Icon(
+                                  AuroraIcons.lightbulb,
+                                  size: isMobile ? 12 : 14,
+                                  color: isMobile
+                                      ? mobileTheme!.textTheme.bodySmall?.color
+                                      : themeData!
+                                          .resources.textFillColorSecondary,
+                                ),
+                              ),
+                              TextSpan(
+                                  text:
+                                      ' ${formatTokenCount(stats.reasoningTokenCount)} / ↓ ${formatTokenCount(stats.completionTokenCount)})'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )),
+                _buildMetricItem(
+                    isMobile,
+                    themeData,
+                    mobileTheme,
+                    _getLoc(context, 'tokensPerSecond'),
+                    Text(tps,
+                        style: TextStyle(
                             fontSize: isMobile ? 12 : 14,
                             fontWeight: FontWeight.w600,
-                            fontFamily: 'Segoe UI Variable',
-                            color: isMobile 
-                                ? mobileTheme!.textTheme.bodyMedium?.color 
-                                : themeData!.resources.textFillColorPrimary,
-                          ),
-                          children: [
-                            TextSpan(text: '${formatTokenCount(stats.totalTokenCount)} '),
-                            TextSpan(
-                              style: TextStyle(
-                                fontSize: isMobile ? 10 : 12,
-                                color: isMobile 
-                                    ? mobileTheme!.textTheme.bodySmall?.color 
-                                    : themeData!.resources.textFillColorSecondary,
-                                fontWeight: FontWeight.normal,
-                              ),
-                              children: [
-                                TextSpan(text: '(↑ ${formatTokenCount(stats.promptTokenCount)} / '),
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: Icon(
-                                    AuroraIcons.lightbulb,
-                                    size: isMobile ? 12 : 14,
-                                    color: isMobile 
-                                        ? mobileTheme!.textTheme.bodySmall?.color 
-                                        : themeData!.resources.textFillColorSecondary,
-                                  ),
-                                ),
-                                TextSpan(text: ' ${formatTokenCount(stats.reasoningTokenCount)} / ↓ ${formatTokenCount(stats.completionTokenCount)})'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      )),
-                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'tokensPerSecond'), 
-                      Text(tps, style: TextStyle(
-                          fontSize: isMobile ? 12 : 14,
-                          fontWeight: FontWeight.w600,
-                          color: tpsColor,
-                          fontFamily: 'Segoe UI Variable'))),
-                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'averageFirstToken'), 
-                      Text('${avgFirstToken}s', style: TextStyle(
-                          fontSize: isMobile ? 12 : 14,
-                          fontWeight: FontWeight.w600,
-                          color: ftColor,
-                          fontFamily: 'Segoe UI Variable'))),
-                  _buildMetricItem(isMobile, themeData, mobileTheme, _getLoc(context, 'averageDuration'), 
-                      Text('${avgDuration}s', style: TextStyle(
-                          fontSize: isMobile ? 12 : 14,
-                          fontWeight: FontWeight.w600,
-                          color: durationColor,
-                          fontFamily: 'Segoe UI Variable'))),
-                ],
-              );
+                            color: tpsColor,
+                            fontFamily: 'Segoe UI Variable'))),
+                _buildMetricItem(
+                    isMobile,
+                    themeData,
+                    mobileTheme,
+                    _getLoc(context, 'averageFirstToken'),
+                    Text('${avgFirstToken}s',
+                        style: TextStyle(
+                            fontSize: isMobile ? 12 : 14,
+                            fontWeight: FontWeight.w600,
+                            color: ftColor,
+                            fontFamily: 'Segoe UI Variable'))),
+                _buildMetricItem(
+                    isMobile,
+                    themeData,
+                    mobileTheme,
+                    _getLoc(context, 'averageDuration'),
+                    Text('${avgDuration}s',
+                        style: TextStyle(
+                            fontSize: isMobile ? 12 : 14,
+                            fontWeight: FontWeight.w600,
+                            color: durationColor,
+                            fontFamily: 'Segoe UI Variable'))),
+              ],
+            );
           }),
         ],
       ),
     );
   }
 
-  Widget _buildMetricItem(bool isMobile, fluent.FluentThemeData? themeData, ThemeData? mobileTheme, String label, Widget valueWidget) {
-    final labelColor = isMobile 
-        ? mobileTheme!.textTheme.bodySmall?.color 
+  Widget _buildMetricItem(bool isMobile, fluent.FluentThemeData? themeData,
+      ThemeData? mobileTheme, String label, Widget valueWidget) {
+    final labelColor = isMobile
+        ? mobileTheme!.textTheme.bodySmall?.color
         : themeData!.resources.textFillColorSecondary;
-        
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(
-          fontSize: isMobile ? 10 : 12,
-          color: labelColor
-        )),
+        Text(label,
+            style: TextStyle(fontSize: isMobile ? 10 : 12, color: labelColor)),
         const SizedBox(height: 2),
         valueWidget,
       ],
@@ -828,37 +851,49 @@ class _ErrorDistributionList extends StatelessWidget {
     }
 
     // Account for legacy failures (before error tracking was added)
-    final categorizedErrors = timeout + network + badRequest + unauthorized + server + rateLimit + unknown;
-    final totalFailures = statsState.stats.values.fold(0, (sum, s) => sum + s.failure);
+    final categorizedErrors = timeout +
+        network +
+        badRequest +
+        unauthorized +
+        server +
+        rateLimit +
+        unknown;
+    final totalFailures =
+        statsState.stats.values.fold(0, (sum, s) => sum + s.failure);
     final legacyUnknown = totalFailures - categorizedErrors;
     if (legacyUnknown > 0) {
       unknown += legacyUnknown;
     }
 
-    final totalErrors = timeout + network + badRequest + unauthorized + server + rateLimit + unknown;
+    final totalErrors = timeout +
+        network +
+        badRequest +
+        unauthorized +
+        server +
+        rateLimit +
+        unknown;
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (totalErrors == 0) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 24.0),
         child: Center(
-          child: Text(l10n.noUsageData, 
-            style: TextStyle(color: Colors.grey[400])
-          ),
+          child:
+              Text(l10n.noUsageData, style: TextStyle(color: Colors.grey[400])),
         ),
       );
     }
 
     final list = [
-      ('Timeout', timeout, Colors.orange), 
+      ('Timeout', timeout, Colors.orange),
       ('Network Error', network, Colors.red),
-      ('Rate Limit (429)', rateLimit, Colors.orange.withOpacity(0.8)),
-      ('Unauthorized (401)', unauthorized, Colors.red.withOpacity(0.7)),
+      ('Rate Limit (429)', rateLimit, Colors.orange.withValues(alpha: 0.8)),
+      ('Unauthorized (401)', unauthorized, Colors.red.withValues(alpha: 0.7)),
       ('Server Error (5XX)', server, Colors.red),
       ('Bad Request (400)', badRequest, Colors.orange),
       ('Other Error', unknown, Colors.grey),
     ];
-    
+
     // Sort by count desc
     list.sort((a, b) => b.$2.compareTo(a.$2));
 
@@ -869,10 +904,11 @@ class _ErrorDistributionList extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorItem(BuildContext context, String label, int count, Color color, int total) {
+  Widget _buildErrorItem(
+      BuildContext context, String label, int count, Color color, int total) {
     final theme = fluent.FluentTheme.of(context);
     final percentage = (count / total);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -882,66 +918,62 @@ class _ErrorDistributionList extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(label, style: TextStyle(
-                  color: theme.resources.textFillColorPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600
-                )),
+                child: Text(label,
+                    style: TextStyle(
+                        color: theme.resources.textFillColorPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600)),
               ),
-              Text('$count', style: TextStyle(
-                 color: theme.resources.textFillColorSecondary,
-                 fontSize: 12
-              )),
+              Text('$count',
+                  style: TextStyle(
+                      color: theme.resources.textFillColorSecondary,
+                      fontSize: 12)),
             ],
           ),
           const SizedBox(height: 6),
           LayoutBuilder(builder: (context, constraints) {
-             final fullWidth = constraints.maxWidth;
-             // Ensure at least 4px width if there are calls
-             final barWidth = percentage * fullWidth;
-             final actualBarWidth = (barWidth < 4 && count > 0) ? 4.0 : barWidth;
-             
-             return Stack(
-               children: [
-                 Row(
-                   children: [
-                     Container(
-                       width: actualBarWidth,
-                       height: 16, // Match Usage Stats height
-                       decoration: BoxDecoration(
-                         color: color,
-                         borderRadius: BorderRadius.circular(8)
-                       ),
-                     ),
-                     if (percentage < 1.0)
-                       Expanded(
-                         child: Container(
-                           height: 16,
-                           margin: const EdgeInsets.only(left: 4),
-                           decoration: BoxDecoration(
-                             color: Colors.grey.withOpacity(0.1),
-                             borderRadius: BorderRadius.circular(8)
-                           ),
-                         ),
-                       )
-                   ],
-                 ),
-                 Positioned(
-                   right: 4,
-                   top: 0,
-                   bottom: 0,
-                   child: Center(
-                     child: Text('${(percentage * 100).toStringAsFixed(1)}%', 
-                       style: TextStyle(
-                         color: theme.resources.textFillColorSecondary,
-                         fontSize: 10,
-                         height: 1.0,
-                         fontWeight: FontWeight.bold
-                       )),
-                   ),
-                 ),
-               ],
-             );
+            final fullWidth = constraints.maxWidth;
+            // Ensure at least 4px width if there are calls
+            final barWidth = percentage * fullWidth;
+            final actualBarWidth = (barWidth < 4 && count > 0) ? 4.0 : barWidth;
+
+            return Stack(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: actualBarWidth,
+                      height: 16, // Match Usage Stats height
+                      decoration: BoxDecoration(
+                          color: color, borderRadius: BorderRadius.circular(8)),
+                    ),
+                    if (percentage < 1.0)
+                      Expanded(
+                        child: Container(
+                          height: 16,
+                          margin: const EdgeInsets.only(left: 4),
+                          decoration: BoxDecoration(
+                              color: Colors.grey.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                      )
+                  ],
+                ),
+                Positioned(
+                  right: 4,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Text('${(percentage * 100).toStringAsFixed(1)}%',
+                        style: TextStyle(
+                            color: theme.resources.textFillColorSecondary,
+                            fontSize: 10,
+                            height: 1.0,
+                            fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            );
           }),
         ],
       ),

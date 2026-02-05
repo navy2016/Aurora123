@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/skill_entity.dart';
 import '../data/skill_parser.dart';
-import '../../settings/presentation/settings_provider.dart';
 
 class SkillState {
   final List<Skill> skills;
@@ -37,19 +36,20 @@ class SkillNotifier extends StateNotifier<SkillState> {
 
   Future<void> loadSkills(String directoryPath, {String? language}) async {
     if (directoryPath.isEmpty) return;
-    
+
     state = state.copyWith(isLoading: true, skillsDirectory: directoryPath);
-    
+
     try {
       final dir = Directory(directoryPath);
       if (!await dir.exists()) {
-        state = state.copyWith(isLoading: false, error: 'Directory does not exist');
+        state =
+            state.copyWith(isLoading: false, error: 'Directory does not exist');
         return;
       }
 
       final skills = <Skill>[];
       final entities = dir.listSync();
-      
+
       for (final entity in entities) {
         if (entity is Directory) {
           final skill = await SkillParser.parse(entity, language: language);
@@ -88,7 +88,7 @@ class SkillNotifier extends StateNotifier<SkillState> {
       }
 
       await skillDir.create(recursive: true);
-      
+
       final skillFile = File('${skillDir.path}/SKILL.md');
       const boilerplate = '''---
 id: {{id}}
@@ -115,7 +115,7 @@ Describe how and when the assistant should use this skill.
       final content = boilerplate
           .replaceAll('{{id}}', folderName.replaceAll(' ', '_').toLowerCase())
           .replaceAll('{{name}}', folderName);
-          
+
       await skillFile.writeAsString(content);
       refresh();
     } catch (e) {
@@ -171,7 +171,8 @@ Describe how and when the assistant should use this skill.
 
       var yamlPart = parts[1];
       if (yamlPart.contains('enabled:')) {
-        yamlPart = yamlPart.replaceFirst(RegExp(r'enabled:\s*(true|false)'), 'enabled: $newValue');
+        yamlPart = yamlPart.replaceFirst(
+            RegExp(r'enabled:\s*(true|false)'), 'enabled: $newValue');
       } else {
         yamlPart = '$yamlPart\nenabled: $newValue';
       }

@@ -48,7 +48,7 @@ class GlobalBackground extends ConsumerWidget {
         // Brightness / Overlay
         Positioned.fill(
           child: Container(
-            color: Colors.black.withOpacity(1.0 - brightness),
+            color: Colors.black.withValues(alpha: 1.0 - brightness),
           ),
         ),
         // Content

@@ -35,12 +35,16 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
     final exitCode = data?['exitCode'] as int?;
     final error = data?['error'] as String?;
 
-    final hasBackground = ref.watch(settingsProvider.select((s) => s.useCustomTheme && s.backgroundImagePath != null && s.backgroundImagePath!.isNotEmpty));
+    final hasBackground = ref.watch(settingsProvider.select((s) =>
+        s.useCustomTheme &&
+        s.backgroundImagePath != null &&
+        s.backgroundImagePath!.isNotEmpty));
     final isDark = theme.brightness == fluent.Brightness.dark;
 
     // Handle Shell Tool Output (Terminal Style)
     if (stdout != null || stderr != null || exitCode != null) {
-      return _buildTerminalOutput(l10n, theme, stdout, stderr, exitCode, hasBackground, isDark);
+      return _buildTerminalOutput(
+          l10n, theme, stdout, stderr, exitCode, hasBackground, isDark);
     }
 
     // Handle Generic Errors from Skill execution
@@ -49,9 +53,9 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
         padding: const EdgeInsets.all(12),
         margin: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(hasBackground ? 0.2 : 0.05),
+          color: Colors.red.withValues(alpha: hasBackground ? 0.2 : 0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.red.withOpacity(0.2)),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,13 +77,17 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
             const SizedBox(height: 8),
             Text(
               error,
-              style: TextStyle(fontSize: 13, color: theme.typography.body?.color),
+              style:
+                  TextStyle(fontSize: 13, color: theme.typography.body?.color),
             ),
             if (data?['missing_parameters'] != null) ...[
               const SizedBox(height: 8),
               Text(
                 'Missing: ${(data!['missing_parameters'] as List).join(', ')}',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.red),
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red),
               ),
             ],
           ],
@@ -95,50 +103,55 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 4),
           decoration: BoxDecoration(
-             color: theme.accentColor.withOpacity(hasBackground ? 0.2 : 0.05),
-             borderRadius: BorderRadius.circular(8),
-             border: Border.all(color: theme.accentColor.withOpacity(hasBackground ? 0.3 : 0.2)),
+            color:
+                theme.accentColor.withValues(alpha: hasBackground ? 0.2 : 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: theme.accentColor
+                    .withValues(alpha: hasBackground ? 0.3 : 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               GestureDetector(
-                 onTap: () => setState(() => _isExpanded = !_isExpanded),
-                 behavior: HitTestBehavior.opaque,
-                 child: Container(
-                   padding: const EdgeInsets.all(12),
-                   child: Row(
-                     children: [
-                       Icon(AuroraIcons.robot, size: 14, color: theme.accentColor),
-                       const SizedBox(width: 8),
-                        Text(
-                          l10n?.agentResponse ?? 'Agent Response',
-                          style: TextStyle(
-                           fontSize: 11,
-                           fontWeight: FontWeight.bold,
-                           color: theme.accentColor,
-                         ),
-                       ),
-                       const Spacer(),
-                       Icon(
-                         _isExpanded
-                             ? AuroraIcons.chevronUp
-                             : AuroraIcons.chevronDown,
-                         size: 10,
-                         color: theme.accentColor.withOpacity(0.5),
-                       ),
-                     ],
-                   ),
-                 ),
-               ),
-               if (_isExpanded)
-                 Padding(
-                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                   child: SelectableText(
-                     message,
-                     style: TextStyle(color: theme.typography.body?.color, fontSize: 13),
-                   ),
-                 ),
+              GestureDetector(
+                onTap: () => setState(() => _isExpanded = !_isExpanded),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(AuroraIcons.robot,
+                          size: 14, color: theme.accentColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n?.agentResponse ?? 'Agent Response',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: theme.accentColor,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        _isExpanded
+                            ? AuroraIcons.chevronUp
+                            : AuroraIcons.chevronDown,
+                        size: 10,
+                        color: theme.accentColor.withValues(alpha: 0.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_isExpanded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: SelectableText(
+                    message,
+                    style: TextStyle(
+                        color: theme.typography.body?.color, fontSize: 13),
+                  ),
+                ),
             ],
           ),
         );
@@ -148,71 +161,78 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
       // Actually widget.content is passed. If jsonDecode fails, data is null.
       // If data is null, we should just show the content.
     }
-    
+
     // Fallback for non-JSON content (raw text from Worker)
     if (data == null) {
-       return Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
-             color: theme.accentColor.withOpacity(hasBackground ? 0.2 : 0.05),
-             borderRadius: BorderRadius.circular(8),
-             border: Border.all(color: theme.accentColor.withOpacity(hasBackground ? 0.3 : 0.2)),
-          ),
-          child: Column(
-             crossAxisAlignment: CrossAxisAlignment.start,
-             children: [
-               GestureDetector(
-                 onTap: () => setState(() => _isExpanded = !_isExpanded),
-                 behavior: HitTestBehavior.opaque,
-                 child: Container(
-                   padding: const EdgeInsets.all(12),
-                   child: Row(
-                     children: [
-                       Icon(AuroraIcons.robot, size: 14, color: theme.accentColor),
-                       const SizedBox(width: 8),
-                        Text(
-                          l10n?.agentOutput ?? 'Agent Output',
-                          style: TextStyle(
-                           fontSize: 11,
-                           fontWeight: FontWeight.bold,
-                           color: theme.accentColor,
-                         ),
-                       ),
-                       const Spacer(),
-                       Icon(
-                         _isExpanded
-                             ? AuroraIcons.chevronUp
-                             : AuroraIcons.chevronDown,
-                         size: 10,
-                         color: theme.accentColor.withOpacity(0.5),
-                       ),
-                     ],
-                   ),
-                 ),
-               ),
-               if (_isExpanded)
-                 Padding(
-                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                   child: SelectableText(
-                     widget.content,
-                     style: TextStyle(color: theme.typography.body?.color, fontSize: 13),
-                   ),
-                 ),
-             ],
-          ),
-       );
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color:
+              theme.accentColor.withValues(alpha: hasBackground ? 0.2 : 0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+              color: theme.accentColor
+                  .withValues(alpha: hasBackground ? 0.3 : 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () => setState(() => _isExpanded = !_isExpanded),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(AuroraIcons.robot, size: 14, color: theme.accentColor),
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n?.agentOutput ?? 'Agent Output',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: theme.accentColor,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      _isExpanded
+                          ? AuroraIcons.chevronUp
+                          : AuroraIcons.chevronDown,
+                      size: 10,
+                      color: theme.accentColor.withValues(alpha: 0.5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_isExpanded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: SelectableText(
+                  widget.content,
+                  style: TextStyle(
+                      color: theme.typography.body?.color, fontSize: 13),
+                ),
+              ),
+          ],
+        ),
+      );
     }
     if (results != null && results.isNotEmpty) {
       return Container(
         margin: const EdgeInsets.only(top: 8, bottom: 8),
         decoration: BoxDecoration(
-          color: hasBackground 
-              ? (isDark ? Colors.black.withOpacity(0.45) : Colors.white.withOpacity(0.45))
+          color: hasBackground
+              ? (isDark
+                  ? Colors.black.withValues(alpha: 0.45)
+                  : Colors.white.withValues(alpha: 0.45))
               : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: hasBackground 
-              ? (isDark ? Colors.white10 : Colors.black12)
-              : theme.resources.controlStrokeColorDefault),
+          border: Border.all(
+              color: hasBackground
+                  ? (isDark ? Colors.white10 : Colors.black12)
+                  : theme.resources.controlStrokeColorDefault),
         ),
         child: Material(
           type: MaterialType.transparency,
@@ -249,13 +269,14 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                                   shape: BoxShape.circle,
                                   color: Colors.white,
                                   border: Border.all(
-                                      color: hasBackground 
-                                          ? Colors.transparent 
+                                      color: hasBackground
+                                          ? Colors.transparent
                                           : theme.scaffoldBackgroundColor,
                                       width: 2),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.1),
                                       blurRadius: 2,
                                       offset: const Offset(0, 1),
                                     ),
@@ -267,10 +288,8 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                                           faviconUrl,
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, __, ___) =>
-                                              const Icon(
-                                                  AuroraIcons.globe,
-                                                  size: 12,
-                                                  color: Colors.grey),
+                                              const Icon(AuroraIcons.globe,
+                                                  size: 12, color: Colors.grey),
                                         )
                                       : const Icon(fluent.FluentIcons.globe,
                                           size: 12, color: Colors.grey),
@@ -286,7 +305,8 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: theme.typography.body?.color?.withOpacity(0.9),
+                          color: theme.typography.body?.color
+                              ?.withValues(alpha: 0.9),
                         ),
                       ),
                       const Spacer(),
@@ -319,7 +339,8 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                           if (link != null && link.isNotEmpty) {
                             final uri = Uri.tryParse(link);
                             if (uri != null) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              await launchUrl(uri,
+                                  mode: LaunchMode.externalApplication);
                             }
                           }
                         },
@@ -334,7 +355,8 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                                 height: 18,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: theme.accentColor.withOpacity(0.1),
+                                  color:
+                                      theme.accentColor.withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Text(
@@ -394,7 +416,8 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: theme.accentColor.withOpacity(hasBackground ? 0.25 : 0.1),
+              color: theme.accentColor
+                  .withValues(alpha: hasBackground ? 0.25 : 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -408,11 +431,11 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                   color: theme.accentColor,
                 ),
                 const SizedBox(width: 8),
-                Icon(AuroraIcons.search,
-                    size: 14, color: theme.accentColor),
+                Icon(AuroraIcons.search, size: 14, color: theme.accentColor),
                 const SizedBox(width: 8),
                 Text(
-                  l10n?.searchResultsWithEngine(count, engine) ?? '$count Search Results ($engine)',
+                  l10n?.searchResultsWithEngine(count, engine) ??
+                      '$count Search Results ($engine)',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -433,12 +456,14 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: hasBackground 
-                    ? (isDark ? Colors.black.withOpacity(0.45) : Colors.white.withOpacity(0.45))
+                color: hasBackground
+                    ? (isDark
+                        ? Colors.black.withValues(alpha: 0.45)
+                        : Colors.white.withValues(alpha: 0.45))
                     : theme.cardColor,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: hasBackground 
+                    color: hasBackground
                         ? (isDark ? Colors.white10 : Colors.black12)
                         : theme.resources.dividerStrokeColorDefault),
               ),
@@ -457,30 +482,43 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                   Text(snippet,
                       style: TextStyle(
                           fontSize: 12,
-                          color:
-                              theme.typography.body!.color!.withOpacity(0.8)),
+                          color: theme.typography.body!.color!
+                              .withValues(alpha: 0.8)),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis),
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ],
     );
   }
 
-  Widget _buildTerminalOutput(AppLocalizations? l10n, fluent.FluentThemeData theme, String? stdout, String? stderr, int? exitCode, bool hasBackground, bool isDark) {
-    final isError = (exitCode != null && exitCode != 0) || (stderr != null && stderr.isNotEmpty && (stdout == null || stdout.isEmpty));
-    
+  Widget _buildTerminalOutput(
+      AppLocalizations? l10n,
+      fluent.FluentThemeData theme,
+      String? stdout,
+      String? stderr,
+      int? exitCode,
+      bool hasBackground,
+      bool isDark) {
+    final isError = (exitCode != null && exitCode != 0) ||
+        (stderr != null &&
+            stderr.isNotEmpty &&
+            (stdout == null || stdout.isEmpty));
+
     return Container(
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       decoration: BoxDecoration(
-        color: hasBackground 
-            ? const Color(0xFF1E1E1E).withOpacity(0.8)
+        color: hasBackground
+            ? const Color(0xFF1E1E1E).withValues(alpha: 0.8)
             : const Color(0xFF1E1E1E), // Terminal black
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isError ? Colors.red.withOpacity(0.5) : Colors.grey.withOpacity(0.3)),
+        border: Border.all(
+            color: isError
+                ? Colors.red.withValues(alpha: 0.5)
+                : Colors.grey.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -491,8 +529,10 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isError ? Colors.red.withOpacity(0.15) : Colors.white.withOpacity(0.05),
-                borderRadius: _isExpanded 
+                color: isError
+                    ? Colors.red.withValues(alpha: 0.15)
+                    : Colors.white.withValues(alpha: 0.05),
+                borderRadius: _isExpanded
                     ? const BorderRadius.vertical(top: Radius.circular(8))
                     : BorderRadius.circular(8),
               ),
@@ -501,17 +541,20 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                   Icon(
                     isError ? AuroraIcons.error : AuroraIcons.terminal,
                     size: 14,
-                    color: isError ? Colors.red.shade300 : Colors.green.shade300,
+                    color:
+                        isError ? Colors.red.shade300 : Colors.green.shade300,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isError 
-                        ? (l10n?.terminalError(exitCode ?? 0) ?? 'Terminal Error (Code $exitCode)')
+                    isError
+                        ? (l10n?.terminalError(exitCode ?? 0) ??
+                            'Terminal Error (Code $exitCode)')
                         : (l10n?.terminalOutput ?? 'Terminal Output'),
                     style: TextStyle(
                       fontSize: 11,
                       fontFamily: 'Consolas',
-                      color: isError ? Colors.red.shade100 : Colors.grey.shade300,
+                      color:
+                          isError ? Colors.red.shade100 : Colors.grey.shade300,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -545,7 +588,8 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                       ),
                     ),
                   if (stderr != null && stderr.isNotEmpty) ...[
-                    if (stdout != null && stdout.isNotEmpty) const SizedBox(height: 8),
+                    if (stdout != null && stdout.isNotEmpty)
+                      const SizedBox(height: 8),
                     SelectableText(
                       stderr.trim(),
                       style: TextStyle(
@@ -556,7 +600,8 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
                       ),
                     ),
                   ],
-                  if ((stdout == null || stdout.isEmpty) && (stderr == null || stderr.isEmpty))
+                  if ((stdout == null || stdout.isEmpty) &&
+                      (stderr == null || stderr.isEmpty))
                     Text(
                       l10n?.noOutput ?? '[No output]',
                       style: const TextStyle(

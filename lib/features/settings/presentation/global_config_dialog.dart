@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart';
@@ -155,7 +154,7 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: theme.accentColor.withOpacity(0.1),
+                  color: theme.accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: theme.accentColor, size: 20),
@@ -182,7 +181,8 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
     );
   }
 
-  Widget _buildParamItem(String key, dynamic value, Map<String, dynamic> currentParams, FluentThemeData theme) {
+  Widget _buildParamItem(String key, dynamic value,
+      Map<String, dynamic> currentParams, FluentThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -198,10 +198,11 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
               color: theme.resources.controlFillColorSecondary,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text(
-              key, 
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.w600)
-            ),
+            child: Text(key,
+                style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
           ),
           const SizedBox(width: 12),
           const Icon(AuroraIcons.chevronRight, size: 10, color: Colors.grey),
@@ -211,7 +212,9 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
               _formatValue(value),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: theme.resources.textFillColorSecondary, fontFamily: 'monospace'),
+              style: TextStyle(
+                  color: theme.resources.textFillColorSecondary,
+                  fontFamily: 'monospace'),
             ),
           ),
           IconButton(
@@ -219,7 +222,8 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
             onPressed: () => _editParam(key, value, currentParams),
           ),
           IconButton(
-            icon: Icon(AuroraIcons.delete, size: 14, color: Colors.red.withOpacity(0.8)),
+            icon: Icon(AuroraIcons.delete,
+                size: 14, color: Colors.red.withValues(alpha: 0.8)),
             onPressed: () => _removeParam(key, currentParams),
           ),
         ],
@@ -244,10 +248,12 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
     }
   }
 
-  void _editParam(String key, dynamic value, Map<String, dynamic> currentParams) async {
+  void _editParam(
+      String key, dynamic value, Map<String, dynamic> currentParams) async {
     final result = await showDialog<MapEntry<String, dynamic>>(
       context: context,
-      builder: (context) => _AddParamDialog(initialKey: key, initialValue: value),
+      builder: (context) =>
+          _AddParamDialog(initialKey: key, initialValue: value),
     );
     if (result != null) {
       final newParams = Map<String, dynamic>.from(currentParams);
@@ -267,7 +273,7 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = FluentTheme.of(context);
-    
+
     // Extract custom settings (exclude internal _aurora_ keys)
     final customParams = Map<String, dynamic>.fromEntries(
         _globalSettings.entries.where((e) => !e.key.startsWith('_aurora_')));
@@ -296,7 +302,8 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
                     onSelected: (item) {
                       if (item.value != null &&
                           !_globalExcludeModels.contains(item.value!)) {
-                        _updateExcludeModels([..._globalExcludeModels, item.value!]);
+                        _updateExcludeModels(
+                            [..._globalExcludeModels, item.value!]);
                       }
                     },
                   ),
@@ -307,11 +314,13 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
                       runSpacing: 8,
                       children: _globalExcludeModels.map((model) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
+                            color: Colors.red.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.red.withOpacity(0.3)),
+                            border: Border.all(
+                                color: Colors.red.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -319,10 +328,12 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
                               Text(model),
                               const SizedBox(width: 4),
                               IconButton(
-                                icon: Icon(AuroraIcons.close, size: 10, color: Colors.red),
+                                icon: Icon(AuroraIcons.close,
+                                    size: 10, color: Colors.red),
                                 onPressed: () {
-                                  _updateExcludeModels(
-                                      _globalExcludeModels.where((e) => e != model).toList());
+                                  _updateExcludeModels(_globalExcludeModels
+                                      .where((e) => e != model)
+                                      .toList());
                                 },
                               ),
                             ],
@@ -354,12 +365,11 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
                           label: l10n.thinkingBudget,
                           child: TextBox(
                             placeholder: l10n.thinkingBudgetHint,
-                            controller: TextEditingController(
-                                text: _thinkingBudget)
-                              ..selection = TextSelection.collapsed(
-                                  offset: _thinkingBudget.length),
-                            onChanged: (v) =>
-                                _saveSettings(thinkingBudget: v),
+                            controller:
+                                TextEditingController(text: _thinkingBudget)
+                                  ..selection = TextSelection.collapsed(
+                                      offset: _thinkingBudget.length),
+                            onChanged: (v) => _saveSettings(thinkingBudget: v),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -415,8 +425,8 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
                     child: TextBox(
                       placeholder: l10n.maxTokensHint,
                       controller: TextEditingController(text: _maxTokens)
-                        ..selection = TextSelection.collapsed(
-                            offset: _maxTokens.length),
+                        ..selection =
+                            TextSelection.collapsed(offset: _maxTokens.length),
                       onChanged: (v) => _saveSettings(maxTokens: v),
                     ),
                   ),
@@ -434,9 +444,9 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Custom Parameters Card
             _buildSectionCard(
               title: l10n.customParams,
@@ -461,7 +471,8 @@ class _GlobalConfigDialogState extends ConsumerState<GlobalConfigDialog> {
                     ...customParams.entries.map((e) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
-                        child: _buildParamItem(e.key, e.value, customParams, theme),
+                        child: _buildParamItem(
+                            e.key, e.value, customParams, theme),
                       );
                     }),
                 ],
@@ -513,7 +524,7 @@ class _AddParamDialogState extends State<_AddParamDialog> {
   Widget build(BuildContext context) {
     final isEditing = widget.initialKey != null;
     final l10n = AppLocalizations.of(context)!;
-    
+
     return ContentDialog(
       title: Text(isEditing ? l10n.editParam : l10n.addCustomParam),
       content: Column(

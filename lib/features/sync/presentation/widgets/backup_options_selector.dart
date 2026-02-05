@@ -26,25 +26,29 @@ class BackupOptionsSelector extends StatelessWidget {
         children: [
           fluent.Checkbox(
             checked: options.includeChatHistory,
-            onChanged: (v) => onChanged(options.copyWith(includeChatHistory: v)),
+            onChanged: (v) =>
+                onChanged(options.copyWith(includeChatHistory: v)),
             content: Text(l10n.backupChatHistory),
           ),
           const SizedBox(height: 12),
           fluent.Checkbox(
             checked: options.includeChatPresets,
-            onChanged: (v) => onChanged(options.copyWith(includeChatPresets: v)),
+            onChanged: (v) =>
+                onChanged(options.copyWith(includeChatPresets: v)),
             content: Text(l10n.backupChatPresets),
           ),
           const SizedBox(height: 12),
           fluent.Checkbox(
             checked: options.includeProviderConfigs,
-            onChanged: (v) => onChanged(options.copyWith(includeProviderConfigs: v)),
+            onChanged: (v) =>
+                onChanged(options.copyWith(includeProviderConfigs: v)),
             content: Text(l10n.backupProviderConfigs),
           ),
           const SizedBox(height: 12),
           fluent.Checkbox(
             checked: options.includeStudioContent,
-            onChanged: (v) => onChanged(options.copyWith(includeStudioContent: v)),
+            onChanged: (v) =>
+                onChanged(options.copyWith(includeStudioContent: v)),
             content: Text(l10n.backupStudioContent),
           ),
         ],
@@ -57,22 +61,26 @@ class BackupOptionsSelector extends StatelessWidget {
         CheckboxListTile(
           title: Text(l10n.backupChatHistory),
           value: options.includeChatHistory,
-          onChanged: (v) => onChanged(options.copyWith(includeChatHistory: v ?? false)),
+          onChanged: (v) =>
+              onChanged(options.copyWith(includeChatHistory: v ?? false)),
         ),
         CheckboxListTile(
           title: Text(l10n.backupChatPresets),
           value: options.includeChatPresets,
-          onChanged: (v) => onChanged(options.copyWith(includeChatPresets: v ?? false)),
+          onChanged: (v) =>
+              onChanged(options.copyWith(includeChatPresets: v ?? false)),
         ),
         CheckboxListTile(
           title: Text(l10n.backupProviderConfigs),
           value: options.includeProviderConfigs,
-          onChanged: (v) => onChanged(options.copyWith(includeProviderConfigs: v ?? false)),
+          onChanged: (v) =>
+              onChanged(options.copyWith(includeProviderConfigs: v ?? false)),
         ),
         CheckboxListTile(
           title: Text(l10n.backupStudioContent),
           value: options.includeStudioContent,
-          onChanged: (v) => onChanged(options.copyWith(includeStudioContent: v ?? false)),
+          onChanged: (v) =>
+              onChanged(options.copyWith(includeStudioContent: v ?? false)),
         ),
       ],
     );

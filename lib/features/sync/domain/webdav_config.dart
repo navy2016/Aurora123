@@ -12,18 +12,18 @@ class WebDavConfig {
   });
 
   Map<String, dynamic> toJson() => {
-    'url': url,
-    'username': username,
-    'password': password,
-    'remotePath': remotePath,
-  };
+        'url': url,
+        'username': username,
+        'password': password,
+        'remotePath': remotePath,
+      };
 
   factory WebDavConfig.fromJson(Map<String, dynamic> json) => WebDavConfig(
-    url: json['url'] as String? ?? '',
-    username: json['username'] as String? ?? '',
-    password: json['password'] as String? ?? '',
-    remotePath: json['remotePath'] as String? ?? '/aurora_backup',
-  );
+        url: json['url'] as String? ?? '',
+        username: json['username'] as String? ?? '',
+        password: json['password'] as String? ?? '',
+        remotePath: json['remotePath'] as String? ?? '/aurora_backup',
+      );
 
   WebDavConfig copyWith({
     String? url,

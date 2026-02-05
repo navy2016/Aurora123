@@ -20,13 +20,6 @@ import 'package:aurora/features/studio/presentation/studio_content.dart';
 import 'package:aurora/features/skills/presentation/skills_page.dart';
 import 'package:aurora/features/assistant/presentation/assistant_content.dart';
 import 'package:aurora/shared/theme/aurora_icons.dart';
-import 'package:aurora/features/assistant/presentation/widgets/assistant_avatar.dart';
-import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
-import 'package:aurora/features/assistant/domain/assistant.dart';
-import 'package:aurora/features/chat/data/session_entity.dart';
-import 'package:aurora/features/chat/presentation/widgets/chat_view.dart';
-import 'package:aurora/features/chat/presentation/widgets/components/chat_utils.dart';
-import 'package:aurora/features/chat/presentation/topic_provider.dart';
 import '../chat_provider.dart';
 
 class DesktopChatScreen extends ConsumerStatefulWidget {
@@ -35,9 +28,8 @@ class DesktopChatScreen extends ConsumerStatefulWidget {
   ConsumerState<DesktopChatScreen> createState() => _DesktopChatScreenState();
 }
 
-
-
-class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with WindowListener, TrayListener {
+class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
+    with WindowListener, TrayListener {
   final _trayManager = TrayManager.instance;
   final _windowManager = WindowManager.instance;
 
@@ -64,7 +56,8 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
         final String exePath = Platform.resolvedExecutable;
         final String exeDir = File(exePath).parent.path;
         final List<String> possiblePaths = [
-          p.join(exeDir, 'data', 'flutter_assets', 'assets', 'icon', 'app_icon.ico'),
+          p.join(exeDir, 'data', 'flutter_assets', 'assets', 'icon',
+              'app_icon.ico'),
           p.join(exeDir, 'assets', 'icon', 'app_icon.ico'),
         ];
         for (final path in possiblePaths) {
@@ -79,7 +72,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
       await _trayManager.setToolTip('Aurora');
 
       _updateTrayMenu();
-      
+
       await _windowManager.setPreventClose(true);
     } catch (e) {
       // 保持静默失败或在非调试模式下忽略
@@ -140,7 +133,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
   @override
   void onWindowClose() async {
     final closeBehavior = ref.read(settingsProvider).closeBehavior;
-    
+
     if (closeBehavior == 1) {
       // 记忆为最小化
       _windowManager.hide();
@@ -221,18 +214,14 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
     ref.listen(settingsProvider.select((s) => s.language), (_, __) {
       _updateTrayMenu();
     });
-    
+
     final theme = fluent.FluentTheme.of(context);
     final settings = ref.watch(settingsProvider);
     final isExpanded = ref.watch(isSidebarExpandedProvider);
     final selectedIndex = ref.watch(desktopActiveTabProvider);
     final l10n = AppLocalizations.of(context)!;
     final navItems = [
-      (
-        icon: AuroraIcons.history,
-        label: l10n.history,
-        body: HistoryContent()
-      ),
+      (icon: AuroraIcons.history, label: l10n.history, body: HistoryContent()),
       (
         icon: AuroraIcons.translation,
         label: l10n.textTranslation,
@@ -243,11 +232,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
         label: l10n.agentSkills,
         body: SkillSettingsPage()
       ),
-      (
-        icon: AuroraIcons.studio,
-        label: l10n.studio,
-        body: StudioContent()
-      ),
+      (icon: AuroraIcons.studio, label: l10n.studio, body: StudioContent()),
       (
         icon: AuroraIcons.settings,
         label: l10n.settings,
@@ -267,8 +252,9 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
     } else {
       currentSessionId = '';
     }
-    final backgroundColor = ref.watch(settingsProvider.select((s) => s.backgroundColor));
-    
+    final backgroundColor =
+        ref.watch(settingsProvider.select((s) => s.backgroundColor));
+
     List<Color>? getBackgroundGradient(String bg, bool isDark) {
       if (isDark) {
         switch (bg) {
@@ -356,16 +342,20 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
 
     final isDark = theme.brightness == fluent.Brightness.dark;
     final backgroundGradient = getBackgroundGradient(backgroundColor, isDark);
-    
+
     // Determine solid background color fallback
     final solidBackgroundColor = () {
       if (isDark) {
         switch (backgroundColor) {
-           case 'pure_black': return const Color(0xFF000000);
-           case 'warm': return const Color(0xFF1E1C1A);
-           case 'cool': return const Color(0xFF1A1C1E);
-           case 'default':
-           default: return const Color(0xFF202020);
+          case 'pure_black':
+            return const Color(0xFF000000);
+          case 'warm':
+            return const Color(0xFF1E1C1A);
+          case 'cool':
+            return const Color(0xFF1A1C1E);
+          case 'default':
+          default:
+            return const Color(0xFF202020);
         }
       } else {
         return Colors.white;
@@ -374,14 +364,19 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
 
     return Stack(
       children: [
-        if (!settings.useCustomTheme || settings.backgroundImagePath == null || settings.backgroundImagePath!.isEmpty)
+        if (!settings.useCustomTheme ||
+            settings.backgroundImagePath == null ||
+            settings.backgroundImagePath!.isEmpty)
           Positioned.fill(
             child: Container(
               color: solidBackgroundColor, // Base color
             ),
           ),
-        if (backgroundGradient != null && (!settings.useCustomTheme || settings.backgroundImagePath == null || settings.backgroundImagePath!.isNotEmpty))
-           Positioned.fill(
+        if (backgroundGradient != null &&
+            (!settings.useCustomTheme ||
+                settings.backgroundImagePath == null ||
+                settings.backgroundImagePath!.isNotEmpty))
+          Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -404,9 +399,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                     height: 32,
                     child: Center(
                       child: fluent.IconButton(
-                        icon: fluent.Icon(
-                            AuroraIcons.globalNav,
-                            size: 16),
+                        icon: fluent.Icon(AuroraIcons.globalNav, size: 16),
                         onPressed: () {
                           ref
                               .read(isSidebarExpandedProvider.notifier)
@@ -423,8 +416,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                     PresetSelector(sessionId: currentSessionId),
                   ],
                   const Expanded(
-                      child: DragToMoveArea(
-                          child: SizedBox.expand())),
+                      child: DragToMoveArea(child: SizedBox.expand())),
                   if (currentSessionId.isNotEmpty &&
                       currentSessionId != 'translation') ...[
                     AssistantSelector(sessionId: currentSessionId),
@@ -487,8 +479,8 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                           }
                                         } else {
                                           ref
-                                              .read(
-                                                  desktopActiveTabProvider.notifier)
+                                              .read(desktopActiveTabProvider
+                                                  .notifier)
                                               .state = index;
                                         }
                                       },
@@ -498,7 +490,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                           margin: const EdgeInsets.symmetric(
                                               horizontal: 5, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: states.isHovering
+                                            color: states.isHovered
                                                 ? theme.resources
                                                     .subtleFillColorSecondary
                                                 : Colors.transparent,
@@ -506,7 +498,8 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                                 BorderRadius.circular(6),
                                           ),
                                           child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
                                             children: [
                                               Container(
                                                 width: 26,
@@ -515,7 +508,8 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                                 decoration: BoxDecoration(
                                                   color: isSelected
                                                       ? theme.accentColor
-                                                          .withOpacity(0.1)
+                                                          .withValues(
+                                                              alpha: 0.1)
                                                       : Colors.transparent,
                                                   borderRadius:
                                                       BorderRadius.circular(6),
@@ -556,13 +550,14 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                   }),
                                   const Spacer(),
                                   Builder(builder: (context) {
-                                    final index = navItems.length - 1; // Assistant
+                                    final index =
+                                        navItems.length - 1; // Assistant
                                     final item = navItems[index];
                                     final isSelected = selectedIndex == index;
                                     return fluent.HoverButton(
                                       onPressed: () => ref
-                                          .read(desktopActiveTabProvider
-                                              .notifier)
+                                          .read(
+                                              desktopActiveTabProvider.notifier)
                                           .state = index,
                                       builder: (context, states) {
                                         return Container(
@@ -570,7 +565,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                           margin: const EdgeInsets.symmetric(
                                               horizontal: 5, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: states.isHovering
+                                            color: states.isHovered
                                                 ? theme.resources
                                                     .subtleFillColorSecondary
                                                 : Colors.transparent,
@@ -578,7 +573,8 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                                 BorderRadius.circular(6),
                                           ),
                                           child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
                                             children: [
                                               SizedBox(
                                                 width: 30,
@@ -617,13 +613,14 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                     );
                                   }),
                                   Builder(builder: (context) {
-                                    final index = navItems.length - 2; // Settings
+                                    final index =
+                                        navItems.length - 2; // Settings
                                     final item = navItems[index];
                                     final isSelected = selectedIndex == index;
                                     return fluent.HoverButton(
                                       onPressed: () => ref
-                                          .read(desktopActiveTabProvider
-                                              .notifier)
+                                          .read(
+                                              desktopActiveTabProvider.notifier)
                                           .state = index,
                                       builder: (context, states) {
                                         return Container(
@@ -631,7 +628,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                           margin: const EdgeInsets.symmetric(
                                               horizontal: 5, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: states.isHovering
+                                            color: states.isHovered
                                                 ? theme.resources
                                                     .subtleFillColorSecondary
                                                 : Colors.transparent,
@@ -639,7 +636,8 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                                 BorderRadius.circular(6),
                                           ),
                                           child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
                                             children: [
                                               SizedBox(
                                                 width: 30,
@@ -680,14 +678,14 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                   const SizedBox(height: 4),
                                   Consumer(
                                     builder: (context, ref, child) {
-                                      final currentTheme = ref
-                                          .watch(settingsProvider)
-                                          .themeMode;
+                                      final currentTheme =
+                                          ref.watch(settingsProvider).themeMode;
                                       final bool isActuallyDark =
                                           (currentTheme == 'dark') ||
                                               (currentTheme == 'system' &&
-                                                  MediaQuery.platformBrightnessOf(
-                                                          context) ==
+                                                  MediaQuery
+                                                          .platformBrightnessOf(
+                                                              context) ==
                                                       Brightness.dark);
                                       final IconData icon = isActuallyDark
                                           ? AuroraIcons.themeDark
@@ -702,7 +700,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                             margin: const EdgeInsets.symmetric(
                                                 horizontal: 5, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: states.isHovering
+                                              color: states.isHovered
                                                   ? theme.resources
                                                       .subtleFillColorSecondary
                                                   : Colors.transparent,
@@ -710,17 +708,16 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                                                   BorderRadius.circular(6),
                                             ),
                                             child: Row(
-                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
                                               children: [
                                                 SizedBox(
                                                   width: 30,
                                                   child: Center(
                                                     child: fluent.Icon(icon,
                                                         size: 16,
-                                                        color: theme
-                                                            .typography
-                                                            .body
-                                                            ?.color),
+                                                        color: theme.typography
+                                                            .body?.color),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 10),
@@ -759,8 +756,9 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
                           color: Colors.transparent,
                           child: FadeIndexedStack(
                             index: selectedIndex,
-                            children:
-                                navItems.map<Widget>((item) => item.body).toList(),
+                            children: navItems
+                                .map<Widget>((item) => item.body)
+                                .toList(),
                           ),
                         ),
                       ),
@@ -775,4 +773,3 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen> with Wind
     );
   }
 }
-

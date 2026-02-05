@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/error/app_error_type.dart';
@@ -20,7 +21,7 @@ class SettingsStorage {
   Future<void> init() async {
     final supportDir = await getApplicationSupportDirectory();
     final documentsDir = await getApplicationDocumentsDirectory();
-    
+
     // Migration logic
     await _migrateFromExampleIfNeeded(supportDir);
     await _migrateIfNeeded(documentsDir, supportDir);
@@ -50,8 +51,8 @@ class SettingsStorage {
     final newIsarFile = File('${newDir.path}/default.isar');
 
     if (await oldIsarFile.exists() && !await newIsarFile.exists()) {
-      print('Migrating Aurora data from ${oldDir.path} to ${newDir.path}');
-      
+      debugPrint('Migrating Aurora data from ${oldDir.path} to ${newDir.path}');
+
       // Ensure new directory exists
       if (!await newDir.exists()) {
         await newDir.create(recursive: true);
@@ -104,24 +105,24 @@ class SettingsStorage {
           }
         }
       } catch (e) {
-        print('Error migrating background images: $e');
+        debugPrint('Error migrating background images: $e');
       }
 
       // 4. Migrate Aurora attachments folder
       try {
         final oldAuroraDir = Directory('${oldDir.path}/Aurora');
         if (await oldAuroraDir.exists()) {
-          // We can just move the whole directory if it's on the same partition, 
+          // We can just move the whole directory if it's on the same partition,
           // but copy/delete is safer across partitions if that were ever the case.
           // For simplicity and consistency with other steps, let's copy recursive.
           await _copyDirectory(oldAuroraDir, Directory(newDir.path));
           await oldAuroraDir.delete(recursive: true);
         }
       } catch (e) {
-        print('Error migrating Aurora attachments: $e');
+        debugPrint('Error migrating Aurora attachments: $e');
       }
-      
-      print('Migration completed successfully.');
+
+      debugPrint('Migration completed successfully.');
     }
   }
 
@@ -159,18 +160,18 @@ class SettingsStorage {
     final providers = await _isar.providerConfigEntitys.where().findAll();
     final order = await loadProviderOrder();
     if (order.isEmpty) return providers;
-    
+
     // Sort providers based on order list
     final Map<String, int> orderMap = {
       for (var i = 0; i < order.length; i++) order[i]: i
     };
-    
+
     providers.sort((a, b) {
       final indexA = orderMap[a.providerId] ?? 9999;
       final indexB = orderMap[b.providerId] ?? 9999;
       return indexA.compareTo(indexB);
     });
-    
+
     return providers;
   }
 
@@ -229,12 +230,14 @@ class SettingsStorage {
       ..backgroundColor = backgroundColor ?? existing?.backgroundColor
       ..closeBehavior = closeBehavior ?? existing?.closeBehavior ?? 0
       ..executionModel = executionModel ?? existing?.executionModel
-      ..executionProviderId = executionProviderId ?? existing?.executionProviderId
+      ..executionProviderId =
+          executionProviderId ?? existing?.executionProviderId
       ..fontSize = fontSize ?? existing?.fontSize ?? 14.0
       ..backgroundImagePath = clearBackgroundImage
           ? null
           : (backgroundImagePath ?? existing?.backgroundImagePath)
-      ..backgroundBrightness = backgroundBrightness ?? existing?.backgroundBrightness ?? 0.5
+      ..backgroundBrightness =
+          backgroundBrightness ?? existing?.backgroundBrightness ?? 0.5
       ..backgroundBlur = backgroundBlur ?? existing?.backgroundBlur ?? 0.0
       ..useCustomTheme = useCustomTheme ?? existing?.useCustomTheme ?? false;
     await _isar.writeTxn(() async {
@@ -340,7 +343,9 @@ class SettingsStorage {
         final List<dynamic> json = jsonDecode(content);
         return json.cast<String>();
       }
-    } catch (e) {}
+    } catch (e, st) {
+      debugPrint('Failed to load session order: $e\n$st');
+    }
     return [];
   }
 
@@ -348,7 +353,9 @@ class SettingsStorage {
     try {
       final file = await _orderFile;
       await file.writeAsString(jsonEncode(order));
-    } catch (e) {}
+    } catch (e, st) {
+      debugPrint('Failed to save session order: $e\n$st');
+    }
   }
 
   Future<File> get _providerOrderFile async {
@@ -364,7 +371,9 @@ class SettingsStorage {
         final List<dynamic> json = jsonDecode(content);
         return json.cast<String>();
       }
-    } catch (e) {}
+    } catch (e, st) {
+      debugPrint('Failed to load provider order: $e\n$st');
+    }
     return [];
   }
 
@@ -372,14 +381,17 @@ class SettingsStorage {
     try {
       final file = await _providerOrderFile;
       await file.writeAsString(jsonEncode(order));
-    } catch (e) {}
+    } catch (e, st) {
+      debugPrint('Failed to save provider order: $e\n$st');
+    }
   }
 
   Future<void> incrementUsage(String modelName,
       {bool success = true,
       int durationMs = 0,
       int firstTokenMs = 0,
-      int tokenCount = 0, // Kept for backward compatibility logic, usually sum of prompt+completion
+      int tokenCount =
+          0, // Kept for backward compatibility logic, usually sum of prompt+completion
       int promptTokens = 0,
       int completionTokens = 0,
       int reasoningTokens = 0,
@@ -402,13 +414,19 @@ class SettingsStorage {
           ..validDurationCount = durationMs > 0 ? 1 : 0
           ..totalFirstTokenMs = firstTokenMs > 0 ? firstTokenMs : 0
           ..validFirstTokenCount = firstTokenMs > 0 ? 1 : 0
-          ..promptTokenCount = promptTokens > 0 ? promptTokens : (tokenCount ~/ 2)
-          ..completionTokenCount = completionTokens > 0 ? completionTokens : (tokenCount - tokenCount ~/ 2)
+          ..promptTokenCount =
+              promptTokens > 0 ? promptTokens : (tokenCount ~/ 2)
+          ..completionTokenCount = completionTokens > 0
+              ? completionTokens
+              : (tokenCount - tokenCount ~/ 2)
           ..reasoningTokenCount = reasoningTokens > 0 ? reasoningTokens : 0
-          ..totalTokenCount = (promptTokens > 0 ? promptTokens : (tokenCount ~/ 2)) + 
-              (completionTokens > 0 ? completionTokens : (tokenCount - tokenCount ~/ 2)) +
-              (reasoningTokens > 0 ? reasoningTokens : 0);
-        
+          ..totalTokenCount =
+              (promptTokens > 0 ? promptTokens : (tokenCount ~/ 2)) +
+                  (completionTokens > 0
+                      ? completionTokens
+                      : (tokenCount - tokenCount ~/ 2)) +
+                  (reasoningTokens > 0 ? reasoningTokens : 0);
+
         if (errorType != null) {
           _updateErrorCount(existing, errorType);
         }
@@ -429,17 +447,22 @@ class SettingsStorage {
           existing.totalFirstTokenMs += firstTokenMs;
           existing.validFirstTokenCount++;
         }
-        
+
         // Always use prompt + completion + reasoning for consistency
         // If only tokenCount is provided (legacy), split evenly as approximation
-        final effectivePrompt = promptTokens > 0 ? promptTokens : (tokenCount ~/ 2);
-        final effectiveCompletion = completionTokens > 0 ? completionTokens : (tokenCount - tokenCount ~/ 2);
+        final effectivePrompt =
+            promptTokens > 0 ? promptTokens : (tokenCount ~/ 2);
+        final effectiveCompletion = completionTokens > 0
+            ? completionTokens
+            : (tokenCount - tokenCount ~/ 2);
         final effectiveReasoning = reasoningTokens > 0 ? reasoningTokens : 0;
-        
+
         existing.promptTokenCount += effectivePrompt;
         existing.completionTokenCount += effectiveCompletion;
         existing.reasoningTokenCount += effectiveReasoning;
-        existing.totalTokenCount = existing.promptTokenCount + existing.completionTokenCount + existing.reasoningTokenCount;
+        existing.totalTokenCount = existing.promptTokenCount +
+            existing.completionTokenCount +
+            existing.reasoningTokenCount;
       }
       await _isar.usageStatsEntitys.put(existing);
 
@@ -448,8 +471,10 @@ class SettingsStorage {
           .filter()
           .dateEqualTo(today)
           .findFirst();
-      
-      final effectiveTotalForDaily = tokenCount > 0 ? tokenCount : (promptTokens + completionTokens + reasoningTokens);
+
+      final effectiveTotalForDaily = tokenCount > 0
+          ? tokenCount
+          : (promptTokens + completionTokens + reasoningTokens);
 
       if (daily == null) {
         daily = DailyUsageStatsEntity()
@@ -523,10 +548,11 @@ class SettingsStorage {
   Future<int> migrateTokenCounts() async {
     int migratedCount = 0;
     final allStats = await _isar.usageStatsEntitys.where().findAll();
-    
+
     await _isar.writeTxn(() async {
       for (final stats in allStats) {
-        final expectedTotal = stats.promptTokenCount + stats.completionTokenCount;
+        final expectedTotal =
+            stats.promptTokenCount + stats.completionTokenCount;
         if (stats.totalTokenCount != expectedTotal) {
           // If we have prompt+completion data, use that as the source of truth
           if (stats.promptTokenCount > 0 || stats.completionTokenCount > 0) {
@@ -534,14 +560,15 @@ class SettingsStorage {
           } else {
             // If we only have totalTokenCount, split it evenly
             stats.promptTokenCount = stats.totalTokenCount ~/ 2;
-            stats.completionTokenCount = stats.totalTokenCount - stats.promptTokenCount;
+            stats.completionTokenCount =
+                stats.totalTokenCount - stats.promptTokenCount;
           }
           await _isar.usageStatsEntitys.put(stats);
           migratedCount++;
         }
       }
     });
-    
+
     return migratedCount;
   }
 
@@ -699,47 +726,58 @@ class SettingsStorage {
   Future<void> _migrateFromExampleIfNeeded(Directory newDir) async {
     try {
       final List<Directory> potentialOldDirs = [];
-      
+
       if (Platform.isWindows) {
         // Gen 1: com.example\Aurora
         // Gen 2: Aurora\Aurora
         final roamingDir = newDir.parent;
-        potentialOldDirs.add(Directory('${roamingDir.path}${Platform.pathSeparator}com.example${Platform.pathSeparator}Aurora'));
-        potentialOldDirs.add(Directory('${newDir.path}${Platform.pathSeparator}Aurora'));
+        potentialOldDirs.add(Directory(
+            '${roamingDir.path}${Platform.pathSeparator}com.example${Platform.pathSeparator}Aurora'));
+        potentialOldDirs
+            .add(Directory('${newDir.path}${Platform.pathSeparator}Aurora'));
       } else if (Platform.isMacOS) {
         final supportDir = newDir.parent;
-        potentialOldDirs.add(Directory('${supportDir.path}${Platform.pathSeparator}com.aurora.aurora'));
+        potentialOldDirs.add(Directory(
+            '${supportDir.path}${Platform.pathSeparator}com.aurora.aurora'));
       } else if (Platform.isLinux) {
         final shareDir = newDir.parent;
-        potentialOldDirs.add(Directory('${shareDir.path}${Platform.pathSeparator}com.aurora.aurora'));
+        potentialOldDirs.add(Directory(
+            '${shareDir.path}${Platform.pathSeparator}com.aurora.aurora'));
       }
 
       for (var oldDir in potentialOldDirs) {
         if (!await oldDir.exists() || oldDir.path == newDir.path) continue;
 
-        final oldIsar = File('${oldDir.path}${Platform.pathSeparator}default.isar');
-        final newIsar = File('${newDir.path}${Platform.pathSeparator}default.isar');
-        
-        bool oldHasData = await oldIsar.exists() || await File('${oldDir.path}${Platform.pathSeparator}session_order.json').exists();
-        bool newIsEmpty = !await newIsar.exists() || (await newIsar.length() <= 1048576);
+        final oldIsar =
+            File('${oldDir.path}${Platform.pathSeparator}default.isar');
+        final newIsar =
+            File('${newDir.path}${Platform.pathSeparator}default.isar');
+
+        bool oldHasData = await oldIsar.exists() ||
+            await File(
+                    '${oldDir.path}${Platform.pathSeparator}session_order.json')
+                .exists();
+        bool newIsEmpty =
+            !await newIsar.exists() || (await newIsar.length() <= 1048576);
 
         if (oldHasData && newIsEmpty) {
-          print('Aggressive Migration Triggered: Data found in ${oldDir.path}');
-          
+          debugPrint(
+              'Aggressive Migration Triggered: Data found in ${oldDir.path}');
+
           if (!await newDir.exists()) {
             await newDir.create(recursive: true);
           }
 
           if (await newIsar.exists()) {
-             await newIsar.rename('${newIsar.path}.bak');
+            await newIsar.rename('${newIsar.path}.bak');
           }
 
           await for (var entity in oldDir.list()) {
             final fileName = entity.path.split(Platform.pathSeparator).last;
-            if (fileName == 'Aurora') continue; 
+            if (fileName == 'Aurora') continue;
 
             final newPath = '${newDir.path}${Platform.pathSeparator}$fileName';
-            
+
             try {
               if (entity is File) {
                 await entity.copy(newPath);
@@ -749,15 +787,15 @@ class SettingsStorage {
                 await entity.delete(recursive: true);
               }
             } catch (e) {
-              print('Warning: Migration failed for $fileName: $e');
+              debugPrint('Warning: Migration failed for $fileName: $e');
             }
           }
-          print('Successfully migrated from ${oldDir.path}');
-          break; 
+          debugPrint('Successfully migrated from ${oldDir.path}');
+          break;
         }
       }
     } catch (e) {
-      print('Critical error during aggressive migration: $e');
+      debugPrint('Critical error during aggressive migration: $e');
     }
   }
 
@@ -771,12 +809,14 @@ class SettingsStorage {
 
       if (path != null) {
         final bool isLegacyExample = path.contains('com.example');
-        final bool isLegacyDoubleAurora = path.contains('${Platform.pathSeparator}Aurora${Platform.pathSeparator}Aurora');
-        
+        final bool isLegacyDoubleAurora = path.contains(
+            '${Platform.pathSeparator}Aurora${Platform.pathSeparator}Aurora');
+
         if (isLegacyExample || isLegacyDoubleAurora) {
           if (path.contains('backgrounds')) {
             final fileName = path.split(Platform.pathSeparator).last;
-            final newPath = '${currentSupportPath}${Platform.pathSeparator}backgrounds${Platform.pathSeparator}$fileName';
+            final newPath =
+                '$currentSupportPath${Platform.pathSeparator}backgrounds${Platform.pathSeparator}$fileName';
             if (newPath != path) {
               path = newPath;
               needsUpdate = true;
@@ -786,11 +826,11 @@ class SettingsStorage {
       }
 
       if (needsUpdate) {
-        print('Repairing legacy path in DB: $path');
+        debugPrint('Repairing legacy path in DB: $path');
         await saveAppSettings(backgroundImagePath: path);
       }
     } catch (e) {
-      print('Error fixing legacy paths: $e');
+      debugPrint('Error fixing legacy paths: $e');
     }
   }
 }

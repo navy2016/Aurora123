@@ -85,7 +85,9 @@ void main() async {
       }
       // Migrate from legacy apiKey to apiKeys if needed
       List<String> apiKeys = e.apiKeys;
+      // ignore: deprecated_member_use_from_same_package
       if (apiKeys.isEmpty && e.apiKey.isNotEmpty) {
+        // ignore: deprecated_member_use_from_same_package
         apiKeys = [e.apiKey];
       }
       return ProviderConfig(
@@ -116,18 +118,18 @@ void main() async {
     overrides: [
       settingsStorageProvider.overrideWithValue(storage),
       settingsProvider.overrideWith((ref) {
-          // Load skills from a default directory (Desktop only)
-          if (PlatformUtils.isDesktop) {
-            Future.microtask(() {
-              final skillsDir =
-                  '${Directory.current.path}${Platform.pathSeparator}skills';
-              final language = appSettings?.language ??
-                  (Platform.localeName.startsWith('zh') ? 'zh' : 'en');
-              ref
-                  .read(skillProvider.notifier)
-                  .loadSkills(skillsDir, language: language);
-            });
-          }
+        // Load skills from a default directory (Desktop only)
+        if (PlatformUtils.isDesktop) {
+          Future.microtask(() {
+            final skillsDir =
+                '${Directory.current.path}${Platform.pathSeparator}skills';
+            final language = appSettings?.language ??
+                (Platform.localeName.startsWith('zh') ? 'zh' : 'en');
+            ref
+                .read(skillProvider.notifier)
+                .loadSkills(skillsDir, language: language);
+          });
+        }
 
         return SettingsNotifier(
           storage: storage,
@@ -179,15 +181,13 @@ class MyApp extends ConsumerWidget {
         ref.read(settingsStorageProvider).saveLastTopicId(next?.toString());
       }
     });
-    final themeModeStr =
-        ref.watch(settingsProvider.select((value) => value.themeMode));
     final language =
         ref.watch(settingsProvider.select((value) => value.language));
     final themeColorStr =
         ref.watch(settingsProvider.select((value) => value.themeColor));
     final fontSize =
         ref.watch(settingsProvider.select((value) => value.fontSize));
-    
+
     fluent.AccentColor getAccentColor(String color) {
       switch (color) {
         case 'blue':
@@ -209,25 +209,25 @@ class MyApp extends ConsumerWidget {
           return fluent.Colors.teal;
       }
     }
-    
+
     final accentColorVal = getAccentColor(themeColorStr);
 
     final backgroundColorStr =
         ref.watch(settingsProvider.select((value) => value.backgroundColor));
-    
+
     bool hasCustomBackground(WidgetRef ref) {
       final settings = ref.watch(settingsProvider);
-      return (settings.useCustomTheme || settings.themeMode == 'custom') && 
-              settings.backgroundImagePath != null && 
-              settings.backgroundImagePath!.isNotEmpty;
+      return (settings.useCustomTheme || settings.themeMode == 'custom') &&
+          settings.backgroundImagePath != null &&
+          settings.backgroundImagePath!.isNotEmpty;
     }
 
     fluent.Color getBackgroundColor(
         String color, fluent.Brightness brightness, bool hasCustomBackground) {
       if (hasCustomBackground) {
         return brightness == fluent.Brightness.dark
-            ? fluent.Colors.black.withOpacity(0.55)
-            : fluent.Colors.white.withOpacity(0.55);
+            ? fluent.Colors.black.withValues(alpha: 0.55)
+            : fluent.Colors.white.withValues(alpha: 0.55);
       }
       if (brightness == fluent.Brightness.dark) {
         switch (color) {
@@ -282,10 +282,10 @@ class MyApp extends ConsumerWidget {
       final hasCustomBg = hasCustomBackground(ref);
       if (hasCustomBg) {
         return brightness == fluent.Brightness.dark
-            ? fluent.Colors.black.withOpacity(0.55)
-            : fluent.Colors.white.withOpacity(0.55);
+            ? fluent.Colors.black.withValues(alpha: 0.55)
+            : fluent.Colors.white.withValues(alpha: 0.55);
       }
-      
+
       if (brightness == fluent.Brightness.dark) {
         return getBackgroundColor(color, brightness, hasCustomBg);
       } else {
@@ -327,7 +327,8 @@ class MyApp extends ConsumerWidget {
       fluentMode = fluent.ThemeMode.system;
     }
     final locale = language == 'en' ? const Locale('en') : const Locale('zh');
-    final String? fontFamily = PlatformUtils.isWindows ? 'Microsoft YaHei' : null;
+    final String? fontFamily =
+        PlatformUtils.isWindows ? 'Microsoft YaHei' : null;
     return fluent.FluentApp(
       title: 'Aurora',
       debugShowCheckedModeBanner: false,
@@ -345,11 +346,12 @@ class MyApp extends ConsumerWidget {
         fontFamily: fontFamily,
         accentColor: accentColorVal,
         brightness: fluent.Brightness.light,
-        scaffoldBackgroundColor:
-            getBackgroundColor(backgroundColorStr, fluent.Brightness.light, hasCustomBackground(ref)),
+        scaffoldBackgroundColor: getBackgroundColor(backgroundColorStr,
+            fluent.Brightness.light, hasCustomBackground(ref)),
         cardColor: fluent.Colors.white,
         navigationPaneTheme: fluent.NavigationPaneThemeData(
-          backgroundColor: getNavBackgroundColor(backgroundColorStr, fluent.Brightness.light),
+          backgroundColor: getNavBackgroundColor(
+              backgroundColorStr, fluent.Brightness.light),
         ),
       ),
       builder: (context, child) {
@@ -359,7 +361,7 @@ class MyApp extends ConsumerWidget {
             final fluentTheme = fluent.FluentTheme.of(context);
             final brightness = fluentTheme.brightness;
             final accentColor = fluentTheme.accentColor;
-            final materialPrimary = Color(accentColor.normal.value);
+            final materialPrimary = accentColor.normal;
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
                 textScaler: TextScaler.linear(fontSize / 14.0),
@@ -371,8 +373,10 @@ class MyApp extends ConsumerWidget {
                       ? Brightness.dark
                       : Brightness.light,
                   primaryColor: materialPrimary,
-                  scaffoldBackgroundColor: hasCustomBg 
-                      ? (brightness == fluent.Brightness.dark ? Colors.black.withOpacity(0.55) : Colors.white.withOpacity(0.55))
+                  scaffoldBackgroundColor: hasCustomBg
+                      ? (brightness == fluent.Brightness.dark
+                          ? Colors.black.withValues(alpha: 0.55)
+                          : Colors.white.withValues(alpha: 0.55))
                       : fluentTheme.scaffoldBackgroundColor,
                   colorScheme: ColorScheme.fromSeed(
                     seedColor: materialPrimary,
@@ -383,19 +387,25 @@ class MyApp extends ConsumerWidget {
                   ),
                   dialogTheme: DialogThemeData(
                     backgroundColor: hasCustomBg
-                        ? (brightness == fluent.Brightness.dark ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.65))
+                        ? (brightness == fluent.Brightness.dark
+                            ? Colors.black.withValues(alpha: 0.65)
+                            : Colors.white.withValues(alpha: 0.65))
                         : null,
                     surfaceTintColor: Colors.transparent,
                   ),
                   bottomSheetTheme: BottomSheetThemeData(
                     backgroundColor: hasCustomBg
-                        ? (brightness == fluent.Brightness.dark ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.65))
+                        ? (brightness == fluent.Brightness.dark
+                            ? Colors.black.withValues(alpha: 0.65)
+                            : Colors.white.withValues(alpha: 0.65))
                         : null,
                     surfaceTintColor: Colors.transparent,
                   ),
                   popupMenuTheme: PopupMenuThemeData(
                     color: hasCustomBg
-                        ? (brightness == fluent.Brightness.dark ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.65))
+                        ? (brightness == fluent.Brightness.dark
+                            ? Colors.black.withValues(alpha: 0.65)
+                            : Colors.white.withValues(alpha: 0.65))
                         : null,
                     surfaceTintColor: Colors.transparent,
                   ),
@@ -416,9 +426,10 @@ class MyApp extends ConsumerWidget {
                     ),
                     systemOverlayStyle: SystemUiOverlayStyle(
                       statusBarColor: Colors.transparent,
-                      statusBarIconBrightness: brightness == fluent.Brightness.dark
-                          ? Brightness.light
-                          : Brightness.dark,
+                      statusBarIconBrightness:
+                          brightness == fluent.Brightness.dark
+                              ? Brightness.light
+                              : Brightness.dark,
                       statusBarBrightness: brightness == fluent.Brightness.dark
                           ? Brightness.dark
                           : Brightness.light,
@@ -427,7 +438,8 @@ class MyApp extends ConsumerWidget {
                   useMaterial3: true,
                   textSelectionTheme: TextSelectionThemeData(
                     selectionColor: brightness == fluent.Brightness.dark
-                        ? const Color(0xFF3A5A80) // Neutral dark blue for dark mode
+                        ? const Color(
+                            0xFF3A5A80) // Neutral dark blue for dark mode
                         : const Color(0xFFB3D4FC), // Light blue for light mode
                     cursorColor: materialPrimary,
                     selectionHandleColor: materialPrimary,
@@ -445,11 +457,12 @@ class MyApp extends ConsumerWidget {
         fontFamily: fontFamily,
         accentColor: accentColorVal,
         brightness: fluent.Brightness.dark,
-        scaffoldBackgroundColor:
-            getBackgroundColor(backgroundColorStr, fluent.Brightness.dark, hasCustomBackground(ref)),
+        scaffoldBackgroundColor: getBackgroundColor(backgroundColorStr,
+            fluent.Brightness.dark, hasCustomBackground(ref)),
         cardColor: const Color(0xFF2D2D2D),
         navigationPaneTheme: fluent.NavigationPaneThemeData(
-          backgroundColor: getNavBackgroundColor(backgroundColorStr, fluent.Brightness.dark),
+          backgroundColor:
+              getNavBackgroundColor(backgroundColorStr, fluent.Brightness.dark),
         ),
       ),
       home: const ChatScreen(),

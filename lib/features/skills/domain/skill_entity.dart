@@ -97,9 +97,13 @@ class Skill {
     if (platforms.contains(normalized)) return true;
 
     if (platforms.contains('desktop') &&
-        const ['windows', 'macos', 'linux'].contains(normalized)) return true;
+        const ['windows', 'macos', 'linux'].contains(normalized)) {
+      return true;
+    }
     if (platforms.contains('mobile') &&
-        const ['android', 'ios'].contains(normalized)) return true;
+        const ['android', 'ios'].contains(normalized)) {
+      return true;
+    }
 
     return false;
   }
@@ -111,7 +115,8 @@ class SkillTool {
   final Map<String, dynamic> inputSchema;
   final String type; // 'shell', 'api', etc.
   final String command; // The script or endpoint
-  final Map<String, dynamic> extra; // Extra fields from YAML (method, headers, etc.)
+  final Map<String, dynamic>
+      extra; // Extra fields from YAML (method, headers, etc.)
   final List<Map<String, dynamic>> inputExamples; // Examples for the tool
 
   const SkillTool({

@@ -35,7 +35,6 @@ dependencies:
   intl: any
 
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
   dio: ^5.7.0
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
@@ -71,6 +70,9 @@ dependencies:
 
 
 
+  uuid: any
+  yaml: any
+  xml: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -82,7 +84,6 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   build_runner: any
-  riverpod_generator: any
   isar_generator: any
   flutter_launcher_icons: ^0.14.2
 

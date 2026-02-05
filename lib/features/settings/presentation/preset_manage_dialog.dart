@@ -1,7 +1,6 @@
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 
 import '../../settings/domain/chat_preset.dart';
 import '../../settings/presentation/settings_provider.dart';
@@ -114,10 +113,10 @@ class _PresetManageDialogState extends ConsumerState<PresetManageDialog> {
                           onPressed: () => _delete(preset.id),
                         ),
                         tileColor: isSelected
-                            ? ButtonState.all(FluentTheme.of(context)
+                            ? WidgetStateProperty.all(FluentTheme.of(context)
                                 .accentColor
-                                .withOpacity(0.1))
-                            : ButtonState.all(Colors.transparent),
+                                .withValues(alpha: 0.1))
+                            : WidgetStateProperty.all(Colors.transparent),
                       );
                     },
                   ),

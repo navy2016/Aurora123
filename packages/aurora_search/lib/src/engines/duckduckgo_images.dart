@@ -129,7 +129,9 @@ class DuckDuckGoImagesEngine extends BaseSearchEngine<ImagesResult> {
           ),
         );
       }
-    } catch (e) {}
+    } catch (_) {
+      return results;
+    }
     return results;
   }
 }

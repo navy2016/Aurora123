@@ -129,7 +129,9 @@ class DuckDuckGoVideosEngine extends BaseSearchEngine<VideosResult> {
           ),
         );
       }
-    } catch (e) {}
+    } catch (_) {
+      return results;
+    }
     return results;
   }
 }

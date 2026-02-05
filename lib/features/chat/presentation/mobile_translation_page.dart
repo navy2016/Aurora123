@@ -1,4 +1,3 @@
-import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -91,7 +90,7 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
   void _openModelSwitcher() {
     final settingsState = ref.read(settingsProvider);
     final provider = settingsState.activeProvider;
-    if (provider == null || provider.models.isEmpty) {
+    if (provider.models.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.noModelsFetch)),
       );
@@ -159,7 +158,6 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
     final chatState = ref.watch(translationProvider);
     final settingsState = ref.watch(settingsProvider);
     final theme = Theme.of(context);
-    final fluentTheme = fluent.FluentTheme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final aiMessage =
         chatState.messages.isNotEmpty && !chatState.messages.last.isUser
@@ -221,7 +219,8 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.3),
               border: Border(bottom: BorderSide(color: theme.dividerColor)),
             ),
             child: Row(
@@ -331,7 +330,8 @@ class _MobileTranslationPageState extends ConsumerState<MobileTranslationPage> {
           Expanded(
             flex: 1,
             child: Container(
-              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.2),
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
