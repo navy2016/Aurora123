@@ -88,6 +88,346 @@ Future<List<Map<String, dynamic>>> _compressImagesTask(
   return result;
 }
 
+enum _ThinkingTier { minimal, low, medium, high, xhigh }
+
+enum _ModelFamily { gemini, gemini3, anthropic, openai, unknown }
+
+class _ThinkingInput {
+  final String raw;
+  final int? budgetTokens;
+  final _ThinkingTier? tier;
+
+  const _ThinkingInput({required this.raw, this.budgetTokens, this.tier});
+}
+
+const Map<_ThinkingTier, int> _defaultBudgetTokensByTier = {
+  _ThinkingTier.minimal: 512,
+  _ThinkingTier.low: 1024,
+  _ThinkingTier.medium: 4096,
+  _ThinkingTier.high: 8192,
+  _ThinkingTier.xhigh: 32576,
+};
+
+_ThinkingInput _parseThinkingInput(String raw) {
+  final trimmed = raw.trim();
+  final budget = int.tryParse(trimmed);
+  if (budget != null) return _ThinkingInput(raw: trimmed, budgetTokens: budget);
+  final tier = _tryParseThinkingTier(trimmed);
+  return _ThinkingInput(raw: trimmed, tier: tier);
+}
+
+_ThinkingTier? _tryParseThinkingTier(String raw) {
+  final normalized = raw.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
+  switch (normalized) {
+    case 'minimal':
+    case 'min':
+    case 'mini':
+    case 'tiny':
+    case 'least':
+    case 'lowest':
+    case '最小':
+    case '最低':
+      return _ThinkingTier.minimal;
+    case 'low':
+    case 'l':
+    case 'small':
+    case '弱':
+    case '低':
+      return _ThinkingTier.low;
+    case 'medium':
+    case 'med':
+    case 'mid':
+    case 'middle':
+    case 'm':
+    case '中':
+    case '中等':
+      return _ThinkingTier.medium;
+    case 'high':
+    case 'h':
+    case 'big':
+    case 'strong':
+    case '高':
+      return _ThinkingTier.high;
+    case 'xhigh':
+    case 'xh':
+    case 'veryhigh':
+    case 'ultra':
+    case 'max':
+    case 'extreme':
+    case '最高':
+    case '极高':
+    case '超高':
+      return _ThinkingTier.xhigh;
+  }
+  return null;
+}
+
+_ModelFamily _inferModelFamily(String model) {
+  final lower = model.toLowerCase();
+  final isAnthropic = lower.contains('claude') || lower.contains('anthropic');
+
+  // Special case: "gemini-claude-*" are Claude models behind OpenAI-compatible
+  // proxies (e.g. Antigravity) where thinking is controlled via reasoning_effort.
+  // Treat them as OpenAI-family so numeric input can be mapped to effort tiers.
+  if (lower.contains('gemini') && isAnthropic) return _ModelFamily.openai;
+
+  final isGemini = lower.contains('gemini');
+  final isGemini3 = isGemini &&
+      (lower.contains('gemini-3') ||
+          lower.contains('gemini_3') ||
+          lower.contains('gemini3'));
+  if (isGemini3) return _ModelFamily.gemini3;
+  if (isGemini) return _ModelFamily.gemini;
+  if (isAnthropic) return _ModelFamily.anthropic;
+
+  final isOpenAI = lower.contains('openai') ||
+      lower.contains('gpt') ||
+      RegExp(r'(^|[\/_-])o[1-9](\b|[\/_-])').hasMatch(lower);
+  if (isOpenAI) return _ModelFamily.openai;
+
+  return _ModelFamily.unknown;
+}
+
+_ThinkingTier _tierFromBudgetForGemini3(int budgetTokens) {
+  final budget = budgetTokens.clamp(0, 1 << 30);
+  if (budget <= 512) return _ThinkingTier.minimal;
+  if (budget <= 1024) return _ThinkingTier.low;
+  if (budget <= 8192) return _ThinkingTier.medium;
+  return _ThinkingTier.high;
+}
+
+_ThinkingTier _tierFromBudgetForOpenAI(int budgetTokens) {
+  final budget = budgetTokens.clamp(0, 1 << 30);
+  if (budget <= _defaultBudgetTokensByTier[_ThinkingTier.low]!) {
+    return _ThinkingTier.low;
+  }
+  if (budget <= _defaultBudgetTokensByTier[_ThinkingTier.medium]!) {
+    return _ThinkingTier.medium;
+  }
+  if (budget <= _defaultBudgetTokensByTier[_ThinkingTier.high]!) {
+    return _ThinkingTier.high;
+  }
+  return _ThinkingTier.xhigh;
+}
+
+_ThinkingTier _coerceTierForGemini3(_ThinkingTier tier) {
+  if (tier == _ThinkingTier.xhigh) return _ThinkingTier.high;
+  return tier;
+}
+
+_ThinkingTier _coerceTierForOpenAI(_ThinkingTier tier) {
+  if (tier == _ThinkingTier.minimal) return _ThinkingTier.low;
+  return tier;
+}
+
+String _thinkingTierToGeminiEffort(_ThinkingTier tier) {
+  final coerced = _coerceTierForGemini3(tier);
+  switch (coerced) {
+    case _ThinkingTier.minimal:
+      return 'minimal';
+    case _ThinkingTier.low:
+      return 'low';
+    case _ThinkingTier.medium:
+      return 'medium';
+    case _ThinkingTier.high:
+      return 'high';
+    case _ThinkingTier.xhigh:
+      return 'high';
+  }
+}
+
+bool _supportsXHighReasoningEffort(String baseUrl, String model) {
+  final lowerModel = model.toLowerCase();
+  if (lowerModel.contains('gemini') &&
+      (lowerModel.contains('claude') || lowerModel.contains('anthropic'))) {
+    return true;
+  }
+  final uri = Uri.tryParse(baseUrl);
+  final host = (uri?.host.isNotEmpty == true ? uri!.host : baseUrl)
+      .toLowerCase();
+  if (host.contains('openrouter')) return true;
+  if (host.endsWith('openai.com') ||
+      host.contains('openai.azure.com') ||
+      host.contains('azure.com')) {
+    return false;
+  }
+  return false;
+}
+
+String _thinkingTierToOpenAIEffort(_ThinkingTier tier,
+    {required bool supportsXHigh}) {
+  final coerced = _coerceTierForOpenAI(tier);
+  if (coerced == _ThinkingTier.xhigh && !supportsXHigh) return 'high';
+  switch (coerced) {
+    case _ThinkingTier.minimal:
+      return 'low';
+    case _ThinkingTier.low:
+      return 'low';
+    case _ThinkingTier.medium:
+      return 'medium';
+    case _ThinkingTier.high:
+      return 'high';
+    case _ThinkingTier.xhigh:
+      return 'xhigh';
+  }
+}
+
+int? _budgetTokensFromThinkingInput(_ThinkingInput input) {
+  if (input.budgetTokens != null) return input.budgetTokens!.clamp(0, 1 << 30);
+  if (input.tier != null) return _defaultBudgetTokensByTier[input.tier!];
+  return null;
+}
+
+Map<String, dynamic> _safeStringKeyedMap(dynamic value) {
+  if (value is! Map) return {};
+  final Map<String, dynamic> result = {};
+  value.forEach((key, val) {
+    if (key is String) result[key] = val;
+  });
+  return result;
+}
+
+void _mergeExtraBodyProvider(
+  Map<String, dynamic> requestData, {
+  required String providerKey,
+  required Map<String, dynamic> providerData,
+}) {
+  final Map<String, dynamic> extraBody =
+      _safeStringKeyedMap(requestData['extra_body']);
+
+  final Map<String, dynamic> mergedProvider =
+      _safeStringKeyedMap(extraBody[providerKey]);
+  mergedProvider.addAll(providerData);
+
+  extraBody[providerKey] = mergedProvider;
+  requestData['extra_body'] = extraBody;
+}
+
+void _applyThinkingConfigToRequest({
+  required Map<String, dynamic> requestData,
+  required Map<String, dynamic> activeParams,
+  required String selectedModel,
+  required String baseUrl,
+}) {
+  final thinkingConfig = activeParams['_aurora_thinking_config'];
+  bool thinkingEnabled = false;
+  String thinkingValue = '';
+  String thinkingMode = 'auto';
+
+  if (thinkingConfig != null && thinkingConfig is Map) {
+    thinkingEnabled = thinkingConfig['enabled'] == true;
+    thinkingValue = thinkingConfig['budget']?.toString() ?? '';
+    thinkingMode = thinkingConfig['mode']?.toString() ?? 'auto';
+  } else {
+    thinkingEnabled = activeParams['_aurora_thinking_enabled'] == true;
+    thinkingValue = activeParams['_aurora_thinking_value']?.toString() ?? '';
+    thinkingMode = activeParams['_aurora_thinking_mode']?.toString() ?? 'auto';
+  }
+
+  if (!thinkingEnabled) return;
+  final raw = thinkingValue.trim();
+  if (raw.isEmpty) return;
+
+  final modelFamily = _inferModelFamily(selectedModel);
+  if (thinkingMode == 'auto') {
+    if (modelFamily == _ModelFamily.gemini) {
+      thinkingMode = 'extra_body';
+    } else if (modelFamily == _ModelFamily.gemini3 ||
+        modelFamily == _ModelFamily.openai) {
+      thinkingMode = 'reasoning_effort';
+    } else if (modelFamily == _ModelFamily.anthropic) {
+      thinkingMode = 'extra_body';
+    } else {
+      thinkingMode = 'reasoning_effort';
+    }
+  }
+
+  final input = _parseThinkingInput(raw);
+
+  if (thinkingMode == 'extra_body') {
+    if (modelFamily == _ModelFamily.gemini || modelFamily == _ModelFamily.gemini3) {
+      final isGemini3 = modelFamily == _ModelFamily.gemini3;
+      if (isGemini3) {
+        final String level;
+        if (input.budgetTokens != null) {
+          level = _thinkingTierToGeminiEffort(
+              _tierFromBudgetForGemini3(input.budgetTokens!));
+        } else if (input.tier != null) {
+          level = _thinkingTierToGeminiEffort(_coerceTierForGemini3(input.tier!));
+        } else {
+          level = input.raw.toLowerCase();
+        }
+        _mergeExtraBodyProvider(
+          requestData,
+          providerKey: 'google',
+          providerData: {
+            'thinking_config': {
+              'thinkingLevel': level,
+              'includeThoughts': true,
+              'include_thoughts': true,
+            }
+          },
+        );
+      } else {
+        final budgetTokens = _budgetTokensFromThinkingInput(input);
+        if (budgetTokens == null) return;
+        _mergeExtraBodyProvider(
+          requestData,
+          providerKey: 'google',
+          providerData: {
+            'thinking_config': {
+              'thinking_budget': budgetTokens,
+              'include_thoughts': true,
+              'includeThoughts': true,
+            }
+          },
+        );
+      }
+    } else if (modelFamily == _ModelFamily.anthropic) {
+      final budgetTokens = _budgetTokensFromThinkingInput(input);
+      if (budgetTokens == null) return;
+      _mergeExtraBodyProvider(
+        requestData,
+        providerKey: 'anthropic',
+        providerData: {
+          'thinking': {
+            'type': 'enabled',
+            'budget_tokens': budgetTokens,
+          }
+        },
+      );
+    }
+  } else if (thinkingMode == 'reasoning_effort') {
+    final supportsXHigh = _supportsXHighReasoningEffort(baseUrl, selectedModel);
+    String effort;
+    if (modelFamily == _ModelFamily.gemini3) {
+      if (input.budgetTokens != null) {
+        effort = _thinkingTierToGeminiEffort(
+            _tierFromBudgetForGemini3(input.budgetTokens!));
+      } else if (input.tier != null) {
+        effort =
+            _thinkingTierToGeminiEffort(_coerceTierForGemini3(input.tier!));
+      } else {
+        effort = input.raw.toLowerCase();
+      }
+    } else if (modelFamily == _ModelFamily.openai) {
+      if (input.budgetTokens != null) {
+        effort = _thinkingTierToOpenAIEffort(
+            _tierFromBudgetForOpenAI(input.budgetTokens!),
+            supportsXHigh: supportsXHigh);
+      } else if (input.tier != null) {
+        effort = _thinkingTierToOpenAIEffort(_coerceTierForOpenAI(input.tier!),
+            supportsXHigh: supportsXHigh);
+      } else {
+        effort = input.raw.toLowerCase();
+      }
+    } else {
+      effort = input.raw;
+    }
+    requestData['reasoning_effort'] = effort;
+  }
+}
+
 class OpenAILLMService implements LLMService {
   final Dio _dio;
   final SettingsState _settings;
@@ -355,99 +695,13 @@ Use search for:
         }
       }
 
-      // Handle Thinking Config
-      final thinkingConfig = activeParams['_aurora_thinking_config'];
-      bool thinkingEnabled = false;
-      String thinkingValue = '';
-      String thinkingMode = 'auto';
-
-      if (thinkingConfig != null && thinkingConfig is Map) {
-        thinkingEnabled = thinkingConfig['enabled'] == true;
-        thinkingValue = thinkingConfig['budget']?.toString() ?? '';
-        thinkingMode = thinkingConfig['mode']?.toString() ?? 'auto';
-      } else {
-        thinkingEnabled = activeParams['_aurora_thinking_enabled'] == true;
-        thinkingValue =
-            activeParams['_aurora_thinking_value']?.toString() ?? '';
-        thinkingMode =
-            activeParams['_aurora_thinking_mode']?.toString() ?? 'auto';
-      }
-
-      if (thinkingEnabled) {
-        if (thinkingMode == 'auto') {
-          final isGemini3 = RegExp(r'gemini[_-]?3[_-]', caseSensitive: false)
-              .hasMatch(selectedModel);
-          if (isGemini3) {
-            thinkingMode = 'reasoning_effort';
-          } else if (selectedModel.toLowerCase().contains('gemini')) {
-            thinkingMode = 'extra_body';
-          } else {
-            thinkingMode = 'reasoning_effort';
-          }
-        }
-        if (thinkingValue.isNotEmpty) {
-          if (thinkingMode == 'extra_body') {
-            final isGemini3 = RegExp(r'gemini[_-]?3[_-]', caseSensitive: false)
-                .hasMatch(selectedModel);
-            final int? budgetInt = int.tryParse(thinkingValue);
-            if (isGemini3) {
-              String thinkingLevel;
-              if (budgetInt != null) {
-                if (budgetInt <= 512) {
-                  thinkingLevel = 'minimal';
-                } else if (budgetInt <= 1024) {
-                  thinkingLevel = 'low';
-                } else if (budgetInt <= 8192) {
-                  thinkingLevel = 'medium';
-                } else {
-                  thinkingLevel = 'high';
-                }
-              } else {
-                thinkingLevel = thinkingValue.toLowerCase();
-              }
-              requestData['extra_body'] = {
-                'google': {
-                  'thinking_config': {
-                    'thinkingLevel': thinkingLevel,
-                    'includeThoughts': true,
-                  }
-                }
-              };
-            } else {
-              requestData['extra_body'] = {
-                'google': {
-                  'thinking_config': {
-                    if (budgetInt != null) 'thinking_budget': budgetInt,
-                    if (budgetInt != null) 'include_thoughts': true,
-                    if (budgetInt == null) 'thinkingLevel': thinkingValue,
-                    if (budgetInt == null) 'includeThoughts': true,
-                  }
-                }
-              };
-            }
-          } else if (thinkingMode == 'reasoning_effort') {
-            final isGemini3ForEffort =
-                RegExp(r'gemini[_-]?3[_-]', caseSensitive: false)
-                    .hasMatch(selectedModel);
-            final int? budgetInt = int.tryParse(thinkingValue);
-            if (isGemini3ForEffort && budgetInt != null) {
-              String level;
-              if (budgetInt <= 512) {
-                level = 'minimal';
-              } else if (budgetInt <= 1024) {
-                level = 'low';
-              } else if (budgetInt <= 8192) {
-                level = 'medium';
-              } else {
-                level = 'high';
-              }
-              requestData['reasoning_effort'] = level;
-            } else {
-              requestData['reasoning_effort'] = thinkingValue;
-            }
-          }
-        }
-      }
+      // Handle Thinking Config (auto maps number/level to model-specific API)
+      _applyThinkingConfigToRequest(
+        requestData: requestData,
+        activeParams: activeParams,
+        selectedModel: selectedModel,
+        baseUrl: baseUrl,
+      );
 
       // Handle Image Config (for gemini-3-pro-image-preview)
       final imageConfig =
@@ -1211,72 +1465,13 @@ Use search for:
         }
       }
 
-      // Handle Thinking Config
-      final thinkingConfig = activeParams['_aurora_thinking_config'];
-      bool thinkingEnabled = false;
-      String thinkingValue = '';
-      String thinkingMode = 'auto';
-
-      if (thinkingConfig != null && thinkingConfig is Map) {
-        thinkingEnabled = thinkingConfig['enabled'] == true;
-        thinkingValue = thinkingConfig['budget']?.toString() ?? '';
-        thinkingMode = thinkingConfig['mode']?.toString() ?? 'auto';
-      } else {
-        thinkingEnabled = activeParams['_aurora_thinking_enabled'] == true;
-        thinkingValue =
-            activeParams['_aurora_thinking_value']?.toString() ?? '';
-        thinkingMode =
-            activeParams['_aurora_thinking_mode']?.toString() ?? 'auto';
-      }
-
-      if (thinkingEnabled) {
-        if (thinkingMode == 'auto') {
-          final isGemini3 = RegExp(r'gemini[_-]?3[_-]', caseSensitive: false)
-              .hasMatch(selectedModel);
-          if (isGemini3) {
-            thinkingMode = 'reasoning_effort';
-          } else if (selectedModel.toLowerCase().contains('gemini')) {
-            thinkingMode = 'extra_body';
-          } else {
-            thinkingMode = 'reasoning_effort';
-          }
-        }
-        if (thinkingValue.isNotEmpty) {
-          if (thinkingMode == 'extra_body') {
-            final int? budgetInt = int.tryParse(thinkingValue);
-            requestData['extra_body'] = {
-              'google': {
-                'thinking_config': {
-                  if (budgetInt != null) 'thinking_budget': budgetInt,
-                  if (budgetInt != null) 'include_thoughts': true,
-                  if (budgetInt == null) 'thinkingLevel': thinkingValue,
-                  if (budgetInt == null) 'includeThoughts': true,
-                }
-              }
-            };
-          } else if (thinkingMode == 'reasoning_effort') {
-            final isGemini3ForEffort =
-                RegExp(r'gemini[_-]?3[_-]', caseSensitive: false)
-                    .hasMatch(selectedModel);
-            final int? budgetInt = int.tryParse(thinkingValue);
-            if (isGemini3ForEffort && budgetInt != null) {
-              String level;
-              if (budgetInt <= 512) {
-                level = 'minimal';
-              } else if (budgetInt <= 1024) {
-                level = 'low';
-              } else if (budgetInt <= 8192) {
-                level = 'medium';
-              } else {
-                level = 'high';
-              }
-              requestData['reasoning_effort'] = level;
-            } else {
-              requestData['reasoning_effort'] = thinkingValue;
-            }
-          }
-        }
-      }
+      // Handle Thinking Config (auto maps number/level to model-specific API)
+      _applyThinkingConfigToRequest(
+        requestData: requestData,
+        activeParams: activeParams,
+        selectedModel: selectedModel,
+        baseUrl: baseUrl,
+      );
 
       _logRequest('${baseUrl}chat/completions', requestData);
       final response = await _dio.post(
