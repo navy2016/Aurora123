@@ -11,7 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:aurora/core/constants/build_info.dart';
 
 class MobileAppSettingsPage extends ConsumerWidget {
   final VoidCallback? onBack;
@@ -149,18 +149,11 @@ class MobileAppSettingsPage extends ConsumerWidget {
           MobileSettingsSection(
             title: l10n.about,
             children: [
-              FutureBuilder<PackageInfo>(
-                future: PackageInfo.fromPlatform(),
-                builder: (context, snapshot) {
-                  return MobileSettingsTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: l10n.version,
-                    subtitle: snapshot.hasData
-                        ? 'v${snapshot.data!.version}'
-                        : 'Loading...',
-                    showChevron: false,
-                  );
-                },
+              MobileSettingsTile(
+                leading: const Icon(Icons.info_outline),
+                title: l10n.version,
+                subtitle: 'v${BuildInfo.version}',
+                showChevron: false,
               ),
               MobileSettingsTile(
                 leading: const Icon(AuroraIcons.github),
