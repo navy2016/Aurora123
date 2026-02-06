@@ -11,8 +11,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
-import 'package:aurora/core/constants/build_info.dart';
 import 'mobile_search_settings_page.dart';
+import 'package:aurora/shared/widgets/aurora_page_route.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+final _packageInfoProvider = FutureProvider<PackageInfo>((ref) async {
+  return PackageInfo.fromPlatform();
+});
 
 class MobileAppSettingsPage extends ConsumerWidget {
   final VoidCallback? onBack;
@@ -22,6 +27,14 @@ class MobileAppSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsState = ref.watch(settingsProvider);
     final l10n = AppLocalizations.of(context)!;
+    final versionSubtitle = ref.watch(_packageInfoProvider).maybeWhen(
+          data: (info) {
+            final buildSuffix =
+                info.buildNumber.isNotEmpty ? '+${info.buildNumber}' : '';
+            return 'v${info.version}$buildSuffix';
+          },
+          orElse: () => 'v...',
+        );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -153,7 +166,7 @@ class MobileAppSettingsPage extends ConsumerWidget {
                     : l10n.disabled,
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  AuroraMobilePageRoute(
                     builder: (_) => const MobileSearchSettingsPage(),
                   ),
                 ),
@@ -166,7 +179,7 @@ class MobileAppSettingsPage extends ConsumerWidget {
               MobileSettingsTile(
                 leading: const Icon(Icons.info_outline),
                 title: l10n.version,
-                subtitle: 'v${BuildInfo.version}',
+                subtitle: versionSubtitle,
                 showChevron: false,
               ),
               MobileSettingsTile(
