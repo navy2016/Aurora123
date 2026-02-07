@@ -390,13 +390,15 @@ class ChatStorage {
     String? uuid,
     int? topicId,
     String? presetId,
+    String? parentSessionId,
   }) async {
     final session = SessionEntity()
       ..sessionId = uuid ?? DateTime.now().millisecondsSinceEpoch.toString()
       ..title = title
       ..lastMessageTime = DateTime.now()
       ..topicId = topicId
-      ..presetId = presetId;
+      ..presetId = presetId
+      ..parentSessionId = parentSessionId;
     await _isar.writeTxn(() async {
       await _isar.sessionEntitys.put(session);
     });
@@ -452,28 +454,66 @@ class ChatStorage {
         .findFirst();
   }
 
-  Future<void> deleteSession(String sessionId) async {
-    final messages = await _isar.messageEntitys
-        .filter()
-        .sessionIdEqualTo(sessionId)
-        .findAll();
+  Future<List<String>> _collectSessionTreeIds(String sessionId) async {
+    final sessions = await _isar.sessionEntitys.where().findAll();
+    if (sessions.isEmpty) return const [];
+
+    final childrenMap = <String, List<String>>{};
+    final idSet = <String>{};
+    for (final session in sessions) {
+      idSet.add(session.sessionId);
+      final parentId = session.parentSessionId;
+      if (parentId == null || parentId.isEmpty) continue;
+      childrenMap
+          .putIfAbsent(parentId, () => <String>[])
+          .add(session.sessionId);
+    }
+    if (!idSet.contains(sessionId)) return const [];
+
+    final collected = <String>[];
+    final pending = <String>[sessionId];
+    while (pending.isNotEmpty) {
+      final current = pending.removeLast();
+      collected.add(current);
+      final children = childrenMap[current];
+      if (children != null && children.isNotEmpty) {
+        pending.addAll(children);
+      }
+    }
+    return collected;
+  }
+
+  Future<List<String>> deleteSessionTree(String sessionId) async {
+    final sessionIds = await _collectSessionTreeIds(sessionId);
+    if (sessionIds.isEmpty) return const [];
+
     final allAttachments = <String>[];
-    for (final msg in messages) {
-      allAttachments.addAll(msg.attachments);
+    for (final id in sessionIds) {
+      final messages =
+          await _isar.messageEntitys.filter().sessionIdEqualTo(id).findAll();
+      for (final msg in messages) {
+        allAttachments.addAll(msg.attachments);
+      }
     }
     if (allAttachments.isNotEmpty) {
       await _deleteAttachmentFiles(allAttachments);
     }
+
     await _isar.writeTxn(() async {
-      await _isar.messageEntitys
-          .filter()
-          .sessionIdEqualTo(sessionId)
-          .deleteAll();
-      await _isar.sessionEntitys
-          .filter()
-          .sessionIdEqualTo(sessionId)
-          .deleteAll();
+      for (final id in sessionIds) {
+        await _isar.messageEntitys.filter().sessionIdEqualTo(id).deleteAll();
+        await _isar.sessionEntitys.filter().sessionIdEqualTo(id).deleteAll();
+      }
     });
+
+    for (final id in sessionIds) {
+      invalidateCache(id);
+    }
+    return sessionIds;
+  }
+
+  Future<void> deleteSession(String sessionId) async {
+    await deleteSessionTree(sessionId);
   }
 
   Future<void> updateSessionTitle(String sessionId, String newTitle) async {
@@ -505,7 +545,12 @@ class ChatStorage {
   Future<void> cleanupEmptySessions() async {
     await _isar.writeTxn(() async {
       final sessions = await _isar.sessionEntitys.where().findAll();
+      final parentIds =
+          sessions.map((s) => s.parentSessionId).whereType<String>().toSet();
       for (final session in sessions) {
+        if (parentIds.contains(session.sessionId)) {
+          continue;
+        }
         final count = await _isar.messageEntitys
             .filter()
             .sessionIdEqualTo(session.sessionId)
@@ -547,6 +592,11 @@ class ChatStorage {
     final count =
         await _isar.messageEntitys.filter().sessionIdEqualTo(sessionId).count();
     if (count == 0) {
+      final sessions = await _isar.sessionEntitys.where().findAll();
+      final hasChildren = sessions.any((s) => s.parentSessionId == sessionId);
+      if (hasChildren) {
+        return false;
+      }
       await deleteSession(sessionId);
       invalidateCache(sessionId);
       return true;

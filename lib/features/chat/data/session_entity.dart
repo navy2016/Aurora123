@@ -6,6 +6,7 @@ class SessionEntity {
   Id id = Isar.autoIncrement;
   @Index(unique: true, replace: true)
   late String sessionId;
+  String? parentSessionId;
   late String title;
   late DateTime lastMessageTime;
   String? snippet;

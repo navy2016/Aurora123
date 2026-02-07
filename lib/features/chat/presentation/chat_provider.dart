@@ -1399,6 +1399,40 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
   SessionsNotifier(this._ref, this._storage) : super(SessionsState()) {
     _init();
   }
+
+  void _cleanupCollapsedSessionIds(List<SessionEntity> sessions) {
+    final collapsed = _ref.read(collapsedHistorySessionIdsProvider);
+    if (collapsed.isEmpty) return;
+    final validIds = sessions.map((s) => s.sessionId).toSet();
+    final nextCollapsed = collapsed.where(validIds.contains).toSet();
+    if (nextCollapsed.length != collapsed.length) {
+      _ref.read(collapsedHistorySessionIdsProvider.notifier).state =
+          nextCollapsed;
+    }
+  }
+
+  void ensureSessionVisible(String sessionId) {
+    if (state.sessions.isEmpty) return;
+    final sessionMap = {for (final s in state.sessions) s.sessionId: s};
+    final collapsed =
+        Set<String>.from(_ref.read(collapsedHistorySessionIdsProvider));
+    var changed = false;
+
+    SessionEntity? current = sessionMap[sessionId];
+    while (current != null) {
+      final parentId = current.parentSessionId;
+      if (parentId == null || parentId.isEmpty) break;
+      if (collapsed.remove(parentId)) {
+        changed = true;
+      }
+      current = sessionMap[parentId];
+    }
+
+    if (changed) {
+      _ref.read(collapsedHistorySessionIdsProvider.notifier).state = collapsed;
+    }
+  }
+
   Future<void> _init() async {
     await _storage.cleanupEmptySessions();
     await _storage.backfillSessionLastUserMessageTimes();
@@ -1436,6 +1470,7 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
         return b.lastMessageTime.compareTo(a.lastMessageTime);
       });
     }
+    _cleanupCollapsedSessionIds(sessions);
     state = SessionsState(sessions: sessions, isLoading: false);
   }
 
@@ -1446,6 +1481,32 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     final items = List<SessionEntity>.from(state.sessions);
     final item = items.removeAt(oldIndex);
     items.insert(newIndex, item);
+    state = SessionsState(sessions: items, isLoading: false);
+    final newOrder = items.map((s) => s.sessionId).toList();
+    await _storage.saveSessionOrder(newOrder);
+  }
+
+  Future<void> reorderSessionById({
+    required String draggedSessionId,
+    String? beforeSessionId,
+  }) async {
+    final items = List<SessionEntity>.from(state.sessions);
+    final draggedIndex =
+        items.indexWhere((s) => s.sessionId == draggedSessionId);
+    if (draggedIndex == -1) return;
+
+    final dragged = items.removeAt(draggedIndex);
+    int insertIndex;
+    if (beforeSessionId == null) {
+      insertIndex = items.length;
+    } else {
+      insertIndex = items.indexWhere((s) => s.sessionId == beforeSessionId);
+      if (insertIndex == -1) {
+        insertIndex = items.length;
+      }
+    }
+    items.insert(insertIndex, dragged);
+
     state = SessionsState(sessions: items, isLoading: false);
     final newOrder = items.map((s) => s.sessionId).toList();
     await _storage.saveSessionOrder(newOrder);
@@ -1467,6 +1528,12 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     if (sessionId == null || sessionId == 'new_chat') return;
     final deleted = await _storage.deleteSessionIfEmpty(sessionId);
     if (deleted) {
+      final collapsed =
+          Set<String>.from(_ref.read(collapsedHistorySessionIdsProvider));
+      if (collapsed.remove(sessionId)) {
+        _ref.read(collapsedHistorySessionIdsProvider.notifier).state =
+            collapsed;
+      }
       await loadSessions();
     }
   }
@@ -1478,14 +1545,23 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
 
   Future<void> deleteSession(String id) async {
     final selectedId = _ref.read(selectedHistorySessionIdProvider);
-    await _storage.deleteSession(id);
+    final deletedIds = await _storage.deleteSessionTree(id);
+    if (deletedIds.isEmpty) return;
+
     // Explicitly reset the session in manager to clear memory and cache
-    _ref.read(chatSessionManagerProvider).resetSession(id);
+    for (final deletedId in deletedIds) {
+      _ref.read(chatSessionManagerProvider).resetSession(deletedId);
+    }
+
+    final collapsed =
+        Set<String>.from(_ref.read(collapsedHistorySessionIdsProvider))
+          ..removeWhere(deletedIds.contains);
+    _ref.read(collapsedHistorySessionIdsProvider.notifier).state = collapsed;
 
     await loadSessions();
 
     // If we deleted the currently active session, move to the next best one
-    if (selectedId == id || selectedId == null) {
+    if (selectedId == null || deletedIds.contains(selectedId)) {
       if (state.sessions.isNotEmpty) {
         _ref.read(selectedHistorySessionIdProvider.notifier).state =
             state.sessions.first.sessionId;
@@ -1515,20 +1591,26 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     // Get the session to copy the topicId
     final originalSession = await _storage.getSession(originalSessionId);
     final topicId = originalSession?.topicId;
+    final presetId = originalSession?.presetId;
 
     // Create a copy of messages up to and including the target
     final messagesToCopy = messages.sublist(0, targetIndex + 1);
 
     // Create new session with branch name
     final newTitle = '$originalTitle$branchSuffix';
-    final newSessionId =
-        await _storage.createSession(title: newTitle, topicId: topicId);
+    final newSessionId = await _storage.createSession(
+      title: newTitle,
+      topicId: topicId,
+      presetId: presetId,
+      parentSessionId: originalSessionId,
+    );
 
     // Save copied messages to new session
     await _storage.saveHistory(messagesToCopy, newSessionId);
 
     // Reload sessions
     await loadSessions();
+    ensureSessionVisible(newSessionId);
 
     return newSessionId;
   }
@@ -1540,6 +1622,8 @@ final sessionsProvider =
   return SessionsNotifier(ref, storage);
 });
 final selectedHistorySessionIdProvider = StateProvider<String?>((ref) => null);
+final collapsedHistorySessionIdsProvider =
+    StateProvider<Set<String>>((ref) => <String>{});
 final isHistorySidebarVisibleProvider = StateProvider<bool>((ref) => true);
 final sessionSearchQueryProvider = StateProvider<String>((ref) => '');
 
