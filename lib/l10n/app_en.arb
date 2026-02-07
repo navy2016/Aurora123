@@ -485,7 +485,7 @@
   "streamDisabled": "Stream Output Disabled",
   "searchEnabled": "Web Search Enabled",
   "searchDisabled": "Web Search Disabled",
-  "desktopInputHint": "Type something... (Enter for new line, Ctrl + Enter to send, @ to switch model, / to switch prompt presets)",
+  "desktopInputHint": "Type a message (Enter newline, Ctrl+Enter send, @ model, / presets)",
   "mobileInputHint": "Type something...",
   "topics": "Topic Groups",
   "createTopic": "New Group",

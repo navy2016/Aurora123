@@ -556,22 +556,23 @@ class MobileAppSettingsPage extends ConsumerWidget {
                   for (final provider in settings.providers)
                     if (provider.isEnabled)
                       for (final model in provider.models)
-                        AuroraBottomSheet.buildListItem(
-                          context: context,
-                          title: Text(model),
-                          leading: Text(provider.name,
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.grey)),
-                          selected: settings.topicGenerationModel ==
-                              '${provider.id}@$model',
-                          onTap: () {
-                            ref
-                                .read(settingsProvider.notifier)
-                                .setTopicGenerationModel(
-                                    '${provider.id}@$model');
-                            Navigator.pop(context);
-                          },
-                        ),
+                        if (provider.isModelEnabled(model))
+                          AuroraBottomSheet.buildListItem(
+                            context: context,
+                            title: Text(model),
+                            leading: Text(provider.name,
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey)),
+                            selected: settings.topicGenerationModel ==
+                                '${provider.id}@$model',
+                            onTap: () {
+                              ref
+                                  .read(settingsProvider.notifier)
+                                  .setTopicGenerationModel(
+                                      '${provider.id}@$model');
+                              Navigator.pop(context);
+                            },
+                          ),
                 ],
               ),
             ),

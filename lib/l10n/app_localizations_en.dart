@@ -1094,7 +1094,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopInputHint =>
-      'Type something... (Enter for new line, Ctrl + Enter to send, @ to switch model, / to switch prompt presets)';
+      'Type a message (Enter newline, Ctrl+Enter send, @ model, / presets)';
 
   @override
   String get mobileInputHint => 'Type something...';

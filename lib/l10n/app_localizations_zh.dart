@@ -1068,8 +1068,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchDisabled => '已关闭联网搜索';
 
   @override
-  String get desktopInputHint =>
-      '随便输入点什么吧 (Enter 换行，Ctrl + Enter 发送，@ 切换模型，/ 切换 Prompt 预设)';
+  String get desktopInputHint => '输入消息（Enter 换行，Ctrl+Enter 发送，@ 模型，/ 预设）';
 
   @override
   String get mobileInputHint => '随便输入点什么吧';
