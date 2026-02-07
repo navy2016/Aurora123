@@ -945,6 +945,111 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchTimeoutSeconds => '超时（秒）';
 
   @override
+  String get knowledgeBase => '知识库';
+
+  @override
+  String get knowledgeBases => '知识库列表';
+
+  @override
+  String get general => '通用';
+
+  @override
+  String get enableKnowledgeRetrieval => '启用知识库检索';
+
+  @override
+  String get knowledgeTopKChunks => 'Top K 片段数';
+
+  @override
+  String get useEmbeddingRerank => '启用 Embedding 重排';
+
+  @override
+  String get knowledgeLlmEnhancementMode => 'LLM 增强模式（可选）';
+
+  @override
+  String get knowledgeModeOff => '关闭';
+
+  @override
+  String get knowledgeModeRewrite => '查询改写';
+
+  @override
+  String get embeddingProvider => 'Embedding 提供商';
+
+  @override
+  String get embeddingModel => 'Embedding 模型';
+
+  @override
+  String get noEmbeddingModelsInProvider => '该提供商下没有可用的 embedding 模型';
+
+  @override
+  String get embeddingModelAutoDetectHint => '仅展示名称中包含 \"embedding\" 的模型。';
+
+  @override
+  String get createBase => '新建知识库';
+
+  @override
+  String get importFiles => '导入文件';
+
+  @override
+  String get deleteBase => '删除知识库';
+
+  @override
+  String get noKnowledgeBaseYetCreateOne => '暂无知识库，请先新建。';
+
+  @override
+  String get knowledgeActive => '启用';
+
+  @override
+  String knowledgeDocsAndChunks(int docs, int chunks) {
+    return '文档: $docs  片段: $chunks';
+  }
+
+  @override
+  String get createKnowledgeBase => '新建知识库';
+
+  @override
+  String get knowledgeBaseName => '知识库名称';
+
+  @override
+  String get descriptionOptional => '描述（可选）';
+
+  @override
+  String get deleteKnowledgeBase => '删除知识库';
+
+  @override
+  String get deleteKnowledgeBaseConfirm => '确定删除该知识库及其所有索引片段吗？此操作不可撤销。';
+
+  @override
+  String get knowledgeFiles => '知识库文件';
+
+  @override
+  String get importFinished => '导入完成';
+
+  @override
+  String knowledgeImportSummary(int success, int failed) {
+    return '成功: $success\n失败: $failed';
+  }
+
+  @override
+  String knowledgeEnabledWithActiveCount(int count) {
+    return '已启用 • $count 个激活';
+  }
+
+  @override
+  String get knowledgeGlobalFallbackHint => '全局知识库仅在未选择助理时生效。';
+
+  @override
+  String get knowledgeGlobalSelectionLabel => '全局模式使用';
+
+  @override
+  String get knowledgeGlobalSelectionHint => '仅在未选择助理时生效。';
+
+  @override
+  String get knowledgeBaseEnabledLabel => '知识库可用';
+
+  @override
+  String get knowledgeBaseEnabledHint => '关闭后该知识库将不参与任何检索。';
+
+  @override
   String get clearContext => '清空上下文';
 
   @override
@@ -989,6 +1094,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get allChats => '所有';
+
+  @override
+  String get requestConfig => '请求配置';
 
   @override
   String get thinkingConfig => '思考配置';
@@ -1487,4 +1595,110 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get auto => '自动';
+
+  @override
+  String get assistantBasicConfig => '基本配置';
+
+  @override
+  String get assistantName => '名称';
+
+  @override
+  String get assistantDescription => '描述';
+
+  @override
+  String get assistantCoreSettings => '核心设定';
+
+  @override
+  String get assistantCapabilities => '能力配置';
+
+  @override
+  String get assistantSkillManagement => '技能管理';
+
+  @override
+  String assistantSkillEnabledCount(int count) {
+    return '已启用 $count 个技能';
+  }
+
+  @override
+  String get assistantLongTermMemory => '长期记忆';
+
+  @override
+  String get assistantKnowledgeBindingHint => '选择此助理时，仅使用这里勾选的知识库。';
+
+  @override
+  String get assistantAvailableSkillsTitle => '可用技能';
+
+  @override
+  String get assistantNoSkillsAvailable => '暂无可用技能';
+
+  @override
+  String get assistantDeleteTitle => '确认删除助理';
+
+  @override
+  String assistantDeleteConfirm(String name) {
+    return '确认要删除助理 \"$name\" 吗？此操作无法撤销。';
+  }
+
+  @override
+  String get defaultAssistant => '默认';
+
+  @override
+  String get noSpecificAssistant => '不使用特定助理';
+
+  @override
+  String get noAssistantDescription => '没有描述';
+
+  @override
+  String get newAssistant => '新助理';
+
+  @override
+  String get cropAvatarTitle => '裁剪头像';
+
+  @override
+  String get lightMode => '浅色模式';
+
+  @override
+  String get darkMode => '深色模式';
+
+  @override
+  String get followSystem => '跟随系统';
+
+  @override
+  String switchedToTheme(String label) {
+    return '已切换到$label';
+  }
+
+  @override
+  String get appTagline => '一款优雅的跨平台 AI 对话助手';
+
+  @override
+  String get back => '返回';
+
+  @override
+  String get rotate => '旋转';
+
+  @override
+  String translationPromptIntro(String sourceLanguage, String targetLanguage) {
+    return '你是一位精通多国语言的专业翻译专家。请将以下$sourceLanguage文本翻译成$targetLanguage。';
+  }
+
+  @override
+  String translationPromptIntroAuto(String targetLanguage) {
+    return '你是一位精通多国语言的专业翻译专家。请将以下文本翻译成$targetLanguage。';
+  }
+
+  @override
+  String get translationPromptRequirements => '要求：';
+
+  @override
+  String get translationPromptRequirement1 => '1. 翻译准确、地道，符合目标语言的表达习惯。';
+
+  @override
+  String get translationPromptRequirement2 => '2. 严格保留原文的换行格式和段落结构，不要合并段落。';
+
+  @override
+  String get translationPromptRequirement3 => '3. 只输出翻译后的内容，不要包含任何解释、前言或后缀。';
+
+  @override
+  String get translationPromptSourceText => '原文内容：';
 }

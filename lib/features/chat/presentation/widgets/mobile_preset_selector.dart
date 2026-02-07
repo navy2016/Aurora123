@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/features/settings/presentation/mobile_preset_manage_page.dart';
+import 'package:aurora/shared/widgets/aurora_page_route.dart';
 import '../chat_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 
@@ -46,7 +47,7 @@ class MobilePresetSelector extends ConsumerWidget {
                 Navigator.pop(ctx);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  AuroraMobilePageRoute(
                     builder: (context) => const MobilePresetManagePage(),
                   ),
                 );

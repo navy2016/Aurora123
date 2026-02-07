@@ -962,6 +962,118 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchTimeoutSeconds => 'Timeout (seconds)';
 
   @override
+  String get knowledgeBase => 'Knowledge Base';
+
+  @override
+  String get knowledgeBases => 'Knowledge Bases';
+
+  @override
+  String get general => 'General';
+
+  @override
+  String get enableKnowledgeRetrieval => 'Enable Knowledge Retrieval';
+
+  @override
+  String get knowledgeTopKChunks => 'Top K Chunks';
+
+  @override
+  String get useEmbeddingRerank => 'Use Embedding Re-rank';
+
+  @override
+  String get knowledgeLlmEnhancementMode => 'LLM Enhancement Mode (Optional)';
+
+  @override
+  String get knowledgeModeOff => 'off';
+
+  @override
+  String get knowledgeModeRewrite => 'rewrite';
+
+  @override
+  String get embeddingProvider => 'Embedding Provider';
+
+  @override
+  String get embeddingModel => 'Embedding Model';
+
+  @override
+  String get noEmbeddingModelsInProvider =>
+      'No embedding model found in this provider';
+
+  @override
+  String get embeddingModelAutoDetectHint =>
+      'Only models whose names include \"embedding\" are listed.';
+
+  @override
+  String get createBase => 'Create Base';
+
+  @override
+  String get importFiles => 'Import Files';
+
+  @override
+  String get deleteBase => 'Delete Base';
+
+  @override
+  String get noKnowledgeBaseYetCreateOne =>
+      'No knowledge base yet. Create one first.';
+
+  @override
+  String get knowledgeActive => 'Active';
+
+  @override
+  String knowledgeDocsAndChunks(int docs, int chunks) {
+    return 'Docs: $docs  Chunks: $chunks';
+  }
+
+  @override
+  String get createKnowledgeBase => 'Create Knowledge Base';
+
+  @override
+  String get knowledgeBaseName => 'Base Name';
+
+  @override
+  String get descriptionOptional => 'Description (optional)';
+
+  @override
+  String get deleteKnowledgeBase => 'Delete Knowledge Base';
+
+  @override
+  String get deleteKnowledgeBaseConfirm =>
+      'Delete this knowledge base and all indexed chunks? This cannot be undone.';
+
+  @override
+  String get knowledgeFiles => 'Knowledge files';
+
+  @override
+  String get importFinished => 'Import Finished';
+
+  @override
+  String knowledgeImportSummary(int success, int failed) {
+    return 'Success: $success\nFailed: $failed';
+  }
+
+  @override
+  String knowledgeEnabledWithActiveCount(int count) {
+    return 'Enabled • $count active';
+  }
+
+  @override
+  String get knowledgeGlobalFallbackHint =>
+      'Global knowledge bases are used only when no assistant is selected.';
+
+  @override
+  String get knowledgeGlobalSelectionLabel => 'Use in Global Mode';
+
+  @override
+  String get knowledgeGlobalSelectionHint =>
+      'Effective only when no assistant is selected.';
+
+  @override
+  String get knowledgeBaseEnabledLabel => 'Knowledge Base Available';
+
+  @override
+  String get knowledgeBaseEnabledHint =>
+      'If disabled, this base is excluded from all retrieval.';
+
+  @override
   String get clearContext => 'Clear Context';
 
   @override
@@ -1008,6 +1120,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allChats => 'All';
+
+  @override
+  String get requestConfig => 'Request Config';
 
   @override
   String get thinkingConfig => 'Thinking Config';
@@ -1517,4 +1632,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get auto => 'Auto';
+
+  @override
+  String get assistantBasicConfig => 'Basic Configuration';
+
+  @override
+  String get assistantName => 'Name';
+
+  @override
+  String get assistantDescription => 'Description';
+
+  @override
+  String get assistantCoreSettings => 'Core Settings';
+
+  @override
+  String get assistantCapabilities => 'Capabilities';
+
+  @override
+  String get assistantSkillManagement => 'Skill Management';
+
+  @override
+  String assistantSkillEnabledCount(int count) {
+    return '$count skills enabled';
+  }
+
+  @override
+  String get assistantLongTermMemory => 'Long-term Memory';
+
+  @override
+  String get assistantKnowledgeBindingHint =>
+      'When this assistant is selected, only the knowledge bases checked here are used.';
+
+  @override
+  String get assistantAvailableSkillsTitle => 'Available Skills';
+
+  @override
+  String get assistantNoSkillsAvailable => 'No available skills';
+
+  @override
+  String get assistantDeleteTitle => 'Delete Assistant';
+
+  @override
+  String assistantDeleteConfirm(String name) {
+    return 'Delete assistant \"$name\"? This action cannot be undone.';
+  }
+
+  @override
+  String get defaultAssistant => 'Default';
+
+  @override
+  String get noSpecificAssistant => 'No specific assistant';
+
+  @override
+  String get noAssistantDescription => 'No description';
+
+  @override
+  String get newAssistant => 'New Assistant';
+
+  @override
+  String get cropAvatarTitle => 'Crop Avatar';
+
+  @override
+  String get lightMode => 'Light Mode';
+
+  @override
+  String get darkMode => 'Dark Mode';
+
+  @override
+  String get followSystem => 'Follow System';
+
+  @override
+  String switchedToTheme(String label) {
+    return 'Switched to $label';
+  }
+
+  @override
+  String get appTagline => 'An elegant cross-platform AI chat assistant';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get rotate => 'Rotate';
+
+  @override
+  String translationPromptIntro(String sourceLanguage, String targetLanguage) {
+    return 'You are a professional multilingual translator. Please translate the following $sourceLanguage text into $targetLanguage.';
+  }
+
+  @override
+  String translationPromptIntroAuto(String targetLanguage) {
+    return 'You are a professional multilingual translator. Please translate the following text into $targetLanguage.';
+  }
+
+  @override
+  String get translationPromptRequirements => 'Requirements:';
+
+  @override
+  String get translationPromptRequirement1 =>
+      '1. Ensure translation is accurate, natural, and idiomatic in the target language.';
+
+  @override
+  String get translationPromptRequirement2 =>
+      '2. Preserve all line breaks and paragraph structure exactly as in the source.';
+
+  @override
+  String get translationPromptRequirement3 =>
+      '3. Output only the translated text, without explanations, introductions, or suffixes.';
+
+  @override
+  String get translationPromptSourceText => 'Source text:';
 }

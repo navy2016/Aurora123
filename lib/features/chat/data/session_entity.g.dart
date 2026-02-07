@@ -17,15 +17,15 @@ const SessionEntitySchema = CollectionSchema(
   name: r'SessionEntity',
   id: 7472964409236372477,
   properties: {
-    r'assistantId': PropertySchema(
-      id: 0,
-      name: r'assistantId',
-      type: IsarType.string,
-    ),
     r'lastMessageTime': PropertySchema(
-      id: 1,
+      id: 0,
       name: r'lastMessageTime',
       type: IsarType.dateTime,
+    ),
+    r'parentSessionId': PropertySchema(
+      id: 1,
+      name: r'parentSessionId',
+      type: IsarType.string,
     ),
     r'presetId': PropertySchema(
       id: 2,
@@ -93,7 +93,7 @@ int _sessionEntityEstimateSize(
 ) {
   var bytesCount = offsets.last;
   {
-    final value = object.assistantId;
+    final value = object.parentSessionId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -121,8 +121,8 @@ void _sessionEntitySerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.assistantId);
-  writer.writeDateTime(offsets[1], object.lastMessageTime);
+  writer.writeDateTime(offsets[0], object.lastMessageTime);
+  writer.writeString(offsets[1], object.parentSessionId);
   writer.writeString(offsets[2], object.presetId);
   writer.writeString(offsets[3], object.sessionId);
   writer.writeString(offsets[4], object.snippet);
@@ -138,9 +138,9 @@ SessionEntity _sessionEntityDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = SessionEntity();
-  object.assistantId = reader.readStringOrNull(offsets[0]);
   object.id = id;
-  object.lastMessageTime = reader.readDateTime(offsets[1]);
+  object.lastMessageTime = reader.readDateTime(offsets[0]);
+  object.parentSessionId = reader.readStringOrNull(offsets[1]);
   object.presetId = reader.readStringOrNull(offsets[2]);
   object.sessionId = reader.readString(offsets[3]);
   object.snippet = reader.readStringOrNull(offsets[4]);
@@ -158,9 +158,9 @@ P _sessionEntityDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readStringOrNull(offset)) as P;
-    case 1:
       return (reader.readDateTime(offset)) as P;
+    case 1:
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
       return (reader.readStringOrNull(offset)) as P;
     case 3:
@@ -374,160 +374,6 @@ extension SessionEntityQueryWhere
 
 extension SessionEntityQueryFilter
     on QueryBuilder<SessionEntity, SessionEntity, QFilterCondition> {
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'assistantId',
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'assistantId',
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'assistantId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'assistantId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdLessThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'assistantId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdBetween(
-    String? lower,
-    String? upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'assistantId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'assistantId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'assistantId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'assistantId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'assistantId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'assistantId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
-      assistantIdIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'assistantId',
-        value: '',
-      ));
-    });
-  }
-
   QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -634,6 +480,160 @@ extension SessionEntityQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'parentSessionId',
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'parentSessionId',
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'parentSessionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'parentSessionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'parentSessionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'parentSessionId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'parentSessionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'parentSessionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'parentSessionId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'parentSessionId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'parentSessionId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterFilterCondition>
+      parentSessionIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'parentSessionId',
+        value: '',
       ));
     });
   }
@@ -1357,19 +1357,6 @@ extension SessionEntityQueryLinks
 
 extension SessionEntityQuerySortBy
     on QueryBuilder<SessionEntity, SessionEntity, QSortBy> {
-  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> sortByAssistantId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'assistantId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
-      sortByAssistantIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'assistantId', Sort.desc);
-    });
-  }
-
   QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
       sortByLastMessageTime() {
     return QueryBuilder.apply(this, (query) {
@@ -1381,6 +1368,20 @@ extension SessionEntityQuerySortBy
       sortByLastMessageTimeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastMessageTime', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
+      sortByParentSessionId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentSessionId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
+      sortByParentSessionIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentSessionId', Sort.desc);
     });
   }
 
@@ -1462,19 +1463,6 @@ extension SessionEntityQuerySortBy
 
 extension SessionEntityQuerySortThenBy
     on QueryBuilder<SessionEntity, SessionEntity, QSortThenBy> {
-  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> thenByAssistantId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'assistantId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
-      thenByAssistantIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'assistantId', Sort.desc);
-    });
-  }
-
   QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1498,6 +1486,20 @@ extension SessionEntityQuerySortThenBy
       thenByLastMessageTimeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastMessageTime', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
+      thenByParentSessionId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentSessionId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QAfterSortBy>
+      thenByParentSessionIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentSessionId', Sort.desc);
     });
   }
 
@@ -1579,17 +1581,18 @@ extension SessionEntityQuerySortThenBy
 
 extension SessionEntityQueryWhereDistinct
     on QueryBuilder<SessionEntity, SessionEntity, QDistinct> {
-  QueryBuilder<SessionEntity, SessionEntity, QDistinct> distinctByAssistantId(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'assistantId', caseSensitive: caseSensitive);
-    });
-  }
-
   QueryBuilder<SessionEntity, SessionEntity, QDistinct>
       distinctByLastMessageTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'lastMessageTime');
+    });
+  }
+
+  QueryBuilder<SessionEntity, SessionEntity, QDistinct>
+      distinctByParentSessionId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'parentSessionId',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -1643,16 +1646,17 @@ extension SessionEntityQueryProperty
     });
   }
 
-  QueryBuilder<SessionEntity, String?, QQueryOperations> assistantIdProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'assistantId');
-    });
-  }
-
   QueryBuilder<SessionEntity, DateTime, QQueryOperations>
       lastMessageTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lastMessageTime');
+    });
+  }
+
+  QueryBuilder<SessionEntity, String?, QQueryOperations>
+      parentSessionIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'parentSessionId');
     });
   }
 

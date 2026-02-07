@@ -19,6 +19,7 @@ import 'package:aurora/shared/services/openai_llm_service.dart';
 import 'package:aurora/shared/services/llm_service.dart';
 import 'package:aurora/shared/services/tool_manager.dart';
 import 'package:aurora/shared/services/worker_service.dart';
+import 'package:aurora/features/knowledge/presentation/knowledge_provider.dart';
 import 'package:fluent_ui/fluent_ui.dart'
     hide Colors, Padding, StateSetter, ListBody;
 import 'package:uuid/uuid.dart';
@@ -192,6 +193,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
     await Future.microtask(() {});
     if (!mounted) return;
     state = state.copyWith(isLoadingHistory: true);
+    if (_sessionId == 'translation') {
+      await _storage.sanitizeTranslationUserMessages();
+    }
     final messages = await _storage.loadHistory(_sessionId);
     if (!mounted) return;
     String? restoredPresetName;
@@ -240,14 +244,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
     if (text != null && (_sessionId == 'chat' || _sessionId == 'new_chat')) {
       final title = text.length > 15 ? '${text.substring(0, 15)}...' : text;
       final topicId = _ref.read(selectedTopicIdProvider);
-      final assistantId = _ref.read(assistantProvider).selectedAssistantId;
 
       // Don't use currentPresetId for new chats to avoid "leaking" presets
       final realId = await _storage.createSession(
-          title: title,
-          topicId: topicId,
-          presetId: '',
-          assistantId: assistantId);
+          title: title, topicId: topicId, presetId: '');
 
       if (!mounted) return realId;
 
@@ -280,8 +280,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     if (text != null) {
       if (!mounted) return _sessionId;
-      final content = apiContent ?? text;
-      final userMessage = Message.user(content, attachments: attachments);
+      final userMessage = Message.user(text, attachments: attachments);
       final dbId = await _storage.saveMessage(userMessage, _sessionId);
 
       if (!mounted) return _sessionId;
@@ -289,6 +288,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       state = state.copyWith(
         messages: [...state.messages, userMessageWithDbId],
       );
+      if (_sessionId != 'translation') {
+        _ref.read(sessionsProvider.notifier).loadSessions();
+      }
     }
 
     // Now it's safe to redirect, as state already contains the user message
@@ -305,6 +307,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
     int reasoningTokens = 0;
     try {
       final messagesForApi = List<Message>.from(state.messages);
+      if (apiContent != null) {
+        final lastUserIndex = messagesForApi.lastIndexWhere((m) => m.isUser);
+        if (lastUserIndex != -1) {
+          messagesForApi[lastUserIndex] =
+              messagesForApi[lastUserIndex].copyWith(content: apiContent);
+        }
+      }
       final settings = _ref.read(settingsProvider);
       final assistantState = _ref.read(assistantProvider);
       // Use global assistant selection, not local state
@@ -417,6 +426,108 @@ To invoke a skill, output a skill tag in this exact format:
 
         // Tools are now primarily tag-based for Search and Skills Routing.
         // Physical tools are only used if explicitly provided or by sub-agents.
+      }
+
+      // Inject local knowledge base context before generation.
+      if (settings.isKnowledgeEnabled) {
+        try {
+          // Bind retrieval scope to the selected assistant first.
+          // Global active bases are only used when no assistant is selected.
+          final selectedKnowledgeBaseIds = assistant != null
+              ? assistant.knowledgeBaseIds
+              : settings.activeKnowledgeBaseIds;
+
+          final fallbackQuery = messagesForApi.reversed
+              .where((m) => m.role == 'user')
+              .map((m) => m.content)
+              .firstOrNull;
+          final retrievalQuery =
+              (apiContent ?? text ?? fallbackQuery ?? '').trim();
+
+          if (selectedKnowledgeBaseIds.isNotEmpty &&
+              retrievalQuery.isNotEmpty) {
+            final enhancementMode =
+                settings.knowledgeLlmEnhanceMode.trim().toLowerCase();
+            var effectiveRetrievalQuery = retrievalQuery;
+            if (enhancementMode == 'rewrite') {
+              try {
+                final rewriteResponse = await llmService.getResponse(
+                  [
+                    Message(
+                      id: const Uuid().v4(),
+                      role: 'system',
+                      content: '''
+You rewrite user questions for knowledge retrieval.
+Rules:
+1. Keep the original language.
+2. Output a compact query with core entities, constraints, and keywords.
+3. Output plain text only.''',
+                      timestamp: DateTime.now(),
+                      isUser: false,
+                    ),
+                    Message.user(retrievalQuery),
+                  ],
+                  model: settings.executionModel ?? currentModel,
+                  providerId:
+                      settings.executionProviderId ?? settings.activeProviderId,
+                  cancelToken: _currentCancelToken,
+                );
+                final rewritten = rewriteResponse.content?.trim() ?? '';
+                if (rewritten.isNotEmpty) {
+                  effectiveRetrievalQuery = rewritten;
+                }
+              } catch (_) {
+                // Fall back to original user query if rewrite fails.
+              }
+            }
+
+            final knowledgeStorage = _ref.read(knowledgeStorageProvider);
+
+            ProviderConfig? embeddingProvider;
+            if (settings.knowledgeUseEmbedding) {
+              final embeddingProviderId =
+                  settings.knowledgeEmbeddingProviderId ??
+                      settings.activeProviderId;
+              embeddingProvider = settings.providers
+                  .where((p) => p.id == embeddingProviderId)
+                  .firstOrNull;
+            }
+
+            final kbResult = await knowledgeStorage.retrieveContext(
+              query: effectiveRetrievalQuery,
+              baseIds: selectedKnowledgeBaseIds,
+              topK: settings.knowledgeTopK,
+              useEmbedding: settings.knowledgeUseEmbedding,
+              embeddingModel: settings.knowledgeEmbeddingModel,
+              embeddingProvider: embeddingProvider,
+            );
+
+            if (kbResult.hasContext) {
+              final contextPrompt = kbResult.toPromptContext();
+              final sysMsg =
+                  messagesForApi.where((m) => m.role == 'system').firstOrNull;
+              if (sysMsg != null) {
+                final idx = messagesForApi.indexOf(sysMsg);
+                final old = sysMsg.content;
+                messagesForApi[idx] =
+                    sysMsg.copyWith(content: '$old\n\n$contextPrompt');
+              } else {
+                messagesForApi.insert(
+                  0,
+                  Message(
+                    id: const Uuid().v4(),
+                    role: 'system',
+                    content: contextPrompt,
+                    timestamp: DateTime.now(),
+                    isUser: false,
+                  ),
+                );
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('Knowledge retrieval skipped due to error: $e');
+        }
       }
       bool continueGeneration = true;
       int turns = 0;
@@ -1145,6 +1256,9 @@ To invoke a skill, output a skill tag in this exact format:
     final newMessages = state.messages.where((m) => m.id != id).toList();
     state = state.copyWith(messages: newMessages);
     await _storage.deleteMessage(id, sessionId: _sessionId);
+    if (_sessionId != 'translation') {
+      _ref.read(sessionsProvider.notifier).loadSessions();
+    }
   }
 
   Future<void> editMessage(String id, String newContent,
@@ -1194,6 +1308,7 @@ To invoke a skill, output a skill tag in this exact format:
           userMsgToUpdate.copyWith(timestamp: DateTime.now());
       await _storage.updateMessage(updatedUserMsg);
       historyToKeep[historyToKeep.length - 1] = updatedUserMsg;
+      _ref.read(sessionsProvider.notifier).loadSessions();
     }
 
     final oldMessages = state.messages;
@@ -1211,7 +1326,12 @@ To invoke a skill, output a skill tag in this exact format:
   }
 
   Future<void> clearContext() async {
-    if (_sessionId == 'new_chat' || _sessionId == 'translation') {
+    if (_sessionId == 'new_chat') {
+      state = state.copyWith(messages: [], isLoading: false, error: null);
+      return;
+    }
+    if (_sessionId == 'translation') {
+      await _storage.clearSessionMessages(_sessionId);
       state = state.copyWith(messages: [], isLoading: false, error: null);
       return;
     }
@@ -1382,8 +1502,43 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
   SessionsNotifier(this._ref, this._storage) : super(SessionsState()) {
     _init();
   }
+
+  void _cleanupCollapsedSessionIds(List<SessionEntity> sessions) {
+    final collapsed = _ref.read(collapsedHistorySessionIdsProvider);
+    if (collapsed.isEmpty) return;
+    final validIds = sessions.map((s) => s.sessionId).toSet();
+    final nextCollapsed = collapsed.where(validIds.contains).toSet();
+    if (nextCollapsed.length != collapsed.length) {
+      _ref.read(collapsedHistorySessionIdsProvider.notifier).state =
+          nextCollapsed;
+    }
+  }
+
+  void ensureSessionVisible(String sessionId) {
+    if (state.sessions.isEmpty) return;
+    final sessionMap = {for (final s in state.sessions) s.sessionId: s};
+    final collapsed =
+        Set<String>.from(_ref.read(collapsedHistorySessionIdsProvider));
+    var changed = false;
+
+    SessionEntity? current = sessionMap[sessionId];
+    while (current != null) {
+      final parentId = current.parentSessionId;
+      if (parentId == null || parentId.isEmpty) break;
+      if (collapsed.remove(parentId)) {
+        changed = true;
+      }
+      current = sessionMap[parentId];
+    }
+
+    if (changed) {
+      _ref.read(collapsedHistorySessionIdsProvider.notifier).state = collapsed;
+    }
+  }
+
   Future<void> _init() async {
     await _storage.cleanupEmptySessions();
+    await _storage.backfillSessionLastUserMessageTimes();
     await loadSessions();
     _storage.preloadAllSessions();
     final settings = await _ref.read(settingsStorageProvider).loadAppSettings();
@@ -1418,6 +1573,7 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
         return b.lastMessageTime.compareTo(a.lastMessageTime);
       });
     }
+    _cleanupCollapsedSessionIds(sessions);
     state = SessionsState(sessions: sessions, isLoading: false);
   }
 
@@ -1428,6 +1584,32 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     final items = List<SessionEntity>.from(state.sessions);
     final item = items.removeAt(oldIndex);
     items.insert(newIndex, item);
+    state = SessionsState(sessions: items, isLoading: false);
+    final newOrder = items.map((s) => s.sessionId).toList();
+    await _storage.saveSessionOrder(newOrder);
+  }
+
+  Future<void> reorderSessionById({
+    required String draggedSessionId,
+    String? beforeSessionId,
+  }) async {
+    final items = List<SessionEntity>.from(state.sessions);
+    final draggedIndex =
+        items.indexWhere((s) => s.sessionId == draggedSessionId);
+    if (draggedIndex == -1) return;
+
+    final dragged = items.removeAt(draggedIndex);
+    int insertIndex;
+    if (beforeSessionId == null) {
+      insertIndex = items.length;
+    } else {
+      insertIndex = items.indexWhere((s) => s.sessionId == beforeSessionId);
+      if (insertIndex == -1) {
+        insertIndex = items.length;
+      }
+    }
+    items.insert(insertIndex, dragged);
+
     state = SessionsState(sessions: items, isLoading: false);
     final newOrder = items.map((s) => s.sessionId).toList();
     await _storage.saveSessionOrder(newOrder);
@@ -1449,6 +1631,12 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     if (sessionId == null || sessionId == 'new_chat') return;
     final deleted = await _storage.deleteSessionIfEmpty(sessionId);
     if (deleted) {
+      final collapsed =
+          Set<String>.from(_ref.read(collapsedHistorySessionIdsProvider));
+      if (collapsed.remove(sessionId)) {
+        _ref.read(collapsedHistorySessionIdsProvider.notifier).state =
+            collapsed;
+      }
       await loadSessions();
     }
   }
@@ -1460,14 +1648,23 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
 
   Future<void> deleteSession(String id) async {
     final selectedId = _ref.read(selectedHistorySessionIdProvider);
-    await _storage.deleteSession(id);
+    final deletedIds = await _storage.deleteSessionTree(id);
+    if (deletedIds.isEmpty) return;
+
     // Explicitly reset the session in manager to clear memory and cache
-    _ref.read(chatSessionManagerProvider).resetSession(id);
+    for (final deletedId in deletedIds) {
+      _ref.read(chatSessionManagerProvider).resetSession(deletedId);
+    }
+
+    final collapsed =
+        Set<String>.from(_ref.read(collapsedHistorySessionIdsProvider))
+          ..removeWhere(deletedIds.contains);
+    _ref.read(collapsedHistorySessionIdsProvider.notifier).state = collapsed;
 
     await loadSessions();
 
     // If we deleted the currently active session, move to the next best one
-    if (selectedId == id || selectedId == null) {
+    if (selectedId == null || deletedIds.contains(selectedId)) {
       if (state.sessions.isNotEmpty) {
         _ref.read(selectedHistorySessionIdProvider.notifier).state =
             state.sessions.first.sessionId;
@@ -1497,20 +1694,26 @@ class SessionsNotifier extends StateNotifier<SessionsState> {
     // Get the session to copy the topicId
     final originalSession = await _storage.getSession(originalSessionId);
     final topicId = originalSession?.topicId;
+    final presetId = originalSession?.presetId;
 
     // Create a copy of messages up to and including the target
     final messagesToCopy = messages.sublist(0, targetIndex + 1);
 
     // Create new session with branch name
     final newTitle = '$originalTitle$branchSuffix';
-    final newSessionId =
-        await _storage.createSession(title: newTitle, topicId: topicId);
+    final newSessionId = await _storage.createSession(
+      title: newTitle,
+      topicId: topicId,
+      presetId: presetId,
+      parentSessionId: originalSessionId,
+    );
 
     // Save copied messages to new session
     await _storage.saveHistory(messagesToCopy, newSessionId);
 
     // Reload sessions
     await loadSessions();
+    ensureSessionVisible(newSessionId);
 
     return newSessionId;
   }
@@ -1522,6 +1725,8 @@ final sessionsProvider =
   return SessionsNotifier(ref, storage);
 });
 final selectedHistorySessionIdProvider = StateProvider<String?>((ref) => null);
+final collapsedHistorySessionIdsProvider =
+    StateProvider<Set<String>>((ref) => <String>{});
 final isHistorySidebarVisibleProvider = StateProvider<bool>((ref) => true);
 final sessionSearchQueryProvider = StateProvider<String>((ref) => '');
 

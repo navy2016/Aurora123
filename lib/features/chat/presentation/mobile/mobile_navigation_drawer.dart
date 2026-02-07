@@ -63,31 +63,39 @@ class MobileNavigationDrawer extends ConsumerWidget {
                   ),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[800] : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: TextField(
-                        onChanged: (value) {
-                          ref.read(sessionSearchQueryProvider.notifier).state =
-                              value;
-                        },
-                        textAlignVertical: TextAlignVertical.center,
-                        decoration: InputDecoration(
-                          hintText:
-                              AppLocalizations.of(context)!.searchChatHistory,
-                          hintStyle:
-                              TextStyle(color: Colors.grey[600], fontSize: 14),
-                          prefixIcon: Icon(AuroraIcons.search,
-                              size: 20, color: Colors.grey[600]),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        style: const TextStyle(fontSize: 14),
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        final theme = fluent.FluentTheme.of(context);
+                        return Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: theme.accentColor.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: TextField(
+                            onChanged: (value) {
+                              ref.read(sessionSearchQueryProvider.notifier).state =
+                                  value;
+                            },
+                            textAlignVertical: TextAlignVertical.center,
+                            decoration: InputDecoration(
+                              hintText:
+                                  AppLocalizations.of(context)!.searchChatHistory,
+                              hintStyle:
+                                  TextStyle(color: Colors.grey[600], fontSize: 14),
+                              prefixIcon: Icon(AuroraIcons.search,
+                                  size: 20, color: theme.accentColor),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),

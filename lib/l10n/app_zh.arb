@@ -418,6 +418,66 @@
   "searchSafeSearchStrict": "严格过滤",
   "searchMaxResults": "最大结果数",
   "searchTimeoutSeconds": "超时（秒）",
+  "knowledgeBase": "知识库",
+  "knowledgeBases": "知识库列表",
+  "general": "通用",
+  "enableKnowledgeRetrieval": "启用知识库检索",
+  "knowledgeTopKChunks": "Top K 片段数",
+  "useEmbeddingRerank": "启用 Embedding 重排",
+  "knowledgeLlmEnhancementMode": "LLM 增强模式（可选）",
+  "knowledgeModeOff": "关闭",
+  "knowledgeModeRewrite": "查询改写",
+  "embeddingProvider": "Embedding 提供商",
+  "embeddingModel": "Embedding 模型",
+  "noEmbeddingModelsInProvider": "该提供商下没有可用的 embedding 模型",
+  "embeddingModelAutoDetectHint": "仅展示名称中包含 \"embedding\" 的模型。",
+  "createBase": "新建知识库",
+  "importFiles": "导入文件",
+  "deleteBase": "删除知识库",
+  "noKnowledgeBaseYetCreateOne": "暂无知识库，请先新建。",
+  "knowledgeActive": "启用",
+  "knowledgeDocsAndChunks": "文档: {docs}  片段: {chunks}",
+  "@knowledgeDocsAndChunks": {
+    "placeholders": {
+      "docs": {
+        "type": "int"
+      },
+      "chunks": {
+        "type": "int"
+      }
+    }
+  },
+  "createKnowledgeBase": "新建知识库",
+  "knowledgeBaseName": "知识库名称",
+  "descriptionOptional": "描述（可选）",
+  "deleteKnowledgeBase": "删除知识库",
+  "deleteKnowledgeBaseConfirm": "确定删除该知识库及其所有索引片段吗？此操作不可撤销。",
+  "knowledgeFiles": "知识库文件",
+  "importFinished": "导入完成",
+  "knowledgeImportSummary": "成功: {success}\n失败: {failed}",
+  "@knowledgeImportSummary": {
+    "placeholders": {
+      "success": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "knowledgeEnabledWithActiveCount": "已启用 • {count} 个激活",
+  "@knowledgeEnabledWithActiveCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "knowledgeGlobalFallbackHint": "全局知识库仅在未选择助理时生效。",
+  "knowledgeGlobalSelectionLabel": "全局模式使用",
+  "knowledgeGlobalSelectionHint": "仅在未选择助理时生效。",
+  "knowledgeBaseEnabledLabel": "知识库可用",
+  "knowledgeBaseEnabledHint": "关闭后该知识库将不参与任何检索。",
   
   "clearContext": "清空上下文",
   "clearContextConfirm": "确定要清空当前对话的历史记录吗？此操作不可撤销。",
@@ -435,6 +495,7 @@
   "topicNamePlaceholder": "分组名称",
   "allChats": "所有",
   
+  "requestConfig": "请求配置",
   "thinkingConfig": "思考配置",
   "enableThinking": "启用思考",
   "thinkingBudget": "思考预算",
@@ -628,5 +689,75 @@
   "imagePayload": "图片参数",
   "aspectRatio": "宽高比",
   "imageSize": "图片分辨率",
-  "auto": "自动"
+  "auto": "自动",
+  "assistantBasicConfig": "基本配置",
+  "assistantName": "名称",
+  "assistantDescription": "描述",
+  "assistantCoreSettings": "核心设定",
+  "assistantCapabilities": "能力配置",
+  "assistantSkillManagement": "技能管理",
+  "assistantSkillEnabledCount": "已启用 {count} 个技能",
+  "@assistantSkillEnabledCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantLongTermMemory": "长期记忆",
+  "assistantKnowledgeBindingHint": "选择此助理时，仅使用这里勾选的知识库。",
+  "assistantAvailableSkillsTitle": "可用技能",
+  "assistantNoSkillsAvailable": "暂无可用技能",
+  "assistantDeleteTitle": "确认删除助理",
+  "assistantDeleteConfirm": "确认要删除助理 \"{name}\" 吗？此操作无法撤销。",
+  "@assistantDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "defaultAssistant": "默认",
+  "noSpecificAssistant": "不使用特定助理",
+  "noAssistantDescription": "没有描述",
+  "newAssistant": "新助理",
+  "cropAvatarTitle": "裁剪头像",
+  "lightMode": "浅色模式",
+  "darkMode": "深色模式",
+  "followSystem": "跟随系统",
+  "switchedToTheme": "已切换到{label}",
+  "@switchedToTheme": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "appTagline": "一款优雅的跨平台 AI 对话助手",
+  "back": "返回",
+  "rotate": "旋转",
+  "translationPromptIntro": "你是一位精通多国语言的专业翻译专家。请将以下{sourceLanguage}文本翻译成{targetLanguage}。",
+  "@translationPromptIntro": {
+    "placeholders": {
+      "sourceLanguage": {
+        "type": "String"
+      },
+      "targetLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "translationPromptIntroAuto": "你是一位精通多国语言的专业翻译专家。请将以下文本翻译成{targetLanguage}。",
+  "@translationPromptIntroAuto": {
+    "placeholders": {
+      "targetLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "translationPromptRequirements": "要求：",
+  "translationPromptRequirement1": "1. 翻译准确、地道，符合目标语言的表达习惯。",
+  "translationPromptRequirement2": "2. 严格保留原文的换行格式和段落结构，不要合并段落。",
+  "translationPromptRequirement3": "3. 只输出翻译后的内容，不要包含任何解释、前言或后缀。",
+  "translationPromptSourceText": "原文内容："
 }

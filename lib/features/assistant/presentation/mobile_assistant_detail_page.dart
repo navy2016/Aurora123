@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
+import 'package:aurora/shared/widgets/aurora_notice.dart';
 import '../domain/assistant.dart';
 import 'widgets/assistant_avatar.dart';
 import 'assistant_provider.dart';
 import '../../settings/presentation/widgets/mobile_settings_widgets.dart';
 import '../../skills/presentation/skill_provider.dart';
+import '../../knowledge/presentation/knowledge_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 
@@ -66,7 +68,7 @@ class _MobileAssistantDetailPageState
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
+      backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.82),
       appBar: AppBar(
         title: const Text(''),
         centerTitle: true,
@@ -86,23 +88,23 @@ class _MobileAssistantDetailPageState
           _buildHeroSection(context, theme, l10n),
 
           MobileSettingsSection(
-            title: '基本配置',
+            title: l10n.assistantBasicConfig,
             children: [
               _buildTextFieldTile(
                 controller: _nameController,
-                label: '名称',
+                label: l10n.assistantName,
                 onChanged: (_) => _save(),
               ),
               _buildTextFieldTile(
                 controller: _descriptionController,
-                label: '描述',
+                label: l10n.assistantDescription,
                 onChanged: (_) => _save(),
               ),
             ],
           ),
 
           MobileSettingsSection(
-            title: '核心设定',
+            title: l10n.assistantCoreSettings,
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -135,18 +137,30 @@ class _MobileAssistantDetailPageState
           ),
 
           MobileSettingsSection(
-            title: '能力配置',
+            title: l10n.assistantCapabilities,
             children: [
               MobileSettingsTile(
                 leading: const Icon(Icons.extension_outlined),
-                title: '技能管理',
-                subtitle: '已启用 ${_currentAssistant.skillIds.length} 个技能',
+                title: l10n.assistantSkillManagement,
+                subtitle: l10n.assistantSkillEnabledCount(
+                    _currentAssistant.skillIds.length),
                 onTap: () => _showSkillPicker(context),
               ),
               MobileSettingsTile(
+                leading: const Icon(Icons.library_books_outlined),
+                title: l10n.knowledgeBase,
+                subtitle: _currentAssistant.knowledgeBaseIds.isEmpty
+                    ? l10n.disabled
+                    : l10n.knowledgeEnabledWithActiveCount(
+                        _currentAssistant.knowledgeBaseIds.length),
+                onTap: () => _showKnowledgeBasePicker(context),
+              ),
+              MobileSettingsTile(
                 leading: const Icon(Icons.memory_outlined),
-                title: '长期记忆',
-                subtitle: _currentAssistant.enableMemory ? '已开启' : '已关闭',
+                title: l10n.assistantLongTermMemory,
+                subtitle: _currentAssistant.enableMemory
+                    ? l10n.enabled
+                    : l10n.disabled,
                 trailing: Switch.adaptive(
                   value: _currentAssistant.enableMemory,
                   onChanged: (v) {
@@ -158,6 +172,17 @@ class _MobileAssistantDetailPageState
                   _updateAssistant(_currentAssistant.copyWith(
                       enableMemory: !_currentAssistant.enableMemory));
                 },
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: Text(
+                  l10n.assistantKnowledgeBindingHint,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ],
           ),
@@ -225,6 +250,7 @@ class _MobileAssistantDetailPageState
   }
 
   Future<void> _pickAvatar() async {
+    final l10n = AppLocalizations.of(context)!;
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file != null && mounted) {
@@ -233,14 +259,14 @@ class _MobileAssistantDetailPageState
         aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: '裁剪头像',
+            toolbarTitle: l10n.cropAvatarTitle,
             toolbarColor: Theme.of(context).primaryColor,
             toolbarWidgetColor: Colors.white,
             initAspectRatio: CropAspectRatioPreset.square,
             lockAspectRatio: true,
           ),
           IOSUiSettings(
-            title: '裁剪头像',
+            title: l10n.cropAvatarTitle,
             aspectRatioLockEnabled: true,
           ),
         ],
@@ -253,14 +279,19 @@ class _MobileAssistantDetailPageState
   }
 
   void _showSkillPicker(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final skills = ref
         .read(skillProvider)
         .skills
         .where((s) => s.isEnabled && s.forAI)
         .toList();
     if (skills.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('暂无可用技能')));
+      showAuroraNotice(
+        context,
+        l10n.assistantNoSkillsAvailable,
+        icon: Icons.info_outline_rounded,
+        top: MediaQuery.of(context).padding.top + 64 + 60,
+      );
       return;
     }
 
@@ -270,7 +301,10 @@ class _MobileAssistantDetailPageState
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AuroraBottomSheet.buildTitle(context, '配置技能'),
+            AuroraBottomSheet.buildTitle(
+              context,
+              l10n.assistantAvailableSkillsTitle,
+            ),
             const Divider(height: 1),
             Container(
               constraints: BoxConstraints(
@@ -317,16 +351,85 @@ class _MobileAssistantDetailPageState
     );
   }
 
+  void _showKnowledgeBasePicker(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final bases =
+        ref.read(knowledgeProvider).bases.where((b) => b.isEnabled).toList();
+    if (bases.isEmpty) {
+      showAuroraNotice(
+        context,
+        l10n.noKnowledgeBaseYetCreateOne,
+        icon: Icons.info_outline_rounded,
+        top: MediaQuery.of(context).padding.top + 64 + 60,
+      );
+      return;
+    }
+
+    AuroraBottomSheet.show(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (context, setSheetState) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AuroraBottomSheet.buildTitle(context, l10n.knowledgeBase),
+            const Divider(height: 1),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6),
+              child: ListView(
+                shrinkWrap: true,
+                children: bases.map((base) {
+                  final isSelected =
+                      _currentAssistant.knowledgeBaseIds.contains(base.baseId);
+                  return CheckboxListTile(
+                    title: Text(base.name),
+                    subtitle: Text(
+                      l10n.knowledgeDocsAndChunks(
+                          base.documentCount, base.chunkCount),
+                    ),
+                    value: isSelected,
+                    onChanged: (v) {
+                      final nextIds =
+                          List<String>.from(_currentAssistant.knowledgeBaseIds);
+                      if (v == true) {
+                        if (!nextIds.contains(base.baseId)) {
+                          nextIds.add(base.baseId);
+                        }
+                      } else {
+                        nextIds.remove(base.baseId);
+                      }
+                      final updated =
+                          _currentAssistant.copyWith(knowledgeBaseIds: nextIds);
+                      setState(() {
+                        _currentAssistant = updated;
+                      });
+                      setSheetState(() {});
+                      ref
+                          .read(assistantProvider.notifier)
+                          .saveAssistant(updated);
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        );
+      }),
+    );
+  }
+
   void _showDeleteDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('确认删除助理'),
-        content: Text('确认要删除助理 "${_currentAssistant.name}" 吗？此操作无法撤销。'),
+        title: Text(l10n.assistantDeleteTitle),
+        content: Text(l10n.assistantDeleteConfirm(_currentAssistant.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -336,7 +439,7 @@ class _MobileAssistantDetailPageState
               Navigator.pop(context); // close dialog
               Navigator.pop(this.context); // close page
             },
-            child: const Text('删除', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

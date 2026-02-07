@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:aurora/shared/utils/translation_prompt_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import '../../settings/data/settings_storage.dart';
@@ -26,6 +27,37 @@ class ChatStorage {
   final SettingsStorage _settingsStorage;
   final Map<String, List<Message>> _messagesCache = {};
   ChatStorage(this._settingsStorage) : _isar = _settingsStorage.isar;
+
+  Future<List<String>> _findUnreferencedAttachments(
+    Iterable<String> candidatePaths, {
+    Set<int> excludedMessageIds = const {},
+    Set<String> excludedSessionIds = const {},
+  }) async {
+    final targets = candidatePaths
+        .map((path) => path.trim())
+        .where((path) => path.isNotEmpty)
+        .toSet();
+    if (targets.isEmpty) return const [];
+
+    final referenced = <String>{};
+    final messages = await _isar.messageEntitys.where().findAll();
+    for (final msg in messages) {
+      if (excludedMessageIds.contains(msg.id)) continue;
+      final sid = msg.sessionId;
+      if (sid != null && excludedSessionIds.contains(sid)) continue;
+      if (msg.attachments.isEmpty) continue;
+      for (final path in msg.attachments) {
+        if (!targets.contains(path)) continue;
+        referenced.add(path);
+        if (referenced.length == targets.length) {
+          return const [];
+        }
+      }
+    }
+
+    return targets.where((path) => !referenced.contains(path)).toList();
+  }
+
   Future<void> preloadAllSessions() async {
     final sw = Stopwatch()..start();
     final sessions = await loadSessions();
@@ -65,9 +97,14 @@ class ChatStorage {
     }
     await _isar.writeTxn(() async {
       await _isar.messageEntitys.put(entity);
-      if (message.tokenCount != null || message.promptTokens != null) {
-        final session = await _isar.sessionEntitys.getBySessionId(sessionId);
-        if (session != null) {
+      final session = await _isar.sessionEntitys.getBySessionId(sessionId);
+      if (session != null) {
+        var shouldPersistSession = false;
+        if (message.isUser) {
+          session.lastMessageTime = message.timestamp;
+          shouldPersistSession = true;
+        }
+        if (message.tokenCount != null || message.promptTokens != null) {
           // Calculate total tokens for this message
           int msgTotal = message.tokenCount ?? 0;
           if (message.promptTokens != null ||
@@ -80,6 +117,9 @@ class ChatStorage {
           }
 
           session.totalTokens += msgTotal;
+          shouldPersistSession = true;
+        }
+        if (shouldPersistSession) {
           await _isar.sessionEntitys.put(session);
         }
       }
@@ -124,6 +164,21 @@ class ChatStorage {
         return e;
       }).toList();
       await _isar.messageEntitys.putAll(entities);
+
+      DateTime? lastUserMessageTime;
+      for (int i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].isUser) {
+          lastUserMessageTime = messages[i].timestamp;
+          break;
+        }
+      }
+      if (lastUserMessageTime != null) {
+        final session = await _isar.sessionEntitys.getBySessionId(sessionId);
+        if (session != null) {
+          session.lastMessageTime = lastUserMessageTime;
+          await _isar.sessionEntitys.put(session);
+        }
+      }
     });
     _messagesCache[sessionId] = List.of(messages);
   }
@@ -196,56 +251,83 @@ class ChatStorage {
     if (intId == null) return;
     final entity = await _isar.messageEntitys.get(intId);
     if (entity != null) {
-      if (entity.attachments.isNotEmpty) {
-        await _deleteAttachmentFiles(entity.attachments);
-      }
       final targetSessionId = sessionId ?? entity.sessionId;
-      if (_messagesCache.containsKey(targetSessionId)) {
+      if (targetSessionId != null &&
+          _messagesCache.containsKey(targetSessionId)) {
         _messagesCache[targetSessionId]!.removeWhere((m) => m.id == id);
       }
     }
     await _isar.writeTxn(() async {
-      if (entity != null &&
-          entity.tokenCount != null &&
-          entity.tokenCount! > 0) {
-        final session = await _isar.sessionEntitys
+      await _isar.messageEntitys.delete(intId);
+
+      final entitySessionId = entity?.sessionId;
+      if (entity == null || entitySessionId == null) return;
+
+      final session = await _isar.sessionEntitys
+          .filter()
+          .sessionIdEqualTo(entitySessionId)
+          .findFirst();
+      if (session == null) return;
+
+      var shouldPersistSession = false;
+      if (entity.tokenCount != null && entity.tokenCount! > 0) {
+        session.totalTokens =
+            (session.totalTokens - entity.tokenCount!).clamp(0, 999999999);
+        shouldPersistSession = true;
+      }
+
+      if (entity.isUser) {
+        final lastUserMessage = await _isar.messageEntitys
             .filter()
-            .sessionIdEqualTo(entity.sessionId!)
+            .sessionIdEqualTo(entitySessionId)
+            .isUserEqualTo(true)
+            .sortByTimestampDesc()
             .findFirst();
-        if (session != null) {
-          session.totalTokens =
-              (session.totalTokens - entity.tokenCount!).clamp(0, 999999999);
-          await _isar.sessionEntitys.put(session);
+        if (lastUserMessage != null) {
+          session.lastMessageTime = lastUserMessage.timestamp;
+          shouldPersistSession = true;
         }
       }
-      await _isar.messageEntitys.delete(intId);
+
+      if (shouldPersistSession) {
+        await _isar.sessionEntitys.put(session);
+      }
     });
+
+    if (entity != null && entity.attachments.isNotEmpty) {
+      final deletable = await _findUnreferencedAttachments(
+        entity.attachments,
+        excludedMessageIds: {entity.id},
+      );
+      if (deletable.isNotEmpty) {
+        await _deleteAttachmentFiles(deletable);
+      }
+    }
   }
 
   Future<void> updateMessage(Message message) async {
     final intId = int.tryParse(message.id);
     if (intId == null) return;
 
+    var removedAttachments = <String>[];
     // Get existing message to compare attachments before transaction
     final existing = await _isar.messageEntitys.get(intId);
     if (existing != null) {
-      // Find attachments that were removed
       final oldAttachments = existing.attachments;
       final newAttachments = message.attachments;
-      final removedAttachments = oldAttachments
+      removedAttachments = oldAttachments
           .where((path) => !newAttachments.contains(path))
           .toList();
-
-      // Delete removed attachment files
-      if (removedAttachments.isNotEmpty) {
-        await _deleteAttachmentFiles(removedAttachments);
-      }
     }
 
     await _isar.writeTxn(() async {
       final existing = await _isar.messageEntitys.get(intId);
       if (existing != null) {
+        final entitySessionId = existing.sessionId;
+        final wasUser = existing.isUser;
         existing.content = message.content;
+        existing.timestamp = message.timestamp;
+        existing.isUser = message.isUser;
         existing.reasoningContent = message.reasoningContent;
         existing.images = message.images;
         existing.attachments = message.attachments;
@@ -260,35 +342,84 @@ class ChatStorage {
         } else {
           existing.toolCallsJson = null;
         }
+        SessionEntity? session;
+        var shouldPersistSession = false;
         if (message.tokenCount != null &&
             message.tokenCount != existing.tokenCount) {
           final diff = (message.tokenCount ?? 0) - (existing.tokenCount ?? 0);
           if (diff != 0) {
-            final session = await _isar.sessionEntitys
-                .filter()
-                .sessionIdEqualTo(existing.sessionId!)
-                .findFirst();
+            if (entitySessionId != null) {
+              session = await _isar.sessionEntitys
+                  .filter()
+                  .sessionIdEqualTo(entitySessionId)
+                  .findFirst();
+            }
             if (session != null) {
               session.totalTokens =
                   (session.totalTokens + diff).clamp(0, 999999999);
-              await _isar.sessionEntitys.put(session);
+              shouldPersistSession = true;
             }
           }
           existing.tokenCount = message.tokenCount;
         }
-        if (_messagesCache.containsKey(existing.sessionId!)) {
-          final cachedList = _messagesCache[existing.sessionId!]!;
+        final shouldUpdateLastMessageTime = wasUser || message.isUser;
+        await _isar.messageEntitys.put(existing);
+
+        if (entitySessionId != null && shouldUpdateLastMessageTime) {
+          session ??= await _isar.sessionEntitys
+              .filter()
+              .sessionIdEqualTo(entitySessionId)
+              .findFirst();
+          if (session != null) {
+            final lastUserMessage = await _isar.messageEntitys
+                .filter()
+                .sessionIdEqualTo(entitySessionId)
+                .isUserEqualTo(true)
+                .sortByTimestampDesc()
+                .findFirst();
+            if (lastUserMessage != null) {
+              session.lastMessageTime = lastUserMessage.timestamp;
+              shouldPersistSession = true;
+            }
+          }
+        }
+
+        if (shouldPersistSession && session != null) {
+          await _isar.sessionEntitys.put(session);
+        }
+
+        if (entitySessionId != null &&
+            _messagesCache.containsKey(entitySessionId)) {
+          final cachedList = _messagesCache[entitySessionId]!;
           final cacheIndex = cachedList.indexWhere((m) => m.id == message.id);
           if (cacheIndex != -1) {
             cachedList[cacheIndex] = message;
           }
         }
-        await _isar.messageEntitys.put(existing);
       }
     });
+
+    if (removedAttachments.isNotEmpty) {
+      final deletable = await _findUnreferencedAttachments(
+        removedAttachments,
+        excludedMessageIds: {intId},
+      );
+      if (deletable.isNotEmpty) {
+        await _deleteAttachmentFiles(deletable);
+      }
+    }
   }
 
   Future<void> clearSessionMessages(String sessionId) async {
+    final messages = await _isar.messageEntitys
+        .filter()
+        .sessionIdEqualTo(sessionId)
+        .findAll();
+    final candidateAttachments = <String>[];
+    for (final message in messages) {
+      candidateAttachments.addAll(message.attachments);
+    }
+
     await _isar.writeTxn(() async {
       await _isar.messageEntitys
           .filter()
@@ -303,6 +434,15 @@ class ChatStorage {
         await _isar.sessionEntitys.put(session);
       }
     });
+    invalidateCache(sessionId);
+
+    if (candidateAttachments.isNotEmpty) {
+      final deletable =
+          await _findUnreferencedAttachments(candidateAttachments);
+      if (deletable.isNotEmpty) {
+        await _deleteAttachmentFiles(deletable);
+      }
+    }
   }
 
   Future<String> createSession({
@@ -310,7 +450,7 @@ class ChatStorage {
     String? uuid,
     int? topicId,
     String? presetId,
-    String? assistantId,
+    String? parentSessionId,
   }) async {
     final session = SessionEntity()
       ..sessionId = uuid ?? DateTime.now().millisecondsSinceEpoch.toString()
@@ -318,7 +458,7 @@ class ChatStorage {
       ..lastMessageTime = DateTime.now()
       ..topicId = topicId
       ..presetId = presetId
-      ..assistantId = assistantId;
+      ..parentSessionId = parentSessionId;
     await _isar.writeTxn(() async {
       await _isar.sessionEntitys.put(session);
     });
@@ -374,28 +514,71 @@ class ChatStorage {
         .findFirst();
   }
 
-  Future<void> deleteSession(String sessionId) async {
-    final messages = await _isar.messageEntitys
-        .filter()
-        .sessionIdEqualTo(sessionId)
-        .findAll();
+  Future<List<String>> _collectSessionTreeIds(String sessionId) async {
+    final sessions = await _isar.sessionEntitys.where().findAll();
+    if (sessions.isEmpty) return const [];
+
+    final childrenMap = <String, List<String>>{};
+    final idSet = <String>{};
+    for (final session in sessions) {
+      idSet.add(session.sessionId);
+      final parentId = session.parentSessionId;
+      if (parentId == null || parentId.isEmpty) continue;
+      childrenMap
+          .putIfAbsent(parentId, () => <String>[])
+          .add(session.sessionId);
+    }
+    if (!idSet.contains(sessionId)) return const [];
+
+    final collected = <String>[];
+    final pending = <String>[sessionId];
+    while (pending.isNotEmpty) {
+      final current = pending.removeLast();
+      collected.add(current);
+      final children = childrenMap[current];
+      if (children != null && children.isNotEmpty) {
+        pending.addAll(children);
+      }
+    }
+    return collected;
+  }
+
+  Future<List<String>> deleteSessionTree(String sessionId) async {
+    final sessionIds = await _collectSessionTreeIds(sessionId);
+    if (sessionIds.isEmpty) return const [];
+
     final allAttachments = <String>[];
-    for (final msg in messages) {
-      allAttachments.addAll(msg.attachments);
+    for (final id in sessionIds) {
+      final messages =
+          await _isar.messageEntitys.filter().sessionIdEqualTo(id).findAll();
+      for (final msg in messages) {
+        allAttachments.addAll(msg.attachments);
+      }
     }
-    if (allAttachments.isNotEmpty) {
-      await _deleteAttachmentFiles(allAttachments);
-    }
+
     await _isar.writeTxn(() async {
-      await _isar.messageEntitys
-          .filter()
-          .sessionIdEqualTo(sessionId)
-          .deleteAll();
-      await _isar.sessionEntitys
-          .filter()
-          .sessionIdEqualTo(sessionId)
-          .deleteAll();
+      for (final id in sessionIds) {
+        await _isar.messageEntitys.filter().sessionIdEqualTo(id).deleteAll();
+        await _isar.sessionEntitys.filter().sessionIdEqualTo(id).deleteAll();
+      }
     });
+
+    for (final id in sessionIds) {
+      invalidateCache(id);
+    }
+
+    if (allAttachments.isNotEmpty) {
+      final deletable = await _findUnreferencedAttachments(allAttachments);
+      if (deletable.isNotEmpty) {
+        await _deleteAttachmentFiles(deletable);
+      }
+    }
+
+    return sessionIds;
+  }
+
+  Future<void> deleteSession(String sessionId) async {
+    await deleteSessionTree(sessionId);
   }
 
   Future<void> updateSessionTitle(String sessionId, String newTitle) async {
@@ -424,24 +607,15 @@ class ChatStorage {
     });
   }
 
-  Future<void> updateSessionAssistant(
-      String sessionId, String? assistantId) async {
-    await _isar.writeTxn(() async {
-      final session = await _isar.sessionEntitys
-          .filter()
-          .sessionIdEqualTo(sessionId)
-          .findFirst();
-      if (session != null) {
-        session.assistantId = assistantId;
-        await _isar.sessionEntitys.put(session);
-      }
-    });
-  }
-
   Future<void> cleanupEmptySessions() async {
     await _isar.writeTxn(() async {
       final sessions = await _isar.sessionEntitys.where().findAll();
+      final parentIds =
+          sessions.map((s) => s.parentSessionId).whereType<String>().toSet();
       for (final session in sessions) {
+        if (parentIds.contains(session.sessionId)) {
+          continue;
+        }
         final count = await _isar.messageEntitys
             .filter()
             .sessionIdEqualTo(session.sessionId)
@@ -453,15 +627,71 @@ class ChatStorage {
     });
   }
 
+  Future<void> backfillSessionLastUserMessageTimes() async {
+    final sessions = await _isar.sessionEntitys.where().findAll();
+    if (sessions.isEmpty) return;
+
+    final sessionsToUpdate = <SessionEntity>[];
+    for (final session in sessions) {
+      final lastUserMessage = await _isar.messageEntitys
+          .filter()
+          .sessionIdEqualTo(session.sessionId)
+          .isUserEqualTo(true)
+          .sortByTimestampDesc()
+          .findFirst();
+      if (lastUserMessage == null) continue;
+
+      if (session.lastMessageTime != lastUserMessage.timestamp) {
+        session.lastMessageTime = lastUserMessage.timestamp;
+        sessionsToUpdate.add(session);
+      }
+    }
+
+    if (sessionsToUpdate.isEmpty) return;
+    await _isar.writeTxn(() async {
+      await _isar.sessionEntitys.putAll(sessionsToUpdate);
+    });
+  }
+
   Future<bool> deleteSessionIfEmpty(String sessionId) async {
     final count =
         await _isar.messageEntitys.filter().sessionIdEqualTo(sessionId).count();
     if (count == 0) {
+      final sessions = await _isar.sessionEntitys.where().findAll();
+      final hasChildren = sessions.any((s) => s.parentSessionId == sessionId);
+      if (hasChildren) {
+        return false;
+      }
       await deleteSession(sessionId);
       invalidateCache(sessionId);
       return true;
     }
     return false;
+  }
+
+  Future<void> sanitizeTranslationUserMessages() async {
+    const translationSessionId = 'translation';
+    final entities = await _isar.messageEntitys
+        .filter()
+        .sessionIdEqualTo(translationSessionId)
+        .isUserEqualTo(true)
+        .findAll();
+    if (entities.isEmpty) return;
+
+    final toUpdate = <MessageEntity>[];
+    for (final e in entities) {
+      final extracted = TranslationPromptUtils.extractSourceText(e.content);
+      if (extracted != e.content) {
+        e.content = extracted;
+        toUpdate.add(e);
+      }
+    }
+
+    if (toUpdate.isEmpty) return;
+    await _isar.writeTxn(() async {
+      await _isar.messageEntitys.putAll(toUpdate);
+    });
+    invalidateCache(translationSessionId);
   }
 
   Future<List<String>> loadSessionOrder() =>

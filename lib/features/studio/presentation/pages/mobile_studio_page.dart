@@ -2,6 +2,7 @@ import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'mobile_novel_writing_page.dart';
+import 'package:aurora/shared/widgets/aurora_page_route.dart';
 
 class MobileStudioPage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -71,7 +72,7 @@ class _MobileStudioPageState extends State<MobileStudioPage> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      AuroraMobilePageRoute(
                         builder: (context) => MobileNovelWritingPage(
                           onBack: () => Navigator.pop(context),
                         ),

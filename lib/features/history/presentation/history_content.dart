@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
@@ -12,10 +11,100 @@ import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/utils/number_format_utils.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
-import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
-import 'package:aurora/features/assistant/presentation/widgets/assistant_avatar.dart';
-import 'package:aurora/features/assistant/domain/assistant.dart';
 import 'package:aurora/features/chat/data/session_entity.dart';
+
+class _SessionTreeItem {
+  final SessionEntity session;
+  final int depth;
+  final bool hasChildren;
+  final bool isCollapsed;
+  const _SessionTreeItem({
+    required this.session,
+    required this.depth,
+    required this.hasChildren,
+    required this.isCollapsed,
+  });
+}
+
+List<_SessionTreeItem> _buildSessionTreeItems(
+  List<SessionEntity> sessions, {
+  required int? selectedTopicId,
+  required String searchQuery,
+  required Set<String> collapsedSessionIds,
+}) {
+  final normalizedQuery = searchQuery.trim().toLowerCase();
+  final idMap = {for (final session in sessions) session.sessionId: session};
+  final childrenMap = <String, List<SessionEntity>>{};
+  final roots = <SessionEntity>[];
+
+  for (final session in sessions) {
+    final parentId = session.parentSessionId;
+    if (parentId == null || parentId.isEmpty || !idMap.containsKey(parentId)) {
+      roots.add(session);
+      continue;
+    }
+    childrenMap.putIfAbsent(parentId, () => <SessionEntity>[]).add(session);
+  }
+
+  bool matchesTopic(SessionEntity session) {
+    return selectedTopicId == null || session.topicId == selectedTopicId;
+  }
+
+  bool matchesQuery(SessionEntity session) {
+    if (normalizedQuery.isEmpty) return true;
+    return session.title.toLowerCase().contains(normalizedQuery);
+  }
+
+  final includedIds = <String>{};
+  if (normalizedQuery.isEmpty) {
+    for (final session in sessions) {
+      if (matchesTopic(session)) {
+        includedIds.add(session.sessionId);
+      }
+    }
+  } else {
+    for (final session in sessions) {
+      if (!matchesTopic(session) || !matchesQuery(session)) continue;
+      SessionEntity? current = session;
+      while (current != null && matchesTopic(current)) {
+        includedIds.add(current.sessionId);
+        final parentId = current.parentSessionId;
+        if (parentId == null || parentId.isEmpty) break;
+        current = idMap[parentId];
+      }
+    }
+  }
+
+  final forceExpand = normalizedQuery.isNotEmpty;
+  final visibleItems = <_SessionTreeItem>[];
+
+  void appendNode(SessionEntity session, int depth) {
+    if (!includedIds.contains(session.sessionId)) return;
+    final childSessions =
+        (childrenMap[session.sessionId] ?? const <SessionEntity>[])
+            .where((child) => includedIds.contains(child.sessionId))
+            .toList();
+    final hasChildren = childSessions.isNotEmpty;
+    final isCollapsed = hasChildren &&
+        !forceExpand &&
+        collapsedSessionIds.contains(session.sessionId);
+    visibleItems.add(_SessionTreeItem(
+      session: session,
+      depth: depth,
+      hasChildren: hasChildren,
+      isCollapsed: isCollapsed,
+    ));
+    if (isCollapsed) return;
+    for (final child in childSessions) {
+      appendNode(child, depth + 1);
+    }
+  }
+
+  for (final root in roots) {
+    appendNode(root, 0);
+  }
+  return visibleItems;
+}
 
 class HistoryContent extends ConsumerStatefulWidget {
   const HistoryContent({super.key});
@@ -170,7 +259,7 @@ class _HistoryContentState extends ConsumerState<HistoryContent> {
   }
 }
 
-class _SessionList extends ConsumerWidget {
+class _SessionList extends ConsumerStatefulWidget {
   final SessionsState sessionsState;
   final String? selectedSessionId;
   final bool isMobile;
@@ -179,8 +268,29 @@ class _SessionList extends ConsumerWidget {
     required this.selectedSessionId,
     required this.isMobile,
   });
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SessionList> createState() => _SessionListState();
+}
+
+class _SessionListState extends ConsumerState<_SessionList> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController =
+        TextEditingController(text: ref.read(sessionSearchQueryProvider));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final manager = ref.watch(chatSessionManagerProvider);
     ref.watch(chatStateUpdateTriggerProvider);
     ref.listen(selectedHistorySessionIdProvider, (_, next) {
@@ -189,12 +299,28 @@ class _SessionList extends ConsumerWidget {
         storage.saveLastSessionId(next);
       }
     });
+
+    final searchQuery = ref.watch(sessionSearchQueryProvider);
+    if (_searchController.text != searchQuery) {
+      _searchController.value = _searchController.value.copyWith(
+        text: searchQuery,
+        selection: TextSelection.collapsed(offset: searchQuery.length),
+        composing: TextRange.empty,
+      );
+    }
+
     final selectedTopicId = ref.watch(selectedTopicIdProvider);
     final l10n = AppLocalizations.of(context)!;
-    final filteredSessions = sessionsState.sessions.where((s) {
-      if (selectedTopicId == null) return true;
-      return s.topicId == selectedTopicId;
-    }).toList();
+    final theme = fluent.FluentTheme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final collapsedSessionIds = ref.watch(collapsedHistorySessionIdsProvider);
+    final visibleSessionItems = _buildSessionTreeItems(
+      widget.sessionsState.sessions,
+      selectedTopicId: selectedTopicId,
+      searchQuery: searchQuery,
+      collapsedSessionIds: collapsedSessionIds,
+    );
+
     return Column(
       children: [
         Padding(
@@ -202,14 +328,64 @@ class _SessionList extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TopicDropdown(isMobile: isMobile),
+              if (!widget.isMobile) ...[
+                Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.black.withValues(alpha: 0.2)
+                          : Colors.white.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: theme.accentColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        ref.read(sessionSearchQueryProvider.notifier).state =
+                            value;
+                      },
+                      textAlignVertical: TextAlignVertical.center,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchChatHistory,
+                        hintStyle:
+                            TextStyle(color: Colors.grey[600], fontSize: 12),
+                        prefixIcon: Icon(AuroraIcons.search,
+                            size: 16, color: theme.accentColor),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(AuroraIcons.close,
+                                    size: 14, color: Colors.grey[600]),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  ref
+                                      .read(sessionSearchQueryProvider.notifier)
+                                      .state = '';
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              TopicDropdown(isMobile: widget.isMobile),
               const SizedBox(height: 4),
               fluent.HoverButton(
                 onPressed: () {
                   ref.read(sessionsProvider.notifier).startNewSession();
                 },
                 builder: (context, states) {
-                  final theme = fluent.FluentTheme.of(context);
                   final isHovered = states.isHovered;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
@@ -251,7 +427,8 @@ class _SessionList extends ConsumerWidget {
           ),
         ),
         Expanded(
-          child: sessionsState.isLoading && sessionsState.sessions.isEmpty
+          child: widget.sessionsState.isLoading &&
+                  widget.sessionsState.sessions.isEmpty
               ? const Center(child: fluent.ProgressRing())
               : ReorderableListView.builder(
                   buildDefaultDragHandles: false,
@@ -265,14 +442,32 @@ class _SessionList extends ConsumerWidget {
                     );
                   },
                   onReorder: (oldIndex, newIndex) {
-                    ref
-                        .read(sessionsProvider.notifier)
-                        .reorderSession(oldIndex, newIndex);
+                    final visibleIds = visibleSessionItems
+                        .map((item) => item.session.sessionId)
+                        .toList();
+                    if (oldIndex < 0 || oldIndex >= visibleIds.length) return;
+                    final draggedId = visibleIds.removeAt(oldIndex);
+                    if (oldIndex < newIndex) {
+                      newIndex -= 1;
+                    }
+                    if (newIndex < 0) newIndex = 0;
+                    if (newIndex > visibleIds.length) {
+                      newIndex = visibleIds.length;
+                    }
+                    final beforeSessionId = newIndex >= visibleIds.length
+                        ? null
+                        : visibleIds[newIndex];
+                    ref.read(sessionsProvider.notifier).reorderSessionById(
+                          draggedSessionId: draggedId,
+                          beforeSessionId: beforeSessionId,
+                        );
                   },
-                  itemCount: filteredSessions.length,
+                  itemCount: visibleSessionItems.length,
                   itemBuilder: (context, index) {
-                    final session = filteredSessions[index];
-                    final isSelected = session.sessionId == selectedSessionId;
+                    final treeItem = visibleSessionItems[index];
+                    final session = treeItem.session;
+                    final isSelected =
+                        session.sessionId == widget.selectedSessionId;
                     final sessionState = manager.getState(session.sessionId);
                     final Color? statusColor;
                     if (sessionState == null) {
@@ -303,6 +498,9 @@ class _SessionList extends ConsumerWidget {
                                 .cleanupSessionIfEmpty(currentId);
                           }
                           ref
+                              .read(sessionsProvider.notifier)
+                              .ensureSessionVisible(session.sessionId);
+                          ref
                               .read(selectedHistorySessionIdProvider.notifier)
                               .state = session.sessionId;
                         },
@@ -321,7 +519,25 @@ class _SessionList extends ConsumerWidget {
                                 .state = null;
                           }
                         },
-                        isMobile: isMobile,
+                        depth: treeItem.depth,
+                        hasChildren: treeItem.hasChildren,
+                        isCollapsed: treeItem.isCollapsed,
+                        onToggleCollapse: treeItem.hasChildren
+                            ? () {
+                                final nextCollapsed = Set<String>.from(ref
+                                    .read(collapsedHistorySessionIdsProvider));
+                                if (treeItem.isCollapsed) {
+                                  nextCollapsed.remove(session.sessionId);
+                                } else {
+                                  nextCollapsed.add(session.sessionId);
+                                }
+                                ref
+                                    .read(collapsedHistorySessionIdsProvider
+                                        .notifier)
+                                    .state = nextCollapsed;
+                              }
+                            : null,
+                        isMobile: widget.isMobile,
                       ),
                     );
                   },
@@ -339,6 +555,10 @@ class _SessionItem extends ConsumerStatefulWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final void Function(String newTitle) onRename;
+  final int depth;
+  final bool hasChildren;
+  final bool isCollapsed;
+  final VoidCallback? onToggleCollapse;
   final bool isMobile;
   const _SessionItem({
     required this.session,
@@ -347,6 +567,10 @@ class _SessionItem extends ConsumerStatefulWidget {
     required this.onTap,
     required this.onDelete,
     required this.onRename,
+    this.depth = 0,
+    this.hasChildren = false,
+    this.isCollapsed = false,
+    this.onToggleCollapse,
     this.isMobile = false,
   });
   @override
@@ -425,6 +649,30 @@ class _SessionItemState extends ConsumerState<_SessionItem> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
+                if (widget.depth > 0)
+                  SizedBox(width: (widget.depth * 12).toDouble()),
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: widget.hasChildren
+                      ? fluent.IconButton(
+                          icon: Icon(
+                            widget.isCollapsed
+                                ? AuroraIcons.chevronRight
+                                : AuroraIcons.chevronDown,
+                            size: 14,
+                          ),
+                          onPressed: widget.onToggleCollapse,
+                        )
+                      : widget.depth > 0
+                          ? Icon(
+                              AuroraIcons.branch,
+                              size: 12,
+                              color: theme.resources.textFillColorSecondary,
+                            )
+                          : const SizedBox.shrink(),
+                ),
+                const SizedBox(width: 4),
                 if (widget.statusColor != null)
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -437,11 +685,6 @@ class _SessionItemState extends ConsumerState<_SessionItem> {
                       ),
                     ),
                   ),
-                if (_buildAssistantAvatar(ref, widget.session, theme)
-                    case final avatar?) ...[
-                  avatar,
-                  const SizedBox(width: 8),
-                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,6 +724,8 @@ class _SessionItemState extends ConsumerState<_SessionItem> {
                                 (widget.session.totalTokens > 0
                                     ? ' • ${formatTokenCount(widget.session.totalTokens)} tokens'
                                     : ''),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                                 fontSize: 10,
                                 color: theme.resources.textFillColorSecondary)),
@@ -524,65 +769,129 @@ class SessionListWidget extends ConsumerWidget {
     if (sessionsState.isLoading && sessionsState.sessions.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    final searchQuery = ref.watch(sessionSearchQueryProvider).toLowerCase();
+    final searchQuery = ref.watch(sessionSearchQueryProvider);
     final selectedTopicId = ref.watch(selectedTopicIdProvider);
-    final filteredSessions = sessionsState.sessions.where((s) {
-      final matchesSearch = s.title.toLowerCase().contains(searchQuery);
-      final matchesTopic =
-          selectedTopicId == null || s.topicId == selectedTopicId;
-      return matchesSearch && matchesTopic;
-    }).toList();
+    final collapsedSessionIds = ref.watch(collapsedHistorySessionIdsProvider);
+    final visibleSessionItems = _buildSessionTreeItems(
+      sessionsState.sessions,
+      selectedTopicId: selectedTopicId,
+      searchQuery: searchQuery,
+      collapsedSessionIds: collapsedSessionIds,
+    );
     return ReorderableListView.builder(
       buildDefaultDragHandles: false,
       onReorder: (oldIndex, newIndex) {
-        ref.read(sessionsProvider.notifier).reorderSession(oldIndex, newIndex);
+        final visibleIds =
+            visibleSessionItems.map((item) => item.session.sessionId).toList();
+        if (oldIndex < 0 || oldIndex >= visibleIds.length) return;
+        final draggedId = visibleIds.removeAt(oldIndex);
+        if (oldIndex < newIndex) {
+          newIndex -= 1;
+        }
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex > visibleIds.length) {
+          newIndex = visibleIds.length;
+        }
+        final beforeSessionId =
+            newIndex >= visibleIds.length ? null : visibleIds[newIndex];
+        ref.read(sessionsProvider.notifier).reorderSessionById(
+              draggedSessionId: draggedId,
+              beforeSessionId: beforeSessionId,
+            );
       },
-      itemCount: filteredSessions.length,
+      itemCount: visibleSessionItems.length,
       itemBuilder: (context, index) {
-        final session = filteredSessions[index];
+        final treeItem = visibleSessionItems[index];
+        final session = treeItem.session;
         final isSelected = session.sessionId == selectedSessionId;
         return ReorderableDelayedDragStartListener(
           key: Key(session.sessionId),
           index: index,
           child: RepaintBoundary(
-            child: _TapDetector(
-              onTap: () => onSessionSelected(session.sessionId),
-              child: ListTile(
-                selected: isSelected,
-                selectedTileColor: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer
-                    .withValues(alpha: 0.5),
-                leading: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    if (_buildAssistantAvatar(ref, session, Theme.of(context),
-                            size: 28)
-                        case final avatar?)
-                      avatar
-                    else
-                      const SizedBox(width: 28, height: 28),
-                    Positioned(
-                      top: -1,
-                      right: -1,
-                      child:
-                          _SessionStatusIndicator(sessionId: session.sessionId),
+            child: ListTile(
+              onTap: () {
+                ref
+                    .read(sessionsProvider.notifier)
+                    .ensureSessionVisible(session.sessionId);
+                onSessionSelected(session.sessionId);
+              },
+              selected: isSelected,
+              selectedTileColor: Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withValues(alpha: 0.5),
+              leading: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const SizedBox(width: 28, height: 28),
+                  Positioned(
+                    top: -1,
+                    right: -1,
+                    child:
+                        _SessionStatusIndicator(sessionId: session.sessionId),
+                  ),
+                ],
+              ),
+              title: Row(
+                children: [
+                  if (treeItem.depth > 0)
+                    SizedBox(width: (treeItem.depth * 12).toDouble()),
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: treeItem.hasChildren
+                        ? IconButton(
+                            visualDensity: VisualDensity.compact,
+                            splashRadius: 14,
+                            padding: EdgeInsets.zero,
+                            icon: Icon(
+                              treeItem.isCollapsed
+                                  ? AuroraIcons.chevronRight
+                                  : AuroraIcons.chevronDown,
+                              size: 14,
+                            ),
+                            onPressed: () {
+                              final nextCollapsed = Set<String>.from(
+                                  ref.read(collapsedHistorySessionIdsProvider));
+                              if (treeItem.isCollapsed) {
+                                nextCollapsed.remove(session.sessionId);
+                              } else {
+                                nextCollapsed.add(session.sessionId);
+                              }
+                              ref
+                                  .read(collapsedHistorySessionIdsProvider
+                                      .notifier)
+                                  .state = nextCollapsed;
+                            },
+                          )
+                        : treeItem.depth > 0
+                            ? Icon(
+                                AuroraIcons.branch,
+                                size: 12,
+                                color: Theme.of(context).hintColor,
+                              )
+                            : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      session.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
-                title: Text(session.title,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text(
-                  DateFormat('MM/dd HH:mm').format(session.lastMessageTime) +
-                      (session.totalTokens > 0
-                          ? ' • ${formatTokenCount(session.totalTokens)} tokens'
-                          : ''),
-                  style: const TextStyle(fontSize: 12),
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  onPressed: () => onSessionDeleted(session.sessionId),
-                ),
+                  ),
+                ],
+              ),
+              subtitle: Text(
+                DateFormat('MM/dd HH:mm').format(session.lastMessageTime) +
+                    (session.totalTokens > 0
+                        ? ' • ${formatTokenCount(session.totalTokens)} tokens'
+                        : ''),
+                style: const TextStyle(fontSize: 12),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                onPressed: () => onSessionDeleted(session.sessionId),
               ),
             ),
           ),
@@ -621,62 +930,4 @@ class _SessionStatusIndicator extends ConsumerWidget {
       ),
     );
   }
-}
-
-class _TapDetector extends StatefulWidget {
-  final VoidCallback onTap;
-  final Widget child;
-  const _TapDetector({required this.onTap, required this.child});
-  @override
-  State<_TapDetector> createState() => _TapDetectorState();
-}
-
-class _TapDetectorState extends State<_TapDetector> {
-  Offset? _downPosition;
-  DateTime? _downTime;
-  static const _tapTimeout = Duration(milliseconds: 300);
-  static const _tapSlop = 18.0;
-  @override
-  Widget build(BuildContext context) {
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (event) {
-        _downPosition = event.position;
-        _downTime = DateTime.now();
-      },
-      onPointerUp: (event) {
-        if (_downPosition != null && _downTime != null) {
-          final elapsed = DateTime.now().difference(_downTime!);
-          final distance = (event.position - _downPosition!).distance;
-          if (elapsed < _tapTimeout && distance < _tapSlop) {
-            widget.onTap();
-          }
-        }
-        _downPosition = null;
-        _downTime = null;
-      },
-      onPointerCancel: (_) {
-        _downPosition = null;
-        _downTime = null;
-      },
-      child: widget.child,
-    );
-  }
-}
-
-Widget? _buildAssistantAvatar(
-    WidgetRef ref, SessionEntity session, dynamic theme,
-    {double size = 20}) {
-  final assistantState = ref.watch(assistantProvider);
-  Assistant? assistant;
-  if (session.assistantId != null) {
-    assistant = assistantState.assistants
-        .where((a) => a.id == session.assistantId)
-        .firstOrNull;
-  }
-
-  if (assistant?.avatar != null && assistant!.avatar!.isNotEmpty) {
-    return AssistantAvatar(assistant: assistant, size: size);
-  }
-  return null;
 }

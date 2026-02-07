@@ -1910,6 +1910,204 @@ abstract class AppLocalizations {
   /// **'超时（秒）'**
   String get searchTimeoutSeconds;
 
+  /// No description provided for @knowledgeBase.
+  ///
+  /// In zh, this message translates to:
+  /// **'知识库'**
+  String get knowledgeBase;
+
+  /// No description provided for @knowledgeBases.
+  ///
+  /// In zh, this message translates to:
+  /// **'知识库列表'**
+  String get knowledgeBases;
+
+  /// No description provided for @general.
+  ///
+  /// In zh, this message translates to:
+  /// **'通用'**
+  String get general;
+
+  /// No description provided for @enableKnowledgeRetrieval.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用知识库检索'**
+  String get enableKnowledgeRetrieval;
+
+  /// No description provided for @knowledgeTopKChunks.
+  ///
+  /// In zh, this message translates to:
+  /// **'Top K 片段数'**
+  String get knowledgeTopKChunks;
+
+  /// No description provided for @useEmbeddingRerank.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用 Embedding 重排'**
+  String get useEmbeddingRerank;
+
+  /// No description provided for @knowledgeLlmEnhancementMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'LLM 增强模式（可选）'**
+  String get knowledgeLlmEnhancementMode;
+
+  /// No description provided for @knowledgeModeOff.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get knowledgeModeOff;
+
+  /// No description provided for @knowledgeModeRewrite.
+  ///
+  /// In zh, this message translates to:
+  /// **'查询改写'**
+  String get knowledgeModeRewrite;
+
+  /// No description provided for @embeddingProvider.
+  ///
+  /// In zh, this message translates to:
+  /// **'Embedding 提供商'**
+  String get embeddingProvider;
+
+  /// No description provided for @embeddingModel.
+  ///
+  /// In zh, this message translates to:
+  /// **'Embedding 模型'**
+  String get embeddingModel;
+
+  /// No description provided for @noEmbeddingModelsInProvider.
+  ///
+  /// In zh, this message translates to:
+  /// **'该提供商下没有可用的 embedding 模型'**
+  String get noEmbeddingModelsInProvider;
+
+  /// No description provided for @embeddingModelAutoDetectHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅展示名称中包含 \"embedding\" 的模型。'**
+  String get embeddingModelAutoDetectHint;
+
+  /// No description provided for @createBase.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建知识库'**
+  String get createBase;
+
+  /// No description provided for @importFiles.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入文件'**
+  String get importFiles;
+
+  /// No description provided for @deleteBase.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除知识库'**
+  String get deleteBase;
+
+  /// No description provided for @noKnowledgeBaseYetCreateOne.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无知识库，请先新建。'**
+  String get noKnowledgeBaseYetCreateOne;
+
+  /// No description provided for @knowledgeActive.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用'**
+  String get knowledgeActive;
+
+  /// No description provided for @knowledgeDocsAndChunks.
+  ///
+  /// In zh, this message translates to:
+  /// **'文档: {docs}  片段: {chunks}'**
+  String knowledgeDocsAndChunks(int docs, int chunks);
+
+  /// No description provided for @createKnowledgeBase.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建知识库'**
+  String get createKnowledgeBase;
+
+  /// No description provided for @knowledgeBaseName.
+  ///
+  /// In zh, this message translates to:
+  /// **'知识库名称'**
+  String get knowledgeBaseName;
+
+  /// No description provided for @descriptionOptional.
+  ///
+  /// In zh, this message translates to:
+  /// **'描述（可选）'**
+  String get descriptionOptional;
+
+  /// No description provided for @deleteKnowledgeBase.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除知识库'**
+  String get deleteKnowledgeBase;
+
+  /// No description provided for @deleteKnowledgeBaseConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定删除该知识库及其所有索引片段吗？此操作不可撤销。'**
+  String get deleteKnowledgeBaseConfirm;
+
+  /// No description provided for @knowledgeFiles.
+  ///
+  /// In zh, this message translates to:
+  /// **'知识库文件'**
+  String get knowledgeFiles;
+
+  /// No description provided for @importFinished.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入完成'**
+  String get importFinished;
+
+  /// No description provided for @knowledgeImportSummary.
+  ///
+  /// In zh, this message translates to:
+  /// **'成功: {success}\n失败: {failed}'**
+  String knowledgeImportSummary(int success, int failed);
+
+  /// No description provided for @knowledgeEnabledWithActiveCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'已启用 • {count} 个激活'**
+  String knowledgeEnabledWithActiveCount(int count);
+
+  /// No description provided for @knowledgeGlobalFallbackHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'全局知识库仅在未选择助理时生效。'**
+  String get knowledgeGlobalFallbackHint;
+
+  /// No description provided for @knowledgeGlobalSelectionLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'全局模式使用'**
+  String get knowledgeGlobalSelectionLabel;
+
+  /// No description provided for @knowledgeGlobalSelectionHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅在未选择助理时生效。'**
+  String get knowledgeGlobalSelectionHint;
+
+  /// No description provided for @knowledgeBaseEnabledLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'知识库可用'**
+  String get knowledgeBaseEnabledLabel;
+
+  /// No description provided for @knowledgeBaseEnabledHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭后该知识库将不参与任何检索。'**
+  String get knowledgeBaseEnabledHint;
+
   /// No description provided for @clearContext.
   ///
   /// In zh, this message translates to:
@@ -1999,6 +2197,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'所有'**
   String get allChats;
+
+  /// No description provided for @requestConfig.
+  ///
+  /// In zh, this message translates to:
+  /// **'请求配置'**
+  String get requestConfig;
 
   /// No description provided for @thinkingConfig.
   ///
@@ -2983,6 +3187,198 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'自动'**
   String get auto;
+
+  /// No description provided for @assistantBasicConfig.
+  ///
+  /// In zh, this message translates to:
+  /// **'基本配置'**
+  String get assistantBasicConfig;
+
+  /// No description provided for @assistantName.
+  ///
+  /// In zh, this message translates to:
+  /// **'名称'**
+  String get assistantName;
+
+  /// No description provided for @assistantDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'描述'**
+  String get assistantDescription;
+
+  /// No description provided for @assistantCoreSettings.
+  ///
+  /// In zh, this message translates to:
+  /// **'核心设定'**
+  String get assistantCoreSettings;
+
+  /// No description provided for @assistantCapabilities.
+  ///
+  /// In zh, this message translates to:
+  /// **'能力配置'**
+  String get assistantCapabilities;
+
+  /// No description provided for @assistantSkillManagement.
+  ///
+  /// In zh, this message translates to:
+  /// **'技能管理'**
+  String get assistantSkillManagement;
+
+  /// No description provided for @assistantSkillEnabledCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'已启用 {count} 个技能'**
+  String assistantSkillEnabledCount(int count);
+
+  /// No description provided for @assistantLongTermMemory.
+  ///
+  /// In zh, this message translates to:
+  /// **'长期记忆'**
+  String get assistantLongTermMemory;
+
+  /// No description provided for @assistantKnowledgeBindingHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择此助理时，仅使用这里勾选的知识库。'**
+  String get assistantKnowledgeBindingHint;
+
+  /// No description provided for @assistantAvailableSkillsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'可用技能'**
+  String get assistantAvailableSkillsTitle;
+
+  /// No description provided for @assistantNoSkillsAvailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无可用技能'**
+  String get assistantNoSkillsAvailable;
+
+  /// No description provided for @assistantDeleteTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认删除助理'**
+  String get assistantDeleteTitle;
+
+  /// No description provided for @assistantDeleteConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认要删除助理 \"{name}\" 吗？此操作无法撤销。'**
+  String assistantDeleteConfirm(String name);
+
+  /// No description provided for @defaultAssistant.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认'**
+  String get defaultAssistant;
+
+  /// No description provided for @noSpecificAssistant.
+  ///
+  /// In zh, this message translates to:
+  /// **'不使用特定助理'**
+  String get noSpecificAssistant;
+
+  /// No description provided for @noAssistantDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有描述'**
+  String get noAssistantDescription;
+
+  /// No description provided for @newAssistant.
+  ///
+  /// In zh, this message translates to:
+  /// **'新助理'**
+  String get newAssistant;
+
+  /// No description provided for @cropAvatarTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'裁剪头像'**
+  String get cropAvatarTitle;
+
+  /// No description provided for @lightMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'浅色模式'**
+  String get lightMode;
+
+  /// No description provided for @darkMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'深色模式'**
+  String get darkMode;
+
+  /// No description provided for @followSystem.
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随系统'**
+  String get followSystem;
+
+  /// No description provided for @switchedToTheme.
+  ///
+  /// In zh, this message translates to:
+  /// **'已切换到{label}'**
+  String switchedToTheme(String label);
+
+  /// No description provided for @appTagline.
+  ///
+  /// In zh, this message translates to:
+  /// **'一款优雅的跨平台 AI 对话助手'**
+  String get appTagline;
+
+  /// No description provided for @back.
+  ///
+  /// In zh, this message translates to:
+  /// **'返回'**
+  String get back;
+
+  /// No description provided for @rotate.
+  ///
+  /// In zh, this message translates to:
+  /// **'旋转'**
+  String get rotate;
+
+  /// No description provided for @translationPromptIntro.
+  ///
+  /// In zh, this message translates to:
+  /// **'你是一位精通多国语言的专业翻译专家。请将以下{sourceLanguage}文本翻译成{targetLanguage}。'**
+  String translationPromptIntro(String sourceLanguage, String targetLanguage);
+
+  /// No description provided for @translationPromptIntroAuto.
+  ///
+  /// In zh, this message translates to:
+  /// **'你是一位精通多国语言的专业翻译专家。请将以下文本翻译成{targetLanguage}。'**
+  String translationPromptIntroAuto(String targetLanguage);
+
+  /// No description provided for @translationPromptRequirements.
+  ///
+  /// In zh, this message translates to:
+  /// **'要求：'**
+  String get translationPromptRequirements;
+
+  /// No description provided for @translationPromptRequirement1.
+  ///
+  /// In zh, this message translates to:
+  /// **'1. 翻译准确、地道，符合目标语言的表达习惯。'**
+  String get translationPromptRequirement1;
+
+  /// No description provided for @translationPromptRequirement2.
+  ///
+  /// In zh, this message translates to:
+  /// **'2. 严格保留原文的换行格式和段落结构，不要合并段落。'**
+  String get translationPromptRequirement2;
+
+  /// No description provided for @translationPromptRequirement3.
+  ///
+  /// In zh, this message translates to:
+  /// **'3. 只输出翻译后的内容，不要包含任何解释、前言或后缀。'**
+  String get translationPromptRequirement3;
+
+  /// No description provided for @translationPromptSourceText.
+  ///
+  /// In zh, this message translates to:
+  /// **'原文内容：'**
+  String get translationPromptSourceText;
 }
 
 class _AppLocalizationsDelegate
