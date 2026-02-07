@@ -20,6 +20,7 @@ import 'package:aurora/shared/services/llm_service.dart';
 import 'package:aurora/shared/services/tool_manager.dart';
 import 'package:aurora/shared/services/worker_service.dart';
 import 'package:aurora/features/knowledge/presentation/knowledge_provider.dart';
+import 'package:aurora/features/knowledge/domain/knowledge_models.dart';
 import 'package:fluent_ui/fluent_ui.dart'
     hide Colors, Padding, StateSetter, ListBody;
 import 'package:uuid/uuid.dart';
@@ -334,6 +335,29 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // Assistant specific model config removed per user request. Always use global settings.
       final currentModel = settings.activeProvider.selectedModel;
       final currentProviderName = settings.activeProvider.name;
+      void recordMainModelUsage({
+        required bool success,
+        required int durationMs,
+        int firstTokenMs = 0,
+        int tokenCount = 0,
+        int promptTokens = 0,
+        int completionTokens = 0,
+        int reasoningTokens = 0,
+        AppErrorType? errorType,
+      }) {
+        if (currentModel == null || currentModel.isEmpty) return;
+        _ref.read(usageStatsProvider.notifier).incrementUsage(
+              currentModel,
+              success: success,
+              durationMs: durationMs,
+              firstTokenMs: firstTokenMs,
+              tokenCount: tokenCount,
+              promptTokens: promptTokens,
+              completionTokens: completionTokens,
+              reasoningTokens: reasoningTokens,
+              errorType: errorType,
+            );
+      }
 
       var aiMsg =
           Message.ai('', model: currentModel, provider: currentProviderName);
@@ -500,6 +524,7 @@ Rules:
               useEmbedding: settings.knowledgeUseEmbedding,
               embeddingModel: settings.knowledgeEmbeddingModel,
               embeddingProvider: embeddingProvider,
+              requiredScope: KnowledgeBaseScope.chat,
             );
 
             if (kbResult.hasContext) {
@@ -538,6 +563,12 @@ Rules:
           mounted) {
         turns++;
         continueGeneration = false;
+        final turnStartTime = DateTime.now();
+        DateTime? turnFirstContentTime;
+        int turnPromptTokens = 0;
+        int turnCompletionTokens = 0;
+        int turnReasoningTokens = 0;
+        int turnTokenCount = 0;
         if (settings.isStreamEnabled) {
           final responseStream = llmService.streamResponse(
             messagesForApi,
@@ -547,16 +578,25 @@ Rules:
           DateTime? reasoningStartTime;
           await for (final chunk in responseStream) {
             if (_currentGenerationId != myGenerationId || !mounted) break;
-            if (chunk.promptTokens != null) promptTokens = chunk.promptTokens!;
+            if (chunk.promptTokens != null) {
+              promptTokens = chunk.promptTokens!;
+              turnPromptTokens = chunk.promptTokens!;
+            }
             if (chunk.completionTokens != null) {
               completionTokens = chunk.completionTokens!;
+              turnCompletionTokens = chunk.completionTokens!;
             }
             if (chunk.reasoningTokens != null) {
               reasoningTokens = chunk.reasoningTokens!;
+              turnReasoningTokens = chunk.reasoningTokens!;
+            }
+            if (chunk.usage != null && chunk.usage! > 0) {
+              turnTokenCount = chunk.usage!;
             }
             if (chunk.reasoning != null && chunk.reasoning!.isNotEmpty) {
               reasoningStartTime ??= DateTime.now();
               firstContentTime ??= DateTime.now();
+              turnFirstContentTime ??= DateTime.now();
             }
             double? duration = aiMsg.reasoningDurationSeconds;
             if (duration == null &&
@@ -584,6 +624,7 @@ Rules:
               if (hasContent || hasReasoning || hasImages || hasToolCalls) {
                 // print('DEBUG: FirstToken captured!');
                 firstContentTime = DateTime.now();
+                turnFirstContentTime ??= DateTime.now();
               }
             }
             if (chunk.finishReason == 'malformed_function_call') {
@@ -668,6 +709,23 @@ Rules:
             newMessages.add(aiMsg);
             if (mounted) state = state.copyWith(messages: newMessages);
           }
+          final turnDurationMs =
+              DateTime.now().difference(turnStartTime).inMilliseconds;
+          final turnFirstTokenMs =
+              turnFirstContentTime?.difference(turnStartTime).inMilliseconds ??
+                  0;
+          final effectiveTurnTokenCount = turnTokenCount > 0
+              ? turnTokenCount
+              : (turnPromptTokens + turnCompletionTokens + turnReasoningTokens);
+          recordMainModelUsage(
+            success: true,
+            durationMs: turnDurationMs,
+            firstTokenMs: turnFirstTokenMs,
+            tokenCount: effectiveTurnTokenCount,
+            promptTokens: turnPromptTokens,
+            completionTokens: turnCompletionTokens,
+            reasoningTokens: turnReasoningTokens,
+          );
           // Check for text-based search pattern: <search>query</search>
           final searchPattern = RegExp(r'<search>(.*?)</search>', dotAll: true);
           final searchMatch = searchPattern.firstMatch(aiMsg.content);
@@ -919,17 +977,33 @@ Rules:
             cancelToken: _currentCancelToken,
           );
           firstContentTime ??= DateTime.now();
+          turnFirstContentTime ??= DateTime.now();
           final durationMs =
-              DateTime.now().difference(startTime).inMilliseconds;
+              DateTime.now().difference(turnStartTime).inMilliseconds;
           if (response.promptTokens != null) {
             promptTokens = response.promptTokens!;
+            turnPromptTokens = response.promptTokens!;
           }
           if (response.completionTokens != null) {
             completionTokens = response.completionTokens!;
+            turnCompletionTokens = response.completionTokens!;
           }
           if (response.reasoningTokens != null) {
             reasoningTokens = response.reasoningTokens!;
+            turnReasoningTokens = response.reasoningTokens!;
           }
+          turnTokenCount = response.usage ??
+              (turnPromptTokens + turnCompletionTokens + turnReasoningTokens);
+          recordMainModelUsage(
+            success: true,
+            durationMs: durationMs,
+            firstTokenMs:
+                turnFirstContentTime.difference(turnStartTime).inMilliseconds,
+            tokenCount: turnTokenCount,
+            promptTokens: turnPromptTokens,
+            completionTokens: turnCompletionTokens,
+            reasoningTokens: turnReasoningTokens,
+          );
           if (_currentGenerationId == myGenerationId && mounted) {
             aiMsg = Message(
               id: aiMsg.id,
@@ -1056,6 +1130,12 @@ Rules:
         newMessages.add(aiMsg);
         state = state.copyWith(messages: newMessages);
 
+        final finalTurnStartTime = DateTime.now();
+        DateTime? finalTurnFirstContentTime;
+        int finalTurnPromptTokens = 0;
+        int finalTurnCompletionTokens = 0;
+        int finalTurnReasoningTokens = 0;
+        int finalTurnTokenCount = 0;
         final finalStream = llmService.streamResponse(
           messagesForApi,
           tools: null,
@@ -1063,16 +1143,31 @@ Rules:
         );
         await for (final chunk in finalStream) {
           if (_currentGenerationId != myGenerationId || !mounted) break;
-          if (chunk.promptTokens != null) promptTokens = chunk.promptTokens!;
+          if (chunk.promptTokens != null) {
+            promptTokens = chunk.promptTokens!;
+            finalTurnPromptTokens = chunk.promptTokens!;
+          }
           if (chunk.completionTokens != null) {
             completionTokens = chunk.completionTokens!;
+            finalTurnCompletionTokens = chunk.completionTokens!;
           }
           if (chunk.reasoningTokens != null) {
             reasoningTokens = chunk.reasoningTokens!;
+            finalTurnReasoningTokens = chunk.reasoningTokens!;
+          }
+          if (chunk.usage != null && chunk.usage! > 0) {
+            finalTurnTokenCount = chunk.usage!;
           }
           if (firstContentTime == null &&
               (chunk.content != null || chunk.reasoning != null)) {
             firstContentTime = DateTime.now();
+          }
+          if (finalTurnFirstContentTime == null &&
+              (chunk.content != null ||
+                  chunk.reasoning != null ||
+                  chunk.images.isNotEmpty ||
+                  (chunk.toolCalls != null && chunk.toolCalls!.isNotEmpty))) {
+            finalTurnFirstContentTime = DateTime.now();
           }
           aiMsg = Message(
             id: aiMsg.id,
@@ -1100,6 +1195,26 @@ Rules:
           updateMessages.add(aiMsg);
           if (mounted) state = state.copyWith(messages: updateMessages);
         }
+        final finalTurnDurationMs =
+            DateTime.now().difference(finalTurnStartTime).inMilliseconds;
+        final finalTurnFirstTokenMs = finalTurnFirstContentTime
+                ?.difference(finalTurnStartTime)
+                .inMilliseconds ??
+            0;
+        final effectiveFinalTurnTokenCount = finalTurnTokenCount > 0
+            ? finalTurnTokenCount
+            : (finalTurnPromptTokens +
+                finalTurnCompletionTokens +
+                finalTurnReasoningTokens);
+        recordMainModelUsage(
+          success: true,
+          durationMs: finalTurnDurationMs,
+          firstTokenMs: finalTurnFirstTokenMs,
+          tokenCount: effectiveFinalTurnTokenCount,
+          promptTokens: finalTurnPromptTokens,
+          completionTokens: finalTurnCompletionTokens,
+          reasoningTokens: finalTurnReasoningTokens,
+        );
       }
       if (_currentGenerationId == myGenerationId) {
         final messages = state.messages;
@@ -1151,18 +1266,6 @@ Rules:
             state = state.copyWith(isLoading: false, hasUnreadResponse: true);
           }
         }
-        if (currentModel != null && currentModel.isNotEmpty) {
-          final tokenCount = aiMsg.tokenCount ?? 0;
-          _ref.read(usageStatsProvider.notifier).incrementUsage(currentModel,
-              success: true,
-              durationMs: durationMs,
-              firstTokenMs: firstTokenMs ?? 0,
-              tokenCount: tokenCount,
-              promptTokens: promptTokens,
-              completionTokens: completionTokens,
-              reasoningTokens: reasoningTokens);
-        }
-
         // Auto-rotate API key after successful request if enabled
         final activeProvider = settings.activeProvider;
         if (activeProvider.autoRotateKeys &&
@@ -1322,6 +1425,9 @@ Rules:
     for (final mid in idsToDelete) {
       await _storage.deleteMessage(mid, sessionId: _sessionId);
     }
+    if (_sessionId != 'translation') {
+      await _ref.read(sessionsProvider.notifier).loadSessions();
+    }
     await sendMessage(null);
   }
 
@@ -1442,6 +1548,12 @@ Rules:
     final providerIndex =
         settings.providers.indexWhere((p) => p.id == providerId);
     if (providerIndex == -1) {
+      return text.length > 15 ? '${text.substring(0, 15)}...' : text;
+    }
+    final provider = settings.providers[providerIndex];
+    if (!provider.isEnabled ||
+        !provider.models.contains(modelId) ||
+        !provider.isModelEnabled(modelId)) {
       return text.length > 15 ? '${text.substring(0, 15)}...' : text;
     }
     final tempProviders = List<ProviderConfig>.from(settings.providers);

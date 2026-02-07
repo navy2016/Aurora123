@@ -349,6 +349,7 @@ class NovelProject {
   final String id;
   final String name;
   final String? outline; // Generated outline text (user-editable)
+  final String? knowledgeBaseId; // Project-dedicated KB (not used by chat)
   final WorldContext worldContext; // Dynamic context that evolves with story
   final List<NovelChapter> chapters;
   final DateTime createdAt;
@@ -357,6 +358,7 @@ class NovelProject {
     required this.id,
     required this.name,
     this.outline,
+    this.knowledgeBaseId,
     this.worldContext = const WorldContext(),
     this.chapters = const [],
     DateTime? createdAt,
@@ -366,6 +368,7 @@ class NovelProject {
     String? id,
     String? name,
     String? outline,
+    String? knowledgeBaseId,
     WorldContext? worldContext,
     List<NovelChapter>? chapters,
     DateTime? createdAt,
@@ -374,6 +377,7 @@ class NovelProject {
       id: id ?? this.id,
       name: name ?? this.name,
       outline: outline ?? this.outline,
+      knowledgeBaseId: knowledgeBaseId ?? this.knowledgeBaseId,
       worldContext: worldContext ?? this.worldContext,
       chapters: chapters ?? this.chapters,
       createdAt: createdAt ?? this.createdAt,
@@ -393,6 +397,7 @@ class NovelProject {
         'id': id,
         'name': name,
         'outline': outline,
+        'knowledgeBaseId': knowledgeBaseId,
         'worldContext': worldContext.toJson(),
         'chapters': chapters.map((c) => c.toJson()).toList(),
         'createdAt': createdAt.toIso8601String(),
@@ -402,6 +407,7 @@ class NovelProject {
         id: json['id'] as String,
         name: json['name'] as String,
         outline: json['outline'] as String?,
+        knowledgeBaseId: json['knowledgeBaseId'] as String?,
         worldContext: json['worldContext'] != null
             ? WorldContext.fromJson(
                 json['worldContext'] as Map<String, dynamic>)

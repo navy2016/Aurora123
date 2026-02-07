@@ -1042,10 +1042,26 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   Future<void> setTopicGenerationModel(String? model) async {
-    state = state.copyWith(topicGenerationModel: model);
+    String? normalized = model;
+    if (normalized != null) {
+      final parts = normalized.split('@');
+      if (parts.length != 2) {
+        normalized = null;
+      } else {
+        final provider = state.providers.where((p) => p.id == parts[0]);
+        if (provider.isEmpty ||
+            !provider.first.isEnabled ||
+            !provider.first.models.contains(parts[1]) ||
+            !provider.first.isModelEnabled(parts[1])) {
+          normalized = null;
+        }
+      }
+    }
+
+    state = state.copyWith(topicGenerationModel: normalized);
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
-      topicGenerationModel: model,
+      topicGenerationModel: normalized,
     );
   }
 

@@ -33,8 +33,23 @@ class KnowledgeStorage {
   final Isar _isar;
   final Dio _dio;
 
-  Future<List<KnowledgeBaseSummary>> loadBaseSummaries() async {
-    final bases = await _isar.knowledgeBaseEntitys.where().findAll();
+  Future<List<KnowledgeBaseSummary>> loadBaseSummaries({
+    String? scope,
+    String? ownerProjectId,
+  }) async {
+    final allBases = await _isar.knowledgeBaseEntitys.where().findAll();
+    await _normalizeLegacyBaseScopes(allBases);
+    final bases = allBases.where((base) {
+      final baseScope = _effectiveScope(base);
+      if (scope != null && baseScope != scope) {
+        return false;
+      }
+      if (ownerProjectId != null && base.ownerProjectId != ownerProjectId) {
+        return false;
+      }
+      return true;
+    }).toList(growable: false);
+
     final docs = await _isar.knowledgeDocumentEntitys.where().findAll();
     final chunks = await _isar.knowledgeChunkEntitys.where().findAll();
 
@@ -67,12 +82,18 @@ class KnowledgeStorage {
     return summaries;
   }
 
-  Future<String> createBase(
-      {required String name, String description = ''}) async {
+  Future<String> createBase({
+    required String name,
+    String description = '',
+    String scope = KnowledgeBaseScope.chat,
+    String? ownerProjectId,
+  }) async {
     final now = DateTime.now();
     final id = const Uuid().v4();
     final entity = KnowledgeBaseEntity()
       ..baseId = id
+      ..scope = scope
+      ..ownerProjectId = ownerProjectId
       ..name = name.trim()
       ..description = description.trim()
       ..isEnabled = true
@@ -111,6 +132,84 @@ class KnowledgeStorage {
       base.updatedAt = DateTime.now();
       await _isar.knowledgeBaseEntitys.put(base);
     });
+  }
+
+  Future<String> ensureProjectBase({
+    required String projectId,
+    required String projectName,
+    String? existingBaseId,
+  }) async {
+    final expectedName = '${projectName.trim()} - Knowledge';
+
+    if (existingBaseId != null && existingBaseId.trim().isNotEmpty) {
+      final byId = await _isar.knowledgeBaseEntitys
+          .filter()
+          .baseIdEqualTo(existingBaseId.trim())
+          .findFirst();
+      if (byId != null &&
+          byId.scope == KnowledgeBaseScope.studioProject &&
+          byId.ownerProjectId == projectId) {
+        if (byId.name != expectedName) {
+          byId.name = expectedName;
+          byId.updatedAt = DateTime.now();
+          await _isar.writeTxn(() async {
+            await _isar.knowledgeBaseEntitys.put(byId);
+          });
+        }
+        return byId.baseId;
+      }
+    }
+
+    final existingByProject = await _isar.knowledgeBaseEntitys
+        .filter()
+        .scopeEqualTo(KnowledgeBaseScope.studioProject)
+        .ownerProjectIdEqualTo(projectId)
+        .findFirst();
+    if (existingByProject != null) {
+      if (existingByProject.name != expectedName) {
+        existingByProject.name = expectedName;
+        existingByProject.updatedAt = DateTime.now();
+        await _isar.writeTxn(() async {
+          await _isar.knowledgeBaseEntitys.put(existingByProject);
+        });
+      }
+      return existingByProject.baseId;
+    }
+
+    return createBase(
+      name: expectedName,
+      description: 'Project dedicated knowledge base.',
+      scope: KnowledgeBaseScope.studioProject,
+      ownerProjectId: projectId,
+    );
+  }
+
+  Future<void> deleteProjectBase(String projectId) async {
+    final existing = await _isar.knowledgeBaseEntitys
+        .filter()
+        .scopeEqualTo(KnowledgeBaseScope.studioProject)
+        .ownerProjectIdEqualTo(projectId)
+        .findFirst();
+    if (existing == null) return;
+    await deleteBase(existing.baseId);
+  }
+
+  Future<KnowledgeBaseSummary?> loadBaseSummaryById(String baseId) async {
+    final all = await loadBaseSummaries();
+    final matched = all
+        .where((summary) => summary.baseId == baseId)
+        .toList(growable: false);
+    if (matched.isEmpty) return null;
+    return matched.first;
+  }
+
+  Future<KnowledgeBaseSummary?> loadProjectBaseSummary(String projectId) async {
+    final all = await loadBaseSummaries(
+      scope: KnowledgeBaseScope.studioProject,
+      ownerProjectId: projectId,
+    );
+    if (all.isEmpty) return null;
+    return all.first;
   }
 
   Future<void> deleteBase(String baseId) async {
@@ -286,6 +385,8 @@ class KnowledgeStorage {
     bool useEmbedding = false,
     String? embeddingModel,
     ProviderConfig? embeddingProvider,
+    String? requiredScope,
+    String? requiredProjectId,
   }) async {
     final trimmedQuery = query.trim();
     final pickedBaseIds = baseIds.toSet().toList();
@@ -293,9 +394,32 @@ class KnowledgeStorage {
       return const KnowledgeRetrievalResult();
     }
 
+    final allBases = await _isar.knowledgeBaseEntitys.where().findAll();
+    await _normalizeLegacyBaseScopes(allBases);
+    final allowedBaseIds = allBases
+        .where((base) {
+          final baseScope = _effectiveScope(base);
+          if (!pickedBaseIds.contains(base.baseId)) {
+            return false;
+          }
+          if (requiredScope != null && baseScope != requiredScope) {
+            return false;
+          }
+          if (requiredProjectId != null &&
+              base.ownerProjectId != requiredProjectId) {
+            return false;
+          }
+          return true;
+        })
+        .map((base) => base.baseId)
+        .toSet();
+    if (allowedBaseIds.isEmpty) {
+      return const KnowledgeRetrievalResult();
+    }
+
     final allChunks = await _isar.knowledgeChunkEntitys.where().findAll();
-    final baseSet = pickedBaseIds.toSet();
-    final chunks = allChunks.where((c) => baseSet.contains(c.baseId)).toList();
+    final chunks =
+        allChunks.where((c) => allowedBaseIds.contains(c.baseId)).toList();
     if (chunks.isEmpty) {
       return const KnowledgeRetrievalResult();
     }
@@ -644,5 +768,27 @@ class KnowledgeStorage {
 
     if (normA <= 0 || normB <= 0) return 0.0;
     return dot / (sqrt(normA) * sqrt(normB));
+  }
+
+  Future<void> _normalizeLegacyBaseScopes(
+      List<KnowledgeBaseEntity> bases) async {
+    final legacy = bases
+        .where((base) => base.scope.trim().isEmpty)
+        .toList(growable: false);
+    if (legacy.isEmpty) return;
+
+    await _isar.writeTxn(() async {
+      final now = DateTime.now();
+      for (final base in legacy) {
+        base.scope = KnowledgeBaseScope.chat;
+        base.updatedAt = now;
+      }
+      await _isar.knowledgeBaseEntitys.putAll(legacy);
+    });
+  }
+
+  String _effectiveScope(KnowledgeBaseEntity base) {
+    final scope = base.scope.trim();
+    return scope.isEmpty ? KnowledgeBaseScope.chat : scope;
   }
 }

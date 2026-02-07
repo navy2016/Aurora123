@@ -9,6 +9,7 @@ import 'package:aurora_search/aurora_search.dart';
 import 'package:aurora/shared/theme/wallpaper_tint.dart';
 import 'package:aurora/shared/theme/wallpaper_tint_provider.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
+import 'package:aurora/shared/widgets/aurora_dropdown.dart';
 import 'settings_provider.dart';
 import 'usage_stats_view.dart';
 import 'preset_settings_page.dart';
@@ -979,51 +980,51 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                 if (settingsState.enableSmartTopic) ...[
                   const SizedBox(height: 12),
                   Builder(builder: (context) {
-                    final items = <fluent.MenuFlyoutItemBase>[];
+                    final options = <AuroraDropdownOption<String>>[];
                     for (final provider in settingsState.providers) {
                       if (provider.isEnabled) {
                         for (final model in provider.models) {
+                          if (!provider.isModelEnabled(model)) continue;
                           final value = '${provider.id}@$model';
-                          final isSelected =
-                              settingsState.topicGenerationModel == value;
-                          items.add(fluent.MenuFlyoutItem(
-                            leading: isSelected
-                                ? const Icon(AuroraIcons.check, size: 12)
-                                : null,
-                            text: Text('${provider.name} - $model'),
-                            onPressed: () {
-                              ref
-                                  .read(settingsProvider.notifier)
-                                  .setTopicGenerationModel(value);
-                            },
-                          ));
+                          options.add(
+                            AuroraDropdownOption<String>(
+                              value: value,
+                              label: '${provider.name} - $model',
+                            ),
+                          );
                         }
                       }
                     }
 
-                    if (items.isEmpty) {
+                    if (options.isEmpty) {
                       return fluent.Button(
                         onPressed: null,
                         child: Text(l10n.noModelsData),
                       );
                     }
 
-                    return fluent.DropDownButton(
-                      title: Text(() {
-                        if (settingsState.topicGenerationModel == null) {
-                          return l10n.selectTopicModel;
+                    String? selectedLabel;
+                    final currentValue = settingsState.topicGenerationModel;
+                    if (currentValue != null) {
+                      for (final option in options) {
+                        if (option.value == currentValue) {
+                          selectedLabel = option.label;
+                          break;
                         }
-                        final parts =
-                            settingsState.topicGenerationModel!.split('@');
-                        if (parts.length == 2) {
-                          final provider = settingsState.providers.firstWhere(
-                              (p) => p.id == parts[0],
-                              orElse: () => settingsState.providers.first);
-                          return '${provider.name} - ${parts[1]}';
-                        }
-                        return settingsState.topicGenerationModel!;
-                      }()),
-                      items: items,
+                      }
+                      selectedLabel ??= currentValue;
+                    }
+
+                    return AuroraDropdown<String>(
+                      value: currentValue,
+                      selectedLabel: selectedLabel,
+                      placeholder: l10n.selectTopicModel,
+                      options: options,
+                      onChanged: (value) {
+                        ref
+                            .read(settingsProvider.notifier)
+                            .setTopicGenerationModel(value);
+                      },
                     );
                   }),
                   if (settingsState.topicGenerationModel == null)
@@ -1299,21 +1300,15 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           fluent.InfoLabel(
             label: l10n.searchEngine,
             child: Builder(builder: (context) {
-              final items = engines.map((engine) {
-                final isSelected = settingsState.searchEngine == engine;
-                return fluent.MenuFlyoutItem(
-                  leading: isSelected
-                      ? const Icon(AuroraIcons.check, size: 12)
-                      : null,
-                  text: Text(engine),
-                  onPressed: () => ref
-                      .read(settingsProvider.notifier)
-                      .setSearchEngine(engine),
-                );
-              }).toList();
-              return fluent.DropDownButton(
-                title: Text(settingsState.searchEngine),
-                items: items,
+              final options = engines
+                  .map((engine) => AuroraDropdownOption<String>(
+                      value: engine, label: engine))
+                  .toList(growable: false);
+              return AuroraDropdown<String>(
+                value: settingsState.searchEngine,
+                options: options,
+                onChanged: (engine) =>
+                    ref.read(settingsProvider.notifier).setSearchEngine(engine),
               );
             }),
           ),
@@ -1321,22 +1316,18 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           fluent.InfoLabel(
             label: l10n.searchRegion,
             child: Builder(builder: (context) {
-              final items = SearchRegion.values.map((r) {
-                final isSelected = region.code == r.code;
-                return fluent.MenuFlyoutItem(
-                  leading: isSelected
-                      ? const Icon(AuroraIcons.check, size: 12)
-                      : null,
-                  text: Text('${r.code} - ${r.displayName}'),
-                  onPressed: () => ref
-                      .read(settingsProvider.notifier)
-                      .setSearchRegion(r.code),
-                );
-              }).toList();
+              final options = SearchRegion.values
+                  .map((r) => AuroraDropdownOption<String>(
+                        value: r.code,
+                        label: '${r.code} - ${r.displayName}',
+                      ))
+                  .toList(growable: false);
 
-              return fluent.DropDownButton(
-                title: Text('${region.code} - ${region.displayName}'),
-                items: items,
+              return AuroraDropdown<String>(
+                value: region.code,
+                options: options,
+                onChanged: (code) =>
+                    ref.read(settingsProvider.notifier).setSearchRegion(code),
               );
             }),
           ),
@@ -1345,21 +1336,18 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
             label: l10n.searchSafeSearch,
             child: Builder(builder: (context) {
               const levels = ['off', 'moderate', 'on'];
-              final items = levels.map((level) {
-                final isSelected = safeSearchCode == level;
-                return fluent.MenuFlyoutItem(
-                  leading: isSelected
-                      ? const Icon(AuroraIcons.check, size: 12)
-                      : null,
-                  text: Text(safeSearchLabel(level)),
-                  onPressed: () => ref
-                      .read(settingsProvider.notifier)
-                      .setSearchSafeSearch(level),
-                );
-              }).toList();
-              return fluent.DropDownButton(
-                title: Text(safeSearchLabel(safeSearchCode)),
-                items: items,
+              final options = levels
+                  .map((level) => AuroraDropdownOption<String>(
+                        value: level,
+                        label: safeSearchLabel(level),
+                      ))
+                  .toList(growable: false);
+              return AuroraDropdown<String>(
+                value: safeSearchCode,
+                options: options,
+                onChanged: (level) => ref
+                    .read(settingsProvider.notifier)
+                    .setSearchSafeSearch(level),
               );
             }),
           ),
@@ -1434,23 +1422,20 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           const SizedBox(height: 24),
           fluent.InfoLabel(
             label: l10n.language,
-            child: fluent.ComboBox<String>(
+            child: AuroraDropdown<String>(
               value: settingsState.language,
-              items: [
-                fluent.ComboBoxItem(
+              options: [
+                AuroraDropdownOption<String>(
                   value: 'zh',
-                  child: Text(l10n.languageChinese),
+                  label: l10n.languageChinese,
                 ),
-                fluent.ComboBoxItem(
+                AuroraDropdownOption<String>(
                   value: 'en',
-                  child: Text(l10n.languageEnglish),
+                  label: l10n.languageEnglish,
                 ),
               ],
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(settingsProvider.notifier).setLanguage(value);
-                }
-              },
+              onChanged: (value) =>
+                  ref.read(settingsProvider.notifier).setLanguage(value),
             ),
           ),
           const SizedBox(height: 24),

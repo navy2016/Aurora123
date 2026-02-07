@@ -43,8 +43,18 @@ const KnowledgeBaseEntitySchema = CollectionSchema(
       name: r'name',
       type: IsarType.string,
     ),
-    r'updatedAt': PropertySchema(
+    r'ownerProjectId': PropertySchema(
       id: 5,
+      name: r'ownerProjectId',
+      type: IsarType.string,
+    ),
+    r'scope': PropertySchema(
+      id: 6,
+      name: r'scope',
+      type: IsarType.string,
+    ),
+    r'updatedAt': PropertySchema(
+      id: 7,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -63,6 +73,32 @@ const KnowledgeBaseEntitySchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'baseId',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    ),
+    r'scope': IndexSchema(
+      id: 152078781581678656,
+      name: r'scope',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'scope',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    ),
+    r'ownerProjectId': IndexSchema(
+      id: 2222615371490776168,
+      name: r'ownerProjectId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'ownerProjectId',
           type: IndexType.hash,
           caseSensitive: true,
         )
@@ -112,6 +148,13 @@ int _knowledgeBaseEntityEstimateSize(
   bytesCount += 3 + object.baseId.length * 3;
   bytesCount += 3 + object.description.length * 3;
   bytesCount += 3 + object.name.length * 3;
+  {
+    final value = object.ownerProjectId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  bytesCount += 3 + object.scope.length * 3;
   return bytesCount;
 }
 
@@ -126,7 +169,9 @@ void _knowledgeBaseEntitySerialize(
   writer.writeString(offsets[2], object.description);
   writer.writeBool(offsets[3], object.isEnabled);
   writer.writeString(offsets[4], object.name);
-  writer.writeDateTime(offsets[5], object.updatedAt);
+  writer.writeString(offsets[5], object.ownerProjectId);
+  writer.writeString(offsets[6], object.scope);
+  writer.writeDateTime(offsets[7], object.updatedAt);
 }
 
 KnowledgeBaseEntity _knowledgeBaseEntityDeserialize(
@@ -142,7 +187,9 @@ KnowledgeBaseEntity _knowledgeBaseEntityDeserialize(
   object.id = id;
   object.isEnabled = reader.readBool(offsets[3]);
   object.name = reader.readString(offsets[4]);
-  object.updatedAt = reader.readDateTime(offsets[5]);
+  object.ownerProjectId = reader.readStringOrNull(offsets[5]);
+  object.scope = reader.readString(offsets[6]);
+  object.updatedAt = reader.readDateTime(offsets[7]);
   return object;
 }
 
@@ -164,6 +211,10 @@ P _knowledgeBaseEntityDeserializeProp<P>(
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
+      return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readString(offset)) as P;
+    case 7:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -375,6 +426,118 @@ extension KnowledgeBaseEntityQueryWhere
               indexName: r'baseId',
               lower: [],
               upper: [baseId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterWhereClause>
+      scopeEqualTo(String scope) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'scope',
+        value: [scope],
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterWhereClause>
+      scopeNotEqualTo(String scope) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'scope',
+              lower: [],
+              upper: [scope],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'scope',
+              lower: [scope],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'scope',
+              lower: [scope],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'scope',
+              lower: [],
+              upper: [scope],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterWhereClause>
+      ownerProjectIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'ownerProjectId',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterWhereClause>
+      ownerProjectIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'ownerProjectId',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterWhereClause>
+      ownerProjectIdEqualTo(String? ownerProjectId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'ownerProjectId',
+        value: [ownerProjectId],
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterWhereClause>
+      ownerProjectIdNotEqualTo(String? ownerProjectId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'ownerProjectId',
+              lower: [],
+              upper: [ownerProjectId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'ownerProjectId',
+              lower: [ownerProjectId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'ownerProjectId',
+              lower: [ownerProjectId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'ownerProjectId',
+              lower: [],
+              upper: [ownerProjectId],
               includeUpper: false,
             ));
       }
@@ -1101,6 +1264,296 @@ extension KnowledgeBaseEntityQueryFilter on QueryBuilder<KnowledgeBaseEntity,
   }
 
   QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'ownerProjectId',
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'ownerProjectId',
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ownerProjectId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ownerProjectId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ownerProjectId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ownerProjectId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'ownerProjectId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'ownerProjectId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'ownerProjectId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'ownerProjectId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ownerProjectId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      ownerProjectIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'ownerProjectId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'scope',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'scope',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'scope',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'scope',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'scope',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'scope',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'scope',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'scope',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'scope',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
+      scopeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'scope',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterFilterCondition>
       updatedAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1236,6 +1689,34 @@ extension KnowledgeBaseEntityQuerySortBy
   }
 
   QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
+      sortByOwnerProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerProjectId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
+      sortByOwnerProjectIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerProjectId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
+      sortByScope() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scope', Sort.asc);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
+      sortByScopeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scope', Sort.desc);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
       sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
@@ -1337,6 +1818,34 @@ extension KnowledgeBaseEntityQuerySortThenBy
   }
 
   QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
+      thenByOwnerProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerProjectId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
+      thenByOwnerProjectIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerProjectId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
+      thenByScope() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scope', Sort.asc);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
+      thenByScopeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scope', Sort.desc);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QAfterSortBy>
       thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
@@ -1389,6 +1898,21 @@ extension KnowledgeBaseEntityQueryWhereDistinct
   }
 
   QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QDistinct>
+      distinctByOwnerProjectId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ownerProjectId',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QDistinct>
+      distinctByScope({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'scope', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, KnowledgeBaseEntity, QDistinct>
       distinctByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'updatedAt');
@@ -1434,6 +1958,19 @@ extension KnowledgeBaseEntityQueryProperty
   QueryBuilder<KnowledgeBaseEntity, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, String?, QQueryOperations>
+      ownerProjectIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ownerProjectId');
+    });
+  }
+
+  QueryBuilder<KnowledgeBaseEntity, String, QQueryOperations> scopeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'scope');
     });
   }
 

@@ -3,6 +3,7 @@ import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/widgets/aurora_dropdown.dart';
 
 import '../../knowledge/presentation/knowledge_provider.dart';
 import 'settings_provider.dart';
@@ -149,38 +150,38 @@ class _KnowledgeSettingsPanelState
           const SizedBox(height: 12),
           fluent.InfoLabel(
             label: l10n.knowledgeLlmEnhancementMode,
-            child: fluent.ComboBox<String>(
+            child: AuroraDropdown<String>(
               value: settings.knowledgeLlmEnhanceMode,
-              items: [
-                fluent.ComboBoxItem(
-                    value: 'off', child: Text(l10n.knowledgeModeOff)),
-                fluent.ComboBoxItem(
-                    value: 'rewrite', child: Text(l10n.knowledgeModeRewrite)),
+              options: [
+                AuroraDropdownOption<String>(
+                  value: 'off',
+                  label: l10n.knowledgeModeOff,
+                ),
+                AuroraDropdownOption<String>(
+                  value: 'rewrite',
+                  label: l10n.knowledgeModeRewrite,
+                ),
               ],
-              onChanged: (v) {
-                if (v == null) return;
-                ref
-                    .read(settingsProvider.notifier)
-                    .setKnowledgeLlmEnhanceMode(v);
-              },
+              onChanged: (v) => ref
+                  .read(settingsProvider.notifier)
+                  .setKnowledgeLlmEnhanceMode(v),
             ),
           ),
           const SizedBox(height: 12),
           fluent.InfoLabel(
             label: l10n.embeddingProvider,
-            child: fluent.ComboBox<String>(
+            child: AuroraDropdown<String>(
               value: embeddingProviderId,
-              isExpanded: true,
-              items: providers
+              placeholder: l10n.noModelsData,
+              options: providers
                   .map(
-                    (p) => fluent.ComboBoxItem<String>(
+                    (p) => AuroraDropdownOption<String>(
                       value: p.id,
-                      child: Text(p.name),
+                      label: p.name,
                     ),
                   )
-                  .toList(),
+                  .toList(growable: false),
               onChanged: (v) {
-                if (v == null) return;
                 final provider =
                     providers.where((p) => p.id == v).toList(growable: false);
                 final providerModels = provider.isNotEmpty
@@ -223,23 +224,19 @@ class _KnowledgeSettingsPanelState
                       ),
                     ),
                   )
-                : fluent.ComboBox<String>(
+                : AuroraDropdown<String>(
                     value: selectedEmbeddingModel,
-                    isExpanded: true,
-                    items: embeddingModels
+                    options: embeddingModels
                         .map(
-                          (m) => fluent.ComboBoxItem<String>(
+                          (m) => AuroraDropdownOption<String>(
                             value: m,
-                            child: Text(m),
+                            label: m,
                           ),
                         )
-                        .toList(),
-                    onChanged: (v) {
-                      if (v == null) return;
-                      ref
-                          .read(settingsProvider.notifier)
-                          .setKnowledgeEmbeddingModel(v);
-                    },
+                        .toList(growable: false),
+                    onChanged: (v) => ref
+                        .read(settingsProvider.notifier)
+                        .setKnowledgeEmbeddingModel(v),
                   ),
           ),
           const SizedBox(height: 6),

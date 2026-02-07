@@ -9,6 +9,9 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 import 'novel_state.dart';
 import 'package:aurora/features/chat/domain/message.dart';
+import 'package:aurora/features/knowledge/data/knowledge_storage.dart';
+import 'package:aurora/features/knowledge/domain/knowledge_models.dart';
+import 'package:aurora/features/knowledge/presentation/knowledge_provider.dart';
 import 'package:aurora/shared/services/openai_llm_service.dart';
 import 'package:aurora/shared/utils/string_utils.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
@@ -416,6 +419,108 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
     loadState();
   }
 
+  KnowledgeStorage get _knowledgeStorage => _ref.read(knowledgeStorageProvider);
+
+  ProviderConfig? _resolveEmbeddingProvider(SettingsState settings) {
+    final providerId =
+        settings.knowledgeEmbeddingProviderId ?? settings.activeProviderId;
+    for (final provider in settings.providers) {
+      if (provider.id == providerId) {
+        return provider;
+      }
+    }
+    return null;
+  }
+
+  Future<String?> _ensureProjectKnowledgeBase(String projectId) async {
+    final project = state.projects.where((p) => p.id == projectId).firstOrNull;
+    if (project == null) return null;
+
+    final baseId = await _knowledgeStorage.ensureProjectBase(
+      projectId: project.id,
+      projectName: project.name,
+      existingBaseId: project.knowledgeBaseId,
+    );
+
+    if (!state.projects.any((p) => p.id == projectId)) {
+      await _knowledgeStorage.deleteProjectBase(projectId);
+      return null;
+    }
+
+    if (project.knowledgeBaseId != baseId) {
+      final updatedProjects = state.projects
+          .map((p) =>
+              p.id == project.id ? p.copyWith(knowledgeBaseId: baseId) : p)
+          .toList();
+      state = state.copyWith(projects: updatedProjects);
+      _saveState();
+    }
+    return baseId;
+  }
+
+  Future<void> _ensureKnowledgeBaseBindingsForAllProjects() async {
+    if (state.projects.isEmpty) return;
+
+    var hasChanges = false;
+    final updatedProjects = <NovelProject>[];
+
+    for (final project in state.projects) {
+      try {
+        final baseId = await _knowledgeStorage.ensureProjectBase(
+          projectId: project.id,
+          projectName: project.name,
+          existingBaseId: project.knowledgeBaseId,
+        );
+        if (project.knowledgeBaseId != baseId) {
+          hasChanges = true;
+          updatedProjects.add(project.copyWith(knowledgeBaseId: baseId));
+        } else {
+          updatedProjects.add(project);
+        }
+      } catch (_) {
+        updatedProjects.add(project);
+      }
+    }
+
+    if (hasChanges) {
+      state = state.copyWith(projects: updatedProjects);
+      await _saveState();
+    }
+  }
+
+  Future<KnowledgeBaseSummary?> getSelectedProjectKnowledgeBaseSummary() async {
+    final project = state.selectedProject;
+    if (project == null) return null;
+
+    final baseId = await _ensureProjectKnowledgeBase(project.id);
+    if (baseId == null) return null;
+
+    return _knowledgeStorage.loadBaseSummaryById(baseId);
+  }
+
+  Future<KnowledgeIngestReport?> importKnowledgeFilesForSelectedProject(
+    List<String> filePaths,
+  ) async {
+    final project = state.selectedProject;
+    if (project == null) return null;
+
+    final baseId = await _ensureProjectKnowledgeBase(project.id);
+    if (baseId == null || baseId.trim().isEmpty) {
+      return null;
+    }
+
+    final settings = _ref.read(settingsProvider);
+    final embeddingProvider = _resolveEmbeddingProvider(settings);
+
+    return _knowledgeStorage.ingestFiles(
+      baseId: baseId,
+      filePaths: filePaths,
+      useEmbedding: settings.knowledgeUseEmbedding,
+      embeddingModel: settings.knowledgeEmbeddingModel,
+      embeddingProvider: embeddingProvider,
+    );
+  }
+
   Future<File> get _stateFile async {
     final dir = await getApplicationSupportDirectory();
     return File(p.join(dir.path, 'novel_writing_state.json'));
@@ -452,6 +557,8 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
           _saveState();
         }
       }
+
+      await _ensureKnowledgeBaseBindingsForAllProjects();
     } catch (e) {
       // Ignore load errors, start with empty state
     }
@@ -681,6 +788,10 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
         worldContext,
         cancelToken: _currentCancelToken,
       );
+      final projectKnowledgeContext = await _buildProjectKnowledgeContext(
+        taskDescription: task.description,
+        chapterTitle: chapterTitle,
+      );
 
       final StringBuffer contextBuffer = StringBuffer();
 
@@ -691,6 +802,12 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       // Add filtered world context (smart selection)
       if (filteredContextStr.isNotEmpty) {
         contextBuffer.writeln(filteredContextStr);
+      }
+
+      // Add project-dedicated knowledge base context.
+      if (projectKnowledgeContext.isNotEmpty) {
+        contextBuffer.writeln(projectKnowledgeContext);
+        contextBuffer.writeln();
       }
 
       // Add outline of all chapters (descriptions only, not full content)
@@ -782,6 +899,57 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       }).toList();
       state = state.copyWith(allTasks: updatedTasks);
       _saveState();
+    }
+  }
+
+  Future<String> _buildProjectKnowledgeContext({
+    required String taskDescription,
+    required String chapterTitle,
+  }) async {
+    final project = state.selectedProject;
+    if (project == null) return '';
+
+    final baseId = await _ensureProjectKnowledgeBase(project.id);
+    if (baseId == null || baseId.trim().isEmpty) return '';
+
+    final settings = _ref.read(settingsProvider);
+    final embeddingProvider = settings.knowledgeUseEmbedding
+        ? _resolveEmbeddingProvider(settings)
+        : null;
+
+    final retrievalQuery = '$chapterTitle\n$taskDescription'.trim();
+    if (retrievalQuery.isEmpty) return '';
+
+    try {
+      final kbResult = await _knowledgeStorage.retrieveContext(
+        query: retrievalQuery,
+        baseIds: [baseId],
+        topK: settings.knowledgeTopK,
+        useEmbedding: settings.knowledgeUseEmbedding,
+        embeddingModel: settings.knowledgeEmbeddingModel,
+        embeddingProvider: embeddingProvider,
+        requiredScope: KnowledgeBaseScope.studioProject,
+        requiredProjectId: project.id,
+      );
+
+      if (!kbResult.hasContext) return '';
+
+      final buffer = StringBuffer();
+      buffer.writeln('【项目知识库】');
+      buffer.writeln('以下内容来自当前项目专用知识库，只在相关时引用。');
+      buffer.writeln();
+
+      for (int i = 0; i < kbResult.chunks.length; i++) {
+        final item = kbResult.chunks[i];
+        buffer.writeln('[P-KB${i + 1}] ${item.sourceLabel}');
+        buffer.writeln(item.text);
+        buffer.writeln();
+      }
+
+      buffer.writeln('如资料不足，请明确说明，不要凭空补全。');
+      return buffer.toString().trim();
+    } catch (_) {
+      return '';
     }
   }
 
@@ -1282,6 +1450,7 @@ $suggestions
           project.chapters.isNotEmpty ? project.chapters.first.id : null,
     );
     _saveState();
+    unawaited(_ensureProjectKnowledgeBase(project.id));
   }
 
   void selectProject(String projectId) {
@@ -1293,6 +1462,7 @@ $suggestions
       selectedTaskId: null,
     );
     _saveState();
+    unawaited(_ensureProjectKnowledgeBase(projectId));
   }
 
   void deleteProject(String projectId) {
@@ -1312,6 +1482,7 @@ $suggestions
       selectedTaskId: null,
     );
     _saveState();
+    unawaited(_knowledgeStorage.deleteProjectBase(projectId));
   }
 
   // ========== Outline Management ==========

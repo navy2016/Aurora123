@@ -485,7 +485,7 @@
   "streamDisabled": "已关闭流式传输",
   "searchEnabled": "已开启联网搜索",
   "searchDisabled": "已关闭联网搜索",
-  "desktopInputHint": "随便输入点什么吧 (Enter 换行，Ctrl + Enter 发送，@ 切换模型，/ 切换 Prompt 预设)",
+  "desktopInputHint": "输入消息（Enter 换行，Ctrl+Enter 发送，@ 模型，/ 预设）",
   "mobileInputHint": "随便输入点什么吧",
   "topics": "话题分组",
   "createTopic": "新建分组",

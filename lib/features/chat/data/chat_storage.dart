@@ -28,6 +28,34 @@ class ChatStorage {
   final Map<String, List<Message>> _messagesCache = {};
   ChatStorage(this._settingsStorage) : _isar = _settingsStorage.isar;
 
+  int _effectiveTokenTotalFromMessage(Message message) {
+    final splitProvided = message.promptTokens != null ||
+        message.completionTokens != null ||
+        message.reasoningTokens != null;
+    final splitTotal = (message.promptTokens ?? 0) +
+        (message.completionTokens ?? 0) +
+        (message.reasoningTokens ?? 0);
+    final legacyTotal = message.tokenCount ?? 0;
+
+    if (splitProvided && splitTotal > 0) return splitTotal;
+    if (legacyTotal > 0) return legacyTotal;
+    return splitTotal;
+  }
+
+  int _effectiveTokenTotalFromEntity(MessageEntity entity) {
+    final splitProvided = entity.promptTokens != null ||
+        entity.completionTokens != null ||
+        entity.reasoningTokens != null;
+    final splitTotal = (entity.promptTokens ?? 0) +
+        (entity.completionTokens ?? 0) +
+        (entity.reasoningTokens ?? 0);
+    final legacyTotal = entity.tokenCount ?? 0;
+
+    if (splitProvided && splitTotal > 0) return splitTotal;
+    if (legacyTotal > 0) return legacyTotal;
+    return splitTotal;
+  }
+
   Future<List<String>> _findUnreferencedAttachments(
     Iterable<String> candidatePaths, {
     Set<int> excludedMessageIds = const {},
@@ -104,18 +132,8 @@ class ChatStorage {
           session.lastMessageTime = message.timestamp;
           shouldPersistSession = true;
         }
-        if (message.tokenCount != null || message.promptTokens != null) {
-          // Calculate total tokens for this message
-          int msgTotal = message.tokenCount ?? 0;
-          if (message.promptTokens != null ||
-              message.completionTokens != null) {
-            // Enforce P + C + R logic
-            final p = message.promptTokens ?? 0;
-            final c = message.completionTokens ?? 0;
-            final r = message.reasoningTokens ?? 0;
-            msgTotal = p + c + r;
-          }
-
+        final msgTotal = _effectiveTokenTotalFromMessage(message);
+        if (msgTotal > 0) {
           session.totalTokens += msgTotal;
           shouldPersistSession = true;
         }
@@ -270,9 +288,10 @@ class ChatStorage {
       if (session == null) return;
 
       var shouldPersistSession = false;
-      if (entity.tokenCount != null && entity.tokenCount! > 0) {
+      final entityTotal = _effectiveTokenTotalFromEntity(entity);
+      if (entityTotal > 0) {
         session.totalTokens =
-            (session.totalTokens - entity.tokenCount!).clamp(0, 999999999);
+            (session.totalTokens - entityTotal).clamp(0, 999999999);
         shouldPersistSession = true;
       }
 
@@ -325,6 +344,8 @@ class ChatStorage {
       if (existing != null) {
         final entitySessionId = existing.sessionId;
         final wasUser = existing.isUser;
+        final oldTokenTotal = _effectiveTokenTotalFromEntity(existing);
+        final newTokenTotal = _effectiveTokenTotalFromMessage(message);
         existing.content = message.content;
         existing.timestamp = message.timestamp;
         existing.isUser = message.isUser;
@@ -336,6 +357,12 @@ class ChatStorage {
         existing.reasoningDurationSeconds = message.reasoningDurationSeconds;
         existing.role = message.role;
         existing.toolCallId = message.toolCallId;
+        existing.tokenCount = message.tokenCount;
+        existing.promptTokens = message.promptTokens;
+        existing.completionTokens = message.completionTokens;
+        existing.reasoningTokens = message.reasoningTokens;
+        existing.firstTokenMs = message.firstTokenMs;
+        existing.durationMs = message.durationMs;
         if (message.toolCalls != null) {
           existing.toolCallsJson =
               jsonEncode(message.toolCalls!.map((tc) => tc.toJson()).toList());
@@ -344,23 +371,19 @@ class ChatStorage {
         }
         SessionEntity? session;
         var shouldPersistSession = false;
-        if (message.tokenCount != null &&
-            message.tokenCount != existing.tokenCount) {
-          final diff = (message.tokenCount ?? 0) - (existing.tokenCount ?? 0);
-          if (diff != 0) {
-            if (entitySessionId != null) {
-              session = await _isar.sessionEntitys
-                  .filter()
-                  .sessionIdEqualTo(entitySessionId)
-                  .findFirst();
-            }
-            if (session != null) {
-              session.totalTokens =
-                  (session.totalTokens + diff).clamp(0, 999999999);
-              shouldPersistSession = true;
-            }
+        final diff = newTokenTotal - oldTokenTotal;
+        if (diff != 0) {
+          if (entitySessionId != null) {
+            session = await _isar.sessionEntitys
+                .filter()
+                .sessionIdEqualTo(entitySessionId)
+                .findFirst();
           }
-          existing.tokenCount = message.tokenCount;
+          if (session != null) {
+            session.totalTokens =
+                (session.totalTokens + diff).clamp(0, 999999999);
+            shouldPersistSession = true;
+          }
         }
         final shouldUpdateLastMessageTime = wasUser || message.isUser;
         await _isar.messageEntitys.put(existing);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:aurora/shared/utils/platform_utils.dart';
 
 class WindowButtons extends StatefulWidget {
   const WindowButtons({super.key});
@@ -23,6 +24,40 @@ class _WindowButtonsState extends State<WindowButtons> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
+    if (PlatformUtils.isWindows || PlatformUtils.isLinux) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _WindowsCaptionButton(
+            icon: Icons.remove,
+            onTap: windowManager.minimize,
+          ),
+          FutureBuilder<bool>(
+            future: windowManager.isMaximized(),
+            builder: (context, snapshot) {
+              final isMaximized = snapshot.data ?? false;
+              return _WindowsCaptionButton(
+                icon: isMaximized ? Icons.filter_none : Icons.crop_square,
+                onTap: () {
+                  if (isMaximized) {
+                    windowManager.restore();
+                  } else {
+                    windowManager.maximize();
+                  }
+                  setState(() {});
+                },
+              );
+            },
+          ),
+          _WindowsCaptionButton(
+            icon: Icons.close,
+            isClose: true,
+            onTap: windowManager.close,
+          ),
+        ],
+      );
+    }
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
@@ -108,6 +143,56 @@ class _TrafficLightButton extends StatelessWidget {
               color: Colors.black.withValues(alpha: 0.5),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WindowsCaptionButton extends StatefulWidget {
+  final IconData icon;
+  final bool isClose;
+  final VoidCallback onTap;
+
+  const _WindowsCaptionButton({
+    required this.icon,
+    required this.onTap,
+    this.isClose = false,
+  });
+
+  @override
+  State<_WindowsCaptionButton> createState() => _WindowsCaptionButtonState();
+}
+
+class _WindowsCaptionButtonState extends State<_WindowsCaptionButton> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final baseIconColor = Theme.of(context).iconTheme.color ??
+        (brightness == Brightness.dark ? Colors.white : Colors.black87);
+    final backgroundColor = widget.isClose
+        ? (_hovering ? const Color(0xFFE81123) : Colors.transparent)
+        : (_hovering
+            ? baseIconColor.withValues(alpha: 0.12)
+            : Colors.transparent);
+    final iconColor =
+        (widget.isClose && _hovering) ? Colors.white : baseIconColor;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          width: 46,
+          height: 32,
+          color: backgroundColor,
+          alignment: Alignment.center,
+          child: Icon(widget.icon, size: 16, color: iconColor),
         ),
       ),
     );

@@ -1,7 +1,9 @@
 import 'package:aurora/shared/theme/aurora_icons.dart';
+import 'package:aurora/features/knowledge/domain/knowledge_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:file_selector/file_selector.dart';
 import '../novel/novel_provider.dart';
 import '../novel/novel_state.dart';
 import 'mobile_model_config_sheet.dart';
@@ -24,6 +26,8 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
   final _taskInputController = TextEditingController();
   final _newProjectController = TextEditingController();
   final _newChapterController = TextEditingController();
+  bool _isProjectKnowledgeBusy = false;
+  int _projectKnowledgeRefreshToken = 0;
 
   @override
   void initState() {
@@ -672,6 +676,8 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _buildProjectKnowledgeCard(context, l10n, theme, state, notifier),
+        const SizedBox(height: 16),
         Wrap(
           spacing: 8,
           children: [
@@ -741,6 +747,186 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
         const Divider(),
       ],
     );
+  }
+
+  Widget _buildProjectKnowledgeCard(BuildContext context, AppLocalizations l10n,
+      ThemeData theme, NovelWritingState state, NovelNotifier notifier) {
+    final projectOnlyHint = Localizations.localeOf(context).languageCode == 'zh'
+        ? '该知识库仅用于当前项目写作，不会应用在对话中。'
+        : 'This knowledge base is project-only and never applied in chat.';
+    final importingLabel = Localizations.localeOf(context).languageCode == 'zh'
+        ? '导入中...'
+        : 'Importing...';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(AuroraIcons.database, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.knowledgeBase,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(AuroraIcons.refresh, size: 18),
+                  onPressed: _isProjectKnowledgeBusy
+                      ? null
+                      : () => setState(() => _projectKnowledgeRefreshToken++),
+                ),
+              ],
+            ),
+            Text(
+              projectOnlyHint,
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            FutureBuilder<KnowledgeBaseSummary?>(
+              key: ValueKey(
+                  '${state.selectedProjectId}-${state.selectedProject?.knowledgeBaseId}-$_projectKnowledgeRefreshToken'),
+              future: notifier.getSelectedProjectKnowledgeBaseSummary(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Text(
+                    snapshot.error.toString(),
+                    style: const TextStyle(color: Colors.red),
+                  );
+                }
+
+                final summary = snapshot.data;
+                if (summary == null) {
+                  return Text(l10n.noDataYet, style: theme.textTheme.bodySmall);
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      summary.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.knowledgeDocsAndChunks(
+                          summary.documentCount, summary.chunkCount),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isProjectKnowledgeBusy
+                    ? null
+                    : () =>
+                        _importProjectKnowledgeFiles(context, l10n, notifier),
+                icon: const Icon(AuroraIcons.backup, size: 16),
+                label: Text(l10n.importFiles),
+              ),
+            ),
+            if (_isProjectKnowledgeBusy) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(importingLabel, style: theme.textTheme.bodySmall),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _importProjectKnowledgeFiles(BuildContext context,
+      AppLocalizations l10n, NovelNotifier notifier) async {
+    final typeGroup = XTypeGroup(
+      label: l10n.knowledgeFiles,
+      extensions: ['txt', 'md', 'csv', 'json', 'xml', 'yaml', 'yml', 'docx'],
+    );
+
+    final files = await openFiles(acceptedTypeGroups: [typeGroup]);
+    if (files.isEmpty) return;
+
+    setState(() {
+      _isProjectKnowledgeBusy = true;
+    });
+
+    try {
+      final report = await notifier.importKnowledgeFilesForSelectedProject(
+        files.map((f) => f.path).toList(growable: false),
+      );
+      if (!context.mounted) return;
+
+      if (report == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.noDataYet)),
+        );
+        return;
+      }
+
+      final summary = StringBuffer()
+        ..write(l10n.knowledgeImportSummary(
+            report.successCount, report.failureCount));
+      if (report.errors.isNotEmpty) {
+        summary
+          ..writeln()
+          ..writeln()
+          ..write(report.errors.join('\n'));
+      }
+
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.importFinished),
+          content: Text(summary.toString()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.confirm),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProjectKnowledgeBusy = false;
+          _projectKnowledgeRefreshToken++;
+        });
+      }
+    }
   }
 
   Widget _buildForeshadowingSection(

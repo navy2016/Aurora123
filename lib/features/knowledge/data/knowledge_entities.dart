@@ -9,6 +9,12 @@ class KnowledgeBaseEntity {
   @Index(unique: true, replace: true)
   late String baseId;
 
+  @Index()
+  String scope = 'chat'; // chat | studio_project
+
+  @Index()
+  String? ownerProjectId;
+
   late String name;
   String description = '';
   bool isEnabled = true;

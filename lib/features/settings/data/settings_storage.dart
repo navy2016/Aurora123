@@ -515,24 +515,28 @@ class SettingsStorage {
   }
 
   /// Migrate existing usage stats to fix totalTokenCount inconsistency.
-  /// This ensures totalTokenCount = promptTokenCount + completionTokenCount.
+  /// This ensures totalTokenCount = promptTokenCount + completionTokenCount + reasoningTokenCount.
   Future<int> migrateTokenCounts() async {
     int migratedCount = 0;
     final allStats = await _isar.usageStatsEntitys.where().findAll();
 
     await _isar.writeTxn(() async {
       for (final stats in allStats) {
-        final expectedTotal =
-            stats.promptTokenCount + stats.completionTokenCount;
+        final expectedTotal = stats.promptTokenCount +
+            stats.completionTokenCount +
+            stats.reasoningTokenCount;
         if (stats.totalTokenCount != expectedTotal) {
-          // If we have prompt+completion data, use that as the source of truth
-          if (stats.promptTokenCount > 0 || stats.completionTokenCount > 0) {
+          // If we have split token data, use that as the source of truth.
+          if (stats.promptTokenCount > 0 ||
+              stats.completionTokenCount > 0 ||
+              stats.reasoningTokenCount > 0) {
             stats.totalTokenCount = expectedTotal;
           } else {
             // If we only have totalTokenCount, split it evenly
             stats.promptTokenCount = stats.totalTokenCount ~/ 2;
             stats.completionTokenCount =
                 stats.totalTokenCount - stats.promptTokenCount;
+            stats.reasoningTokenCount = 0;
           }
           await _isar.usageStatsEntitys.put(stats);
           migratedCount++;

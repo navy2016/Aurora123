@@ -42,7 +42,8 @@ class KnowledgeNotifier extends StateNotifier<KnowledgeState> {
   Future<void> loadBases() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final bases = await _storage.loadBaseSummaries();
+      final bases =
+          await _storage.loadBaseSummaries(scope: KnowledgeBaseScope.chat);
       state = state.copyWith(bases: bases, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
