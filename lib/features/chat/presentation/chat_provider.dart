@@ -20,6 +20,7 @@ import 'package:aurora/shared/services/llm_service.dart';
 import 'package:aurora/shared/services/tool_manager.dart';
 import 'package:aurora/shared/services/worker_service.dart';
 import 'package:aurora/features/knowledge/presentation/knowledge_provider.dart';
+import 'package:aurora/features/knowledge/domain/knowledge_models.dart';
 import 'package:fluent_ui/fluent_ui.dart'
     hide Colors, Padding, StateSetter, ListBody;
 import 'package:uuid/uuid.dart';
@@ -523,6 +524,7 @@ Rules:
               useEmbedding: settings.knowledgeUseEmbedding,
               embeddingModel: settings.knowledgeEmbeddingModel,
               embeddingProvider: embeddingProvider,
+              requiredScope: KnowledgeBaseScope.chat,
             );
 
             if (kbResult.hasContext) {

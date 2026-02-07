@@ -1,4 +1,6 @@
 import 'package:aurora/shared/theme/aurora_icons.dart';
+import 'package:aurora/features/knowledge/domain/knowledge_models.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:super_clipboard/super_clipboard.dart';
@@ -25,6 +27,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
   final _projectFlyoutController = FlyoutController();
 
   int _selectedNavIndex = 0; // 0: Writing, 1: Context, 2: Preview
+  bool _isProjectKnowledgeBusy = false;
+  int _projectKnowledgeRefreshToken = 0;
 
   @override
   void dispose() {
@@ -759,6 +763,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  _buildProjectKnowledgeSection(
+                      context, l10n, theme, state, notifier),
+                  const SizedBox(height: 24),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -840,6 +847,215 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               )),
       ],
     );
+  }
+
+  Widget _buildProjectKnowledgeSection(
+      BuildContext context,
+      AppLocalizations l10n,
+      FluentThemeData theme,
+      NovelWritingState state,
+      NovelNotifier notifier) {
+    final projectOnlyHint = Localizations.localeOf(context).languageCode == 'zh'
+        ? '该知识库仅用于当前项目写作，不会应用在对话中。'
+        : 'This knowledge base is project-only and never applied in chat.';
+    final importingLabel = Localizations.localeOf(context).languageCode == 'zh'
+        ? '导入中...'
+        : 'Importing...';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.resources.dividerStrokeColorDefault),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(AuroraIcons.database, size: 14),
+              const SizedBox(width: 8),
+              Text(l10n.knowledgeBase, style: theme.typography.bodyStrong),
+              const Spacer(),
+              FilledButton(
+                onPressed: _isProjectKnowledgeBusy
+                    ? null
+                    : () =>
+                        _importProjectKnowledgeFiles(context, l10n, notifier),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(AuroraIcons.backup, size: 12),
+                    const SizedBox(width: 6),
+                    Text(l10n.importFiles),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Button(
+                onPressed: _isProjectKnowledgeBusy
+                    ? null
+                    : () => setState(() => _projectKnowledgeRefreshToken++),
+                child: Text(l10n.refreshList),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            projectOnlyHint,
+            style: theme.typography.caption,
+          ),
+          const SizedBox(height: 10),
+          FutureBuilder<KnowledgeBaseSummary?>(
+            key: ValueKey(
+                '${state.selectedProjectId}-${state.selectedProject?.knowledgeBaseId}-$_projectKnowledgeRefreshToken'),
+            future: notifier.getSelectedProjectKnowledgeBaseSummary(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: ProgressRing(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(l10n.generating),
+                  ],
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Text(
+                  snapshot.error.toString(),
+                  style: TextStyle(color: Colors.red),
+                );
+              }
+
+              final summary = snapshot.data;
+              if (summary == null) {
+                return Text(l10n.noDataYet, style: theme.typography.caption);
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    summary.name,
+                    style: theme.typography.bodyStrong,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.knowledgeDocsAndChunks(
+                        summary.documentCount, summary.chunkCount),
+                    style: theme.typography.caption,
+                  ),
+                ],
+              );
+            },
+          ),
+          if (_isProjectKnowledgeBusy) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: ProgressRing(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                Text(importingLabel),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _importProjectKnowledgeFiles(BuildContext context,
+      AppLocalizations l10n, NovelNotifier notifier) async {
+    final typeGroup = XTypeGroup(
+      label: l10n.knowledgeFiles,
+      extensions: ['txt', 'md', 'csv', 'json', 'xml', 'yaml', 'yml', 'docx'],
+    );
+
+    final files = await openFiles(acceptedTypeGroups: [typeGroup]);
+    if (files.isEmpty) return;
+
+    setState(() {
+      _isProjectKnowledgeBusy = true;
+    });
+
+    try {
+      final report = await notifier.importKnowledgeFilesForSelectedProject(
+        files.map((f) => f.path).toList(growable: false),
+      );
+      if (!context.mounted) return;
+
+      if (report == null) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => ContentDialog(
+            title: Text(l10n.importFinished),
+            content: Text(l10n.noDataYet),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.confirm),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      final summary = StringBuffer()
+        ..write(l10n.knowledgeImportSummary(
+            report.successCount, report.failureCount));
+      if (report.errors.isNotEmpty) {
+        summary
+          ..writeln()
+          ..writeln()
+          ..write(report.errors.join('\n'));
+      }
+
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => ContentDialog(
+          title: Text(l10n.importFinished),
+          content: Text(summary.toString()),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.confirm),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => ContentDialog(
+          title: Text(l10n.error),
+          content: Text(e.toString()),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.confirm),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProjectKnowledgeBusy = false;
+          _projectKnowledgeRefreshToken++;
+        });
+      }
+    }
   }
 
   Widget _buildForeshadowingSection(

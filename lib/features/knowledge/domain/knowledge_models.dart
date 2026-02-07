@@ -1,3 +1,8 @@
+class KnowledgeBaseScope {
+  static const String chat = 'chat';
+  static const String studioProject = 'studio_project';
+}
+
 class KnowledgeBaseSummary {
   final String baseId;
   final String name;
