@@ -1,134 +1,209 @@
 ---
 name: skill-guide
-description: 官方 Skill 开发指南，包含目录结构、元数据规范及构建流程。仅用于指导开发者创建新 Skill。
+description: Aurora Skills 编写与维护指南。用于创建、重构或审核 SKILL.md，确保符合官方最小规范并兼容 Aurora 扩展与可配置轮次。
 locked: true
 for_ai: false
 ---
 
-# 官方 Skill 开发格式指南
+# Aurora Skills 开发指南（官方规范 + Aurora 扩展）
 
-本项目遵循官方 Skill 格式标准。每个 Skill 都是一个独立的目录，包含定义文件和相关资源。
+## 1. 目标
 
-## 1. 目录结构
+本指南用于回答三个问题：
 
-标准的 Skill 目录结构如下：
+1. 一个 Skill 至少要写成什么样（官方最小标准）
+2. Aurora 额外支持了哪些字段和行为（项目扩展）
+3. turns 在哪里配、按什么优先级生效（当前实现）
 
-```text
-skill-name/
-├── SKILL.md (必需)
-│   ├── YAML 前置元数据 (必需)
-│   │   ├── name: (必需)
-│   │   └── description: (必需)
-│   └── Markdown 指令 (必需)
-└── 打包资源 (可选)
-    ├── scripts/     - 可执行代码
-    ├── references/  - 上下文文档
-    └── assets/      - 输出文件（模板等）
-```
+## 2. 官方最小标准（必须）
 
-## 2. SKILL.md 格式规范
-
-### YAML 前置元数据 (Frontmatter)
-
-`SKILL.md` 文件的顶部必须包含 YAML 格式的元数据：
+每个 Skill 目录必须包含 `SKILL.md`，文件头使用 YAML frontmatter，最小只需要两个字段：
 
 ```yaml
 ---
 name: your-skill-name
-description: 这个技能做什么以及何时使用。包括触发上下文、文件类型、任务类型和用户可能提及的关键词。
+description: WHAT + WHEN（做什么 + 何时触发）
 ---
 ```
 
-**字段要求：**
+约束：
 
-| 字段 | 必需 | 格式 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `name` | 是 | 小写，允许连字符，最多 64 字符 | 技能的唯一标识名。 |
-| `description` | 是 | 最多 1024 字符 | **核心要点**：必须包含 **WHAT** (做什么) 和 **WHEN** (何时使用)。这是触发技能的关键。 |
+- `name` 必填，建议小写连字符，如 `weather-fetcher`
+- `description` 必填，必须写清楚 WHAT 和 WHEN
+- 路由阶段只依赖 frontmatter（尤其是 `name`、`description`）
+- 正文（Markdown body）是在 Skill 被触发后才加载，所以“何时使用”不要只写在正文里
 
-### 主体内容
+## 3. SKILL 正文编写原则
 
-元数据下方是 Markdown 格式的指令内容：
+正文只写 How（怎么做）：
 
-```markdown
-# Your Skill Name
+1. 用简洁步骤描述执行流程（祈使句）
+2. 可变体内容放到 `references/`，正文只保留入口和选择规则
+3. 重复性强、可确定执行的逻辑放 `scripts/`
+4. 输出模板或素材放 `assets/`
+5. 避免堆砌背景说明，优先可执行指令
 
-[指令部分]
-Claude 的清晰、分步指导。始终使用祈使/不定式形式。
+## 4. Aurora 的目录发现规则（当前实现）
 
-[示例部分]
-具体的输入/输出示例。
+Aurora 会递归扫描 `skills/`：
+
+- 识别 `SKILL.md`
+- 识别 `SKILL_<language>.md`（如 `SKILL_en.md`）
+- 若指定语言文件不存在，回退到 `SKILL.md`
+- 目录中只要存在以上文件之一，即可被识别为一个 Skill
+
+推荐结构：
+
+```text
+skill-name/
+├── SKILL.md
+├── SKILL_en.md        # 可选
+├── scripts/           # 可选
+├── references/        # 可选
+└── assets/            # 可选
 ```
 
-> **注意**：「何时使用」的信息应放在 `description` 中，**不要** 放在主体内容里，因为主体内容只有在其 description 触发技能后才会被加载。
+## 5. Aurora frontmatter 扩展字段（可选）
 
-## 3. 运行机制 (Mechanism)
+官方最小只要求 `name` + `description`。Aurora 额外支持以下字段：
 
-理解 Skill 的两阶段加载机制至关重要：
+- `enabled: true|false`
+- `locked: true|false`
+- `for_ai: true|false`
+- `platforms: [all|desktop|mobile|windows|macos|linux|android|ios]`
+- `id: custom_id`（不填时默认目录名）
+- `tools: [...]`（工具定义）
+- `worker_mode: reasoner|executor`（Skill Worker 执行模式）
 
-### 阶段 1：路由 (Routing)
-- 系统仅读取 YAML Frontmatter 中的 `name` 和 `description`。
-- LLM 根据 `description` (包含了 What & When) 来决定是否需要调用该技能。
-- **关键点**：如果 `description` 写得不好，Skill 永远不会被触发。
+与 turns 相关的 Aurora 扩展字段：
 
-### 阶段 2：执行 (Execution)
-- 一旦 Skill 被选中，系统会将 Markdown 主体部分 (`Instructions` 和 `Examples`) 注入到当前的 Context (System Prompt) 中。
-- **关键点**：主体内容只需包含 **How** (如何操作)。不要在主体中重复冗长的“何时使用”条件，以节省 Token 开销。
+- `skill_max_turns`
+- 兼容别名：`skillMaxTurns`、`worker_max_turns`、`workerMaxTurns`、`subagent_max_turns`、`subagentMaxTurns`、`_aurora_skill_max_turns`、`max_turns`、`maxTurns`
 
-## 4. 构建流程 (Build Process)
+说明：`skill_max_turns` 是 Aurora 项目扩展，不是官方必需 frontmatter 字段。
 
-### 步骤 1：通过具体示例理解
-在创建 Skill 之前，先收集具体使用场景：
-- 「这个技能应该支持什么功能？」
-- 「用户会说什么来触发这个技能？」（例如："从这张图像中去除红眼", "构建一个待办应用"）
+`worker_mode` 说明：
 
-### 步骤 2：规划可复用内容
-分析示例，识别需要的脚本和资源：
-- **Scripts**: 每次执行都需要运行的代码 (如 `scripts/rotate_pdf.py`)。
-- **Assets**: 样板代码或模板 (如 `assets/hello-world/`)。
-- **References**: 需要查阅的静态文档 (如 `references/schema.md`)。
+- `reasoner`（默认）：Worker 可多轮推理与工具调用
+- `executor`：Worker 在拿到首个工具输出后直接返回结果，不在 Worker 内做二次收尾
 
-### 步骤 3：初始化 Skill
-创建目录并初始化 `SKILL.md`。
+兼容别名（模式字段）：
 
-```bash
-mkdir -p my-skill/{scripts,references,assets}
-touch my-skill/SKILL.md
-```
+- `workerMode`
+- `skill_worker_mode`
+- `skillWorkerMode`
+- `subagent_mode`
+- `subagentMode`
+- `_aurora_worker_mode`
+- `_aurora_skill_worker_mode`
 
-### 步骤 4：编辑 Skill
-编写 `SKILL.md` 的内容。
+## 6. turns 配置与优先级（当前实现）
 
-**Frontmatter 示例：**
+### 6.1 Orchestrator（主对话编排）
+
+键名（按读取顺序）：
+
+- `orchestrator_max_turns`
+- `orchestratorMaxTurns`
+- `_aurora_max_turns`
+- `max_turns`
+- `maxTurns`
+
+来源与顺序：
+
+1. Provider `customParameters`
+2. Provider `globalSettings`
+
+默认值与范围：
+
+- 默认 `8`
+- 限制 `1..50`
+
+### 6.2 Skill Worker（单个 skill 执行）
+
+键名（按读取顺序）：
+
+- `skill_max_turns`
+- `skillMaxTurns`
+- `worker_max_turns`
+- `workerMaxTurns`
+- `subagent_max_turns`
+- `subagentMaxTurns`
+- `_aurora_skill_max_turns`
+- `max_turns`
+- `maxTurns`
+
+来源与顺序：
+
+1. Skill frontmatter（metadata）
+2. Provider `customParameters`
+3. Provider `globalSettings`
+
+默认值与范围：
+
+- 默认 `6`
+- 限制 `1..30`
+
+补充：
+
+- WorkerService 底层默认 `maxTurns=8`、shell timeout `45s`
+- 但在聊天编排路径下会显式传入上述解析值，通常以 `6/1..30` 规则为准
+
+## 7. 配置入口
+
+### 7.1 Skill frontmatter 在哪里设置
+
+在 Aurora UI：
+
+1. `Settings`
+2. `Agent Skills`
+3. 选中某个 skill，点击 `Edit`
+4. 直接修改 `SKILL.md` 顶部 YAML frontmatter
+
+### 7.2 customParameters 在哪里设置
+
+当前桌面端主要入口是 Provider 配置的两类 Custom Parameters 卡片：
+
+1. `Settings` -> `Model Provider` -> provider 区域右上齿轮（Global Config）-> `Custom Parameters`
+2. `Settings` -> `Model Provider` -> 模型行右侧齿轮（Model Config）-> `Custom Parameters`
+
+注意：
+
+- turns 解析当前读取 `customParameters` + `globalSettings` + skill metadata
+- model-specific 的 `modelSettings` 自定义参数目前不参与 turns 解析（它主要用于请求参数覆盖）
+
+## 8. 推荐模板
+
 ```yaml
 ---
-name: docx-processor
-description: 综合文档创建、编辑和分析，支持跟踪更改、评论、格式保留和文本提取。当 Claude 需要处理专业文档（.docx 文件）时使用：(1) 创建新文档，(2) 修改或编辑内容，(3) 处理跟踪更改，(4) 添加评论，或任何其他文档任务。
+name: weather-fetcher
+description: 获取指定城市实时天气。当用户询问天气、温度、降雨或风力时触发。
+enabled: true
+for_ai: true
+platforms: [desktop]
+skill_max_turns: 10
+worker_mode: reasoner
 ---
 ```
 
-**主体结构建议：**
 ```markdown
-# Skill Name
+# Weather Fetcher
 
-## Getting Started
-[基本的第一步]
-
-## Core Workflows
-[分步程序]
-
-## Extended Capabilities
-- **Feature A**: See [FEATURE_A.md](references/feature_a.md)
+## Instructions
+1. 校验输入
+2. 拉取数据
+3. 返回结构化结果
 
 ## Examples
-[具体的输入/输出对]
+- Input: 上海天气
+- Output: { ... }
 ```
 
-### 步骤 5：打包 Skill (可选)
-如果需要分发，可以将技能文件夹打包成 `.skill` 文件（zip 格式），并验证元数据和结构。
+## 9. 提交前检查清单
 
-### 步骤 6：基于使用迭代
-- 在真实任务上使用技能。
-- 识别瓶颈与低效环节。
-- 只有在实际使用中才能发现 SKILL.md 或资源需要的改进。
-- 即时反馈，即刻迭代。
+- frontmatter 可被 YAML 正常解析
+- `name` 与 `description` 已填写且语义明确
+- `description` 明确写了 WHAT + WHEN
+- 正文以可执行步骤为主，避免冗长背景
+- 需要多步工具调用时，已设置合理的 `skill_max_turns`
+- 单次工具执行即可完成时，考虑使用 `worker_mode: executor`

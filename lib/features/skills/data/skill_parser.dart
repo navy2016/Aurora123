@@ -21,19 +21,21 @@ class SkillParser {
 
     final content = await skillMdFile.readAsString();
 
-    // Simple Frontmatter Parser (between ---)
-    final parts = content.split('---');
-    if (parts.length < 3) return null;
+    final frontmatterMatch =
+        RegExp(r'^\s*---\s*\r?\n([\s\S]*?)\s*---\s*(?:\r?\n|$)')
+            .firstMatch(content);
+    if (frontmatterMatch == null) return null;
 
-    final yamlString = parts[1];
-    final instructions = parts.sublist(2).join('---').trim();
+    final yamlString = frontmatterMatch.group(1) ?? '';
+    final instructions = content.substring(frontmatterMatch.end).trim();
 
     final yaml = loadYaml(yamlString);
     if (yaml is! YamlMap) return null;
 
     final id = yaml['id']?.toString() ??
         directory.path.split(Platform.pathSeparator).last;
-    final name = yaml['name']?.toString() ?? id;
+    final parsedName = yaml['name']?.toString().trim() ?? '';
+    final name = parsedName.isNotEmpty ? parsedName : id;
     final description = yaml['description']?.toString() ?? '';
     final isEnabled = yaml['enabled'] is bool ? yaml['enabled'] as bool : true;
     final isLocked = yaml['locked'] is bool ? yaml['locked'] as bool : false;
@@ -51,16 +53,26 @@ class SkillParser {
           // Standard fields
           final tName = toolData['name']?.toString() ?? '';
           final tDesc = toolData['description']?.toString() ?? '';
-          final tSchema =
-              toolData['input_schema'] as Map<String, dynamic>? ?? {};
+          final tSchemaRaw = toolData['input_schema'];
+          final tSchema = tSchemaRaw is Map
+              ? tSchemaRaw.map((key, value) => MapEntry('$key', value))
+              : <String, dynamic>{};
           final tType = toolData['type']?.toString() ?? 'shell';
           final tCommand = toolData['command']?.toString() ?? '';
 
-          final inputExamples = (toolData['input_examples'] ??
-              toolData['examples'] ??
-              []) as List<dynamic>;
-          final parsedExamples =
-              inputExamples.map((e) => e as Map<String, dynamic>).toList();
+          final inputExamples =
+              (toolData['input_examples'] ?? toolData['examples'] ?? []);
+          final parsedExamples = <Map<String, dynamic>>[];
+          if (inputExamples is List) {
+            for (final example in inputExamples) {
+              if (example is YamlMap) {
+                parsedExamples.add(_convertYamlMapToMap(example));
+              } else if (example is Map) {
+                parsedExamples
+                    .add(example.map((key, value) => MapEntry('$key', value)));
+              }
+            }
+          }
 
           // Everything else goes to extra
           final extra = Map<String, dynamic>.from(toolData)

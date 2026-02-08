@@ -335,6 +335,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // Assistant specific model config removed per user request. Always use global settings.
       final currentModel = settings.activeProvider.selectedModel;
       final currentProviderName = settings.activeProvider.name;
+      final maxOrchestratorTurns = _resolveOrchestratorMaxTurns(settings);
       void recordMainModelUsage({
         required bool success,
         required int durationMs,
@@ -558,7 +559,7 @@ Rules:
       int turns = 0;
       DateTime? firstContentTime;
       while (continueGeneration &&
-          turns < 3 &&
+          turns < maxOrchestratorTurns &&
           _currentGenerationId == myGenerationId &&
           mounted) {
         turns++;
@@ -819,6 +820,8 @@ Rules:
                   originalRequest: originalUserMsg.content,
                   model: settings.executionModel,
                   providerId: settings.executionProviderId,
+                  maxTurns: _resolveSkillWorkerMaxTurns(settings, skill: skill),
+                  mode: _resolveSkillWorkerMode(settings, skill: skill),
                   onUsage: ({
                     required bool success,
                     required int promptTokens,
@@ -854,12 +857,12 @@ Rules:
                 id: const Uuid().v4(),
                 role: 'user',
                 content:
-                    '<result name="$skillName">\n$executionResult\n</result>\n\nPlease provide a final human-readable response based on the above result.',
+                    '<result name="$skillName">\n$executionResult\n</result>\n\nPlease provide a final human-readable response based only on the above result. If the result JSON includes `exitCode` != 0, non-empty `stderr`, or an `error` field, explicitly report execution failure and include the key error message. Do not claim success unless the result clearly indicates success.',
                 timestamp: DateTime.now(),
                 isUser: false,
               ));
 
-              // Prepare for the final Summary call (Call 3)
+              // Prepare for the next synthesis turn.
               continueGeneration = true;
               aiMsg = Message.ai('',
                   model: currentModel, provider: currentProvider);
@@ -931,6 +934,9 @@ Rules:
                     query.toString(),
                     model: executionModel,
                     providerId: executionProviderId,
+                    maxTurns:
+                        _resolveSkillWorkerMaxTurns(settings, skill: skill),
+                    mode: _resolveSkillWorkerMode(settings, skill: skill),
                     onUsage: ({
                       required bool success,
                       required int promptTokens,
@@ -1040,6 +1046,10 @@ Rules:
             final searchPattern =
                 RegExp(r'<search>(.*?)</search>', dotAll: true);
             final searchMatch = searchPattern.firstMatch(aiMsg.content);
+            final skillPattern = RegExp(
+                r'''<skill\s+name=["'](.*?)["']>(.*?)</skill>''',
+                dotAll: true);
+            final skillMatch = skillPattern.firstMatch(aiMsg.content);
             if (searchMatch != null) {
               final searchQuery = searchMatch.group(1)?.trim() ?? '';
               if (searchQuery.isNotEmpty) {
@@ -1079,16 +1089,163 @@ Rules:
                     model: currentModel, provider: currentProvider);
                 state = state.copyWith(messages: [...state.messages, aiMsg]);
               }
+            } else if (skillMatch != null) {
+              final skillName = skillMatch.group(1)?.trim() ?? '';
+              final skillQuery = skillMatch.group(2)?.trim() ?? '';
+              if (skillName.isNotEmpty) {
+                continueGeneration = true;
+                final cleanedContent =
+                    aiMsg.content.replaceAll(skillPattern, '').trim();
+                aiMsg = aiMsg.copyWith(content: cleanedContent);
+
+                final originalUserMsg = state.messages
+                    .lastWhere((m) => m.isUser, orElse: () => Message.user(''));
+
+                String executionResult;
+                try {
+                  final skill = activeSkills.firstWhere(
+                    (s) => s.name == skillName,
+                    orElse: () =>
+                        throw Exception('Skill "$skillName" not found.'),
+                  );
+                  final workerService = WorkerService(llmService);
+                  executionResult = await workerService.executeSkillTask(
+                    skill,
+                    skillQuery,
+                    originalRequest: originalUserMsg.content,
+                    model: settings.executionModel,
+                    providerId: settings.executionProviderId,
+                    maxTurns:
+                        _resolveSkillWorkerMaxTurns(settings, skill: skill),
+                    mode: _resolveSkillWorkerMode(settings, skill: skill),
+                    onUsage: ({
+                      required bool success,
+                      required int promptTokens,
+                      required int completionTokens,
+                      required int reasoningTokens,
+                      required int durationMs,
+                      AppErrorType? errorType,
+                    }) {
+                      final execModel = settings.executionModel;
+                      if (execModel != null && execModel.isNotEmpty) {
+                        _ref.read(usageStatsProvider.notifier).incrementUsage(
+                              execModel,
+                              success: success,
+                              promptTokens: promptTokens,
+                              completionTokens: completionTokens,
+                              reasoningTokens: reasoningTokens,
+                              durationMs: durationMs,
+                              errorType: errorType,
+                            );
+                      }
+                    },
+                  );
+                } catch (e) {
+                  executionResult = "Error executing skill: $e";
+                }
+
+                messagesForApi.add(aiMsg.copyWith(
+                    content: '<skill name="$skillName">$skillQuery</skill>'));
+                messagesForApi.add(Message(
+                  id: const Uuid().v4(),
+                  role: 'user',
+                  content:
+                      '<result name="$skillName">\n$executionResult\n</result>\n\nPlease provide a final human-readable response based only on the above result. If the result JSON includes `exitCode` != 0, non-empty `stderr`, or an `error` field, explicitly report execution failure and include the key error message. Do not claim success unless the result clearly indicates success.',
+                  timestamp: DateTime.now(),
+                  isUser: false,
+                ));
+
+                aiMsg = Message.ai('',
+                    model: currentModel, provider: currentProvider);
+                state = state.copyWith(messages: [...state.messages, aiMsg]);
+              }
             } else if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
               continueGeneration = true;
               messagesForApi.add(aiMsg);
               for (final tc in aiMsg.toolCalls!) {
                 String toolResult;
                 try {
-                  final args = jsonDecode(tc.arguments);
-                  toolResult = await toolManager.executeTool(tc.name, args,
-                      preferredEngine: settings.searchEngine,
-                      skills: activeSkills);
+                  if (tc.name == 'call_skill') {
+                    Map<String, dynamic> args;
+                    if (tc.arguments.startsWith('{')) {
+                      args = jsonDecode(tc.arguments);
+                    } else {
+                      try {
+                        args = jsonDecode(tc.arguments);
+                      } catch (_) {
+                        args = {
+                          'query': tc.arguments,
+                          'skill_name': 'unknown',
+                        };
+                      }
+                    }
+
+                    var skillName = args['skill_name'];
+                    if (skillName == null && args.containsKey('skill_args')) {
+                      final nested = args['skill_args'];
+                      if (nested is Map) {
+                        skillName = nested['skill_name'];
+                      } else if (nested is String) {
+                        try {
+                          final nMap = jsonDecode(nested);
+                          skillName = nMap['skill_name'];
+                        } catch (_) {}
+                      }
+                    }
+
+                    var query = args['query'] ??
+                        args['request'] ??
+                        args['task'] ??
+                        args['content'];
+                    if (query == null) {
+                      final copy = Map<String, dynamic>.from(args);
+                      copy.remove('skill_name');
+                      query = jsonEncode(copy);
+                    }
+
+                    final skill = activeSkills
+                        .firstWhere((s) => s.name == skillName, orElse: () {
+                      throw Exception(
+                          'Skill "$skillName" not found. Available: ${activeSkills.map((s) => s.name).join(", ")}');
+                    });
+
+                    final workerService = WorkerService(llmService);
+                    toolResult = await workerService.executeSkillTask(
+                      skill,
+                      query.toString(),
+                      model: settings.executionModel,
+                      providerId: settings.executionProviderId,
+                      maxTurns:
+                          _resolveSkillWorkerMaxTurns(settings, skill: skill),
+                      mode: _resolveSkillWorkerMode(settings, skill: skill),
+                      onUsage: ({
+                        required bool success,
+                        required int promptTokens,
+                        required int completionTokens,
+                        required int reasoningTokens,
+                        required int durationMs,
+                        AppErrorType? errorType,
+                      }) {
+                        final execModel = settings.executionModel;
+                        if (execModel != null && execModel.isNotEmpty) {
+                          _ref.read(usageStatsProvider.notifier).incrementUsage(
+                                execModel,
+                                success: success,
+                                promptTokens: promptTokens,
+                                completionTokens: completionTokens,
+                                reasoningTokens: reasoningTokens,
+                                durationMs: durationMs,
+                                errorType: errorType,
+                              );
+                        }
+                      },
+                    );
+                  } else {
+                    final args = jsonDecode(tc.arguments);
+                    toolResult = await toolManager.executeTool(tc.name, args,
+                        preferredEngine: settings.searchEngine,
+                        skills: activeSkills);
+                  }
                 } catch (e) {
                   toolResult = jsonEncode({'error': e.toString()});
                 }
@@ -1105,17 +1262,23 @@ Rules:
       }
       if (_currentGenerationId == myGenerationId &&
           mounted &&
-          turns >= 3 &&
-          (aiMsg.content.isEmpty || aiMsg.content.contains('<search>'))) {
+          turns >= maxOrchestratorTurns &&
+          (aiMsg.content.isEmpty ||
+              aiMsg.content.contains('<search>') ||
+              aiMsg.content.contains('<skill'))) {
         final cleanedContent = aiMsg.content
             .replaceAll(RegExp(r'<search>.*?</search>', dotAll: true), '')
+            .replaceAll(
+                RegExp(r'''<skill\s+name=["'].*?["']>.*?</skill>''',
+                    dotAll: true),
+                '')
             .trim();
         aiMsg = aiMsg.copyWith(content: cleanedContent);
 
         messagesForApi.add(Message(
           id: const Uuid().v4(),
           role: 'user',
-          content: '请根据已有的搜索结果直接给出答案，不要再进行搜索。如果搜索结果不足，请如实说明。',
+          content: '请根据已有工具/技能结果直接给出答案，不要再调用搜索或技能。如果信息不足，请如实说明。',
           timestamp: DateTime.now(),
           isUser: false,
         ));
@@ -1326,6 +1489,140 @@ Rules:
       if (mounted) state = state.copyWith(isLoading: false);
     }
     return _sessionId;
+  }
+
+  int _resolveOrchestratorMaxTurns(SettingsState settings) {
+    return _resolveTurnLimit(
+      sources: [
+        settings.activeProvider.customParameters,
+        settings.activeProvider.globalSettings,
+      ],
+      keys: const [
+        'orchestrator_max_turns',
+        'orchestratorMaxTurns',
+        '_aurora_max_turns',
+        'max_turns',
+        'maxTurns',
+      ],
+      fallback: 8,
+      min: 1,
+      max: 50,
+    );
+  }
+
+  int _resolveSkillWorkerMaxTurns(SettingsState settings, {Skill? skill}) {
+    final sources = <Map<String, dynamic>>[];
+    if (skill != null) {
+      sources.add(skill.metadata);
+    }
+    sources.add(settings.activeProvider.customParameters);
+    sources.add(settings.activeProvider.globalSettings);
+
+    return _resolveTurnLimit(
+      sources: sources,
+      keys: const [
+        'skill_max_turns',
+        'skillMaxTurns',
+        'worker_max_turns',
+        'workerMaxTurns',
+        'subagent_max_turns',
+        'subagentMaxTurns',
+        '_aurora_skill_max_turns',
+        'max_turns',
+        'maxTurns',
+      ],
+      fallback: 10,
+      min: 1,
+      max: 30,
+    );
+  }
+
+  SkillWorkerMode _resolveSkillWorkerMode(SettingsState settings,
+      {Skill? skill}) {
+    final sources = <Map<String, dynamic>>[];
+    if (skill != null) {
+      sources.add(skill.metadata);
+    }
+    sources.add(settings.activeProvider.customParameters);
+    sources.add(settings.activeProvider.globalSettings);
+
+    return _resolveWorkerMode(
+          sources: sources,
+          keys: const [
+            'worker_mode',
+            'workerMode',
+            'skill_worker_mode',
+            'skillWorkerMode',
+            'subagent_mode',
+            'subagentMode',
+            '_aurora_worker_mode',
+            '_aurora_skill_worker_mode',
+          ],
+        ) ??
+        SkillWorkerMode.reasoner;
+  }
+
+  SkillWorkerMode? _resolveWorkerMode({
+    required List<Map<String, dynamic>> sources,
+    required List<String> keys,
+  }) {
+    for (final source in sources) {
+      for (final key in keys) {
+        if (!source.containsKey(key)) continue;
+        final parsed = _parseWorkerMode(source[key]);
+        if (parsed != null) return parsed;
+      }
+    }
+    return null;
+  }
+
+  SkillWorkerMode? _parseWorkerMode(dynamic value) {
+    if (value is! String) return null;
+    switch (value.trim().toLowerCase()) {
+      case 'executor':
+      case 'execute':
+      case 'tool_executor':
+      case 'tool-executor':
+        return SkillWorkerMode.executor;
+      case 'reasoner':
+      case 'reason':
+      case 'planner':
+        return SkillWorkerMode.reasoner;
+      default:
+        return null;
+    }
+  }
+
+  int _resolveTurnLimit({
+    required List<Map<String, dynamic>> sources,
+    required List<String> keys,
+    required int fallback,
+    required int min,
+    required int max,
+  }) {
+    for (final source in sources) {
+      for (final key in keys) {
+        if (!source.containsKey(key)) continue;
+        final parsed = _parsePositiveInt(source[key]);
+        if (parsed != null) {
+          return parsed.clamp(min, max).toInt();
+        }
+      }
+    }
+    return fallback.clamp(min, max).toInt();
+  }
+
+  int? _parsePositiveInt(dynamic value) {
+    if (value is int) return value > 0 ? value : null;
+    if (value is num) {
+      final n = value.toInt();
+      return n > 0 ? n : null;
+    }
+    if (value is String) {
+      final parsed = int.tryParse(value.trim());
+      if (parsed != null && parsed > 0) return parsed;
+    }
+    return null;
   }
 
   List<ToolCall>? _mergeToolCalls(
