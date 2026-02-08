@@ -16,7 +16,7 @@ class WorkerService {
 
   WorkerService(this._llmService);
 
-  static const int _defaultMaxTurns = 8;
+  static const int _defaultMaxTurns = 10;
   static const int _maxAllowedTurns = 30;
   static const Duration _defaultShellTimeout = Duration(seconds: 45);
   static const int _maxPromptFieldChars = 1800;

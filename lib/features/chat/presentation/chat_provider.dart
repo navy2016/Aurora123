@@ -1531,7 +1531,7 @@ Rules:
         'max_turns',
         'maxTurns',
       ],
-      fallback: 6,
+      fallback: 10,
       min: 1,
       max: 30,
     );
