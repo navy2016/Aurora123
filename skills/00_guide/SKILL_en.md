@@ -1,134 +1,209 @@
 ---
 name: skill-guide
-description: Official Skill development guide, including directory structure, metadata specifications, and build process. Only used to guide developers in creating new Skills.
+description: Aurora Skills authoring and maintenance guide for creating, refactoring, or reviewing SKILL.md files with the official minimum format and Aurora runtime extensions.
 locked: true
 for_ai: false
 ---
 
-# Official Skill Format Guide
+# Aurora Skills Guide (Official Minimum + Aurora Extensions)
 
-This project follows the official Skill format standard. Each Skill is a standalone directory containing definition files and related resources.
+## 1. Purpose
 
-## 1. Directory Structure
+This guide answers three practical questions:
 
-The standard Skill directory structure is as follows:
+1. What a Skill must include at minimum (official baseline)
+2. What Aurora adds on top (project extensions)
+3. Where turns are configured and how priority works (current implementation)
 
-```text
-skill-name/
-├── SKILL.md (Required)
-│   ├── YAML Frontmatter (Required)
-│   │   ├── name: (Required)
-│   │   └── description: (Required)
-│   └── Markdown Instructions (Required)
-└── Resources (Optional)
-    ├── scripts/     - Executable code
-    ├── references/  - Context documentation
-    └── assets/      - Output files (templates, etc.)
-```
+## 2. Official Minimum Format (Required)
 
-## 2. SKILL.md Format Specifications
-
-### YAML Frontmatter
-
-The top of the `SKILL.md` file must contain YAML formatted metadata:
+Each Skill directory must contain `SKILL.md` with YAML frontmatter at the top. The minimum required fields are:
 
 ```yaml
 ---
 name: your-skill-name
-description: What this skill does and when to use it. Includes trigger context, file types, task types, and keywords users might mention.
+description: WHAT + WHEN
 ---
 ```
 
-**Field Requirements:**
+Requirements:
 
-| Field | Required | Format | Description |
-| :--- | :--- | :--- | :--- |
-| `name` | Yes | Lowercase, hyphens allowed, max 64 chars | Unique identifier for the skill. |
-| `description` | Yes | Max 1024 chars | **Core Point**: Must include **WHAT** and **WHEN**. This is the key to triggering the skill. |
+- `name` is required; use lowercase hyphenated names like `weather-fetcher`
+- `description` is required and must clearly describe WHAT and WHEN
+- Routing depends on frontmatter metadata (especially `name` and `description`)
+- The Markdown body is loaded only after trigger, so usage conditions must not live only in the body
 
-### Body Content
+## 3. Writing the SKILL Body
 
-Below the metadata is the content in Markdown format:
+Keep the body focused on How:
 
-```markdown
-# Your Skill Name
+1. Write concise, imperative steps
+2. Put variant-heavy details in `references/`; keep body as workflow and selection logic
+3. Put repeatable deterministic logic in `scripts/`
+4. Put templates/materials in `assets/`
+5. Prefer executable instructions over long background explanations
 
-[Instructions Section]
-Clear, step-by-step instructions for Claude. Always use imperative/infinitive forms.
+## 4. Aurora Discovery Rules (Current)
 
-[Examples Section]
-Concrete input/output examples.
+Aurora recursively scans `skills/` and recognizes:
+
+- `SKILL.md`
+- `SKILL_<language>.md` (for example, `SKILL_en.md`)
+- If the requested language file is missing, it falls back to `SKILL.md`
+- A directory is treated as a Skill if at least one of the files above exists
+
+Recommended structure:
+
+```text
+skill-name/
+├── SKILL.md
+├── SKILL_en.md        # optional
+├── scripts/           # optional
+├── references/        # optional
+└── assets/            # optional
 ```
 
-> **Note**: Information about "When to use" should be in the `description`, **NOT** in the body content, because the body is only loaded *after* the skill is triggered by its description.
+## 5. Aurora Frontmatter Extensions (Optional)
 
-## 3. Operation Mechanism
+Official minimum requires only `name` and `description`. Aurora also supports:
 
-Understanding the two-stage loading mechanism of a Skill is crucial:
+- `enabled: true|false`
+- `locked: true|false`
+- `for_ai: true|false`
+- `platforms: [all|desktop|mobile|windows|macos|linux|android|ios]`
+- `id: custom_id` (defaults to folder name when omitted)
+- `tools: [...]` (tool definitions)
+- `worker_mode: reasoner|executor` (Skill Worker execution mode)
 
-### Phase 1: Routing
-- The system reads only the `name` and `description` from the YAML Frontmatter.
-- The LLM decides whether to utilize the skill based on the `description` (which includes What & When).
-- **Key Point**: If the `description` is poorly written, the Skill will never be triggered.
+Aurora turns-related extension fields:
 
-### Phase 2: Execution
-- Once a Skill is selected, the system injects the Markdown body (`Instructions` and `Examples`) into the current Context (System Prompt).
-- **Key Point**: The body only needs to include **How** (Execution Instructions). Do not repeat verbose "When to use" conditions in the body to save Tokens.
+- `skill_max_turns`
+- Alias keys: `skillMaxTurns`, `worker_max_turns`, `workerMaxTurns`, `subagent_max_turns`, `subagentMaxTurns`, `_aurora_skill_max_turns`, `max_turns`, `maxTurns`
 
-## 4. Build Process
+Note: `skill_max_turns` is an Aurora extension, not an official required field.
 
-### Step 1: Understand Through Examples
-Before creating a Skill, collect specific usage scenarios:
-- "What functionality should this skill support?"
-- "What will the user say to trigger this skill?" (e.g., "Remove red eye from this image", "Build a todo app")
+`worker_mode` behavior:
 
-### Step 2: Plan Reusable Content
-Analyze examples to identify needed scripts and resources:
-- **Scripts**: Code that needs to run every time (e.g., `scripts/rotate_pdf.py`).
-- **Assets**: Boilerplate code or templates (e.g., `assets/hello-world/`).
-- **References**: Static documentation to consult (e.g., `references/schema.md`).
+- `reasoner` (default): Worker may run multi-turn reasoning/tool loops
+- `executor`: Worker returns immediately after the first tool output (no in-worker second-pass synthesis)
 
-### Step 3: Initialize Skill
-Create the directory and initialize `SKILL.md`.
+Alias keys for mode:
 
-```bash
-mkdir -p my-skill/{scripts,references,assets}
-touch my-skill/SKILL.md
-```
+- `workerMode`
+- `skill_worker_mode`
+- `skillWorkerMode`
+- `subagent_mode`
+- `subagentMode`
+- `_aurora_worker_mode`
+- `_aurora_skill_worker_mode`
 
-### Step 4: Edit Skill
-Write the content of `SKILL.md`.
+## 6. Turns Configuration and Priority (Current)
 
-**Frontmatter Example:**
+### 6.1 Orchestrator (main chat loop)
+
+Keys (read order):
+
+- `orchestrator_max_turns`
+- `orchestratorMaxTurns`
+- `_aurora_max_turns`
+- `max_turns`
+- `maxTurns`
+
+Sources (priority order):
+
+1. Provider `customParameters`
+2. Provider `globalSettings`
+
+Defaults and limits:
+
+- Default `8`
+- Clamped to `1..50`
+
+### 6.2 Skill Worker (single skill execution)
+
+Keys (read order):
+
+- `skill_max_turns`
+- `skillMaxTurns`
+- `worker_max_turns`
+- `workerMaxTurns`
+- `subagent_max_turns`
+- `subagentMaxTurns`
+- `_aurora_skill_max_turns`
+- `max_turns`
+- `maxTurns`
+
+Sources (priority order):
+
+1. Skill frontmatter metadata
+2. Provider `customParameters`
+3. Provider `globalSettings`
+
+Defaults and limits:
+
+- Default `6`
+- Clamped to `1..30`
+
+Additional runtime note:
+
+- `WorkerService` base defaults are `maxTurns=8` and shell timeout `45s`
+- In chat orchestration, explicit resolved values are passed, so the `6/1..30` rule usually applies
+
+## 7. Configuration Entry Points
+
+### 7.1 Where to set Skill frontmatter
+
+In Aurora UI:
+
+1. `Settings`
+2. `Agent Skills`
+3. Select a skill and click `Edit`
+4. Edit YAML frontmatter directly at the top of `SKILL.md`
+
+### 7.2 Where to set customParameters
+
+Desktop entry points are the two Custom Parameters cards under provider configuration:
+
+1. `Settings` -> `Model Provider` -> provider-level gear button (Global Config) -> `Custom Parameters`
+2. `Settings` -> `Model Provider` -> model row gear button (Model Config) -> `Custom Parameters`
+
+Current behavior note:
+
+- Turns resolution reads `customParameters`, `globalSettings`, and skill metadata
+- Model-specific `modelSettings` custom params currently do not participate in turns resolution (they mainly override request params)
+
+## 8. Recommended Template
+
 ```yaml
 ---
-name: docx-processor
-description: Comprehensive document creation, editing, and analysis, supporting change tracking, comments, formatting preservation, and text extraction. Use when Claude needs to handle professional documents (.docx files): (1) create new docs, (2) modify or edit content, (3) handle tracked changes, (4) add comments, or any other document task.
+name: weather-fetcher
+description: Fetch real-time weather for a city. Trigger when users ask about weather, temperature, rain, or wind.
+enabled: true
+for_ai: true
+platforms: [desktop]
+skill_max_turns: 10
+worker_mode: reasoner
 ---
 ```
 
-**Body Structure Suggestions:**
 ```markdown
-# Skill Name
+# Weather Fetcher
 
-## Getting Started
-[Basic first steps]
-
-## Core Workflows
-[Step-by-step procedures]
-
-## Extended Capabilities
-- **Feature A**: See [FEATURE_A.md](references/feature_a.md)
+## Instructions
+1. Validate the input city
+2. Fetch weather data
+3. Return structured output
 
 ## Examples
-[Concrete input/output pairs]
+- Input: Weather in Shanghai
+- Output: { ... }
 ```
 
-### Step 5: Package Skill (Optional)
-If explanation is needed, the skill folder can be packaged into a `.skill` file (zip format), verifying metadata and structure.
+## 9. Pre-commit Checklist
 
-### Step 6: Iterate Based on Usage
-- Use the skill on real tasks.
-- Identify bottlenecks and inefficiencies.
-- Only actual usage reveals needed improvements in SKILL.md or resources.
-- Immediate feedback, immediate iteration.
+- Frontmatter parses as valid YAML
+- `name` and `description` are present and precise
+- `description` clearly covers WHAT + WHEN
+- Body is actionable and concise
+- `skill_max_turns` is set when multi-step tool execution is expected
+- Use `worker_mode: executor` when a single tool call is enough

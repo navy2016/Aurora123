@@ -48,14 +48,13 @@ class SkillNotifier extends StateNotifier<SkillState> {
       }
 
       final skills = <Skill>[];
-      final entities = dir.listSync();
-
-      for (final entity in entities) {
-        if (entity is Directory) {
-          final skill = await SkillParser.parse(entity, language: language);
-          if (skill != null) {
-            skills.add(skill);
-          }
+      final skillDirs =
+          _discoverSkillDirectories(dir, language: language).toList()..sort();
+      for (final skillDirPath in skillDirs) {
+        final skill = await SkillParser.parse(Directory(skillDirPath),
+            language: language);
+        if (skill != null) {
+          skills.add(skill);
         }
       }
 
@@ -91,30 +90,24 @@ class SkillNotifier extends StateNotifier<SkillState> {
 
       final skillFile = File('${skillDir.path}/SKILL.md');
       const boilerplate = '''---
-id: {{id}}
 name: "{{name}}"
-description: "Brief description of the skill."
-tools:
-  - name: my_tool
-    description: "Description of what this tool does."
-    type: shell
-    command: "echo Hello from {{name}}!"
-    input_schema:
-      type: object
-      properties:
-        param1:
-          type: string
-          description: "A sample parameter"
-      required: [param1]
+description: "Describe WHAT this skill does and WHEN it should be used."
+enabled: true
+for_ai: true
+worker_mode: reasoner
 ---
 
-# Instruction for Assistant
-Describe how and when the assistant should use this skill.
+# {{name}}
+
+## Instructions
+Provide clear, imperative execution steps for the assistant.
+
+## Examples
+- Input:
+- Output:
 ''';
 
-      final content = boilerplate
-          .replaceAll('{{id}}', folderName.replaceAll(' ', '_').toLowerCase())
-          .replaceAll('{{name}}', folderName);
+      final content = boilerplate.replaceAll('{{name}}', folderName);
 
       await skillFile.writeAsString(content);
       refresh();
@@ -183,6 +176,34 @@ Describe how and when the assistant should use this skill.
     } catch (e) {
       state = state.copyWith(error: 'Failed to toggle skill: $e');
     }
+  }
+
+  Set<String> _discoverSkillDirectories(Directory root, {String? language}) {
+    final directories = <String>{};
+    final normalizedLang = language?.trim().toLowerCase();
+
+    for (final entity in root.listSync(recursive: true, followLinks: false)) {
+      if (entity is! File) continue;
+      final fileName =
+          entity.path.split(Platform.pathSeparator).last.toLowerCase();
+      if (fileName == 'skill.md' ||
+          (normalizedLang != null &&
+              normalizedLang.isNotEmpty &&
+              fileName == 'skill_$normalizedLang.md')) {
+        directories.add(entity.parent.path);
+      }
+    }
+
+    if (directories.isEmpty) {
+      // Backward-compatible fallback for legacy flat skill directories.
+      for (final entity in root.listSync()) {
+        if (entity is Directory) {
+          directories.add(entity.path);
+        }
+      }
+    }
+
+    return directories;
   }
 }
 
