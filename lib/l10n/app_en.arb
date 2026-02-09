@@ -6,6 +6,7 @@
   "newChat": "New Chat",
   "searchChatHistory": "Search chat history",
   "send": "Send",
+  "sendAndRegenerate": "Send & Regenerate",
   "retry": "Retry",
   "copy": "Copy",
   "copied": "Copied",
@@ -54,6 +55,7 @@
   "clickToChangeAvatar": "Click to change avatar",
   "aiInfo": "AI Info",
   "aiName": "AI Name",
+  "aiNamePlaceholder": "Assistant",
   "aiAvatar": "AI Avatar",
   "pleaseEnter": "Please enter",
   "changeAvatarTitle": "Change {target} Avatar",
@@ -99,12 +101,21 @@
   "startNewChat": "New Chat",
   "edit": "Edit",
   "add": "Add",
+  "create": "Create",
   "enabled": "Enabled",
   "disabled": "Disabled",
   "loading": "Loading",
+  "loadingEllipsis": "Loading...",
   "error": "Error",
+  "errorWithMessage": "Error: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
   "success": "Success",
   "failed": "Failed",
+  "unknown": "Unknown",
   
   "settings": "Settings",
   "modelProvider": "Model Provider",
@@ -114,6 +125,7 @@
   "usageStats": "Usage Statistics",
   "agentSkills": "Skills",
   "executionModel": "Execution Model",
+  "executionModelHint": "The model used by Worker Agents to execute skills.",
   "defaultModelSameAsChat": "Default (Same as Chat)",
   "agentSkillsDescription": "Skills are loaded from the './skills' folder in the application root. Create a folder with a 'SKILL.md' file to add a new skill.",
   "noSkillsFound": "No skills found in ./skills directory",
@@ -127,10 +139,9 @@
   "deleteSkillConfirm": "Are you sure you want to delete this skill? This action cannot be undone.",
   "updateSkill": "Update Skill",
   "saveSuccess": "Saved Successfully",
-  "enabled": "Enabled",
-  "disabled": "Disabled",
   "skillName": "Skill Folder Name",
   "skillNameHint": "Enter folder name (e.g. translation_helper)",
+  "skillMarkdownPlaceholder": "SKILL.md content...",
   
   "providerName": "Provider Name",
   "currentProvider": "Current Provider",
@@ -152,13 +163,13 @@
   "enableAll": "Enable All",
   "disableAll": "Disable All",
   
-  "modelConfig": "Configuration",
   "configureModelParams": "Configure parameters for this model",
   "paramsHigherPriority": "These parameters have higher priority than global settings",
   "noCustomParams": "No custom parameters",
   "addCustomParam": "Add Custom Parameter",
   "editParam": "Edit Parameter",
   "paramKey": "Key",
+  "paramKeyPlaceholder": "e.g. _aurora_image_config",
   "paramValue": "Value",
   "paramType": "Type",
   "typeText": "Text",
@@ -167,14 +178,9 @@
   "typeJson": "JSON",
   "formatError": "Format error",
   
-  "smartTopicGeneration": "Smart Topic Generation",
   "selectTopicModel": "Select topic generation model",
   "noModelFallback": "Will fallback to default truncation if no model selected",
   
-  "userName": "User Name",
-  "userAvatar": "User Avatar",
-  "aiName": "AI Name",
-  "aiAvatar": "AI Avatar",
   "selectImage": "Select Image",
   "cropAvatar": "Crop Avatar",
   
@@ -238,6 +244,10 @@
       "tps": {"type": "String"}
     }
   },
+  "totalTokens": "Total Tokens",
+  "tokensPerSecondShort": "Tokens/s",
+  "ttft": "TTFT",
+  "avgDuration": "Avg Duration",
   
   "mobileSettings": "Mobile Settings",
   "mobileSettingsHint": "Please use the settings button in the top navigation bar to access full settings",
@@ -271,6 +281,7 @@
   "createProject": "New Project",
   "deleteProject": "Delete Project",
   "deleteProjectConfirm": "Are you sure you want to delete this project?",
+  "deleteChapter": "Delete Chapter",
   "deleteChapterConfirm": "Are you sure you want to delete this chapter?",
   "writing": "Writing",
   "context": "World Settings",
@@ -284,8 +295,14 @@
   "outlinePlaceholder": "E.g. Write a cyberpunk detective novel featuring...",
   "generateOutline": "Generate Outline",
   "editOutlinePlaceholder": "Edit outline here...",
+  "rerunOutline": "Rerun Outline",
+  "rerunOutlineFromLastPromptHint": "Regenerate outline based on the last requirement prompt",
+  "noRerunnableOutlinePrompt": "No outline requirement prompt to rerun",
   "generateChapters": "Generate Chapters",
   "regenerateChapters": "Regenerate Chapters",
+  "regenerateChapterOutlineTitle": "Regenerate Chapter Outline",
+  "regenerateChapterOutlineConfirm": "This will regenerate chapter outlines based on the latest story outline.\nIf an error occurs, the system will automatically roll back to the current chapter content.",
+  "continueGenerate": "Continue",
   "clearChaptersWarning": "This will clear all existing chapters and progress.\nIt is recommended to backup important content first.\n\nAre you sure you want to continue?",
   "clearAndRegenerate": "Clear & Regenerate",
   "chaptersAndTasks": "Chapters & Tasks",
@@ -298,6 +315,9 @@
   "waitingForGeneration": "Waiting for generation...",
   "worldSettings": "World Settings",
   "autoIncludeHint": "Checked categories will be automatically included during writing",
+  "clearWorldSettingsTooltip": "Clear all world settings",
+  "clearWorldSettingsTitle": "Clear World Settings",
+  "clearWorldSettingsConfirm": "Are you sure you want to clear all world settings data?\n(Characters, relationships, locations, foreshadowing/clues, etc.)",
   "worldRules": "World Rules",
   "characterSettings": "Character Settings",
   "relationships": "Relationships",
@@ -310,19 +330,39 @@
   "noContentYet": "No content yet",
   "allTasksPending": "Execute all pending tasks sequentially",
   "noPendingTasks": "No executable pending tasks",
+  "restartAllTasksTooltip": "Reset all task states and regenerate from scratch",
+  "restartAllTasksTitle": "Restart All Tasks",
+  "restartAllTasksConfirm": "Are you sure you want to reset all tasks?\nThis will clear generated content and require regenerating all chapters.",
+  "restartAllTasksAction": "Restart",
   "executeTask": "Execute",
   "reviewFeedback": "Review Feedback",
   "reject": "Reject",
   "approve": "Approve",
-  "regenerate": "Rewrite",
+  "rewrite": "Rewrite",
   "pending": "Pending",
   "running": "Running",
-  "success": "Completed",
-  "failed": "Failed",
+  "completed": "Completed",
   "paused": "Paused",
   "reviewing": "Reviewing",
   "decomposing": "Decomposing",
-  "deleteProjectConfirm": "Are you sure you want to delete this project?",
+  "needsRevision": "Needs Revision",
+  "batchProgress": "Batch progress: {current}/{total}",
+  "@batchProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "projectOnlyKnowledgeBaseHint": "This knowledge base is project-only and never applied in chat.",
+  "importingEllipsis": "Importing...",
+  "chapterProgressSummary": "{completed}/{total} chapters · {words} words",
+  "@chapterProgressSummary": {
+    "placeholders": {
+      "completed": {"type": "int"},
+      "total": {"type": "int"},
+      "words": {"type": "int"}
+    }
+  },
   "noProjectSelected": "No Project Selected",
   "createYourFirstProject": "Start Your Creative Journey",
   "createProjectDescription": "Create a new project to start building your story outline and chapters.",
@@ -341,6 +381,13 @@
   "copyCode": "Copy Code",
   "codeCopied": "Code copied",
   "contentCopied": "Content copied",
+  "footnotes": "Footnotes",
+  "undefinedFootnote": "Undefined footnote: {id}",
+  "@undefinedFootnote": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
   
   "thinking": "Thinking",
   "thinkingProcess": "Thinking Process",
@@ -373,10 +420,29 @@
   "terminalOutput": "Terminal Output",
   "noOutput": "[No output]",
   
+  "images": "Images",
   "imageGenerated": "Image generated",
+  "imageCopied": "Image Copied",
+  "imageCopiedToClipboard": "Image has been copied to clipboard",
+  "clipboardError": "Clipboard Error",
+  "clipboardAccessFailed": "Failed to access clipboard. Please restart the app completely.",
+  "copyImage": "Copy Image",
   "saveImage": "Save Image",
+  "saveImageAs": "Save Image As...",
   "imageSaved": "Image saved",
+  "imageSavedToPath": "Image saved to {path}",
+  "@imageSavedToPath": {
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "imageSaveFailed": "Failed to save image",
+  "rotateLeft": "Rotate Left",
+  "rotateRight": "Rotate Right",
+  "flipHorizontal": "Flip Horizontal",
+  "flipVertical": "Flip Vertical",
+  "zoomIn": "Zoom In",
+  "zoomOut": "Zoom Out",
   
   "today": "Today",
   "yesterday": "Yesterday",
@@ -391,8 +457,8 @@
   
   "noMessages": "No messages",
   "typeMessage": "Type a message...",
+  "editMessagePlaceholder": "Edit message...",
   
-  "editApiKey": "Edit API Key",
   "editBaseUrl": "Edit API Base URL",
   
   "sourceLanguage": "Source Language",
@@ -493,6 +559,8 @@
   "deleteTopic": "Delete Group",
   "deleteTopicConfirm": "Delete this group? Sessions will be moved to the default group.",
   "topicNamePlaceholder": "Group Name",
+  "errorLoadingTopics": "Error loading topics",
+  "noGroups": "No groups",
   "allChats": "All",
   
   "requestConfig": "Request Config",
@@ -540,10 +608,6 @@
   "errorServerError": "Server Error (5XX)",
   "errorRateLimit": "Rate Limit (429)",
   "errorUnknown": "Other Error",
-  "clearStats": "Clear Stats",
-  "clearStatsConfirm": "Are you sure you want to clear all statistics? This cannot be undone.",
-  "clearData": "Clear Data",
-  "noUsageData": "No data available",
   "bgDefault": "Default",
   "bgPureBlack": "Pure Black",
   "bgWarm": "Warm",
@@ -577,7 +641,14 @@
   "providerColor": "Color (Hex)",
   "apiKeyPlaceholder": "sk-xxxxxxxx",
   "baseUrlPlaceholder": "https://api.openai.com/v1",
+  "apiBaseUrl": "API Base URL",
   "apiKeys": "API Keys",
+  "apiKeysCount": "{count, plural, =1{1 key} other{{count} keys}}",
+  "@apiKeysCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "addApiKey": "Add Key",
   "autoRotateKeys": "Auto Rotate",
   "editApiKey": "Edit API Key",
@@ -655,6 +726,7 @@
   "noCustomPresets": "No custom presets",
   "systemDefault": "System Default",
   "systemDefaultRestored": "System default presets restored",
+  "restoreSystemDefaultPromptHint": "Restore system default preset prompt",
   "presetLoaded": "Preset loaded: {name}",
   "@presetLoaded": {
     "placeholders": {

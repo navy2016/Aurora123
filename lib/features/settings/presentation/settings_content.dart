@@ -727,7 +727,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
 
                 // --- Base URL ---
                 fluent.InfoLabel(
-                  label: 'API Base URL',
+                  label: l10n.apiBaseUrl,
                   child: _buildStyledTextBox(
                     controller: _baseUrlController,
                     placeholder: l10n.baseUrlPlaceholder,
@@ -1251,7 +1251,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           fluent.InfoLabel(
             label: l10n.aiName,
             child: _buildStyledTextBox(
-              placeholder: 'Assistant',
+              placeholder: l10n.aiNamePlaceholder,
               controller: _llmNameController,
               onChanged: (value) {
                 ref
@@ -1288,7 +1288,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                 ),
                 const SizedBox(width: 12),
                 fluent.Button(
-                  child: const Text('选择图片'),
+                  child: Text(l10n.selectImage),
                   onPressed: () async {
                     final result = await openFile(
                       acceptedTypeGroups: [
@@ -1826,7 +1826,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                 Text('${settingsState.fontSize.toStringAsFixed(1)} pt'),
                 const SizedBox(width: 8),
                 fluent.Button(
-                  child: const Text('Reset'),
+                  child: Text(l10n.reset),
                   onPressed: () {
                     ref.read(settingsProvider.notifier).setFontSize(14.0);
                   },
@@ -1997,12 +1997,13 @@ class _ApiKeyItemState extends State<_ApiKeyItem> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return fluent.TextBox(
       controller: _controller,
       focusNode: _focusNode,
       obscureText: !_isVisible,
       onChanged: widget.onUpdate,
-      placeholder: 'sk-................',
+      placeholder: l10n.apiKeyPlaceholder,
       suffix: fluent.IconButton(
         icon: fluent.Icon(
           _isVisible ? AuroraIcons.visibilityOff : AuroraIcons.visibility,

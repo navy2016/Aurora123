@@ -60,7 +60,9 @@ class MobileAppSettingsPage extends ConsumerWidget {
               MobileSettingsTile(
                 leading: const Icon(Icons.language),
                 title: l10n.language,
-                subtitle: settingsState.language == 'zh' ? '简体中文' : 'English',
+                subtitle: settingsState.language == 'zh'
+                    ? l10n.languageChinese
+                    : l10n.languageEnglish,
                 onTap: () => _showLanguagePicker(context, ref),
               ),
               MobileSettingsTile(
@@ -229,7 +231,7 @@ class MobileAppSettingsPage extends ConsumerWidget {
           const Divider(height: 1),
           AuroraBottomSheet.buildListItem(
             context: context,
-            title: const Text('简体中文'),
+            title: Text(l10n.languageChinese),
             selected: currentLang == 'zh',
             onTap: () {
               ref.read(settingsProvider.notifier).setLanguage('zh');
@@ -241,7 +243,7 @@ class MobileAppSettingsPage extends ConsumerWidget {
           ),
           AuroraBottomSheet.buildListItem(
             context: context,
-            title: const Text('English'),
+            title: Text(l10n.languageEnglish),
             selected: currentLang == 'en',
             onTap: () {
               ref.read(settingsProvider.notifier).setLanguage('en');

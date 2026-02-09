@@ -58,7 +58,7 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
           backgroundColor: theme.menuColor,
           borderColor: theme.resources.surfaceStrokeColorDefault,
           width: 220,
-          items: _buildDropdownItems(theme, l10n),
+          coloredItems: _buildDropdownItems(theme, l10n),
         ),
       ),
     );
@@ -66,28 +66,25 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
     setState(() => _isOpen = true);
   }
 
-  List<fluent.CommandBarItem> _buildDropdownItems(
+  List<ColoredDropdownItem> _buildDropdownItems(
       fluent.FluentThemeData theme, AppLocalizations l10n) {
     final assistants = ref.watch(assistantProvider).assistants;
     ref.watch(settingsProvider);
-    final List<fluent.CommandBarItem> items = [];
+    final List<ColoredDropdownItem> items = [];
 
     // Add Default option first
-    items.add(fluent.CommandBarButton(
+    items.add(ColoredDropdownItem(
       onPressed: () {
         ref.read(assistantProvider.notifier).selectAssistant(null);
         _removeOverlay();
       },
-      label: fluent.Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: Row(
-          children: [
-            AssistantAvatar(assistant: null, size: 24),
-            const SizedBox(width: 8),
-            const Text('Default',
-                style: TextStyle(fontWeight: FontWeight.w500)),
-          ],
-        ),
+      child: Row(
+        children: [
+          AssistantAvatar(assistant: null, size: 24),
+          const SizedBox(width: 8),
+          Text(l10n.defaultAssistant,
+              style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
       ),
     ));
 
@@ -96,39 +93,35 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
     }
 
     for (final assistant in assistants) {
-      items.add(fluent.CommandBarButton(
+      items.add(ColoredDropdownItem(
         onPressed: () {
           ref.read(assistantProvider.notifier).selectAssistant(assistant.id);
           _removeOverlay();
         },
-        label: fluent.Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: Row(
-            children: [
-              AssistantAvatar(
-                assistant: assistant,
-                size: 24,
+        child: Row(
+          children: [
+            AssistantAvatar(
+              assistant: assistant,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(assistant.name,
+                      style: const TextStyle(fontWeight: FontWeight.w500)),
+                  if (assistant.description.isNotEmpty)
+                    Text(assistant.description,
+                        style: TextStyle(
+                            fontSize: 10, color: theme.typography.caption?.color),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(assistant.name,
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
-                    if (assistant.description.isNotEmpty)
-                      Text(assistant.description,
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: theme.typography.caption?.color),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ));
     }
@@ -139,6 +132,7 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
   @override
   Widget build(BuildContext context) {
     final theme = fluent.FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final selectedId = ref.watch(assistantProvider).selectedAssistantId;
     final assistants = ref.watch(assistantProvider).assistants;
     final selectedAssistant =
@@ -168,7 +162,7 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
                 Container(
                   constraints: const BoxConstraints(maxWidth: 120),
                   child: fluent.Text(
-                    selectedAssistant?.name ?? 'Default',
+                    selectedAssistant?.name ?? l10n.defaultAssistant,
                     style: const TextStyle(
                         fontWeight: FontWeight.w500, fontSize: 13),
                     overflow: TextOverflow.ellipsis,

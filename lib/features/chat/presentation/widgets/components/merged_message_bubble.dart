@@ -238,7 +238,7 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  l10n?.deepThinking ?? '思考中...',
+                                  l10n?.deepThinking ?? 'Thinking...',
                                   style: TextStyle(
                                     color: theme.typography.body?.color
                                         ?.withValues(alpha: 0.6),

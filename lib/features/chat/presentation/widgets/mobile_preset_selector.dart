@@ -66,7 +66,7 @@ class MobilePresetSelector extends ConsumerWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
-                    '预设 (Presets)',
+                    l10n.promptPresets,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,

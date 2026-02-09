@@ -120,8 +120,8 @@ class _MobileSyncSettingsPageState
               actions: [
                 TextButton(
                     onPressed: () => ref.refresh(syncProvider),
-                    child: const Text('DISMISS',
-                        style: TextStyle(color: Colors.white)))
+                    child: Text(l10n.close,
+                        style: const TextStyle(color: Colors.white)))
               ],
             ),
           if (state.successMessage != null)
@@ -132,8 +132,8 @@ class _MobileSyncSettingsPageState
               actions: [
                 TextButton(
                     onPressed: () => ref.refresh(syncProvider),
-                    child:
-                        const Text('OK', style: TextStyle(color: Colors.white)))
+                    child: Text(l10n.done,
+                        style: const TextStyle(color: Colors.white)))
               ],
             ),
           MobileSettingsSection(

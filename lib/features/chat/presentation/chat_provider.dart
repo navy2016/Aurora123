@@ -1321,10 +1321,13 @@ Rules:
             .trim();
         aiMsg = aiMsg.copyWith(content: cleanedContent);
 
+        final finalizeInstruction = settings.language == 'zh'
+            ? '请根据已有工具/技能结果直接给出答案，不要再调用搜索或技能。如果信息不足，请如实说明。'
+            : 'Please answer directly based on the existing tool/skill results and do not call search or skills again. If information is insufficient, say so honestly.';
         messagesForApi.add(Message(
           id: const Uuid().v4(),
           role: 'user',
-          content: '请根据已有工具/技能结果直接给出答案，不要再调用搜索或技能。如果信息不足，请如实说明。',
+          content: finalizeInstruction,
           timestamp: DateTime.now(),
           isUser: false,
         ));
@@ -1510,9 +1513,13 @@ Rules:
         final messages = List<Message>.from(state.messages);
         if (messages.isNotEmpty && !messages.last.isUser) {
           final lastMsg = messages.last;
+          final language = _ref.read(settingsProvider).language;
+          final requestFailedTitle = language == 'zh'
+              ? '请求失败'
+              : 'Request failed';
           messages[messages.length - 1] = Message(
             id: lastMsg.id,
-            content: '⚠️ **请求失败**\n\n$errorMessage',
+            content: '⚠️ **$requestFailedTitle**\n\n$errorMessage',
             isUser: false,
             timestamp: lastMsg.timestamp,
             model: lastMsg.model,

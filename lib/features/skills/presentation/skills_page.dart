@@ -261,7 +261,7 @@ class _SkillSettingsPageState extends ConsumerState<SkillSettingsPage> {
                 ),
                 const SizedBox(width: 8),
                 fluent.Tooltip(
-                  message: 'The model used by Worker Agents to execute skills.',
+                  message: l10n.executionModelHint,
                   child: Icon(AuroraIcons.info,
                       size: 14, color: theme.typography.caption?.color),
                 ),
@@ -576,7 +576,7 @@ class _SkillSettingsPageState extends ConsumerState<SkillSettingsPage> {
                     controller: controller,
                     maxLines: null,
                     minLines: 20,
-                    placeholder: 'SKILL.md content...',
+                    placeholder: l10n.skillMarkdownPlaceholder,
                     style: const TextStyle(
                       fontFamily: 'Consolas',
                       fontSize: 13,
@@ -633,9 +633,9 @@ class _SkillSettingsPageState extends ConsumerState<SkillSettingsPage> {
                     controller: controller,
                     maxLines: 15,
                     minLines: 5,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'SKILL.md content...',
+                      hintText: l10n.skillMarkdownPlaceholder,
                     ),
                     style: const TextStyle(
                       fontFamily: 'Consolas',

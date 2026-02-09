@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get send => 'Send';
 
   @override
+  String get sendAndRegenerate => 'Send & Regenerate';
+
+  @override
   String get retry => 'Retry';
 
   @override
@@ -149,6 +152,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiName => 'AI Name';
 
   @override
+  String get aiNamePlaceholder => 'Assistant';
+
+  @override
   String get aiAvatar => 'AI Avatar';
 
   @override
@@ -227,6 +233,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add => 'Add';
 
   @override
+  String get create => 'Create';
+
+  @override
   String get enabled => 'Enabled';
 
   @override
@@ -236,13 +245,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading';
 
   @override
+  String get loadingEllipsis => 'Loading...';
+
+  @override
   String get error => 'Error';
 
   @override
-  String get success => 'Completed';
+  String errorWithMessage(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get success => 'Success';
 
   @override
   String get failed => 'Failed';
+
+  @override
+  String get unknown => 'Unknown';
 
   @override
   String get settings => 'Settings';
@@ -267,6 +287,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get executionModel => 'Execution Model';
+
+  @override
+  String get executionModelHint =>
+      'The model used by Worker Agents to execute skills.';
 
   @override
   String get defaultModelSameAsChat => 'Default (Same as Chat)';
@@ -314,6 +338,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skillNameHint => 'Enter folder name (e.g. translation_helper)';
+
+  @override
+  String get skillMarkdownPlaceholder => 'SKILL.md content...';
 
   @override
   String get providerName => 'Provider Name';
@@ -372,9 +399,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disableAll => 'Disable All';
 
   @override
-  String get modelConfig => 'Model Config';
-
-  @override
   String get configureModelParams => 'Configure parameters for this model';
 
   @override
@@ -392,6 +416,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paramKey => 'Key';
+
+  @override
+  String get paramKeyPlaceholder => 'e.g. _aurora_image_config';
 
   @override
   String get paramValue => 'Value';
@@ -461,11 +488,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modelCallDistribution => 'Model Call Distribution';
 
   @override
-  String get clearStats => 'Clear Stats';
+  String get clearStats => 'Clear Statistics';
 
   @override
   String get clearStatsConfirm =>
-      'Are you sure you want to clear all statistics? This cannot be undone.';
+      'Are you sure you want to clear all usage statistics? This action cannot be undone.';
 
   @override
   String get clearData => 'Clear Data';
@@ -475,7 +502,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to clear all statistics?';
 
   @override
-  String get noUsageData => 'No data available';
+  String get noUsageData => 'No usage data';
 
   @override
   String callsCount(int count) {
@@ -511,6 +538,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String tokensPerSecond(String tps) {
     return 'Token/s: $tps';
   }
+
+  @override
+  String get totalTokens => 'Total Tokens';
+
+  @override
+  String get tokensPerSecondShort => 'Tokens/s';
+
+  @override
+  String get ttft => 'TTFT';
+
+  @override
+  String get avgDuration => 'Avg Duration';
 
   @override
   String get mobileSettings => 'Mobile Settings';
@@ -580,6 +619,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get novelStructure => 'Novel Structure';
 
   @override
+  String get modelConfig => 'Model Config';
+
+  @override
   String get reviewModel => 'Review';
 
   @override
@@ -603,6 +645,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteProjectConfirm =>
       'Are you sure you want to delete this project?';
+
+  @override
+  String get deleteChapter => 'Delete Chapter';
 
   @override
   String get deleteChapterConfirm =>
@@ -647,10 +692,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editOutlinePlaceholder => 'Edit outline here...';
 
   @override
+  String get rerunOutline => 'Rerun Outline';
+
+  @override
+  String get rerunOutlineFromLastPromptHint =>
+      'Regenerate outline based on the last requirement prompt';
+
+  @override
+  String get noRerunnableOutlinePrompt =>
+      'No outline requirement prompt to rerun';
+
+  @override
   String get generateChapters => 'Generate Chapters';
 
   @override
   String get regenerateChapters => 'Regenerate Chapters';
+
+  @override
+  String get regenerateChapterOutlineTitle => 'Regenerate Chapter Outline';
+
+  @override
+  String get regenerateChapterOutlineConfirm =>
+      'This will regenerate chapter outlines based on the latest story outline.\nIf an error occurs, the system will automatically roll back to the current chapter content.';
+
+  @override
+  String get continueGenerate => 'Continue';
 
   @override
   String get clearChaptersWarning =>
@@ -691,6 +757,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Checked categories will be automatically included during writing';
 
   @override
+  String get clearWorldSettingsTooltip => 'Clear all world settings';
+
+  @override
+  String get clearWorldSettingsTitle => 'Clear World Settings';
+
+  @override
+  String get clearWorldSettingsConfirm =>
+      'Are you sure you want to clear all world settings data?\n(Characters, relationships, locations, foreshadowing/clues, etc.)';
+
+  @override
   String get worldRules => 'World Rules';
 
   @override
@@ -727,6 +803,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPendingTasks => 'No executable pending tasks';
 
   @override
+  String get restartAllTasksTooltip =>
+      'Reset all task states and regenerate from scratch';
+
+  @override
+  String get restartAllTasksTitle => 'Restart All Tasks';
+
+  @override
+  String get restartAllTasksConfirm =>
+      'Are you sure you want to reset all tasks?\nThis will clear generated content and require regenerating all chapters.';
+
+  @override
+  String get restartAllTasksAction => 'Restart';
+
+  @override
   String get executeTask => 'Execute';
 
   @override
@@ -739,13 +829,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approve => 'Approve';
 
   @override
-  String get regenerate => 'Regenerate';
+  String get rewrite => 'Rewrite';
 
   @override
   String get pending => 'Pending';
 
   @override
   String get running => 'Running';
+
+  @override
+  String get completed => 'Completed';
 
   @override
   String get paused => 'Paused';
@@ -755,6 +848,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get decomposing => 'Decomposing';
+
+  @override
+  String get needsRevision => 'Needs Revision';
+
+  @override
+  String batchProgress(int current, int total) {
+    return 'Batch progress: $current/$total';
+  }
+
+  @override
+  String get projectOnlyKnowledgeBaseHint =>
+      'This knowledge base is project-only and never applied in chat.';
+
+  @override
+  String get importingEllipsis => 'Importing...';
+
+  @override
+  String chapterProgressSummary(int completed, int total, int words) {
+    return '$completed/$total chapters · $words words';
+  }
 
   @override
   String get noProjectSelected => 'No Project Selected';
@@ -791,6 +904,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stopGenerating => 'Stop Generating';
 
   @override
+  String get regenerate => 'Regenerate';
+
+  @override
   String get copyCode => 'Copy Code';
 
   @override
@@ -798,6 +914,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contentCopied => 'Content copied';
+
+  @override
+  String get footnotes => 'Footnotes';
+
+  @override
+  String undefinedFootnote(String id) {
+    return 'Undefined footnote: $id';
+  }
 
   @override
   String get thinking => 'Thinking';
@@ -845,16 +969,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noOutput => '[No output]';
 
   @override
+  String get images => 'Images';
+
+  @override
   String get imageGenerated => 'Image generated';
+
+  @override
+  String get imageCopied => 'Image Copied';
+
+  @override
+  String get imageCopiedToClipboard => 'Image has been copied to clipboard';
+
+  @override
+  String get clipboardError => 'Clipboard Error';
+
+  @override
+  String get clipboardAccessFailed =>
+      'Failed to access clipboard. Please restart the app completely.';
+
+  @override
+  String get copyImage => 'Copy Image';
 
   @override
   String get saveImage => 'Save Image';
 
   @override
+  String get saveImageAs => 'Save Image As...';
+
+  @override
   String get imageSaved => 'Image saved';
 
   @override
+  String imageSavedToPath(String path) {
+    return 'Image saved to $path';
+  }
+
+  @override
   String get imageSaveFailed => 'Failed to save image';
+
+  @override
+  String get rotateLeft => 'Rotate Left';
+
+  @override
+  String get rotateRight => 'Rotate Right';
+
+  @override
+  String get flipHorizontal => 'Flip Horizontal';
+
+  @override
+  String get flipVertical => 'Flip Vertical';
+
+  @override
+  String get zoomIn => 'Zoom In';
+
+  @override
+  String get zoomOut => 'Zoom Out';
 
   @override
   String get today => 'Today';
@@ -890,7 +1059,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get typeMessage => 'Type a message...';
 
   @override
-  String get editApiKey => 'Edit API Key';
+  String get editMessagePlaceholder => 'Edit message...';
 
   @override
   String get editBaseUrl => 'Edit API Base URL';
@@ -1119,6 +1288,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get topicNamePlaceholder => 'Group Name';
 
   @override
+  String get errorLoadingTopics => 'Error loading topics';
+
+  @override
+  String get noGroups => 'No groups';
+
+  @override
   String get allChats => 'All';
 
   @override
@@ -1333,13 +1508,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get baseUrlPlaceholder => 'https://api.openai.com/v1';
 
   @override
+  String get apiBaseUrl => 'API Base URL';
+
+  @override
   String get apiKeys => 'API Keys';
+
+  @override
+  String apiKeysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count keys',
+      one: '1 key',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get addApiKey => 'Add Key';
 
   @override
   String get autoRotateKeys => 'Auto Rotate';
+
+  @override
+  String get editApiKey => 'Edit API Key';
 
   @override
   String get fontSize => 'Font Size';
@@ -1563,6 +1755,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get systemDefaultRestored => 'System default presets restored';
+
+  @override
+  String get restoreSystemDefaultPromptHint =>
+      'Restore system default preset prompt';
 
   @override
   String presetLoaded(String name) {

@@ -21,6 +21,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get send => '发送';
 
   @override
+  String get sendAndRegenerate => '发送并重新生成';
+
+  @override
   String get retry => '重试';
 
   @override
@@ -146,6 +149,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiName => 'AI 名称';
 
   @override
+  String get aiNamePlaceholder => '助手';
+
+  @override
   String get aiAvatar => 'AI 头像';
 
   @override
@@ -224,6 +230,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get add => '添加';
 
   @override
+  String get create => '创建';
+
+  @override
   String get enabled => '已启用';
 
   @override
@@ -233,13 +242,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loading => '加载中';
 
   @override
+  String get loadingEllipsis => '加载中...';
+
+  @override
   String get error => '错误';
 
   @override
-  String get success => '已完成';
+  String errorWithMessage(String message) {
+    return '错误：$message';
+  }
+
+  @override
+  String get success => '成功';
 
   @override
   String get failed => '失败';
+
+  @override
+  String get unknown => '未知';
 
   @override
   String get settings => '设置';
@@ -264,6 +284,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get executionModel => '执行模型';
+
+  @override
+  String get executionModelHint => '用于 Worker Agent 执行技能的模型。';
 
   @override
   String get defaultModelSameAsChat => '默认 (跟随主对话)';
@@ -310,6 +333,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get skillNameHint => '输入文件夹名称 (如 translation_helper)';
+
+  @override
+  String get skillMarkdownPlaceholder => 'SKILL.md 内容...';
 
   @override
   String get providerName => '供应商名称';
@@ -366,9 +392,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get disableAll => '全部禁用';
 
   @override
-  String get modelConfig => '模型配置';
-
-  @override
   String get configureModelParams => '为该模型配置专属参数';
 
   @override
@@ -385,6 +408,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get paramKey => '参数名 (Key)';
+
+  @override
+  String get paramKeyPlaceholder => '例如 _aurora_image_config';
 
   @override
   String get paramValue => '值 (Value)';
@@ -453,10 +479,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelCallDistribution => '模型调用分布';
 
   @override
-  String get clearStats => '清除数据';
+  String get clearStats => '清除统计数据';
 
   @override
-  String get clearStatsConfirm => '确定要清除所有统计数据吗？此操作无法撤销。';
+  String get clearStatsConfirm => '确定要清除所有使用统计吗？此操作无法撤销。';
 
   @override
   String get clearData => '清除数据';
@@ -465,7 +491,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearDataConfirm => '确定要清除所有统计数据吗？';
 
   @override
-  String get noUsageData => '暂无数据';
+  String get noUsageData => '暂无使用数据';
 
   @override
   String callsCount(int count) {
@@ -501,6 +527,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String tokensPerSecond(String tps) {
     return 'Token/s: $tps';
   }
+
+  @override
+  String get totalTokens => '累计Token';
+
+  @override
+  String get tokensPerSecondShort => 'Token/s';
+
+  @override
+  String get ttft => 'TTFT';
+
+  @override
+  String get avgDuration => '平均';
 
   @override
   String get mobileSettings => '移动端设置';
@@ -569,6 +607,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get novelStructure => '小说结构';
 
   @override
+  String get modelConfig => '模型配置';
+
+  @override
   String get reviewModel => '审查';
 
   @override
@@ -591,6 +632,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get deleteProjectConfirm => '确定要删除这个项目吗？';
+
+  @override
+  String get deleteChapter => '删除章节';
 
   @override
   String get deleteChapterConfirm => '确定要删除这个章节吗？';
@@ -632,10 +676,29 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editOutlinePlaceholder => '在此处编辑大纲...';
 
   @override
+  String get rerunOutline => '重跑大纲';
+
+  @override
+  String get rerunOutlineFromLastPromptHint => '基于上次需求词重新生成大纲';
+
+  @override
+  String get noRerunnableOutlinePrompt => '暂无可重跑的大纲需求词';
+
+  @override
   String get generateChapters => '生成章节列表';
 
   @override
   String get regenerateChapters => '重新生成章节';
+
+  @override
+  String get regenerateChapterOutlineTitle => '重新生成细纲';
+
+  @override
+  String get regenerateChapterOutlineConfirm =>
+      '将按最新大纲重新生成章节细纲。\n若中途出现异常，系统会自动回滚到当前章节内容。';
+
+  @override
+  String get continueGenerate => '继续生成';
 
   @override
   String get clearChaptersWarning =>
@@ -675,6 +738,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get autoIncludeHint => '勾选的分类会在写作时自动携带';
 
   @override
+  String get clearWorldSettingsTooltip => '清空所有设定';
+
+  @override
+  String get clearWorldSettingsTitle => '清空世界设定';
+
+  @override
+  String get clearWorldSettingsConfirm =>
+      '确定要清空所有世界设定数据吗？\n（人物设定、人物关系、场景地点、伏笔/线索等）';
+
+  @override
   String get worldRules => '世界规则';
 
   @override
@@ -711,6 +784,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPendingTasks => '没有可执行的待办任务';
 
   @override
+  String get restartAllTasksTooltip => '重置所有任务状态，从头开始重新生成';
+
+  @override
+  String get restartAllTasksTitle => '重新执行所有任务';
+
+  @override
+  String get restartAllTasksConfirm => '确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。';
+
+  @override
+  String get restartAllTasksAction => '重新执行';
+
+  @override
   String get executeTask => '执行任务';
 
   @override
@@ -723,13 +808,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get approve => '批准';
 
   @override
-  String get regenerate => '重新生成';
+  String get rewrite => '重写';
 
   @override
   String get pending => '待处理';
 
   @override
   String get running => '进行中';
+
+  @override
+  String get completed => '已完成';
 
   @override
   String get paused => '已暂停';
@@ -739,6 +827,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get decomposing => '拆解中';
+
+  @override
+  String get needsRevision => '待重试';
+
+  @override
+  String batchProgress(int current, int total) {
+    return '批次进度：$current/$total';
+  }
+
+  @override
+  String get projectOnlyKnowledgeBaseHint => '该知识库仅用于当前项目写作，不会应用在对话中。';
+
+  @override
+  String get importingEllipsis => '导入中...';
+
+  @override
+  String chapterProgressSummary(int completed, int total, int words) {
+    return '$completed/$total 章完成 · $words 字';
+  }
 
   @override
   String get noProjectSelected => '未选择项目';
@@ -774,6 +881,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stopGenerating => '停止生成';
 
   @override
+  String get regenerate => '重新生成';
+
+  @override
   String get copyCode => '复制代码';
 
   @override
@@ -781,6 +891,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get contentCopied => '内容已复制';
+
+  @override
+  String get footnotes => '脚注';
+
+  @override
+  String undefinedFootnote(String id) {
+    return '未定义脚注：$id';
+  }
 
   @override
   String get thinking => '思考中';
@@ -828,16 +946,60 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noOutput => '[无输出]';
 
   @override
+  String get images => '图片';
+
+  @override
   String get imageGenerated => '图片已生成';
+
+  @override
+  String get imageCopied => '图片已复制';
+
+  @override
+  String get imageCopiedToClipboard => '图片已复制到剪贴板';
+
+  @override
+  String get clipboardError => '剪贴板错误';
+
+  @override
+  String get clipboardAccessFailed => '无法访问剪贴板，请完全重启应用。';
+
+  @override
+  String get copyImage => '复制图片';
 
   @override
   String get saveImage => '保存图片';
 
   @override
+  String get saveImageAs => '图片另存为...';
+
+  @override
   String get imageSaved => '图片已保存';
 
   @override
+  String imageSavedToPath(String path) {
+    return '图片已保存到 $path';
+  }
+
+  @override
   String get imageSaveFailed => '图片保存失败';
+
+  @override
+  String get rotateLeft => '向左旋转';
+
+  @override
+  String get rotateRight => '向右旋转';
+
+  @override
+  String get flipHorizontal => '水平翻转';
+
+  @override
+  String get flipVertical => '垂直翻转';
+
+  @override
+  String get zoomIn => '放大';
+
+  @override
+  String get zoomOut => '缩小';
 
   @override
   String get today => '今天';
@@ -873,7 +1035,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get typeMessage => '输入消息...';
 
   @override
-  String get editApiKey => '编辑 API Key';
+  String get editMessagePlaceholder => '编辑消息...';
 
   @override
   String get editBaseUrl => '编辑 API Base URL';
@@ -1092,6 +1254,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get topicNamePlaceholder => '分组名称';
 
   @override
+  String get errorLoadingTopics => '加载话题失败';
+
+  @override
+  String get noGroups => '暂无分组';
+
+  @override
   String get allChats => '所有';
 
   @override
@@ -1304,13 +1472,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get baseUrlPlaceholder => 'https://api.openai.com/v1';
 
   @override
+  String get apiBaseUrl => 'API Base URL';
+
+  @override
   String get apiKeys => 'API Keys';
+
+  @override
+  String apiKeysCount(int count) {
+    return '$count 个 Key';
+  }
 
   @override
   String get addApiKey => '添加 Key';
 
   @override
   String get autoRotateKeys => '自动轮询';
+
+  @override
+  String get editApiKey => '编辑 API Key';
 
   @override
   String get fontSize => '字体大小';
@@ -1527,6 +1706,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get systemDefaultRestored => '已恢复系统默认预设';
+
+  @override
+  String get restoreSystemDefaultPromptHint => '将提示词恢复为系统默认预设';
 
   @override
   String presetLoaded(String name) {

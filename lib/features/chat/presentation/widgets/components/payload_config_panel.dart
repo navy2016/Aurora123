@@ -241,7 +241,7 @@ class _PayloadConfigPanelState extends ConsumerState<PayloadConfigPanel> {
           label: l10n.temperature,
           child: TextBox(
             controller: _tempController,
-            placeholder: '0.0 - 2.0',
+            placeholder: l10n.temperatureHint,
             onChanged: (v) {
               generationConfig['temperature'] = v;
               final newSettings = Map<String, dynamic>.from(_modelSettings);
@@ -255,7 +255,7 @@ class _PayloadConfigPanelState extends ConsumerState<PayloadConfigPanel> {
           label: l10n.contextLength,
           child: TextBox(
             controller: _ctxLenController,
-            placeholder: 'e.g. 10',
+            placeholder: l10n.contextLengthHint,
             onChanged: (v) {
               generationConfig['context_length'] = v;
               final newSettings = Map<String, dynamic>.from(_modelSettings);

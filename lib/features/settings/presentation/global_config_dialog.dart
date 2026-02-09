@@ -535,7 +535,7 @@ class _AddParamDialogState extends State<_AddParamDialog> {
             label: l10n.paramKey,
             child: TextBox(
               controller: _keyController,
-              placeholder: 'e.g. _aurora_image_config',
+              placeholder: l10n.paramKeyPlaceholder,
             ),
           ),
           const SizedBox(height: 12),
@@ -544,9 +544,10 @@ class _AddParamDialogState extends State<_AddParamDialog> {
             child: ComboBox<String>(
               value: _type,
               isExpanded: true,
-              items: ['String', 'JSON']
-                  .map((e) => ComboBoxItem(value: e, child: Text(e)))
-                  .toList(),
+              items: [
+                ComboBoxItem(value: 'String', child: Text(l10n.typeText)),
+                ComboBoxItem(value: 'JSON', child: Text(l10n.typeJson)),
+              ],
               onChanged: (v) => setState(() => _type = v!),
             ),
           ),
@@ -555,7 +556,8 @@ class _AddParamDialogState extends State<_AddParamDialog> {
             label: l10n.paramValue,
             child: TextBox(
               controller: _valueController,
-              placeholder: _type == 'JSON' ? '{"key": "value"}' : 'Value',
+              placeholder:
+                  _type == 'JSON' ? '{"key": "value"}' : l10n.paramValue,
               maxLines: _type == 'JSON' ? 3 : 1,
             ),
           ),

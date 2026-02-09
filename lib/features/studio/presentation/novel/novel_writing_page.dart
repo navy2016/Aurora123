@@ -171,7 +171,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
             ),
           ] else ...[
             Tooltip(
-              message: hasRunnableTasks ? '按顺序执行所有待办任务' : '没有可执行的待办任务',
+              message:
+                  hasRunnableTasks ? l10n.allTasksPending : l10n.noPendingTasks,
               child: FilledButton(
                 onPressed:
                     hasRunnableTasks ? () => notifier.startQueue() : null,
@@ -191,15 +192,15 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                 t.status == TaskStatus.failed)) ...[
               const SizedBox(width: 8),
               Tooltip(
-                message: '重置所有任务状态，从头开始重新生成',
+                message: l10n.restartAllTasksTooltip,
                 child: Button(
                   onPressed: () {
                     showDialog(
                       context: context,
                       builder: (ctx) => ContentDialog(
-                        title: const Text('重新执行所有任务'),
+                        title: Text(l10n.restartAllTasksTitle),
                         content:
-                            const Text('确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。'),
+                            Text(l10n.restartAllTasksConfirm),
                         actions: [
                           Button(
                             child: Text(l10n.cancel),
@@ -209,7 +210,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                             style: ButtonStyle(
                                 backgroundColor:
                                     WidgetStateProperty.all(Colors.orange)),
-                            child: const Text('重新执行'),
+                            child: Text(l10n.restartAllTasksAction),
                             onPressed: () {
                               notifier.restartAllTasks();
                               Navigator.pop(ctx);
@@ -219,12 +220,12 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                       ),
                     );
                   },
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(AuroraIcons.refresh, size: 12),
-                      SizedBox(width: 4),
-                      Text('重新执行'),
+                      const Icon(AuroraIcons.refresh, size: 12),
+                      const SizedBox(width: 4),
+                      Text(l10n.restartAllTasksAction),
                     ],
                   ),
                 ),
@@ -598,8 +599,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                     children: [
                       Tooltip(
                         message: hasStoredRequirement
-                            ? '基于上次需求词重新生成大纲'
-                            : '暂无可重跑的大纲需求词',
+                            ? l10n.rerunOutlineFromLastPromptHint
+                            : l10n.noRerunnableOutlinePrompt,
                         child: Button(
                           onPressed: (state.isGeneratingOutline ||
                                   state.isDecomposing ||
@@ -620,7 +621,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                               const SizedBox(width: 6),
                               Text(state.isGeneratingOutline
                                   ? l10n.generating
-                                  : '重跑大纲'),
+                                  : l10n.rerunOutline),
                             ],
                           ),
                         ),
@@ -689,7 +690,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                           child: Text(
                             state.decomposeTotalBatches > 0 &&
                                     state.isDecomposing
-                                ? '$decomposeStatus\n批次进度：${state.decomposeCurrentBatch}/${state.decomposeTotalBatches}'
+                                ? '$decomposeStatus\n${l10n.batchProgress(state.decomposeCurrentBatch, state.decomposeTotalBatches)}'
                                 : decomposeStatus,
                             style: theme.typography.caption,
                           ),
@@ -782,8 +783,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       showDialog(
         context: context,
         builder: (context) => ContentDialog(
-          title: const Text('重新生成细纲'),
-          content: const Text('将按最新大纲重新生成章节细纲。\n若中途出现异常，系统会自动回滚到当前章节内容。'),
+          title: Text(l10n.regenerateChapterOutlineTitle),
+          content: Text(l10n.regenerateChapterOutlineConfirm),
           actions: [
             Button(
               child: Text(l10n.cancel),
@@ -792,7 +793,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
             FilledButton(
               style: ButtonStyle(
                   backgroundColor: WidgetStateProperty.all(Colors.orange)),
-              child: const Text('继续生成'),
+              child: Text(l10n.continueGenerate),
               onPressed: () {
                 notifier.decomposeFromOutline();
                 Navigator.pop(context);
@@ -832,16 +833,15 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                   Text(l10n.autoIncludeHint, style: theme.typography.caption),
                   const SizedBox(width: 8),
                   Tooltip(
-                    message: '清空所有设定',
+                    message: l10n.clearWorldSettingsTooltip,
                     child: IconButton(
                       icon: const Icon(AuroraIcons.delete, size: 14),
                       onPressed: () {
                         showDialog(
                           context: context,
                           builder: (ctx) => ContentDialog(
-                            title: const Text('清空世界设定'),
-                            content: const Text(
-                                '确定要清空所有世界设定数据吗？\n（人物设定、人物关系、场景地点、伏笔/线索等）'),
+                            title: Text(l10n.clearWorldSettingsTitle),
+                            content: Text(l10n.clearWorldSettingsConfirm),
                             actions: [
                               Button(
                                 child: Text(l10n.cancel),
@@ -851,7 +851,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                                 style: ButtonStyle(
                                     backgroundColor:
                                         WidgetStateProperty.all(Colors.red)),
-                                child: const Text('清空'),
+                                child: Text(l10n.clear),
                                 onPressed: () {
                                   notifier.clearWorldContext();
                                   Navigator.pop(ctx);
@@ -963,12 +963,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       FluentThemeData theme,
       NovelWritingState state,
       NovelNotifier notifier) {
-    final projectOnlyHint = Localizations.localeOf(context).languageCode == 'zh'
-        ? '该知识库仅用于当前项目写作，不会应用在对话中。'
-        : 'This knowledge base is project-only and never applied in chat.';
-    final importingLabel = Localizations.localeOf(context).languageCode == 'zh'
-        ? '导入中...'
-        : 'Importing...';
+    final projectOnlyHint = l10n.projectOnlyKnowledgeBaseHint;
+    final importingLabel = l10n.importingEllipsis;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1215,7 +1211,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                           style: theme.typography.subtitle),
                       const SizedBox(height: 4),
                       Text(
-                        '$completedChapters/$totalChapters 章完成 · $totalWords 字',
+                        l10n.chapterProgressSummary(
+                            completedChapters, totalChapters, totalWords),
                         style: theme.typography.caption
                             ?.copyWith(color: theme.inactiveColor),
                       ),
@@ -1331,7 +1328,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                               showDialog(
                                 context: context,
                                 builder: (context) => ContentDialog(
-                                  title: const Text('Delete Chapter'),
+                                  title: Text(l10n.deleteChapter),
                                   content: Text(l10n.deleteChapterConfirm),
                                   actions: [
                                     Button(
@@ -1675,9 +1672,9 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       case TaskStatus.running:
         return l10n.running;
       case TaskStatus.needsRevision:
-        return '待重试';
+        return l10n.needsRevision;
       case TaskStatus.success:
-        return l10n.success;
+        return l10n.completed;
       case TaskStatus.failed:
         return l10n.failed;
       case TaskStatus.paused:

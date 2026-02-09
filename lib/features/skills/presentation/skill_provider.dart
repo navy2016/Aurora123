@@ -194,15 +194,6 @@ Provide clear, imperative execution steps for the assistant.
       }
     }
 
-    if (directories.isEmpty) {
-      // Backward-compatible fallback for legacy flat skill directories.
-      for (final entity in root.listSync()) {
-        if (entity is Directory) {
-          directories.add(entity.path);
-        }
-      }
-    }
-
     return directories;
   }
 }

@@ -81,16 +81,16 @@ class UsageStatsView extends ConsumerWidget {
                         final confirmed = await showDialog<bool>(
                           context: context,
                           builder: (context) => fluent.ContentDialog(
-                            title: Text(_getLoc(context, 'clearStats')),
+                            title: Text(l10n.clearStats),
                             content:
-                                Text(_getLoc(context, 'clearStatsConfirm')),
+                                Text(l10n.clearStatsConfirm),
                             actions: [
                               fluent.Button(
                                 child: Text(l10n.cancel),
                                 onPressed: () => Navigator.pop(context, false),
                               ),
                               fluent.FilledButton(
-                                child: Text(_getLoc(context, 'clearData')),
+                                child: Text(l10n.clearData),
                                 onPressed: () => Navigator.pop(context, true),
                               ),
                             ],
@@ -108,7 +108,7 @@ class UsageStatsView extends ConsumerWidget {
                               size: 14,
                               color: theme.resources.textFillColorSecondary),
                           const SizedBox(width: 6),
-                          Text(_getLoc(context, 'clearData'),
+                          Text(l10n.clearData,
                               style: TextStyle(
                                   fontSize: 12,
                                   color:
@@ -384,29 +384,6 @@ class UsageStatsView extends ConsumerWidget {
     );
   }
 
-  String _getLoc(BuildContext context, String key) {
-    final isZh = Localizations.localeOf(context).languageCode == 'zh';
-    switch (key) {
-      case 'cumulativeToken':
-        return isZh ? '累计Token' : 'Total Tokens';
-      case 'tokensPerSecond':
-        return isZh ? 'Token/s' : 'Tokens/s';
-      case 'averageFirstToken':
-        return isZh ? 'TTFT' : 'TTFT';
-      case 'averageDuration':
-        return isZh ? '平均' : 'Average';
-      case 'clearStats':
-        return isZh ? '清除数据' : 'Clear Stats';
-      case 'clearStatsConfirm':
-        return isZh
-            ? '确定要清除所有统计数据吗？此操作无法撤销。'
-            : 'Are you sure you want to clear all statistics? This cannot be undone.';
-      case 'clearData':
-        return isZh ? '清除数据' : 'Clear Data';
-      default:
-        return key;
-    }
-  }
 }
 
 class UsageStatsMobileSheet extends ConsumerWidget {
@@ -435,7 +412,7 @@ class UsageStatsMobileSheet extends ConsumerWidget {
           const SizedBox(
               height: 200, child: Center(child: CircularProgressIndicator()))
         else if (statsState.stats.isEmpty)
-          const SizedBox(height: 300, child: Center(child: Text('No data')))
+          SizedBox(height: 300, child: Center(child: Text(l10n.noUsageData)))
         else
           Flexible(
             child: SingleChildScrollView(
@@ -700,7 +677,7 @@ class _ModelStatsList extends StatelessWidget {
                     isMobile,
                     themeData,
                     mobileTheme,
-                    _getLoc(context, 'cumulativeToken'),
+                    l10n.totalTokens,
                     RichText(
                       text: TextSpan(
                         style: TextStyle(
@@ -750,7 +727,7 @@ class _ModelStatsList extends StatelessWidget {
                     isMobile,
                     themeData,
                     mobileTheme,
-                    _getLoc(context, 'tokensPerSecond'),
+                    l10n.tokensPerSecondShort,
                     Text(tps,
                         style: TextStyle(
                             fontSize: isMobile ? 12 : 14,
@@ -761,7 +738,7 @@ class _ModelStatsList extends StatelessWidget {
                     isMobile,
                     themeData,
                     mobileTheme,
-                    _getLoc(context, 'averageFirstToken'),
+                    l10n.ttft,
                     Text('${avgFirstToken}s',
                         style: TextStyle(
                             fontSize: isMobile ? 12 : 14,
@@ -772,7 +749,7 @@ class _ModelStatsList extends StatelessWidget {
                     isMobile,
                     themeData,
                     mobileTheme,
-                    _getLoc(context, 'averageDuration'),
+                    l10n.avgDuration,
                     Text('${avgDuration}s',
                         style: TextStyle(
                             fontSize: isMobile ? 12 : 14,
@@ -804,25 +781,6 @@ class _ModelStatsList extends StatelessWidget {
     );
   }
 
-  String _getLoc(BuildContext context, String key) {
-    final isZh = Localizations.localeOf(context).languageCode == 'zh';
-    switch (key) {
-      case 'cumulativeToken':
-        return isZh ? '累计Token' : 'Total Tokens';
-      case 'tokensPerSecond':
-        return isZh ? 'Token/s' : 'Tokens/s';
-      case 'averageFirstToken':
-        return isZh ? 'TTFT' : 'TTFT';
-      case 'averageDuration':
-        return isZh ? '平均' : 'Average';
-      case 'prompt':
-        return isZh ? '提问' : 'Prompt';
-      case 'completion':
-        return isZh ? '回答' : 'Completion';
-      default:
-        return key;
-    }
-  }
 }
 
 class _ErrorDistributionList extends StatelessWidget {

@@ -751,8 +751,10 @@ class OpenAILLMService implements LLMService {
         ? provider.baseUrl
         : '${provider.baseUrl}/';
     if (apiKey.isEmpty) {
-      yield const LLMResponseChunk(
-          content: 'Error: API key is empty. Please check your settings.');
+      final message = _settings.language == 'zh'
+          ? '错误：API Key 为空。请检查设置。'
+          : 'Error: API key is empty. Please check your settings.';
+      yield LLMResponseChunk(content: message);
       return;
     }
     try {
@@ -1578,8 +1580,10 @@ Use search for:
         ? provider.baseUrl
         : '${provider.baseUrl}/';
     if (apiKey.isEmpty) {
-      return const LLMResponseChunk(
-          content: 'Error: API key is empty. Please check your settings.');
+      final message = _settings.language == 'zh'
+          ? '错误：API Key 为空。请检查设置。'
+          : 'Error: API key is empty. Please check your settings.';
+      return LLMResponseChunk(content: message);
     }
     try {
       List<Map<String, dynamic>> apiMessages =

@@ -18,30 +18,30 @@ class TranslationContent extends ConsumerStatefulWidget {
 class _TranslationContentState extends ConsumerState<TranslationContent> {
   final TextEditingController _sourceController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  String _sourceLang = '自动检测';
-  String _targetLang = '简体中文';
+  String _sourceLang = 'auto';
+  String _targetLang = 'zh-Hans';
   bool _showComparison = true;
   bool _hasRestored = false;
   final List<String> _sourceLanguages = [
-    '自动检测',
-    '英语',
-    '日语',
-    '韩语',
-    '简体中文',
-    '繁体中文',
-    '俄语',
-    '法语',
-    '德语'
+    'auto',
+    'en',
+    'ja',
+    'ko',
+    'zh-Hans',
+    'zh-Hant',
+    'ru',
+    'fr',
+    'de',
   ];
   final List<String> _targetLanguages = [
-    '简体中文',
-    '英语',
-    '日语',
-    '韩语',
-    '繁体中文',
-    '俄语',
-    '法语',
-    '德语'
+    'zh-Hans',
+    'en',
+    'ja',
+    'ko',
+    'zh-Hant',
+    'ru',
+    'fr',
+    'de',
   ];
   @override
   void initState() {
@@ -76,17 +76,35 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
 
   void _translate() {
     if (_sourceController.text.trim().isEmpty) return;
+    final isZh = Localizations.localeOf(context).languageCode == 'zh';
+    final sourceLangLabel =
+        _sourceLang == 'auto' ? '' : _getDisplayLanguage(context, _sourceLang);
+    final targetLangLabel = _getDisplayLanguage(context, _targetLang);
     final notifier = ref.read(translationProvider.notifier);
     notifier.clearContext().then((_) {
       final sb = StringBuffer();
-      sb.writeln(
-          '你是一位精通多国语言的专业翻译专家。请将以下${_sourceLang == '自动检测' ? '' : _sourceLang}文本翻译成$_targetLang。');
-      sb.writeln('要求：');
-      sb.writeln('1. 翻译准确、地道，符合目标语言的表达习惯。');
-      sb.writeln('2. 严格保留原文的换行格式和段落结构，不要合并段落。');
-      sb.writeln('3. 只输出翻译后的内容，不要包含任何解释、前言或后缀。');
-      sb.writeln('');
-      sb.writeln('原文内容：');
+      if (isZh) {
+        sb.writeln(
+            '你是一位精通多国语言的专业翻译专家。请将以下${sourceLangLabel.isEmpty ? '' : sourceLangLabel}文本翻译成$targetLangLabel。');
+        sb.writeln('要求：');
+        sb.writeln('1. 翻译准确、地道，符合目标语言的表达习惯。');
+        sb.writeln('2. 严格保留原文的换行格式和段落结构，不要合并段落。');
+        sb.writeln('3. 只输出翻译后的内容，不要包含任何解释、前言或后缀。');
+        sb.writeln('');
+        sb.writeln('原文内容：');
+      } else {
+        sb.writeln(
+            'You are a professional translator proficient in multiple languages. Please translate the following${sourceLangLabel.isEmpty ? '' : ' $sourceLangLabel'} text into $targetLangLabel.');
+        sb.writeln('Requirements:');
+        sb.writeln(
+            '1. The translation should be accurate and natural, matching the target language’s style.');
+        sb.writeln(
+            '2. Preserve line breaks and paragraph structure exactly; do not merge paragraphs.');
+        sb.writeln(
+            '3. Output only the translated content; do not include explanations, prefaces, or suffixes.');
+        sb.writeln('');
+        sb.writeln('Source text:');
+      }
       sb.writeln(_sourceController.text);
       notifier.sendMessage(_sourceController.text, apiContent: sb.toString());
     });
@@ -289,23 +307,23 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
   String _getDisplayLanguage(BuildContext context, String internalLang) {
     final l10n = AppLocalizations.of(context)!;
     switch (internalLang) {
-      case '自动检测':
+      case 'auto':
         return l10n.autoDetect;
-      case '英语':
+      case 'en':
         return l10n.english;
-      case '日语':
+      case 'ja':
         return l10n.japanese;
-      case '韩语':
+      case 'ko':
         return l10n.korean;
-      case '简体中文':
+      case 'zh-Hans':
         return l10n.simplifiedChinese;
-      case '繁体中文':
+      case 'zh-Hant':
         return l10n.traditionalChinese;
-      case '俄语':
+      case 'ru':
         return l10n.russian;
-      case '法语':
+      case 'fr':
         return l10n.french;
-      case '德语':
+      case 'de':
         return l10n.german;
       default:
         return internalLang;

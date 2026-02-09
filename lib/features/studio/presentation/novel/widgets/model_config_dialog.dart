@@ -180,14 +180,14 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             InfoLabel(
-              label: '选择模型',
+              label: l10n.selectModel,
               child: ComboBox<NovelModelConfig>(
                 placeholder: Text(l10n.selectModel),
                 items: allModels.map((item) {
                   final providerName = settingsState.providers
                       .firstWhere((p) => p.id == item.providerId,
                           orElse: () => ProviderConfig(
-                              id: item.providerId, name: 'Unknown'))
+                              id: item.providerId, name: l10n.unknown))
                       .name;
                   return ComboBoxItem<NovelModelConfig>(
                     value: item,
@@ -211,11 +211,10 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
             const SizedBox(height: 20),
             Row(
               children: [
-                Text('系统提示词 (System Prompt)',
-                    style: theme.typography.bodyStrong),
+                Text(l10n.systemPrompt, style: theme.typography.bodyStrong),
                 const Spacer(),
                 Tooltip(
-                  message: '将提示词恢复为系统默认预设',
+                  message: l10n.restoreSystemDefaultPromptHint,
                   child: IconButton(
                     icon: const Icon(AuroraIcons.reset, size: 14),
                     onPressed: () {
@@ -234,7 +233,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                 keyboardType: TextInputType.multiline,
                 expands: true,
                 textAlignVertical: TextAlignVertical.top,
-                placeholder: '在此输入自定义 Prompt...',
+                placeholder: l10n.systemPromptPlaceholder,
                 onChanged: onPromptChanged,
                 style: const TextStyle(
                     fontFamily: 'monospace', fontSize: 13, height: 1.4),

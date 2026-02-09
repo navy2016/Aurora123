@@ -7,6 +7,7 @@ import 'package:flutter/material.dart' as material
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:flutter/foundation.dart';
 import 'package:aurora/shared/widgets/aurora_page_route.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'windows_image_viewer.dart';
 import 'mobile_image_viewer.dart';
 
@@ -132,9 +133,10 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
       await clipboard.write([item]);
       if (context.mounted) {
         displayInfoBar(context, builder: (context, close) {
+          final l10n = AppLocalizations.of(context)!;
           return InfoBar(
-            title: const Text('Image Copied'),
-            content: const Text('Image has been copied to clipboard'),
+            title: Text(l10n.imageCopied),
+            content: Text(l10n.imageCopiedToClipboard),
             action: IconButton(
               icon: const Icon(FluentIcons.clear),
               onPressed: close,
@@ -147,10 +149,10 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
       debugPrint('Clipboard error: $e');
       if (context.mounted) {
         displayInfoBar(context, builder: (context, close) {
+          final l10n = AppLocalizations.of(context)!;
           return InfoBar(
-            title: const Text('Clipboard Error'),
-            content: const Text(
-                'Failed to access clipboard. Please restart the app completely.'),
+            title: Text(l10n.clipboardError),
+            content: Text(l10n.clipboardAccessFailed),
             severity: InfoBarSeverity.error,
             action: IconButton(
               icon: const Icon(FluentIcons.clear),
@@ -162,16 +164,13 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
     }
   }
 
-  Future<void> _handleSave(BuildContext context) async {
+  Future<void> _handleSave({required String imagesLabel}) async {
     final bytes = await _getImageBytes();
     if (bytes == null) return;
     final FileSaveLocation? result = await getSaveLocation(
       suggestedName: 'image_${DateTime.now().millisecondsSinceEpoch}.png',
       acceptedTypeGroups: [
-        const XTypeGroup(
-          label: 'Images',
-          extensions: ['png'],
-        ),
+        XTypeGroup(label: imagesLabel, extensions: ['png']),
       ],
     );
     if (result != null) {
@@ -254,11 +253,12 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
               _flyoutController.showFlyout(
                 position: details.globalPosition,
                 builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
                   return MenuFlyout(
                     items: [
                       MenuFlyoutItem(
                         leading: const Icon(FluentIcons.copy),
-                        text: const Text('Copy Image'),
+                        text: Text(l10n.copyImage),
                         onPressed: () {
                           Flyout.of(context).close();
                           _handleCopy(context);
@@ -266,10 +266,10 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
                       ),
                       MenuFlyoutItem(
                         leading: const Icon(FluentIcons.save),
-                        text: const Text('Save Image As...'),
+                        text: Text(l10n.saveImageAs),
                         onPressed: () {
                           Flyout.of(context).close();
-                          _handleSave(context);
+                          _handleSave(imagesLabel: l10n.images);
                         },
                       ),
                     ],
@@ -313,23 +313,24 @@ class _ChatImageBubbleState extends State<ChatImageBubble> {
           onSecondaryTapUp: (details) {
             _flyoutController.showFlyout(
               position: details.globalPosition,
-              builder: (context) {
-                return MenuFlyout(
-                  items: [
-                    MenuFlyoutItem(
-                      leading: const Icon(FluentIcons.copy),
-                      text: const Text('Copy Image'),
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return MenuFlyout(
+                    items: [
+                      MenuFlyoutItem(
+                        leading: const Icon(FluentIcons.copy),
+                        text: Text(l10n.copyImage),
+                        onPressed: () {
+                          Flyout.of(context).close();
+                          _handleCopy(context);
+                        },
+                      ),
+                      MenuFlyoutItem(
+                        leading: const Icon(FluentIcons.save),
+                      text: Text(l10n.saveImageAs),
                       onPressed: () {
                         Flyout.of(context).close();
-                        _handleCopy(context);
-                      },
-                    ),
-                    MenuFlyoutItem(
-                      leading: const Icon(FluentIcons.save),
-                      text: const Text('Save Image As...'),
-                      onPressed: () {
-                        Flyout.of(context).close();
-                        _handleSave(context);
+                        _handleSave(imagesLabel: l10n.images);
                       },
                     ),
                   ],
