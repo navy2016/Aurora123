@@ -245,8 +245,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
         final session =
             sessions.where((s) => s.sessionId == sessionId).firstOrNull;
         if (session == null) break;
-        final l10n = AppLocalizations.of(context);
-        final branchSuffix = l10n?.branch ?? 'Branch';
+        final l10n = AppLocalizations.of(context)!;
+        final branchSuffix = l10n.branch;
         final newSessionId =
             await ref.read(sessionsProvider.notifier).createBranchSession(
                   originalSessionId: sessionId,
@@ -281,6 +281,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
     final isUser = message.isUser;
     final settingsState = ref.watch(settingsProvider);
     final theme = fluent.FluentTheme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return MouseRegion(
       child: Container(
         margin: EdgeInsets.only(
@@ -492,7 +493,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                                   focusNode: _focusNode,
                                                   maxLines: 15,
                                                   minLines: 1,
-                                                  placeholder: '编辑消息...',
+                                                  placeholder: l10n.editMessagePlaceholder,
                                                   decoration: const fluent
                                                       .WidgetStatePropertyAll(
                                                       fluent.BoxDecoration(
@@ -579,25 +580,19 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                         const SizedBox(width: 8),
                                         ActionButton(
                                             icon: AuroraIcons.cancel,
-                                            tooltip:
-                                                AppLocalizations.of(context)
-                                                        ?.cancel ??
-                                                    'Cancel',
+                                            tooltip: l10n.cancel,
                                             onPressed: () => setState(
                                                 () => _isEditing = false)),
                                         const SizedBox(width: 4),
                                         ActionButton(
                                             icon: AuroraIcons.save,
-                                            tooltip:
-                                                AppLocalizations.of(context)
-                                                        ?.save ??
-                                                    'Save',
+                                            tooltip: l10n.save,
                                             onPressed: _saveEdit),
                                         if (message.isUser) ...[
                                           const SizedBox(width: 4),
                                           ActionButton(
                                               icon: AuroraIcons.send,
-                                              tooltip: 'Send & Regenerate',
+                                              tooltip: l10n.sendAndRegenerate,
                                               onPressed: () async {
                                                 await _saveEdit();
                                                 ref
@@ -825,30 +820,29 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                         children: [
                           ActionButton(
                               icon: AuroraIcons.retry,
-                              tooltip: 'Retry',
+                              tooltip: l10n.retry,
                               onPressed: () => _handleAction('retry')),
                           const SizedBox(width: 4),
                           ActionButton(
                               icon: AuroraIcons.edit,
-                              tooltip: 'Edit',
+                              tooltip: l10n.edit,
                               onPressed: () => _handleAction('edit')),
                           const SizedBox(width: 4),
                           ActionButton(
                               icon: AuroraIcons.copy,
-                              tooltip: 'Copy',
+                              tooltip: l10n.copy,
                               onPressed: () => _handleAction('copy')),
                           if (!isUser) ...[
                             const SizedBox(width: 4),
                             ActionButton(
                                 icon: AuroraIcons.branch,
-                                tooltip: AppLocalizations.of(context)?.branch ??
-                                    'Branch',
+                                tooltip: l10n.branch,
                                 onPressed: () => _handleAction('branch')),
                           ],
                           const SizedBox(width: 4),
                           ActionButton(
                               icon: AuroraIcons.delete,
-                              tooltip: 'Delete',
+                              tooltip: l10n.delete,
                               onPressed: () => _handleAction('delete')),
                         ],
                       ),

@@ -6,6 +6,7 @@
   "newChat": "新对话",
   "searchChatHistory": "搜索聊天记录",
   "send": "发送",
+  "sendAndRegenerate": "发送并重新生成",
   "retry": "重试",
   "copy": "复制",
   "copied": "已复制",
@@ -54,6 +55,7 @@
   "clickToChangeAvatar": "点击更换头像",
   "aiInfo": "AI 信息",
   "aiName": "AI 名称",
+  "aiNamePlaceholder": "助手",
   "aiAvatar": "AI 头像",
   "pleaseEnter": "请输入",
   "changeAvatarTitle": "更换{target}头像",
@@ -99,12 +101,21 @@
   "startNewChat": "新对话",
   "edit": "编辑",
   "add": "添加",
+  "create": "创建",
   "enabled": "已启用",
   "disabled": "已禁用",
   "loading": "加载中",
+  "loadingEllipsis": "加载中...",
   "error": "错误",
+  "errorWithMessage": "错误：{message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
   "success": "成功",
   "failed": "失败",
+  "unknown": "未知",
   
   "settings": "设置",
   "modelProvider": "模型提供",
@@ -114,6 +125,7 @@
   "usageStats": "数据统计",
   "agentSkills": "技能",
   "executionModel": "执行模型",
+  "executionModelHint": "用于 Worker Agent 执行技能的模型。",
   "defaultModelSameAsChat": "默认 (跟随主对话)",
   "agentSkillsDescription": "插件从应用根目录下的 './skills' 文件夹加载。创建一个包含 'SKILL.md' 文件的文件夹即可添加新插件。",
   "noSkillsFound": "未在 ./skills 目录下发现插件",
@@ -127,10 +139,9 @@
   "deleteSkillConfirm": "确定要删除这个插件吗？此操作无法撤销。",
   "updateSkill": "更新插件",
   "saveSuccess": "保存成功",
-  "enabled": "已启用",
-  "disabled": "已禁用",
   "skillName": "插件文件夹名称",
   "skillNameHint": "输入文件夹名称 (如 translation_helper)",
+  "skillMarkdownPlaceholder": "SKILL.md 内容...",
   
   "providerName": "供应商名称",
   "currentProvider": "当前供应商",
@@ -152,13 +163,13 @@
   "enableAll": "全部启用",
   "disableAll": "全部禁用",
   
-  "modelConfig": "配置",
   "configureModelParams": "为该模型配置专属参数",
   "paramsHigherPriority": "这些参数优先级高于全局设置",
   "noCustomParams": "暂无自定义参数",
   "addCustomParam": "添加自定义参数",
   "editParam": "编辑参数",
   "paramKey": "参数名 (Key)",
+  "paramKeyPlaceholder": "例如 _aurora_image_config",
   "paramValue": "值 (Value)",
   "paramType": "类型",
   "typeText": "文本",
@@ -167,14 +178,9 @@
   "typeJson": "JSON",
   "formatError": "格式错误",
   
-  "smartTopicGeneration": "智能话题生成",
   "selectTopicModel": "选择话题生成模型",
   "noModelFallback": "未选择模型将回退到默认截断逻辑",
   
-  "userName": "用户名称",
-  "userAvatar": "用户头像",
-  "aiName": "AI 名称",
-  "aiAvatar": "AI 头像",
   "selectImage": "选择图片",
   "cropAvatar": "裁剪头像",
   
@@ -238,6 +244,10 @@
       "tps": {"type": "String"}
     }
   },
+  "totalTokens": "累计Token",
+  "tokensPerSecondShort": "Token/s",
+  "ttft": "TTFT",
+  "avgDuration": "平均",
   
   "mobileSettings": "移动端设置",
   "mobileSettingsHint": "请使用顶部导航栏的设置按钮访问完整设置页面",
@@ -271,6 +281,7 @@
   "createProject": "新建项目",
   "deleteProject": "删除项目",
   "deleteProjectConfirm": "确定要删除这个项目吗？",
+  "deleteChapter": "删除章节",
   "deleteChapterConfirm": "确定要删除这个章节吗？",
   "writing": "写作",
   "context": "设定",
@@ -284,8 +295,14 @@
   "outlinePlaceholder": "例如：写一本关于赛博朋克世界的侦探小说，主角是...",
   "generateOutline": "生成大纲",
   "editOutlinePlaceholder": "在此处编辑大纲...",
+  "rerunOutline": "重跑大纲",
+  "rerunOutlineFromLastPromptHint": "基于上次需求词重新生成大纲",
+  "noRerunnableOutlinePrompt": "暂无可重跑的大纲需求词",
   "generateChapters": "生成章节列表",
   "regenerateChapters": "重新生成章节",
+  "regenerateChapterOutlineTitle": "重新生成细纲",
+  "regenerateChapterOutlineConfirm": "将按最新大纲重新生成章节细纲。\n若中途出现异常，系统会自动回滚到当前章节内容。",
+  "continueGenerate": "继续生成",
   "clearChaptersWarning": "这将清除现有的所有章节和写作进度。\n建议在操作前备份重要内容。\n\n确定要继续吗？",
   "clearAndRegenerate": "清除并重新生成",
   "chaptersAndTasks": "章节与任务",
@@ -298,6 +315,9 @@
   "waitingForGeneration": "等待生成...",
   "worldSettings": "世界设定",
   "autoIncludeHint": "勾选的分类会在写作时自动携带",
+  "clearWorldSettingsTooltip": "清空所有设定",
+  "clearWorldSettingsTitle": "清空世界设定",
+  "clearWorldSettingsConfirm": "确定要清空所有世界设定数据吗？\n（人物设定、人物关系、场景地点、伏笔/线索等）",
   "worldRules": "世界规则",
   "characterSettings": "人物设定",
   "relationships": "人物关系",
@@ -310,19 +330,39 @@
   "noContentYet": "暂无内容",
   "allTasksPending": "按顺序执行所有待办任务",
   "noPendingTasks": "没有可执行的待办任务",
+  "restartAllTasksTooltip": "重置所有任务状态，从头开始重新生成",
+  "restartAllTasksTitle": "重新执行所有任务",
+  "restartAllTasksConfirm": "确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。",
+  "restartAllTasksAction": "重新执行",
   "executeTask": "执行任务",
   "reviewFeedback": "审查反馈",
   "reject": "拒绝",
   "approve": "批准",
-  "regenerate": "重写",
+  "rewrite": "重写",
   "pending": "待处理",
   "running": "进行中",
-  "success": "已完成",
-  "failed": "失败",
+  "completed": "已完成",
   "paused": "已暂停",
   "reviewing": "审查中",
   "decomposing": "拆解中",
-  "deleteProjectConfirm": "确定要删除这个项目吗？",
+  "needsRevision": "待重试",
+  "batchProgress": "批次进度：{current}/{total}",
+  "@batchProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "projectOnlyKnowledgeBaseHint": "该知识库仅用于当前项目写作，不会应用在对话中。",
+  "importingEllipsis": "导入中...",
+  "chapterProgressSummary": "{completed}/{total} 章完成 · {words} 字",
+  "@chapterProgressSummary": {
+    "placeholders": {
+      "completed": {"type": "int"},
+      "total": {"type": "int"},
+      "words": {"type": "int"}
+    }
+  },
   "noProjectSelected": "未选择项目",
   "createYourFirstProject": "开始你的创作吧",
   "createProjectDescription": "新建一个项目来开始编写你的故事大纲和章节。",
@@ -341,6 +381,13 @@
   "copyCode": "复制代码",
   "codeCopied": "代码已复制",
   "contentCopied": "内容已复制",
+  "footnotes": "脚注",
+  "undefinedFootnote": "未定义脚注：{id}",
+  "@undefinedFootnote": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
   
   "thinking": "思考中",
   "thinkingProcess": "思考过程",
@@ -373,10 +420,29 @@
   "terminalOutput": "终端输出",
   "noOutput": "[无输出]",
   
+  "images": "图片",
   "imageGenerated": "图片已生成",
+  "imageCopied": "图片已复制",
+  "imageCopiedToClipboard": "图片已复制到剪贴板",
+  "clipboardError": "剪贴板错误",
+  "clipboardAccessFailed": "无法访问剪贴板，请完全重启应用。",
+  "copyImage": "复制图片",
   "saveImage": "保存图片",
+  "saveImageAs": "图片另存为...",
   "imageSaved": "图片已保存",
+  "imageSavedToPath": "图片已保存到 {path}",
+  "@imageSavedToPath": {
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "imageSaveFailed": "图片保存失败",
+  "rotateLeft": "向左旋转",
+  "rotateRight": "向右旋转",
+  "flipHorizontal": "水平翻转",
+  "flipVertical": "垂直翻转",
+  "zoomIn": "放大",
+  "zoomOut": "缩小",
   
   "today": "今天",
   "yesterday": "昨天",
@@ -391,8 +457,8 @@
   
   "noMessages": "暂无消息",
   "typeMessage": "输入消息...",
+  "editMessagePlaceholder": "编辑消息...",
   
-  "editApiKey": "编辑 API Key",
   "editBaseUrl": "编辑 API Base URL",
   
   "sourceLanguage": "源语言",
@@ -493,6 +559,8 @@
   "deleteTopic": "删除分组",
   "deleteTopicConfirm": "确定要删除此分组吗？该分组下的会话将移至默认分组。",
   "topicNamePlaceholder": "分组名称",
+  "errorLoadingTopics": "加载话题失败",
+  "noGroups": "暂无分组",
   "allChats": "所有",
   
   "requestConfig": "请求配置",
@@ -540,10 +608,6 @@
   "errorServerError": "服务器错误 (5XX)",
   "errorRateLimit": "限流 (429)",
   "errorUnknown": "其他错误",
-  "clearStats": "清除数据",
-  "clearStatsConfirm": "确定要清除所有统计数据吗？此操作无法撤销。",
-  "clearData": "清除数据",
-  "noUsageData": "暂无数据",
   "bgDefault": "默认",
   "bgPureBlack": "纯黑",
   "bgWarm": "暖色",
@@ -577,7 +641,14 @@
   "providerColor": "颜色 (Hex)",
   "apiKeyPlaceholder": "sk-xxxxxxxx",
   "baseUrlPlaceholder": "https://api.openai.com/v1",
+  "apiBaseUrl": "API Base URL",
   "apiKeys": "API Keys",
+  "apiKeysCount": "{count} 个 Key",
+  "@apiKeysCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "addApiKey": "添加 Key",
   "autoRotateKeys": "自动轮询",
   "editApiKey": "编辑 API Key",
@@ -655,6 +726,7 @@
   "noCustomPresets": "暂无自定义预设",
   "systemDefault": "系统默认",
   "systemDefaultRestored": "已恢复系统默认预设",
+  "restoreSystemDefaultPromptHint": "将提示词恢复为系统默认预设",
   "presetLoaded": "已加载预设: {name}",
   "@presetLoaded": {
     "placeholders": {
@@ -705,6 +777,16 @@
     }
   },
   "assistantLongTermMemory": "长期记忆",
+  "assistantMemoryConsolidationModel": "记忆整理模型",
+  "assistantMemoryFollowCurrentChatModel": "跟随当前对话模型",
+  "assistantMemoryGlobalDefaults": "记忆配置",
+  "assistantMemoryMinNewUserTurns": "触发整理前最少新增用户轮次",
+  "assistantMemoryIdleSecondsBeforeConsolidation": "触发整理前空闲秒数",
+  "assistantMemoryMaxBufferedMessages": "触发整理前最大缓冲消息数",
+  "assistantMemoryMaxRunsPerDay": "每日最多整理次数",
+  "assistantMemoryContextWindowSize": "上下文窗口大小（K 条消息）",
+  "assistantAdvancedSettings": "高级设置",
+  "assistantSelectOrCreateHint": "选择或创建一个助理开始配置",
   "assistantKnowledgeBindingHint": "选择此助理时，仅使用这里勾选的知识库。",
   "assistantAvailableSkillsTitle": "可用技能",
   "assistantNoSkillsAvailable": "暂无可用技能",

@@ -64,8 +64,8 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
               MobileSettingsTile(
                 leading: const Icon(Icons.key),
                 title: l10n.apiKeys,
-                subtitle: activeProvider.apiKeys.isNotEmpty == true
-                    ? '${activeProvider.apiKeys.length} ${activeProvider.apiKeys.length > 1 ? "keys" : "key"}'
+                subtitle: activeProvider.apiKeys.isNotEmpty
+                    ? l10n.apiKeysCount(activeProvider.apiKeys.length)
                     : l10n.notConfigured,
                 trailing: (activeProvider.apiKeys.length > 1)
                     ? SizedBox(
@@ -84,10 +84,10 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
               ),
               MobileSettingsTile(
                 leading: const Icon(Icons.link),
-                title: 'API Base URL',
+                title: l10n.apiBaseUrl,
                 subtitle: activeProvider.baseUrl.isNotEmpty
                     ? activeProvider.baseUrl
-                    : 'https://api.openai.com/v1',
+                    : l10n.baseUrlPlaceholder,
                 onTap: () => _showBaseUrlEditor(context, activeProvider),
               ),
               MobileSettingsTile(
@@ -225,10 +225,10 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
                   );
                 })
               else
-                const Padding(
+                Padding(
                   padding: EdgeInsets.all(24),
                   child: Center(
-                    child: Text('No models found'),
+                    child: Text(l10n.noModelsData),
                   ),
                 ),
             ],
@@ -477,7 +477,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
     final newKey = await AuroraBottomSheet.showInput(
       context: context,
       title: l10n.addApiKey,
-      hintText: 'sk-xxxxxxxx',
+      hintText: l10n.apiKeyPlaceholder,
     );
     if (newKey != null && newKey.isNotEmpty) {
       ref.read(settingsProvider.notifier).addApiKey(providerId, newKey);
@@ -493,7 +493,7 @@ class _MobileSettingsPageState extends ConsumerState<MobileSettingsPage> {
       context: context,
       title: l10n.editBaseUrl,
       initialValue: provider.baseUrl,
-      hintText: 'https://api.openai.com/v1',
+      hintText: l10n.baseUrlPlaceholder,
     );
     if (newUrl != null) {
       ref.read(settingsProvider.notifier).updateProvider(
@@ -1063,7 +1063,7 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
                 controller: _keyController,
                 decoration: InputDecoration(
                   labelText: l10n.paramKey,
-                  hintText: 'e.g. image_config',
+                  hintText: l10n.paramKeyPlaceholder,
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -1088,7 +1088,7 @@ class _ParameterConfigDialogState extends State<_ParameterConfigDialog> {
                 minLines: _type == 'json' ? 3 : 1,
                 decoration: InputDecoration(
                   labelText: l10n.paramValue,
-                  hintText: 'Value',
+                  hintText: l10n.paramValue,
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -1193,6 +1193,7 @@ class _ApiKeyListItemState extends State<_ApiKeyListItem> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ListTile(
       leading: Radio<int>(value: widget.index),
       title: TextField(
@@ -1202,7 +1203,7 @@ class _ApiKeyListItemState extends State<_ApiKeyListItem> {
         onChanged: widget.onEdit,
         decoration: InputDecoration(
           border: InputBorder.none,
-          hintText: 'sk-xxxxxxxx',
+          hintText: l10n.apiKeyPlaceholder,
           suffixIcon: IconButton(
             icon: Icon(
               _isVisible ? Icons.visibility_off : Icons.visibility,

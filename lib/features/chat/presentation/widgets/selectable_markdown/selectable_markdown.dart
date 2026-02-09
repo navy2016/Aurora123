@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'markdown_generator.dart';
 
 /// A widget that renders markdown content with native text selection.
@@ -28,6 +29,12 @@ class _SelectableMarkdownState extends State<SelectableMarkdown> {
   @override
   void initState() {
     super.initState();
+    _children = const [];
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _generateChildren();
   }
 
@@ -43,10 +50,14 @@ class _SelectableMarkdownState extends State<SelectableMarkdown> {
   }
 
   void _generateChildren() {
+    final l10n = AppLocalizations.of(context);
     final generator = MarkdownGenerator(
       isDark: widget.isDark,
       textColor: widget.textColor,
       baseFontSize: widget.baseFontSize,
+      footnotesTitle: l10n?.footnotes ?? 'Footnotes',
+      undefinedFootnoteText: (id) =>
+          l10n?.undefinedFootnote(id) ?? 'Undefined footnote: $id',
     );
     _children = generator.generate(widget.data);
   }

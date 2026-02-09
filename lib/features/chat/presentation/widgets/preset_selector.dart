@@ -55,7 +55,7 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
           backgroundColor: theme.menuColor,
           borderColor: theme.resources.surfaceStrokeColorDefault,
           width: 200,
-          items: _buildDropdownItems(theme, l10n),
+          coloredItems: _buildDropdownItems(theme, l10n),
         ),
       ),
     );
@@ -63,16 +63,16 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
     setState(() => _isOpen = true);
   }
 
-  List<fluent.CommandBarItem> _buildDropdownItems(
+  List<ColoredDropdownItem> _buildDropdownItems(
       fluent.FluentThemeData theme, AppLocalizations l10n) {
     final settings = ref.watch(settingsProvider);
     final presets = settings.presets;
-    final List<fluent.CommandBarItem> items = [];
+    final List<ColoredDropdownItem> items = [];
     // --- Assistants Section ---
     // Removed to separate concerns based on user feedback.
 
     // --- Presets Section ---
-    items.add(fluent.CommandBarButton(
+    items.add(ColoredDropdownItem(
       onPressed: () {
         ref
             .read(chatSessionManagerProvider)
@@ -80,15 +80,12 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
             .updateSystemPrompt('', null);
         _removeOverlay();
       },
-      label: fluent.Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: Text(l10n.defaultPreset,
-            style: const TextStyle(fontWeight: FontWeight.w500)),
-      ),
+      child: Text(l10n.defaultPreset,
+          style: const TextStyle(fontWeight: FontWeight.w500)),
     ));
 
     for (final preset in presets) {
-      items.add(fluent.CommandBarButton(
+      items.add(ColoredDropdownItem(
         onPressed: () {
           ref
               .read(chatSessionManagerProvider)
@@ -96,42 +93,35 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
               .updateSystemPrompt(preset.systemPrompt, preset.name);
           _removeOverlay();
         },
-        label: fluent.Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(preset.name,
-                  style: const TextStyle(fontWeight: FontWeight.w500)),
-              if (preset.description.isNotEmpty)
-                Text(preset.description,
-                    style: TextStyle(
-                        fontSize: 10, color: theme.typography.caption?.color),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(preset.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+            if (preset.description.isNotEmpty)
+              Text(preset.description,
+                  style:
+                      TextStyle(fontSize: 10, color: theme.typography.caption?.color),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+          ],
         ),
       ));
     }
 
-    items.add(const fluent.CommandBarSeparator());
-    items.add(fluent.CommandBarButton(
+    items.add(const DropdownSeparator());
+    items.add(ColoredDropdownItem(
       onPressed: () {
         _removeOverlay();
         ref.read(desktopActiveTabProvider.notifier).state = 4;
         ref.read(settingsPageIndexProvider.notifier).state = 2;
       },
-      label: fluent.Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: Row(
-          children: [
-            Icon(AuroraIcons.settings, size: 12),
-            const SizedBox(width: 8),
-            Text(l10n.managePresets),
-          ],
-        ),
+      child: Row(
+        children: [
+          Icon(AuroraIcons.settings, size: 12),
+          const SizedBox(width: 8),
+          Text(l10n.managePresets),
+        ],
       ),
     ));
     return items;

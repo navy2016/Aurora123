@@ -17,6 +17,7 @@ Color generateColorFromString(String input) {
 /// A dropdown item with optional background color
 class ColoredDropdownItem {
   final String label;
+  final Widget? child;
   final VoidCallback? onPressed;
   final Widget? icon;
   final Color? backgroundColor;
@@ -25,7 +26,8 @@ class ColoredDropdownItem {
   final Color? textColor;
 
   const ColoredDropdownItem({
-    required this.label,
+    this.label = '',
+    this.child,
     this.onPressed,
     this.icon,
     this.backgroundColor,
@@ -88,14 +90,12 @@ class CustomDropdownOverlay extends StatelessWidget {
 }
 
 class AnimatedDropdownList extends StatefulWidget {
-  final List<fluent.CommandBarItem>? items;
   final List<ColoredDropdownItem>? coloredItems;
   final double width;
   final Color backgroundColor;
   final Color borderColor;
   const AnimatedDropdownList({
     super.key,
-    this.items,
     this.coloredItems,
     this.width = 280,
     required this.backgroundColor,
@@ -171,43 +171,18 @@ class _AnimatedDropdownListState extends State<AnimatedDropdownList>
   }
 
   List<Widget> _buildItems() {
-    // Prefer coloredItems if available
-    if (widget.coloredItems != null && widget.coloredItems!.isNotEmpty) {
-      return widget.coloredItems!.map((item) {
-        if (item is DropdownSeparator) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
-            child: Divider(height: 1, thickness: 1, color: Colors.grey),
-          );
-        }
-        return _ColoredMenuItem(item: item);
-      }).toList();
+    if (widget.coloredItems == null || widget.coloredItems!.isEmpty) {
+      return [];
     }
-
-    // Fallback to legacy items
-    if (widget.items != null) {
-      return widget.items!.map((item) {
-        if (item is fluent.CommandBarButton) {
-          return _buildLegacyMenuItem(item);
-        } else if (item is fluent.CommandBarSeparator) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
-            child: Divider(height: 1, thickness: 1, color: Colors.grey),
-          );
-        }
-        return const SizedBox.shrink();
-      }).toList();
-    }
-
-    return [];
-  }
-
-  Widget _buildLegacyMenuItem(fluent.CommandBarButton item) {
-    return _HoverSelectButton(
-      onPressed: item.onPressed,
-      trailing: item.icon,
-      child: item.label ?? const SizedBox(),
-    );
+    return widget.coloredItems!.map((item) {
+      if (item is DropdownSeparator) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Divider(height: 1, thickness: 1, color: Colors.grey),
+        );
+      }
+      return _ColoredMenuItem(item: item);
+    }).toList();
   }
 }
 
@@ -253,17 +228,18 @@ class _ColoredMenuItemState extends State<_ColoredMenuItem> {
             children: [
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  widget.item.label,
-                  style: TextStyle(
-                    color:
-                        widget.item.textColor ?? theme.typography.body?.color,
-                    fontSize: 14,
-                    fontWeight: widget.item.isBold
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
+                child: widget.item.child ??
+                    Text(
+                      widget.item.label,
+                      style: TextStyle(
+                        color:
+                            widget.item.textColor ?? theme.typography.body?.color,
+                        fontSize: 14,
+                        fontWeight: widget.item.isBold
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
               ),
               if (widget.item.icon != null) ...[
                 const SizedBox(width: 8),
@@ -273,65 +249,6 @@ class _ColoredMenuItemState extends State<_ColoredMenuItem> {
                     color: theme.accentColor,
                   ),
                   child: widget.item.icon!,
-                ),
-              ]
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverSelectButton extends StatefulWidget {
-  final VoidCallback? onPressed;
-  final Widget child;
-  final Widget? trailing;
-  const _HoverSelectButton({
-    required this.onPressed,
-    required this.child,
-    this.trailing,
-  });
-  @override
-  State<_HoverSelectButton> createState() => _HoverSelectButtonState();
-}
-
-class _HoverSelectButtonState extends State<_HoverSelectButton> {
-  bool isHovered = false;
-  @override
-  Widget build(BuildContext context) {
-    final theme = fluent.FluentTheme.of(context);
-    return GestureDetector(
-      onTap: widget.onPressed,
-      child: MouseRegion(
-        onEnter: (_) => setState(() => isHovered = true),
-        onExit: (_) => setState(() => isHovered = false),
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: isHovered
-              ? theme.resources.subtleFillColorSecondary
-              : Colors.transparent,
-          child: Row(
-            children: [
-              const SizedBox(width: 8),
-              Expanded(
-                child: DefaultTextStyle(
-                  style: TextStyle(
-                    color: theme.typography.body?.color,
-                    fontSize: 14,
-                  ),
-                  child: widget.child,
-                ),
-              ),
-              if (widget.trailing != null) ...[
-                const SizedBox(width: 8),
-                IconTheme(
-                  data: IconThemeData(
-                    size: 14,
-                    color: theme.accentColor,
-                  ),
-                  child: widget.trailing!,
                 ),
               ]
             ],

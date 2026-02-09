@@ -15,12 +15,18 @@ class MarkdownGenerator {
   final bool isDark;
   final Color textColor;
   final double baseFontSize;
+  final String footnotesTitle;
+  final String Function(String id) undefinedFootnoteText;
 
   MarkdownGenerator({
     required this.isDark,
     required this.textColor,
     this.baseFontSize = 14.0,
-  });
+    String? footnotesTitle,
+    String Function(String id)? undefinedFootnoteText,
+  })  : footnotesTitle = footnotesTitle ?? 'Footnotes',
+        undefinedFootnoteText =
+            undefinedFootnoteText ?? ((id) => 'Undefined footnote: $id');
 
   /// Parse markdown and return a list of widgets
   List<Widget> generate(String markdownText) {
@@ -154,7 +160,7 @@ class MarkdownGenerator {
     final List<InlineSpan> footnoteSpans = [
       const TextSpan(text: '\n'),
       TextSpan(
-        text: '脚注',
+        text: footnotesTitle,
         style: TextStyle(
           fontSize: baseFontSize * 0.9,
           fontWeight: FontWeight.bold,
@@ -198,7 +204,7 @@ class MarkdownGenerator {
         footnoteSpans.addAll(defSpans);
       } else {
         footnoteSpans.add(TextSpan(
-          text: '未定义脚注: $id',
+          text: undefinedFootnoteText(id),
           style: TextStyle(
             fontSize: baseFontSize * 0.85,
             fontStyle: FontStyle.italic,

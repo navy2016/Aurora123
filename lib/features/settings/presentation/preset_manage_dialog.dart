@@ -1,6 +1,7 @@
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 
 import '../../settings/domain/chat_preset.dart';
 import '../../settings/presentation/settings_provider.dart';
@@ -84,8 +85,9 @@ class _PresetManageDialogState extends ConsumerState<PresetManageDialog> {
   @override
   Widget build(BuildContext context) {
     final presets = ref.watch(settingsProvider).presets;
+    final l10n = AppLocalizations.of(context)!;
     return ContentDialog(
-      title: const Text('Manage Presets'),
+      title: Text(l10n.managePresets),
       content: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -94,7 +96,7 @@ class _PresetManageDialogState extends ConsumerState<PresetManageDialog> {
             child: Column(
               children: [
                 Button(
-                  child: const Text('+ New Preset'),
+                  child: Text(l10n.newPreset),
                   onPressed: () => _startEdit(null),
                 ),
                 const SizedBox(height: 10),
@@ -130,18 +132,18 @@ class _PresetManageDialogState extends ConsumerState<PresetManageDialog> {
               children: [
                 TextBox(
                   controller: _nameController,
-                  placeholder: 'Name',
+                  placeholder: l10n.presetNamePlaceholder,
                 ),
                 const SizedBox(height: 8),
                 TextBox(
                   controller: _descController,
-                  placeholder: 'Description (optional)',
+                  placeholder: l10n.presetDescriptionPlaceholder,
                 ),
                 const SizedBox(height: 8),
                 Expanded(
                   child: TextBox(
                     controller: _promptController,
-                    placeholder: 'System Prompt',
+                    placeholder: l10n.systemPromptPlaceholder,
                     maxLines: null,
                     expands: true,
                     textAlignVertical: TextAlignVertical.top,
@@ -180,7 +182,8 @@ class _PresetManageDialogState extends ConsumerState<PresetManageDialog> {
                 const SizedBox(height: 10),
                 FilledButton(
                   onPressed: _save,
-                  child: Text(_editingPreset == null ? 'Create' : 'Save'),
+                  child:
+                      Text(_editingPreset == null ? l10n.create : l10n.save),
                 ),
               ],
             ),
@@ -189,7 +192,7 @@ class _PresetManageDialogState extends ConsumerState<PresetManageDialog> {
       ),
       actions: [
         Button(
-          child: const Text('Close'),
+          child: Text(l10n.close),
           onPressed: () => Navigator.pop(context),
         ),
       ],

@@ -98,9 +98,9 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
     final viewingProvider = settingsState.viewingProvider;
     _updateControllers(viewingProvider);
     final settingsPageIndex = ref.watch(settingsPageIndexProvider);
+    final l10n = AppLocalizations.of(context)!;
     if (PlatformUtils.isDesktop) {
       final theme = fluent.FluentTheme.of(context);
-      final l10n = AppLocalizations.of(context)!;
       final settingsPages = [
         (icon: AuroraIcons.model, label: l10n.modelProvider),
         (icon: AuroraIcons.translation, label: l10n.chatSettings),
@@ -214,7 +214,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
       );
     } else {
       return Scaffold(
-        appBar: AppBar(title: const Text('设置')),
+        appBar: AppBar(title: Text(l10n.settings)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -223,11 +223,11 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
               children: [
                 const Icon(AuroraIcons.settings, size: 48, color: Colors.grey),
                 const SizedBox(height: 16),
-                const Text('移动端设置',
+                Text(l10n.mobileSettings,
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                const Text('请使用顶部导航栏的设置按钮访问完整设置页面',
+                Text(l10n.mobileSettingsHint,
                     textAlign: TextAlign.center),
               ],
             ),
@@ -727,7 +727,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
 
                 // --- Base URL ---
                 fluent.InfoLabel(
-                  label: 'API Base URL',
+                  label: l10n.apiBaseUrl,
                   child: _buildStyledTextBox(
                     controller: _baseUrlController,
                     placeholder: l10n.baseUrlPlaceholder,
@@ -1043,10 +1043,127 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           const SizedBox(height: 24),
           const fluent.Divider(),
           const SizedBox(height: 24),
+          fluent.Text(
+            l10n.assistantMemoryGlobalDefaults,
+            style: fluent.FluentTheme.of(context).typography.bodyStrong,
+          ),
+          const SizedBox(height: 16),
+          fluent.InfoLabel(
+            label: l10n.assistantMemoryMinNewUserTurns,
+            child: Row(
+              children: [
+                Expanded(
+                  child: fluent.Slider(
+                    value: settingsState.memoryMinNewUserMessages.toDouble(),
+                    min: 1,
+                    max: 200,
+                    onChanged: (v) {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setMemoryMinNewUserMessages(v.round());
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${settingsState.memoryMinNewUserMessages}'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          fluent.InfoLabel(
+            label: l10n.assistantMemoryIdleSecondsBeforeConsolidation,
+            child: Row(
+              children: [
+                Expanded(
+                  child: fluent.Slider(
+                    value: settingsState.memoryIdleSeconds.toDouble(),
+                    min: 30,
+                    max: 7200,
+                    onChanged: (v) {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setMemoryIdleSeconds(v.round());
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${settingsState.memoryIdleSeconds}s'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          fluent.InfoLabel(
+            label: l10n.assistantMemoryMaxBufferedMessages,
+            child: Row(
+              children: [
+                Expanded(
+                  child: fluent.Slider(
+                    value: settingsState.memoryMaxBufferedMessages.toDouble(),
+                    min: 20,
+                    max: 500,
+                    onChanged: (v) {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setMemoryMaxBufferedMessages(v.round());
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${settingsState.memoryMaxBufferedMessages}'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          fluent.InfoLabel(
+            label: l10n.assistantMemoryMaxRunsPerDay,
+            child: Row(
+              children: [
+                Expanded(
+                  child: fluent.Slider(
+                    value: settingsState.memoryMaxRunsPerDay.toDouble(),
+                    min: 1,
+                    max: 30,
+                    onChanged: (v) {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setMemoryMaxRunsPerDay(v.round());
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${settingsState.memoryMaxRunsPerDay}'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          fluent.InfoLabel(
+            label: l10n.assistantMemoryContextWindowSize,
+            child: Row(
+              children: [
+                Expanded(
+                  child: fluent.Slider(
+                    value: settingsState.memoryContextWindowSize.toDouble(),
+                    min: 20,
+                    max: 240,
+                    onChanged: (v) {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setMemoryContextWindowSize(v.round());
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${settingsState.memoryContextWindowSize}'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          const fluent.Divider(),
+          const SizedBox(height: 24),
           fluent.InfoLabel(
             label: l10n.userName,
             child: _buildStyledTextBox(
-              placeholder: 'User',
+              placeholder: l10n.user,
               controller: _userNameController,
               onChanged: (value) {
                 ref
@@ -1134,7 +1251,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
           fluent.InfoLabel(
             label: l10n.aiName,
             child: _buildStyledTextBox(
-              placeholder: 'Assistant',
+              placeholder: l10n.aiNamePlaceholder,
               controller: _llmNameController,
               onChanged: (value) {
                 ref
@@ -1171,7 +1288,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                 ),
                 const SizedBox(width: 12),
                 fluent.Button(
-                  child: const Text('选择图片'),
+                  child: Text(l10n.selectImage),
                   onPressed: () async {
                     final result = await openFile(
                       acceptedTypeGroups: [
@@ -1709,7 +1826,7 @@ class _SettingsContentState extends ConsumerState<SettingsContent> {
                 Text('${settingsState.fontSize.toStringAsFixed(1)} pt'),
                 const SizedBox(width: 8),
                 fluent.Button(
-                  child: const Text('Reset'),
+                  child: Text(l10n.reset),
                   onPressed: () {
                     ref.read(settingsProvider.notifier).setFontSize(14.0);
                   },
@@ -1880,12 +1997,13 @@ class _ApiKeyItemState extends State<_ApiKeyItem> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return fluent.TextBox(
       controller: _controller,
       focusNode: _focusNode,
       obscureText: !_isVisible,
       onChanged: widget.onUpdate,
-      placeholder: 'sk-................',
+      placeholder: l10n.apiKeyPlaceholder,
       suffix: fluent.IconButton(
         icon: fluent.Icon(
           _isVisible ? AuroraIcons.visibilityOff : AuroraIcons.visibility,

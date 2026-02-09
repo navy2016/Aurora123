@@ -36,7 +36,7 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                 ?.firstWhere((t) => t.id == selectedTopicId,
                     orElse: () => TopicEntity()
                       ..id = -1
-                      ..name = 'Unknown')
+                      ..name = l10n.unknown)
                 .name ??
             l10n.allChats;
     if (widget.isMobile) {
@@ -132,12 +132,12 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                             }),
                             loading: () => [
                               fluent.MenuFlyoutItem(
-                                  text: const Text('Loading...'),
+                                  text: Text(l10n.loadingEllipsis),
                                   onPressed: null)
                             ],
                             error: (e, s) => [
                               fluent.MenuFlyoutItem(
-                                  text: const Text('Error loading topics'),
+                                  text: Text(l10n.errorLoadingTopics),
                                   onPressed: null)
                             ],
                           ),
@@ -256,14 +256,14 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                         },
                       )),
                   loading: () => [
-                    const ListTile(
-                      title: Text('Loading...'),
+                    ListTile(
+                      title: Text(l10n.loadingEllipsis),
                       enabled: false,
                     )
                   ],
                   error: (_, __) => [
-                    const ListTile(
-                      title: Text('Error'),
+                    ListTile(
+                      title: Text(l10n.error),
                       enabled: false,
                     )
                   ],
@@ -357,7 +357,8 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                       );
                     },
                     loading: () => const Center(child: fluent.ProgressRing()),
-                    error: (e, s) => Center(child: Text('Error: $e')),
+                    error: (e, s) =>
+                        Center(child: Text(l10n.errorWithMessage(e.toString()))),
                   );
                 }),
               ),
@@ -387,7 +388,7 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
               final topicsAsync = ref.watch(topicsProvider);
               return topicsAsync.when(
                 data: (topics) {
-                  if (topics.isEmpty) return Center(child: Text("No groups"));
+                  if (topics.isEmpty) return Center(child: Text(l10n.noGroups));
                   return ListView.builder(
                     itemCount: topics.length,
                     itemBuilder: (context, index) {
@@ -406,7 +407,8 @@ class _TopicDropdownState extends ConsumerState<TopicDropdown> {
                   );
                 },
                 loading: () => const Center(child: fluent.ProgressRing()),
-                error: (e, s) => Center(child: Text('Error: $e')),
+                error: (e, s) =>
+                    Center(child: Text(l10n.errorWithMessage(e.toString()))),
               );
             }),
           ),

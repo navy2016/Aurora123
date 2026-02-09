@@ -142,14 +142,15 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
     showDialog(
         context: context,
         builder: (context) {
+          final l10n = AppLocalizations.of(context)!;
           return ContentDialog(
             title: isError
-                ? Text('Error', style: TextStyle(color: Colors.red))
+                ? Text(l10n.error, style: TextStyle(color: Colors.red))
                 : Icon(AuroraIcons.check, color: Colors.green),
             content: Text(message),
             actions: [
               Button(
-                  child: const Text('OK'),
+                  child: Text(l10n.confirm),
                   onPressed: () => Navigator.pop(context)),
             ],
           );
@@ -239,7 +240,7 @@ class _SyncSettingsSectionState extends ConsumerState<SyncSettingsSection> {
                 label: l10n.passwordOrToken,
                 child: TextBox(
                   controller: _passwordController,
-                  placeholder: 'Password',
+                  placeholder: l10n.passwordOrToken,
                   obscureText: !_showPassword,
                   suffix: IconButton(
                     icon: Icon(_showPassword

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:aurora/shared/theme/aurora_icons.dart';
+import 'package:aurora/l10n/app_localizations.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:file_selector/file_selector.dart';
@@ -80,9 +81,10 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
       await clipboard.write([item]);
       if (mounted) {
         displayInfoBar(context, builder: (context, close) {
+          final l10n = AppLocalizations.of(context)!;
           return InfoBar(
-            title: const Text('已复制'),
-            content: const Text('图片已复制到剪贴板'),
+            title: Text(l10n.copied),
+            content: Text(l10n.imageCopiedToClipboard),
             severity: InfoBarSeverity.success,
             action: IconButton(
                 icon: const Icon(AuroraIcons.close), onPressed: close),
@@ -95,10 +97,11 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
   }
 
   Future<void> _handleSave() async {
+    final l10n = AppLocalizations.of(context)!;
     final FileSaveLocation? result = await getSaveLocation(
       suggestedName: 'image_${DateTime.now().millisecondsSinceEpoch}.png',
       acceptedTypeGroups: [
-        const XTypeGroup(label: 'Images', extensions: ['png']),
+        XTypeGroup(label: l10n.images, extensions: const ['png']),
       ],
     );
     if (result != null) {
@@ -106,9 +109,10 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
       await file.writeAsBytes(widget.imageBytes);
       if (mounted) {
         displayInfoBar(context, builder: (context, close) {
+          final l10n = AppLocalizations.of(context)!;
           return InfoBar(
-            title: const Text('已保存'),
-            content: Text('图片已保存到 ${result.path}'),
+            title: Text(l10n.imageSaved),
+            content: Text(l10n.imageSavedToPath(result.path)),
             severity: InfoBarSeverity.success,
             action: IconButton(
                 icon: const Icon(AuroraIcons.close), onPressed: close),
@@ -130,6 +134,7 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Listener(
       onPointerSignal: (event) {
         if (event is PointerScrollEvent) {
@@ -200,53 +205,53 @@ class _WindowsImageViewerState extends State<WindowsImageViewer> {
                   children: [
                     _ToolButton(
                       icon: AuroraIcons.refresh,
-                      tooltip: '重置',
+                      tooltip: l10n.reset,
                       onPressed: _resetView,
                     ),
                     const SizedBox(width: 8),
                     _ToolButton(
                       icon: AuroraIcons.retry,
-                      tooltip: '向左旋转',
+                      tooltip: l10n.rotateLeft,
                       onPressed: _rotateLeft,
                     ),
                     _ToolButton(
                       icon: AuroraIcons.retry,
-                      tooltip: '向右旋转',
+                      tooltip: l10n.rotateRight,
                       onPressed: _rotateRight,
                       flipIcon: true,
                     ),
                     const SizedBox(width: 8),
                     _ToolButton(
                       icon: AuroraIcons.sync,
-                      tooltip: '水平翻转',
+                      tooltip: l10n.flipHorizontal,
                       onPressed: _flipH,
                     ),
                     _ToolButton(
                       icon: AuroraIcons.sync,
-                      tooltip: '垂直翻转',
+                      tooltip: l10n.flipVertical,
                       onPressed: _flipV,
                       rotateIcon: true,
                     ),
                     const SizedBox(width: 8),
                     _ToolButton(
                       icon: AuroraIcons.delete,
-                      tooltip: '缩小',
+                      tooltip: l10n.zoomOut,
                       onPressed: _zoomOut,
                     ),
                     _ToolButton(
                       icon: FluentIcons.add,
-                      tooltip: '放大',
+                      tooltip: l10n.zoomIn,
                       onPressed: _zoomIn,
                     ),
                     const SizedBox(width: 16),
                     _ToolButton(
                       icon: FluentIcons.copy,
-                      tooltip: '复制',
+                      tooltip: l10n.copy,
                       onPressed: _handleCopy,
                     ),
                     _ToolButton(
                       icon: FluentIcons.download,
-                      tooltip: '保存',
+                      tooltip: l10n.save,
                       onPressed: _handleSave,
                     ),
                   ],

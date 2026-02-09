@@ -72,13 +72,13 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
               t.status == TaskStatus.success || t.status == TaskStatus.failed))
             IconButton(
               icon: const Icon(AuroraIcons.refresh, size: 20),
-              tooltip: '重新执行所有任务',
+              tooltip: l10n.restartAllTasksTooltip,
               onPressed: () async {
                 final confirmed = await AuroraBottomSheet.showConfirm(
                   context: context,
-                  title: '重新执行所有任务',
-                  content: '确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。',
-                  confirmText: '重新执行',
+                  title: l10n.restartAllTasksTitle,
+                  content: l10n.restartAllTasksConfirm,
+                  confirmText: l10n.restartAllTasksAction,
                   isDestructive: true,
                 );
                 if (confirmed == true) {
@@ -436,7 +436,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                                   : const Icon(AuroraIcons.refresh, size: 16),
                               label: Text(state.isGeneratingOutline
                                   ? l10n.generating
-                                  : '重跑大纲'),
+                                  : l10n.rerunOutline),
                               style: OutlinedButton.styleFrom(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),
@@ -556,9 +556,9 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     if (state.selectedProject?.chapters.isNotEmpty ?? false) {
       final confirmed = await AuroraBottomSheet.showConfirm(
         context: context,
-        title: '重新生成细纲',
-        content: '将按最新大纲重新生成章节细纲。\n若中途出现异常，系统会自动回滚到当前章节内容。',
-        confirmText: '继续生成',
+        title: l10n.regenerateChapterOutlineTitle,
+        content: l10n.regenerateChapterOutlineConfirm,
+        confirmText: l10n.continueGenerate,
         isDestructive: false,
       );
       if (confirmed == true) {
@@ -669,8 +669,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                         ElevatedButton.icon(
                           onPressed: isQueueRunning
                               ? null
-                              : () => notifier.updateTaskStatus(
-                                  tasks.first.id, TaskStatus.success),
+                              : () => notifier.approveTask(tasks.first.id),
                           icon: const Icon(AuroraIcons.check, size: 16),
                           label: Text(l10n.approve,
                               style: const TextStyle(fontSize: 13)),

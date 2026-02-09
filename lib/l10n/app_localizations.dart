@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'发送'**
   String get send;
 
+  /// No description provided for @sendAndRegenerate.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送并重新生成'**
+  String get sendAndRegenerate;
+
   /// No description provided for @retry.
   ///
   /// In zh, this message translates to:
@@ -368,6 +374,12 @@ abstract class AppLocalizations {
   /// **'AI 名称'**
   String get aiName;
 
+  /// No description provided for @aiNamePlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'助手'**
+  String get aiNamePlaceholder;
+
   /// No description provided for @aiAvatar.
   ///
   /// In zh, this message translates to:
@@ -512,6 +524,12 @@ abstract class AppLocalizations {
   /// **'添加'**
   String get add;
 
+  /// No description provided for @create.
+  ///
+  /// In zh, this message translates to:
+  /// **'创建'**
+  String get create;
+
   /// No description provided for @enabled.
   ///
   /// In zh, this message translates to:
@@ -530,16 +548,28 @@ abstract class AppLocalizations {
   /// **'加载中'**
   String get loading;
 
+  /// No description provided for @loadingEllipsis.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载中...'**
+  String get loadingEllipsis;
+
   /// No description provided for @error.
   ///
   /// In zh, this message translates to:
   /// **'错误'**
   String get error;
 
+  /// No description provided for @errorWithMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'错误：{message}'**
+  String errorWithMessage(String message);
+
   /// No description provided for @success.
   ///
   /// In zh, this message translates to:
-  /// **'已完成'**
+  /// **'成功'**
   String get success;
 
   /// No description provided for @failed.
@@ -547,6 +577,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'失败'**
   String get failed;
+
+  /// No description provided for @unknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'未知'**
+  String get unknown;
 
   /// No description provided for @settings.
   ///
@@ -595,6 +631,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'执行模型'**
   String get executionModel;
+
+  /// No description provided for @executionModelHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'用于 Worker Agent 执行技能的模型。'**
+  String get executionModelHint;
 
   /// No description provided for @defaultModelSameAsChat.
   ///
@@ -685,6 +727,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'输入文件夹名称 (如 translation_helper)'**
   String get skillNameHint;
+
+  /// No description provided for @skillMarkdownPlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'SKILL.md 内容...'**
+  String get skillMarkdownPlaceholder;
 
   /// No description provided for @providerName.
   ///
@@ -794,12 +842,6 @@ abstract class AppLocalizations {
   /// **'全部禁用'**
   String get disableAll;
 
-  /// No description provided for @modelConfig.
-  ///
-  /// In zh, this message translates to:
-  /// **'模型配置'**
-  String get modelConfig;
-
   /// No description provided for @configureModelParams.
   ///
   /// In zh, this message translates to:
@@ -835,6 +877,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'参数名 (Key)'**
   String get paramKey;
+
+  /// No description provided for @paramKeyPlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'例如 _aurora_image_config'**
+  String get paramKeyPlaceholder;
 
   /// No description provided for @paramValue.
   ///
@@ -971,13 +1019,13 @@ abstract class AppLocalizations {
   /// No description provided for @clearStats.
   ///
   /// In zh, this message translates to:
-  /// **'清除数据'**
+  /// **'清除统计数据'**
   String get clearStats;
 
   /// No description provided for @clearStatsConfirm.
   ///
   /// In zh, this message translates to:
-  /// **'确定要清除所有统计数据吗？此操作无法撤销。'**
+  /// **'确定要清除所有使用统计吗？此操作无法撤销。'**
   String get clearStatsConfirm;
 
   /// No description provided for @clearData.
@@ -995,7 +1043,7 @@ abstract class AppLocalizations {
   /// No description provided for @noUsageData.
   ///
   /// In zh, this message translates to:
-  /// **'暂无数据'**
+  /// **'暂无使用数据'**
   String get noUsageData;
 
   /// No description provided for @callsCount.
@@ -1039,6 +1087,30 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'Token/s: {tps}'**
   String tokensPerSecond(String tps);
+
+  /// No description provided for @totalTokens.
+  ///
+  /// In zh, this message translates to:
+  /// **'累计Token'**
+  String get totalTokens;
+
+  /// No description provided for @tokensPerSecondShort.
+  ///
+  /// In zh, this message translates to:
+  /// **'Token/s'**
+  String get tokensPerSecondShort;
+
+  /// No description provided for @ttft.
+  ///
+  /// In zh, this message translates to:
+  /// **'TTFT'**
+  String get ttft;
+
+  /// No description provided for @avgDuration.
+  ///
+  /// In zh, this message translates to:
+  /// **'平均'**
+  String get avgDuration;
 
   /// No description provided for @mobileSettings.
   ///
@@ -1172,6 +1244,12 @@ abstract class AppLocalizations {
   /// **'小说结构'**
   String get novelStructure;
 
+  /// No description provided for @modelConfig.
+  ///
+  /// In zh, this message translates to:
+  /// **'模型配置'**
+  String get modelConfig;
+
   /// No description provided for @reviewModel.
   ///
   /// In zh, this message translates to:
@@ -1219,6 +1297,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'确定要删除这个项目吗？'**
   String get deleteProjectConfirm;
+
+  /// No description provided for @deleteChapter.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除章节'**
+  String get deleteChapter;
 
   /// No description provided for @deleteChapterConfirm.
   ///
@@ -1298,6 +1382,24 @@ abstract class AppLocalizations {
   /// **'在此处编辑大纲...'**
   String get editOutlinePlaceholder;
 
+  /// No description provided for @rerunOutline.
+  ///
+  /// In zh, this message translates to:
+  /// **'重跑大纲'**
+  String get rerunOutline;
+
+  /// No description provided for @rerunOutlineFromLastPromptHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'基于上次需求词重新生成大纲'**
+  String get rerunOutlineFromLastPromptHint;
+
+  /// No description provided for @noRerunnableOutlinePrompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无可重跑的大纲需求词'**
+  String get noRerunnableOutlinePrompt;
+
   /// No description provided for @generateChapters.
   ///
   /// In zh, this message translates to:
@@ -1309,6 +1411,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'重新生成章节'**
   String get regenerateChapters;
+
+  /// No description provided for @regenerateChapterOutlineTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新生成细纲'**
+  String get regenerateChapterOutlineTitle;
+
+  /// No description provided for @regenerateChapterOutlineConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'将按最新大纲重新生成章节细纲。\n若中途出现异常，系统会自动回滚到当前章节内容。'**
+  String get regenerateChapterOutlineConfirm;
+
+  /// No description provided for @continueGenerate.
+  ///
+  /// In zh, this message translates to:
+  /// **'继续生成'**
+  String get continueGenerate;
 
   /// No description provided for @clearChaptersWarning.
   ///
@@ -1382,6 +1502,24 @@ abstract class AppLocalizations {
   /// **'勾选的分类会在写作时自动携带'**
   String get autoIncludeHint;
 
+  /// No description provided for @clearWorldSettingsTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'清空所有设定'**
+  String get clearWorldSettingsTooltip;
+
+  /// No description provided for @clearWorldSettingsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'清空世界设定'**
+  String get clearWorldSettingsTitle;
+
+  /// No description provided for @clearWorldSettingsConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要清空所有世界设定数据吗？\n（人物设定、人物关系、场景地点、伏笔/线索等）'**
+  String get clearWorldSettingsConfirm;
+
   /// No description provided for @worldRules.
   ///
   /// In zh, this message translates to:
@@ -1454,6 +1592,30 @@ abstract class AppLocalizations {
   /// **'没有可执行的待办任务'**
   String get noPendingTasks;
 
+  /// No description provided for @restartAllTasksTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'重置所有任务状态，从头开始重新生成'**
+  String get restartAllTasksTooltip;
+
+  /// No description provided for @restartAllTasksTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新执行所有任务'**
+  String get restartAllTasksTitle;
+
+  /// No description provided for @restartAllTasksConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要重置所有任务吗？\n这将清空已生成的内容，所有章节需要重新生成。'**
+  String get restartAllTasksConfirm;
+
+  /// No description provided for @restartAllTasksAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新执行'**
+  String get restartAllTasksAction;
+
   /// No description provided for @executeTask.
   ///
   /// In zh, this message translates to:
@@ -1478,11 +1640,11 @@ abstract class AppLocalizations {
   /// **'批准'**
   String get approve;
 
-  /// No description provided for @regenerate.
+  /// No description provided for @rewrite.
   ///
   /// In zh, this message translates to:
-  /// **'重新生成'**
-  String get regenerate;
+  /// **'重写'**
+  String get rewrite;
 
   /// No description provided for @pending.
   ///
@@ -1495,6 +1657,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'进行中'**
   String get running;
+
+  /// No description provided for @completed.
+  ///
+  /// In zh, this message translates to:
+  /// **'已完成'**
+  String get completed;
 
   /// No description provided for @paused.
   ///
@@ -1513,6 +1681,36 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'拆解中'**
   String get decomposing;
+
+  /// No description provided for @needsRevision.
+  ///
+  /// In zh, this message translates to:
+  /// **'待重试'**
+  String get needsRevision;
+
+  /// No description provided for @batchProgress.
+  ///
+  /// In zh, this message translates to:
+  /// **'批次进度：{current}/{total}'**
+  String batchProgress(int current, int total);
+
+  /// No description provided for @projectOnlyKnowledgeBaseHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'该知识库仅用于当前项目写作，不会应用在对话中。'**
+  String get projectOnlyKnowledgeBaseHint;
+
+  /// No description provided for @importingEllipsis.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入中...'**
+  String get importingEllipsis;
+
+  /// No description provided for @chapterProgressSummary.
+  ///
+  /// In zh, this message translates to:
+  /// **'{completed}/{total} 章完成 · {words} 字'**
+  String chapterProgressSummary(int completed, int total, int words);
 
   /// No description provided for @noProjectSelected.
   ///
@@ -1580,6 +1778,12 @@ abstract class AppLocalizations {
   /// **'停止生成'**
   String get stopGenerating;
 
+  /// No description provided for @regenerate.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新生成'**
+  String get regenerate;
+
   /// No description provided for @copyCode.
   ///
   /// In zh, this message translates to:
@@ -1597,6 +1801,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'内容已复制'**
   String get contentCopied;
+
+  /// No description provided for @footnotes.
+  ///
+  /// In zh, this message translates to:
+  /// **'脚注'**
+  String get footnotes;
+
+  /// No description provided for @undefinedFootnote.
+  ///
+  /// In zh, this message translates to:
+  /// **'未定义脚注：{id}'**
+  String undefinedFootnote(String id);
 
   /// No description provided for @thinking.
   ///
@@ -1676,11 +1892,47 @@ abstract class AppLocalizations {
   /// **'[无输出]'**
   String get noOutput;
 
+  /// No description provided for @images.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片'**
+  String get images;
+
   /// No description provided for @imageGenerated.
   ///
   /// In zh, this message translates to:
   /// **'图片已生成'**
   String get imageGenerated;
+
+  /// No description provided for @imageCopied.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片已复制'**
+  String get imageCopied;
+
+  /// No description provided for @imageCopiedToClipboard.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片已复制到剪贴板'**
+  String get imageCopiedToClipboard;
+
+  /// No description provided for @clipboardError.
+  ///
+  /// In zh, this message translates to:
+  /// **'剪贴板错误'**
+  String get clipboardError;
+
+  /// No description provided for @clipboardAccessFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法访问剪贴板，请完全重启应用。'**
+  String get clipboardAccessFailed;
+
+  /// No description provided for @copyImage.
+  ///
+  /// In zh, this message translates to:
+  /// **'复制图片'**
+  String get copyImage;
 
   /// No description provided for @saveImage.
   ///
@@ -1688,17 +1940,65 @@ abstract class AppLocalizations {
   /// **'保存图片'**
   String get saveImage;
 
+  /// No description provided for @saveImageAs.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片另存为...'**
+  String get saveImageAs;
+
   /// No description provided for @imageSaved.
   ///
   /// In zh, this message translates to:
   /// **'图片已保存'**
   String get imageSaved;
 
+  /// No description provided for @imageSavedToPath.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片已保存到 {path}'**
+  String imageSavedToPath(String path);
+
   /// No description provided for @imageSaveFailed.
   ///
   /// In zh, this message translates to:
   /// **'图片保存失败'**
   String get imageSaveFailed;
+
+  /// No description provided for @rotateLeft.
+  ///
+  /// In zh, this message translates to:
+  /// **'向左旋转'**
+  String get rotateLeft;
+
+  /// No description provided for @rotateRight.
+  ///
+  /// In zh, this message translates to:
+  /// **'向右旋转'**
+  String get rotateRight;
+
+  /// No description provided for @flipHorizontal.
+  ///
+  /// In zh, this message translates to:
+  /// **'水平翻转'**
+  String get flipHorizontal;
+
+  /// No description provided for @flipVertical.
+  ///
+  /// In zh, this message translates to:
+  /// **'垂直翻转'**
+  String get flipVertical;
+
+  /// No description provided for @zoomIn.
+  ///
+  /// In zh, this message translates to:
+  /// **'放大'**
+  String get zoomIn;
+
+  /// No description provided for @zoomOut.
+  ///
+  /// In zh, this message translates to:
+  /// **'缩小'**
+  String get zoomOut;
 
   /// No description provided for @today.
   ///
@@ -1766,11 +2066,11 @@ abstract class AppLocalizations {
   /// **'输入消息...'**
   String get typeMessage;
 
-  /// No description provided for @editApiKey.
+  /// No description provided for @editMessagePlaceholder.
   ///
   /// In zh, this message translates to:
-  /// **'编辑 API Key'**
-  String get editApiKey;
+  /// **'编辑消息...'**
+  String get editMessagePlaceholder;
 
   /// No description provided for @editBaseUrl.
   ///
@@ -2192,6 +2492,18 @@ abstract class AppLocalizations {
   /// **'分组名称'**
   String get topicNamePlaceholder;
 
+  /// No description provided for @errorLoadingTopics.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载话题失败'**
+  String get errorLoadingTopics;
+
+  /// No description provided for @noGroups.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无分组'**
+  String get noGroups;
+
   /// No description provided for @allChats.
   ///
   /// In zh, this message translates to:
@@ -2612,11 +2924,23 @@ abstract class AppLocalizations {
   /// **'https://api.openai.com/v1'**
   String get baseUrlPlaceholder;
 
+  /// No description provided for @apiBaseUrl.
+  ///
+  /// In zh, this message translates to:
+  /// **'API Base URL'**
+  String get apiBaseUrl;
+
   /// No description provided for @apiKeys.
   ///
   /// In zh, this message translates to:
   /// **'API Keys'**
   String get apiKeys;
+
+  /// No description provided for @apiKeysCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 个 Key'**
+  String apiKeysCount(int count);
 
   /// No description provided for @addApiKey.
   ///
@@ -2629,6 +2953,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'自动轮询'**
   String get autoRotateKeys;
+
+  /// No description provided for @editApiKey.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑 API Key'**
+  String get editApiKey;
 
   /// No description provided for @fontSize.
   ///
@@ -3062,6 +3392,12 @@ abstract class AppLocalizations {
   /// **'已恢复系统默认预设'**
   String get systemDefaultRestored;
 
+  /// No description provided for @restoreSystemDefaultPromptHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'将提示词恢复为系统默认预设'**
+  String get restoreSystemDefaultPromptHint;
+
   /// No description provided for @presetLoaded.
   ///
   /// In zh, this message translates to:
@@ -3235,6 +3571,66 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'长期记忆'**
   String get assistantLongTermMemory;
+
+  /// No description provided for @assistantMemoryConsolidationModel.
+  ///
+  /// In zh, this message translates to:
+  /// **'记忆整理模型'**
+  String get assistantMemoryConsolidationModel;
+
+  /// No description provided for @assistantMemoryFollowCurrentChatModel.
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随当前对话模型'**
+  String get assistantMemoryFollowCurrentChatModel;
+
+  /// No description provided for @assistantMemoryGlobalDefaults.
+  ///
+  /// In zh, this message translates to:
+  /// **'记忆配置'**
+  String get assistantMemoryGlobalDefaults;
+
+  /// No description provided for @assistantMemoryMinNewUserTurns.
+  ///
+  /// In zh, this message translates to:
+  /// **'触发整理前最少新增用户轮次'**
+  String get assistantMemoryMinNewUserTurns;
+
+  /// No description provided for @assistantMemoryIdleSecondsBeforeConsolidation.
+  ///
+  /// In zh, this message translates to:
+  /// **'触发整理前空闲秒数'**
+  String get assistantMemoryIdleSecondsBeforeConsolidation;
+
+  /// No description provided for @assistantMemoryMaxBufferedMessages.
+  ///
+  /// In zh, this message translates to:
+  /// **'触发整理前最大缓冲消息数'**
+  String get assistantMemoryMaxBufferedMessages;
+
+  /// No description provided for @assistantMemoryMaxRunsPerDay.
+  ///
+  /// In zh, this message translates to:
+  /// **'每日最多整理次数'**
+  String get assistantMemoryMaxRunsPerDay;
+
+  /// No description provided for @assistantMemoryContextWindowSize.
+  ///
+  /// In zh, this message translates to:
+  /// **'上下文窗口大小（K 条消息）'**
+  String get assistantMemoryContextWindowSize;
+
+  /// No description provided for @assistantAdvancedSettings.
+  ///
+  /// In zh, this message translates to:
+  /// **'高级设置'**
+  String get assistantAdvancedSettings;
+
+  /// No description provided for @assistantSelectOrCreateHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择或创建一个助理开始配置'**
+  String get assistantSelectOrCreateHint;
 
   /// No description provided for @assistantKnowledgeBindingHint.
   ///
