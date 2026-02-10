@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show max;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
@@ -415,6 +416,67 @@ String _thinkingTierToOpenAIEffort(_ThinkingTier tier,
     case _ThinkingTier.xhigh:
       return 'xhigh';
   }
+}
+
+bool _isClaudeRoutedModel(String model) {
+  final lowerModel = model.toLowerCase();
+  return lowerModel.contains('claude') || lowerModel.contains('anthropic');
+}
+
+int? _reasoningEffortToBudgetTokens(String effort) {
+  switch (effort.trim().toLowerCase()) {
+    case 'minimal':
+      return 512;
+    case 'low':
+      return 1024;
+    case 'medium':
+      return 8192;
+    case 'high':
+      return 24576;
+    case 'xhigh':
+      return 32768;
+    default:
+      return null;
+  }
+}
+
+void _ensureReasoningEffortCompatibleMaxTokens({
+  required Map<String, dynamic> requestData,
+  required String selectedModel,
+}) {
+  if (!_isClaudeRoutedModel(selectedModel)) return;
+
+  final candidates = <int>[];
+  final effortRaw = requestData['reasoning_effort'];
+  if (effortRaw != null) {
+    final budget = _reasoningEffortToBudgetTokens(effortRaw.toString());
+    if (budget != null && budget > 0) candidates.add(budget);
+  }
+  final extraBody = _safeStringKeyedMap(requestData['extra_body']);
+  final anthropic = _safeStringKeyedMap(extraBody['anthropic']);
+  final thinking = _safeStringKeyedMap(anthropic['thinking']);
+  final budgetRaw = thinking['budget_tokens'];
+  final anthropicBudget =
+      budgetRaw == null ? null : int.tryParse(budgetRaw.toString().trim());
+  if (anthropicBudget != null && anthropicBudget > 0) {
+    candidates.add(anthropicBudget);
+  }
+  if (candidates.isEmpty) return;
+  final budgetTokens = candidates.reduce(max);
+
+  final maxTokensRaw = requestData['max_tokens'];
+  final maxTokens = maxTokensRaw == null
+      ? null
+      : int.tryParse(maxTokensRaw.toString().trim());
+  if (maxTokens != null) {
+    if (maxTokens > budgetTokens) return;
+    requestData['max_tokens'] = budgetTokens + 1;
+    return;
+  }
+
+  // Some Claude-compatible backends apply a low implicit max_tokens default.
+  // Always set an explicit compatible value when thinking budget is enabled.
+  requestData['max_tokens'] = budgetTokens + 1;
 }
 
 int? _budgetTokensFromThinkingInput(_ThinkingInput input) {
@@ -885,6 +947,10 @@ Use search for:
         activeParams: activeParams,
         selectedModel: selectedModel,
         baseUrl: baseUrl,
+      );
+      _ensureReasoningEffortCompatibleMaxTokens(
+        requestData: requestData,
+        selectedModel: selectedModel,
       );
 
       // Handle Image Config (for gemini image models)
@@ -1696,6 +1762,10 @@ Use search for:
         activeParams: activeParams,
         selectedModel: selectedModel,
         baseUrl: baseUrl,
+      );
+      _ensureReasoningEffortCompatibleMaxTokens(
+        requestData: requestData,
+        selectedModel: selectedModel,
       );
       _applyImageConfigToRequest(
         requestData: requestData,
