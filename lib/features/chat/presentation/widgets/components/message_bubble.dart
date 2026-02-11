@@ -231,9 +231,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
             .addPostFrameCallback((_) => _focusNode.requestFocus());
         break;
       case 'copy':
-        final item = DataWriterItem();
-        item.add(Formats.plainText(msg.content));
-        SystemClipboard.instance?.write([item]);
+        await Clipboard.setData(ClipboardData(text: msg.content));
         break;
       case 'delete':
         notifier.deleteMessage(msg.id);
@@ -493,7 +491,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                                   focusNode: _focusNode,
                                                   maxLines: 15,
                                                   minLines: 1,
-                                                  placeholder: l10n.editMessagePlaceholder,
+                                                  placeholder: l10n
+                                                      .editMessagePlaceholder,
                                                   decoration: const fluent
                                                       .WidgetStatePropertyAll(
                                                       fluent.BoxDecoration(

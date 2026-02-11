@@ -17,6 +17,7 @@ class MarkdownGenerator {
   final double baseFontSize;
   final String footnotesTitle;
   final String Function(String id) undefinedFootnoteText;
+  final void Function(String latex)? onLatexInteract;
 
   MarkdownGenerator({
     required this.isDark,
@@ -24,6 +25,7 @@ class MarkdownGenerator {
     this.baseFontSize = 14.0,
     String? footnotesTitle,
     String Function(String id)? undefinedFootnoteText,
+    this.onLatexInteract,
   })  : footnotesTitle = footnotesTitle ?? 'Footnotes',
         undefinedFootnoteText =
             undefinedFootnoteText ?? ((id) => 'Undefined footnote: $id');
@@ -105,15 +107,13 @@ class MarkdownGenerator {
 
       if (currentSpans.isNotEmpty) {
         widgets.add(
-          SelectionArea(
-            child: Text.rich(
-              TextSpan(children: List.from(currentSpans)),
-              key: ValueKey('text_${widgetIndex++}'),
-              style: TextStyle(
-                color: textColor,
-                fontSize: baseFontSize,
-                height: 1.5,
-              ),
+          Text.rich(
+            TextSpan(children: List.from(currentSpans)),
+            key: ValueKey('text_${widgetIndex++}'),
+            style: TextStyle(
+              color: textColor,
+              fontSize: baseFontSize,
+              height: 1.5,
             ),
           ),
         );
@@ -216,14 +216,12 @@ class MarkdownGenerator {
     }
 
     return [
-      SelectionArea(
-        child: Text.rich(
-          TextSpan(children: footnoteSpans),
-          style: TextStyle(
-            color: textColor,
-            fontSize: baseFontSize,
-            height: 1.5,
-          ),
+      Text.rich(
+        TextSpan(children: footnoteSpans),
+        style: TextStyle(
+          color: textColor,
+          fontSize: baseFontSize,
+          height: 1.5,
         ),
       )
     ];
@@ -345,7 +343,8 @@ class MarkdownGenerator {
 
   bool _isClosingFenceLine(String line, _FenceInfo openFence) {
     final content = openFence.blockQuoteLevel > 0
-        ? _stripBlockQuotePrefixForCheck(line, maxMarkers: openFence.blockQuoteLevel)
+        ? _stripBlockQuotePrefixForCheck(line,
+                maxMarkers: openFence.blockQuoteLevel)
             .content
         : line;
     var i = 0;
@@ -357,7 +356,8 @@ class MarkdownGenerator {
     if (content[i] != openFence.markerChar) return false;
 
     var run = 0;
-    while (i + run < content.length && content[i + run] == openFence.markerChar) {
+    while (
+        i + run < content.length && content[i + run] == openFence.markerChar) {
       run++;
     }
     if (run < openFence.markerLength) return false;
@@ -380,8 +380,7 @@ class MarkdownGenerator {
 
     final isHtmlTag = contentTrimmed.startsWith('<') &&
         (contentTrimmed.endsWith('>') || !contentTrimmed.contains(' '));
-    final isListMarker =
-        RegExp(r'^(\s*)([*+-]|\d+\.)\s').hasMatch(content);
+    final isListMarker = RegExp(r'^(\s*)([*+-]|\d+\.)\s').hasMatch(content);
 
     return !isHtmlTag && !isListMarker;
   }
@@ -439,8 +438,9 @@ class MarkdownGenerator {
         // Hard barriers embedded inside list items need explicit line breaks,
         // otherwise they can end up laid out "inline" right after the marker.
         if (context.indentLevel > 0) {
-          final baseIndent =
-              context.indentLevel > 1 ? ('    ' * (context.indentLevel - 1)) : '';
+          final baseIndent = context.indentLevel > 1
+              ? ('    ' * (context.indentLevel - 1))
+              : '';
           final markerIndent = context.listType == 'ol'
               ? ('${context.listIndex + 1}. '.length)
               : 2;
@@ -582,39 +582,47 @@ class MarkdownGenerator {
         final latex = node.textContent;
         final isBold = context.currentStyle?.fontWeight == FontWeight.bold;
         final displayLatex = isBold ? '\\boldsymbol{$latex}' : latex;
+        final rawLatex = '\$$latex\$';
 
         // Use WidgetSpan for inline math
         return [
           WidgetSpan(
             alignment: PlaceholderAlignment.middle,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Render the math
-                Math.tex(
-                  displayLatex,
-                  textStyle:
-                      (context.currentStyle ?? const TextStyle()).copyWith(
-                    // Ensure color is respected if not overridden by latex
-                    color: textColor,
-                    fontSize: baseFontSize,
-                  ),
-                ),
-                // Invisible text overlay for selection/copying
-                // We use a small font size text that contains the source.
-                // Positioned.fill ensures it covers the area for selection hit-testing.
-                Semantics(
-                  label: latex,
-                  child: Opacity(
-                    opacity: 0.0,
-                    child: Text(
-                      latex,
-                      style: const TextStyle(
-                          color: Colors.transparent, fontSize: 1),
+            child: MouseRegion(
+              onEnter: (_) => onLatexInteract?.call(rawLatex),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTapDown: (_) => onLatexInteract?.call(rawLatex),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Render the math
+                    Math.tex(
+                      displayLatex,
+                      textStyle:
+                          (context.currentStyle ?? const TextStyle()).copyWith(
+                        // Ensure color is respected if not overridden by latex
+                        color: textColor,
+                        fontSize: baseFontSize,
+                      ),
                     ),
-                  ),
+                    // Invisible text overlay for selection/copying
+                    // We use a small font size text that contains the source.
+                    // Positioned.fill ensures it covers the area for selection hit-testing.
+                    Semantics(
+                      label: latex,
+                      child: Opacity(
+                        opacity: 0.0,
+                        child: Text(
+                          latex,
+                          style: const TextStyle(
+                              color: Colors.transparent, fontSize: 1),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           )
         ];
@@ -858,11 +866,14 @@ class MarkdownGenerator {
 
   Widget _buildLatex(md.Element element, int index) {
     final latex = element.textContent;
+    final rawLatex = '\$\$\n$latex\n\$\$';
     return _LatexBlock(
       key: ValueKey('latex_$index'),
       latex: latex,
+      rawLatex: rawLatex,
       textColor: textColor,
       baseFontSize: baseFontSize,
+      onInteract: onLatexInteract,
     );
   }
 
@@ -916,14 +927,12 @@ class MarkdownGenerator {
           cells.add(
             Padding(
               padding: const EdgeInsets.all(8),
-              child: SelectionArea(
-                child: Text(
-                  text,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: baseFontSize,
-                    fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
-                  ),
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: baseFontSize,
+                  fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
             ),
@@ -1343,17 +1352,15 @@ class _ExpandableCodeBlockState extends State<_ExpandableCodeBlock> {
             ),
           ),
           if (_isExpanded)
-            SelectionArea(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  widget.code,
-                  style: TextStyle(
-                    color: widget.textColor,
-                    fontSize: 13,
-                    fontFamily: 'monospace',
-                    height: 1.4,
-                  ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                widget.code,
+                style: TextStyle(
+                  color: widget.textColor,
+                  fontSize: 13,
+                  fontFamily: 'monospace',
+                  height: 1.4,
                 ),
               ),
             ),
@@ -1419,7 +1426,8 @@ class _BlockQuoteStripResult {
   final String content;
   final int blockQuoteLevel;
 
-  _BlockQuoteStripResult({required this.content, required this.blockQuoteLevel});
+  _BlockQuoteStripResult(
+      {required this.content, required this.blockQuoteLevel});
 }
 
 class LatexBlockSyntax extends md.BlockSyntax {
@@ -1574,14 +1582,18 @@ class GeneralBoldSyntax extends md.InlineSyntax {
 
 class _LatexBlock extends StatefulWidget {
   final String latex;
+  final String rawLatex;
   final Color textColor;
   final double baseFontSize;
+  final void Function(String latex)? onInteract;
 
   const _LatexBlock({
     super.key,
     required this.latex,
+    required this.rawLatex,
     required this.textColor,
     required this.baseFontSize,
+    this.onInteract,
   });
 
   @override
@@ -1601,34 +1613,41 @@ class _LatexBlockState extends State<_LatexBlock> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          width: constraints.maxWidth,
-          alignment: Alignment.center,
-          child: Scrollbar(
-            controller: _controller,
-            thumbVisibility: true,
-            child: SingleChildScrollView(
-              controller: _controller,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(
-                  left: 16, right: 16, top: 4, bottom: 16),
-              child: Math.tex(
-                widget.latex,
-                textStyle: TextStyle(
-                  fontSize: widget.baseFontSize + 2,
-                  color: widget.textColor,
-                ),
-                onErrorFallback: (error) {
-                  return Text(
+        return MouseRegion(
+          onEnter: (_) => widget.onInteract?.call(widget.rawLatex),
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTapDown: (_) => widget.onInteract?.call(widget.rawLatex),
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              width: constraints.maxWidth,
+              alignment: Alignment.center,
+              child: Scrollbar(
+                controller: _controller,
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  controller: _controller,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(
+                      left: 16, right: 16, top: 4, bottom: 16),
+                  child: Math.tex(
                     widget.latex,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: widget.baseFontSize,
+                    textStyle: TextStyle(
+                      fontSize: widget.baseFontSize + 2,
                       color: widget.textColor,
                     ),
-                  );
-                },
+                    onErrorFallback: (error) {
+                      return Text(
+                        widget.latex,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: widget.baseFontSize,
+                          color: widget.textColor,
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),
