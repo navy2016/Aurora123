@@ -584,55 +584,61 @@ class MarkdownGenerator {
         final displayLatex = isBold ? '\\boldsymbol{$latex}' : latex;
         final rawLatex = '\$$latex\$';
 
+        Widget inline = Stack(
+          alignment: Alignment.center,
+          children: [
+            // Render layer: visible formula
+            SelectionContainer.disabled(
+              child: Math.tex(
+                displayLatex,
+                textStyle: (context.currentStyle ?? const TextStyle()).copyWith(
+                  color: textColor,
+                  fontSize: baseFontSize,
+                ),
+              ),
+            ),
+            // Copy layer: near-invisible selectable source
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.center,
+                child: DefaultSelectionStyle(
+                  // Keep a normal text-like selection feedback, but lighter
+                  // to avoid visually "covering" the rendered formula.
+                  selectionColor: const Color(0x4D66A3FF),
+                  cursorColor: Colors.transparent,
+                  child: Text(
+                    rawLatex,
+                    textAlign: TextAlign.center,
+                    style: (context.currentStyle ?? const TextStyle()).copyWith(
+                      color: textColor.withValues(alpha: 0.005),
+                      fontSize: baseFontSize * 0.95,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+
+        // If there's an external interaction hook, prefer raw pointer listening
+        // to avoid competing with selection gestures.
+        if (onLatexInteract != null) {
+          inline = MouseRegion(
+            onEnter: (_) => onLatexInteract?.call(rawLatex),
+            child: Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (_) => onLatexInteract?.call(rawLatex),
+              child: inline,
+            ),
+          );
+        }
+
         // Use WidgetSpan for inline math
         return [
           WidgetSpan(
             alignment: PlaceholderAlignment.middle,
-            child: MouseRegion(
-              onEnter: (_) => onLatexInteract?.call(rawLatex),
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTapDown: (_) => onLatexInteract?.call(rawLatex),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Render layer: visible formula
-                    SelectionContainer.disabled(
-                      child: Math.tex(
-                        displayLatex,
-                        textStyle: (context.currentStyle ?? const TextStyle())
-                            .copyWith(
-                          color: textColor,
-                          fontSize: baseFontSize,
-                        ),
-                      ),
-                    ),
-                    // Copy layer: near-invisible selectable source
-                    Positioned.fill(
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: DefaultSelectionStyle(
-                          // Keep a normal text-like selection feedback, but lighter
-                          // to avoid visually "covering" the rendered formula.
-                          selectionColor: const Color(0x4D66A3FF),
-                          cursorColor: Colors.transparent,
-                          child: Text(
-                            rawLatex,
-                            textAlign: TextAlign.center,
-                            style: (context.currentStyle ?? const TextStyle())
-                                .copyWith(
-                              color: textColor.withValues(alpha: 0.005),
-                              fontSize: baseFontSize * 0.95,
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: inline,
           )
         ];
       }
@@ -840,7 +846,13 @@ class MarkdownGenerator {
       case 'img':
         return _buildImage(element, index);
       case 'hr':
-        return const Divider(height: 24, thickness: 1);
+        return const SizedBox(
+          height: 24,
+          child: Align(
+            alignment: Alignment.center,
+            child: Divider(height: 24, thickness: 1),
+          ),
+        );
       case 'latex_block':
         return _buildLatex(element, index);
       case 'blockquote':
@@ -852,12 +864,14 @@ class MarkdownGenerator {
 
   Widget _buildBlockquote(
       md.Element element, GeneratorContext context, int index) {
-    final children = _generateWidgets(element.children ?? [], context);
+    final children = _generateWidgets(
+      element.children ?? [],
+      context,
+    );
 
     return Container(
       key: ValueKey('blockquote_$index'),
       margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.only(left: 16, top: 2, bottom: 2),
       decoration: BoxDecoration(
         border: Border(
           left: BorderSide(
@@ -866,9 +880,12 @@ class MarkdownGenerator {
           ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16, top: 2, bottom: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
     );
   }
@@ -1622,75 +1639,82 @@ class _LatexBlockState extends State<_LatexBlock> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return MouseRegion(
-          onEnter: (_) => widget.onInteract?.call(widget.rawLatex),
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTapDown: (_) => widget.onInteract?.call(widget.rawLatex),
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              width: constraints.maxWidth,
-              alignment: Alignment.center,
-              child: Scrollbar(
-                controller: _controller,
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  controller: _controller,
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(
-                      left: 16, right: 16, top: 4, bottom: 16),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Render layer: visible formula
-                      SelectionContainer.disabled(
-                        child: Math.tex(
+        Widget body = Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          width: constraints.maxWidth,
+          alignment: Alignment.center,
+          child: Scrollbar(
+            controller: _controller,
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              controller: _controller,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(
+                  left: 16, right: 16, top: 4, bottom: 16),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Render layer: visible formula
+                  SelectionContainer.disabled(
+                    child: Math.tex(
+                      widget.latex,
+                      textStyle: TextStyle(
+                        fontSize: widget.baseFontSize + 2,
+                        color: widget.textColor,
+                      ),
+                      onErrorFallback: (error) {
+                        return Text(
                           widget.latex,
-                          textStyle: TextStyle(
-                            fontSize: widget.baseFontSize + 2,
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: widget.baseFontSize,
                             color: widget.textColor,
                           ),
-                          onErrorFallback: (error) {
-                            return Text(
-                              widget.latex,
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: widget.baseFontSize,
-                                color: widget.textColor,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      // Copy layer: near-invisible selectable source
-                      Positioned.fill(
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: DefaultSelectionStyle(
-                            // Keep a normal text-like selection feedback, but lighter
-                            // to avoid visually "covering" the rendered formula.
-                            selectionColor: const Color(0x4D66A3FF),
-                            cursorColor: Colors.transparent,
-                            child: Text(
-                              widget.rawLatex,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color:
-                                    widget.textColor.withValues(alpha: 0.005),
-                                fontSize: widget.baseFontSize,
-                                height: 1.5,
-                              ),
-                            ),
+                        );
+                      },
+                    ),
+                  ),
+                  // Copy layer: near-invisible selectable source
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: DefaultSelectionStyle(
+                        // Keep a normal text-like selection feedback, but lighter
+                        // to avoid visually "covering" the rendered formula.
+                        selectionColor: const Color(0x4D66A3FF),
+                        cursorColor: Colors.transparent,
+                        child: Text(
+                          widget.rawLatex,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: widget.textColor.withValues(alpha: 0.005),
+                            fontSize: widget.baseFontSize,
+                            height: 1.5,
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
         );
+
+        // If there's an external interaction hook, prefer raw pointer listening
+        // to avoid competing with selection gestures.
+        if (widget.onInteract != null) {
+          body = MouseRegion(
+            onEnter: (_) => widget.onInteract?.call(widget.rawLatex),
+            child: Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (_) => widget.onInteract?.call(widget.rawLatex),
+              child: body,
+            ),
+          );
+        }
+
+        return body;
       },
     );
   }
