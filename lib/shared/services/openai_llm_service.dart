@@ -11,6 +11,7 @@ import '../../features/settings/presentation/settings_provider.dart';
 import 'llm_service.dart';
 import '../../core/error/app_exception.dart';
 import '../../core/error/app_error_type.dart';
+import '../utils/app_logger.dart';
 
 const Set<String> _supportedVisionImageMimes = {
   'image/jpeg',
@@ -754,9 +755,25 @@ class OpenAILLMService implements LLMService {
           },
         ));
 
-  void _debugLog(String message) {
+  void _debugLog(String message,
+      {String level = 'DEBUG', String category = 'GENERAL'}) {
     assert(() {
-      debugPrint(message);
+      final normalizedMessage = message.replaceAll('\n', r'\n');
+      switch (level.toUpperCase()) {
+        case 'ERROR':
+          AppLogger.error('LLM', normalizedMessage, category: category);
+          break;
+        case 'WARN':
+          AppLogger.warn('LLM', normalizedMessage, category: category);
+          break;
+        case 'INFO':
+          AppLogger.info('LLM', normalizedMessage, category: category);
+          break;
+        case 'DEBUG':
+        default:
+          AppLogger.debug('LLM', normalizedMessage, category: category);
+          break;
+      }
       return true;
     }());
   }
@@ -764,6 +781,9 @@ class OpenAILLMService implements LLMService {
   dynamic _sanitizeForLog(dynamic data) {
     if (data is Map) {
       return data.map((k, v) {
+        if (k == 'messages' && v is List) {
+          return MapEntry(k, _summarizeMessagesForLog(v));
+        }
         if (k == 'b64_json' && v is String && v.length > 200) {
           return MapEntry(
               k, '${v.substring(0, 50)}...[TRUNCATED ${v.length} chars]');
@@ -780,6 +800,9 @@ class OpenAILLMService implements LLMService {
     } else if (data is List) {
       return data.map((i) => _sanitizeForLog(i)).toList();
     } else if (data is String) {
+      if (data.length > 800) {
+        return '${data.substring(0, 200)}...[TRUNCATED ${data.length} chars]';
+      }
       if (data.startsWith('data:') && data.length > 200) {
         return '${data.substring(0, 50)}...[TRUNCATED ${data.length} chars]';
       }
@@ -787,53 +810,129 @@ class OpenAILLMService implements LLMService {
     return data;
   }
 
-  void _prettyPrintLog(String title, String emoji, dynamic content) {
-    assert(() {
-      final now = DateTime.now();
-      final timestamp =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+  Map<String, dynamic> _summarizeMessagesForLog(List<dynamic> messages) {
+    const maxRecentMessages = 2;
+    final roleCounts = <String, int>{};
 
-      final buffer = StringBuffer();
-      buffer.writeln(
-          '$emoji ┌─────────────────────────────────────────────────────────────────────────');
-      buffer.writeln('$emoji │ $title');
-      buffer.writeln(
-          '$emoji ├─────────────────────────────────────────────────────────────────────────');
-      buffer.writeln('$emoji │ Time: $timestamp');
+    for (final item in messages) {
+      if (item is Map) {
+        final role = (item['role'] ?? 'unknown').toString();
+        roleCounts[role] = (roleCounts[role] ?? 0) + 1;
+      }
+    }
 
-      if (content is Map) {
-        if (content.containsKey('url')) {
-          buffer.writeln('$emoji │ URL: ${content['url']}');
-        }
-        if (content.containsKey('payload')) {
-          buffer.writeln('$emoji │ Payload:');
-          const encoder = JsonEncoder.withIndent('  ');
-          final prettyJson = encoder.convert(content['payload']);
-          // Add indentation to each line of the JSON
-          final lines = prettyJson.split('\n');
-          for (var line in lines) {
-            buffer.writeln('$emoji │   $line');
+    final total = messages.length;
+    final keep = total > maxRecentMessages ? maxRecentMessages : total;
+    final recent = keep == 0
+        ? const <Map<String, dynamic>>[]
+        : messages.sublist(total - keep).map(_summarizeMessageForLog).toList();
+
+    return {
+      'total_messages': total,
+      'omitted_messages': total - keep,
+      'role_counts': roleCounts,
+      'recent_messages': recent,
+    };
+  }
+
+  Map<String, dynamic> _summarizeMessageForLog(dynamic raw) {
+    if (raw is! Map) {
+      return {
+        'role': 'unknown',
+        'preview': _sanitizeForLog(raw.toString()),
+      };
+    }
+
+    final content = raw['content'];
+    return {
+      'role': (raw['role'] ?? 'unknown').toString(),
+      if (raw['name'] != null) 'name': raw['name'].toString(),
+      ..._summarizeMessageContentForLog(content),
+    };
+  }
+
+  Map<String, dynamic> _summarizeMessageContentForLog(dynamic content) {
+    if (content is String) {
+      return {
+        'content_type': 'text',
+        'content_length': content.length,
+        'content_preview': _sanitizeForLog(content),
+      };
+    }
+
+    if (content is List) {
+      int textParts = 0;
+      int imageParts = 0;
+      int otherParts = 0;
+      String? textPreview;
+
+      for (final item in content) {
+        if (item is Map) {
+          final type = (item['type'] ?? 'unknown').toString();
+          if (type == 'text') {
+            textParts++;
+            final text = item['text']?.toString() ?? '';
+            if (textPreview == null && text.isNotEmpty) {
+              textPreview = _sanitizeForLog(text).toString();
+            }
+          } else if (type == 'image_url') {
+            imageParts++;
+          } else {
+            otherParts++;
           }
         } else {
-          const encoder = JsonEncoder.withIndent('  ');
-          final prettyJson = encoder.convert(content);
-          final lines = prettyJson.split('\n');
-          for (var line in lines) {
-            buffer.writeln('$emoji │ $line');
-          }
+          otherParts++;
         }
-      } else if (content is String) {
-        final lines = content.split('\n');
-        for (var line in lines) {
-          buffer.writeln('$emoji │ $line');
-        }
-      } else {
-        buffer.writeln('$emoji │ $content');
       }
 
-      buffer.writeln(
-          '$emoji └─────────────────────────────────────────────────────────────────────────');
-      debugPrint(buffer.toString());
+      return {
+        'content_type': 'multipart',
+        'parts': content.length,
+        'text_parts': textParts,
+        'image_parts': imageParts,
+        'other_parts': otherParts,
+        if (textPreview != null) 'text_preview': textPreview,
+      };
+    }
+
+    return {
+      'content_type': 'other',
+      'content_preview': _sanitizeForLog(content.toString()),
+    };
+  }
+
+  void _logEvent(String category, dynamic payload, {String level = 'DEBUG'}) {
+    assert(() {
+      final sanitized = _sanitizeForLog(payload);
+      var effectiveCategory = category;
+      var effectiveLevel = level.toUpperCase();
+      dynamic effectivePayload = sanitized;
+      try {
+        jsonEncode(sanitized);
+      } catch (e) {
+        effectivePayload = 'Log serialization failed: $e';
+        effectiveLevel = 'ERROR';
+        effectiveCategory = 'LOG_SERIALIZATION';
+      }
+      switch (effectiveLevel) {
+        case 'ERROR':
+          AppLogger.error('LLM', 'event',
+              category: effectiveCategory, data: effectivePayload);
+          break;
+        case 'WARN':
+          AppLogger.warn('LLM', 'event',
+              category: effectiveCategory, data: effectivePayload);
+          break;
+        case 'INFO':
+          AppLogger.info('LLM', 'event',
+              category: effectiveCategory, data: effectivePayload);
+          break;
+        case 'DEBUG':
+        default:
+          AppLogger.debug('LLM', 'event',
+              category: effectiveCategory, data: effectivePayload);
+          break;
+      }
       return true;
     }());
   }
@@ -841,13 +940,10 @@ class OpenAILLMService implements LLMService {
   void _logRequest(String url, Map<String, dynamic> data) {
     assert(() {
       try {
-        final sanitized = _sanitizeForLog(data);
-        _prettyPrintLog('LLM REQUEST', '🔵', {
-          'url': url,
-          'payload': sanitized,
-        });
+        AppLogger.llmRequest(url: url, payload: _sanitizeForLog(data));
       } catch (e) {
-        debugPrint('🔴 [LLM REQUEST LOG ERROR]: $e');
+        AppLogger.error('LLM', 'Request log error: $e',
+            category: 'REQUEST_LOG');
       }
       return true;
     }());
@@ -856,10 +952,10 @@ class OpenAILLMService implements LLMService {
   void _logResponse(dynamic data) {
     assert(() {
       try {
-        final sanitized = _sanitizeForLog(data);
-        _prettyPrintLog('LLM RESPONSE', '🟢', sanitized);
+        AppLogger.llmResponse(payload: _sanitizeForLog(data));
       } catch (e) {
-        debugPrint('🔴 [LLM RESPONSE LOG ERROR]: $e');
+        AppLogger.error('LLM', 'Response log error: $e',
+            category: 'RESPONSE_LOG');
       }
       return true;
     }());
@@ -1088,7 +1184,7 @@ Use search for:
           if (line.startsWith('data: ')) {
             final data = line.substring(6).trim();
             if (data == '[DONE]') {
-              _debugLog('🟢 [LLM RESPONSE STREAM]: [DONE]');
+              _debugLog('DONE', category: 'STREAM');
               return;
             }
             try {
@@ -1336,8 +1432,8 @@ Use search for:
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) {
-        _prettyPrintLog('LLM REQUEST CANCELLED', '🔵',
-            'Request was cancelled by the user.');
+        _debugLog('Request was cancelled by the user.',
+            level: 'INFO', category: 'REQUEST_CANCELLED');
         return;
       }
       final statusCode = e.response?.statusCode;
@@ -1366,13 +1462,13 @@ Use search for:
       try {
         if (e.response?.data != null) {
           final responseData = e.response?.data;
-          _prettyPrintLog('LLM ERROR RESPONSE', '🔴', responseData);
+          _logEvent('ERROR_RESPONSE', responseData, level: 'ERROR');
           if (responseData is ResponseBody) {
             final stream = responseData.stream;
             final bytes = await stream
                 .fold<List<int>>([], (prev, chunk) => prev..addAll(chunk));
             final errorBody = utf8.decode(bytes);
-            _prettyPrintLog('LLM ERROR BODY', '🔴', errorBody);
+            _logEvent('ERROR_BODY', errorBody, level: 'ERROR');
             try {
               final json = jsonDecode(errorBody);
               if (json is Map) {
@@ -1935,7 +2031,8 @@ Use search for:
       return const LLMResponseChunk(content: '');
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) {
-        _debugLog('🔵 [LLM REQUEST CANCELLED]');
+        _debugLog('Request was cancelled by the user.',
+            level: 'INFO', category: 'REQUEST_CANCELLED');
         return const LLMResponseChunk(content: '');
       }
       final statusCode = e.response?.statusCode;
@@ -1964,7 +2061,7 @@ Use search for:
       try {
         if (e.response?.data != null) {
           final data = e.response?.data;
-          _debugLog('🔴 [LLM ERROR RESPONSE]: $data');
+          _logEvent('ERROR_RESPONSE', data, level: 'ERROR');
           if (data is Map) {
             final error = data['error'];
             if (error is Map && error['message'] != null) {
@@ -2113,7 +2210,8 @@ Use search for:
         }
       }
     } catch (e) {
-      debugPrint('Docx deep processing failed: $e');
+      _debugLog('Docx deep processing failed: $e',
+          level: 'WARN', category: 'DOCX_PARSE');
     }
     return parts;
   }

@@ -27,7 +27,8 @@ final novelProvider =
 // Preset prompts for model roles
 class NovelPromptPresets {
   // 拆解模型-第一阶段：生成章节标题列表
-  static const String chapterListPlanner = '''你是一个小说架构师。请阅读故事大纲，**提取**其中已定义的章节列表。
+  static const String chapterListPlanner =
+      '''你是一个小说架构师。请阅读故事大纲，**提取**其中已定义的章节列表。
 
 ⚠️【核心规则】⭐最重要
 1. **直接提取**：从大纲中找到所有以"第X章"、"Chapter X"、"### 第X章"等格式标记的章节，原样提取标题。
@@ -768,7 +769,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
 
         if (isTruncated) {
           debugPrint(
-              '⚠️ LLM Request Truncated (Reason: ${response.finishReason}). Retrying... ($attempts/$maxAttempts)');
+              '[NOVEL][WARN] LLM request truncated (reason: ${response.finishReason}); retrying ($attempts/$maxAttempts).');
 
           // Still track usage since tokens were consumed
           _ref.read(usageStatsProvider.notifier).incrementUsage(
@@ -847,7 +848,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
 
       if (pendingTask.id.isEmpty) {
         // No more pending tasks
-        debugPrint('✅ No more pending tasks found, stopping loop.');
+        debugPrint('[NOVEL][INFO] No more pending tasks; stopping loop.');
         state = state.copyWith(isRunning: false);
         _currentCancelToken = null;
         unawaited(_saveState());
@@ -860,7 +861,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
       }
 
       if (_shouldStop) {
-        debugPrint('⏹ Workflow stopped by _shouldStop flag.');
+        debugPrint('[NOVEL][INFO] Workflow stopped by _shouldStop flag.');
         break;
       }
 
@@ -1040,7 +1041,7 @@ class NovelNotifier extends StateNotifier<NovelWritingState> {
     } catch (e) {
       if (e is DioException && e.type == DioExceptionType.cancel) {
         // 静默处理中止
-        debugPrint('⏹ Task $taskId execution cancelled by user.');
+        debugPrint('[NOVEL][INFO] Task $taskId execution cancelled by user.');
         return;
       }
       _updateTaskStatus(taskId, TaskStatus.failed);
@@ -1499,8 +1500,8 @@ $content
         }
       } catch (e) {
         // Review result is not valid JSON, mark as error
-        debugPrint('⚠️ Review JSON parse error: $e');
-        debugPrint('⚠️ Raw result: $reviewResult');
+        debugPrint('[NOVEL][WARN] Review JSON parse error: $e');
+        debugPrint('[NOVEL][WARN] Raw review result: $reviewResult');
         final updatedTasks = state.allTasks.map((t) {
           if (t.id == taskId) {
             return t.copyWith(
@@ -1516,7 +1517,7 @@ $content
       }
     } catch (e) {
       if (e is DioException && e.type == DioExceptionType.cancel) {
-        debugPrint('⏹ Task $taskId review cancelled by user.');
+        debugPrint('[NOVEL][INFO] Task $taskId review cancelled by user.');
         return;
       }
       // Review failed, mark task as failed and needing attention
@@ -1891,7 +1892,7 @@ $suggestions
       }
 
       if (updates == null) {
-        debugPrint('⚠️ Context extraction skipped: $lastError');
+        debugPrint('[NOVEL][WARN] Context extraction skipped: $lastError');
         return;
       }
 
@@ -1960,7 +1961,7 @@ $suggestions
         foreshadowing: newForeshadowing,
       ));
     } catch (e) {
-      debugPrint('⚠️ Context extraction failed: $e');
+      debugPrint('[NOVEL][WARN] Context extraction failed: $e');
     }
   }
 
@@ -2110,7 +2111,7 @@ $suggestions
       _currentCancelToken = CancelToken();
 
       // --- 第一阶段：获取完整的章节标题列表 ---
-      debugPrint('🚀 Phase 1: Planning chapter list...');
+      debugPrint('[NOVEL][INFO] Phase 1: planning chapter list.');
       final listResult = await _callLLM(
         activeDecomposeConfig,
         NovelPromptPresets.chapterListPlanner,
@@ -2123,7 +2124,7 @@ $suggestions
       if (allTitles.isEmpty) throw Exception('No chapters planned.');
 
       debugPrint(
-          '✅ Planned ${allTitles.length} chapters. Starting batch detailing...');
+          '[NOVEL][INFO] Planned ${allTitles.length} chapters; starting batch detailing.');
 
       // --- 第二阶段：分批次填充详细细纲 ---
       const int batchSize = 10; // 每批处理10章，提高效率的同时保持足够的描述细节
@@ -2163,12 +2164,12 @@ $suggestions
           try {
             if (retry > 0) {
               debugPrint(
-                  '🔄 Retrying batch ${i + 1} (Attempt ${retry + 1}/3)...');
+                  '[NOVEL][INFO] Retrying batch ${i + 1} (attempt ${retry + 1}/3).');
               await Future.delayed(const Duration(seconds: 1));
             }
 
             debugPrint(
-                '📦 Processing batch: ${i + 1} - $end / ${allTitles.length}');
+                '[NOVEL][INFO] Processing batch: ${i + 1}-$end/${allTitles.length}.');
 
             final detailPrompt = '以下是全书大纲：\n$outline\n\n'
                 '【前文进度总结】：\n$runningContext\n\n'
@@ -2250,7 +2251,7 @@ $suggestions
 
             // --- 专项总结阶段：解耦调用总结官 ---
             try {
-              debugPrint('📝 Summarizing batch for next context...');
+              debugPrint('[NOVEL][INFO] Summarizing batch for next context.');
               final summaryInput =
                   '【本批次细纲内容】：\n$batchContentForSummary\n\n【旧进度总结】：\n$runningContext';
               final summaryResult = await _callLLM(activeDecomposeConfig,
@@ -2258,7 +2259,7 @@ $suggestions
               runningContext = _cleanJson(summaryResult);
             } catch (e) {
               debugPrint(
-                  '⚠️ Summarization failed, using basic concatenation: $e');
+                  '[NOVEL][WARN] Summarization failed; using basic concatenation: $e');
               runningContext += '\n(由于总结失败，仅记录标题) ${batchTitles.join(', ')}';
             }
 
@@ -2285,7 +2286,7 @@ $suggestions
             batchSuccess = true;
             break; // 成功则跳出重试循环
           } catch (e) {
-            debugPrint('⚠️ Batch attempt ${retry + 1} failed: $e');
+            debugPrint('[NOVEL][WARN] Batch attempt ${retry + 1} failed: $e');
             if (retry == maxRetries) {
               throw Exception(
                   'Batch $batchNo/$totalBatches failed after retries: $e');
@@ -2307,7 +2308,7 @@ $suggestions
         rollbackReason = '细纲生成不完整，已恢复到拆解前内容。';
       }
     } catch (e) {
-      debugPrint('❌ Decomposition failed: $e');
+      debugPrint('[NOVEL][ERROR] Decomposition failed: $e');
       rollbackReason = '细纲生成异常，已恢复到拆解前内容：$e';
     } finally {
       if (!completedSuccessfully) {

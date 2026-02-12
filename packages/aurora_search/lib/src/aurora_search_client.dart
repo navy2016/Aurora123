@@ -21,8 +21,7 @@ class AuroraSearch {
     bool verify = true,
     CacheConfig cacheConfig = CacheConfig.disabled,
     int maxRequestsPerSecond = 10,
-  })  : _proxy =
-            expandProxyTbAlias(proxy) ??
+  })  : _proxy = expandProxyTbAlias(proxy) ??
             Platform.environment['AURORA_SEARCH_PROXY'],
         _timeout = timeout ?? const Duration(seconds: 5),
         _verify = verify,
@@ -207,7 +206,7 @@ class AuroraSearch {
         seenProviders.add(engine.provider);
       }
     } catch (e) {
-      stderr.writeln('Error in engine ${engine.name}: $e');
+      print('Error in engine ${engine.name}: $e');
     }
   }
 
