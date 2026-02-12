@@ -944,7 +944,11 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   Future<void> toggleThemeMode() async {
     final current = state.themeMode;
-    final next = current == 'light' ? 'dark' : 'light';
+    final next = switch (current) {
+      'custom' => 'light',
+      'light' => 'dark',
+      _ => 'custom',
+    };
     await setThemeMode(next);
   }
 

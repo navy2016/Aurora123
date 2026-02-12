@@ -69,7 +69,8 @@ class MobileNavigationDrawer extends ConsumerWidget {
                         return Container(
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.1),
+                            color: Colors.black
+                                .withValues(alpha: isDark ? 0.2 : 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: theme.accentColor.withValues(alpha: 0.5),
@@ -77,15 +78,16 @@ class MobileNavigationDrawer extends ConsumerWidget {
                           ),
                           child: TextField(
                             onChanged: (value) {
-                              ref.read(sessionSearchQueryProvider.notifier).state =
-                                  value;
+                              ref
+                                  .read(sessionSearchQueryProvider.notifier)
+                                  .state = value;
                             },
                             textAlignVertical: TextAlignVertical.center,
                             decoration: InputDecoration(
-                              hintText:
-                                  AppLocalizations.of(context)!.searchChatHistory,
-                              hintStyle:
-                                  TextStyle(color: Colors.grey[600], fontSize: 14),
+                              hintText: AppLocalizations.of(context)!
+                                  .searchChatHistory,
+                              hintStyle: TextStyle(
+                                  color: Colors.grey[600], fontSize: 14),
                               prefixIcon: Icon(AuroraIcons.search,
                                   size: 20, color: theme.accentColor),
                               border: InputBorder.none,
@@ -285,8 +287,10 @@ class MobileNavigationDrawer extends ConsumerWidget {
         return AuroraIcons.themeDark;
       case 'light':
         return AuroraIcons.themeLight;
+      case 'custom':
+        return AuroraIcons.image;
       default:
-        return AuroraIcons.themeAuto;
+        return AuroraIcons.image;
     }
   }
 }

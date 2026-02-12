@@ -587,15 +587,15 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                               else if (message.role == 'tool')
                                 BuildToolOutput(content: message.content)
                               else if (isUser)
-                                SelectableText(
-                                  message.content,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    height: 1.5,
-                                    color: theme.typography.body!.color,
+                                SelectionArea(
+                                  child: Text(
+                                    message.content,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      height: 1.5,
+                                      color: theme.typography.body!.color,
+                                    ),
                                   ),
-                                  selectionControls:
-                                      fluent.fluentTextSelectionControls,
                                 )
                               else
                                 fluent.FluentTheme(

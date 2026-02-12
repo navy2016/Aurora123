@@ -582,16 +582,12 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
                                     builder: (context, ref, child) {
                                       final currentTheme =
                                           ref.watch(settingsProvider).themeMode;
-                                      final bool isActuallyDark =
-                                          (currentTheme == 'dark') ||
-                                              (currentTheme == 'system' &&
-                                                  MediaQuery
-                                                          .platformBrightnessOf(
-                                                              context) ==
-                                                      Brightness.dark);
-                                      final IconData icon = isActuallyDark
-                                          ? AuroraIcons.themeDark
-                                          : AuroraIcons.themeLight;
+                                      final IconData icon =
+                                          switch (currentTheme) {
+                                        'dark' => AuroraIcons.themeDark,
+                                        'light' => AuroraIcons.themeLight,
+                                        _ => AuroraIcons.image,
+                                      };
                                       return fluent.HoverButton(
                                         onPressed: () => ref
                                             .read(settingsProvider.notifier)
