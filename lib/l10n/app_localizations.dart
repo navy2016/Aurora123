@@ -1730,6 +1730,66 @@ abstract class AppLocalizations {
   /// **'新建一个项目来开始编写你的故事大纲和章节。'**
   String get createProjectDescription;
 
+  /// No description provided for @styleImitation.
+  ///
+  /// In zh, this message translates to:
+  /// **'文风模仿'**
+  String get styleImitation;
+
+  /// No description provided for @styleSampleHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'粘贴一段例文，AI 将分析其文风特征供写作参考'**
+  String get styleSampleHint;
+
+  /// No description provided for @styleSamplePlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'在此粘贴例文...'**
+  String get styleSamplePlaceholder;
+
+  /// No description provided for @analyzeStyle.
+  ///
+  /// In zh, this message translates to:
+  /// **'分析文风'**
+  String get analyzeStyle;
+
+  /// No description provided for @analyzingStyle.
+  ///
+  /// In zh, this message translates to:
+  /// **'分析中...'**
+  String get analyzingStyle;
+
+  /// No description provided for @styleAnalysisResult.
+  ///
+  /// In zh, this message translates to:
+  /// **'文风分析结果'**
+  String get styleAnalysisResult;
+
+  /// No description provided for @clearStyle.
+  ///
+  /// In zh, this message translates to:
+  /// **'清除文风'**
+  String get clearStyle;
+
+  /// No description provided for @styleAnalyzed.
+  ///
+  /// In zh, this message translates to:
+  /// **'已分析'**
+  String get styleAnalyzed;
+
+  /// No description provided for @styleNotAnalyzed.
+  ///
+  /// In zh, this message translates to:
+  /// **'未设置'**
+  String get styleNotAnalyzed;
+
+  /// No description provided for @clearStyleConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要清除文风设置吗？这将同时清除例文和分析结果。'**
+  String get clearStyleConfirm;
+
   /// No description provided for @aboutAurora.
   ///
   /// In zh, this message translates to:
@@ -4244,6 +4304,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'LLM 建议'**
   String get cleanerLlmSuggestionFallback;
+
+  /// No description provided for @novelUnlimitedMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'破限'**
+  String get novelUnlimitedMode;
+
+  /// No description provided for @novelUnlimitedModeHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用不受限制的创作模式，注入角色扮演指令'**
+  String get novelUnlimitedModeHint;
 }
 
 class _AppLocalizationsDelegate

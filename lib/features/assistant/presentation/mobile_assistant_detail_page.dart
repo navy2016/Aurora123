@@ -68,6 +68,17 @@ class _MobileAssistantDetailPageState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final knowledgeState = ref.watch(knowledgeProvider);
+    final enabledKnowledgeBaseIds = knowledgeState.bases
+        .where((b) => b.isEnabled)
+        .map((b) => b.baseId)
+        .toSet();
+    final assistantKnowledgeBaseCount =
+        (knowledgeState.isLoading || knowledgeState.error != null)
+            ? _currentAssistant.knowledgeBaseIds.length
+            : _currentAssistant.knowledgeBaseIds
+                .where(enabledKnowledgeBaseIds.contains)
+                .length;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.65),
@@ -151,10 +162,11 @@ class _MobileAssistantDetailPageState
               MobileSettingsTile(
                 leading: const Icon(Icons.library_books_outlined),
                 title: l10n.knowledgeBase,
-                subtitle: _currentAssistant.knowledgeBaseIds.isEmpty
+                subtitle: assistantKnowledgeBaseCount == 0
                     ? l10n.disabled
                     : l10n.knowledgeEnabledWithActiveCount(
-                        _currentAssistant.knowledgeBaseIds.length),
+                        assistantKnowledgeBaseCount,
+                      ),
                 onTap: () => _showKnowledgeBasePicker(context),
               ),
               MobileSettingsTile(
@@ -386,8 +398,27 @@ class _MobileAssistantDetailPageState
 
   void _showKnowledgeBasePicker(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final bases =
-        ref.read(knowledgeProvider).bases.where((b) => b.isEnabled).toList();
+    final knowledgeState = ref.read(knowledgeProvider);
+    if (knowledgeState.isLoading) {
+      showAuroraNotice(
+        context,
+        l10n.loadingEllipsis,
+        icon: Icons.info_outline_rounded,
+        top: MediaQuery.of(context).padding.top + 64 + 60,
+      );
+      return;
+    }
+    if (knowledgeState.error != null) {
+      showAuroraNotice(
+        context,
+        knowledgeState.error!,
+        icon: Icons.error_outline_rounded,
+        top: MediaQuery.of(context).padding.top + 64 + 60,
+      );
+      return;
+    }
+
+    final bases = knowledgeState.bases.where((b) => b.isEnabled).toList();
     if (bases.isEmpty) {
       showAuroraNotice(
         context,

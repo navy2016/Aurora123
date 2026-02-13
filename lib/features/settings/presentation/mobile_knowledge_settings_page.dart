@@ -20,6 +20,7 @@ class _MobileKnowledgeSettingsPageState
     extends ConsumerState<MobileKnowledgeSettingsPage> {
   String? _selectedBaseId;
   bool _normalizingEmbeddingSettings = false;
+  bool _normalizingActiveKnowledgeBaseIds = false;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +66,29 @@ class _MobileKnowledgeSettingsPageState
     if (_selectedBaseId == null ||
         !bases.any((b) => b.baseId == _selectedBaseId)) {
       _selectedBaseId = bases.isNotEmpty ? bases.first.baseId : null;
+    }
+
+    if (!_normalizingActiveKnowledgeBaseIds &&
+        !knowledgeState.isLoading &&
+        knowledgeState.error == null) {
+      final knownBaseIds = bases.map((b) => b.baseId).toSet();
+      final validActiveIds = settings.activeKnowledgeBaseIds
+          .where((id) => knownBaseIds.contains(id))
+          .toList(growable: false);
+
+      if (validActiveIds.length != settings.activeKnowledgeBaseIds.length) {
+        _normalizingActiveKnowledgeBaseIds = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          try {
+            if (!mounted) return;
+            await ref
+                .read(settingsProvider.notifier)
+                .setActiveKnowledgeBaseIds(validActiveIds);
+          } finally {
+            _normalizingActiveKnowledgeBaseIds = false;
+          }
+        });
+      }
     }
 
     return Scaffold(
@@ -157,6 +181,28 @@ class _MobileKnowledgeSettingsPageState
               onPressed: _createBase,
             ),
             children: [
+              if (knowledgeState.error != null) ...[
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    knowledgeState.error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        ref.read(knowledgeProvider.notifier).loadBases(),
+                    icon: const Icon(Icons.refresh),
+                    label: Text(l10n.retry),
+                  ),
+                ),
+              ],
               if (knowledgeState.isLoading)
                 const Padding(
                   padding: EdgeInsets.all(24),

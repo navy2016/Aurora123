@@ -179,6 +179,32 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (key == 'writer') ...[
+              Row(
+                children: [
+                  const Icon(AuroraIcons.warning, size: 14),
+                  const SizedBox(width: 8),
+                  Text(l10n.novelUnlimitedMode,
+                      style: theme.typography.bodyStrong),
+                  const SizedBox(width: 12),
+                  ToggleSwitch(
+                    checked: novelState.isUnlimitedMode,
+                    onChanged: (val) {
+                      novelNotifier.setUnlimitedMode(val);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.novelUnlimitedModeHint,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.typography.caption?.color,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
             InfoLabel(
               label: l10n.selectModel,
               child: ComboBox<NovelModelConfig>(

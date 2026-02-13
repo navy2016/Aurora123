@@ -13,6 +13,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'mobile_search_settings_page.dart';
 import 'mobile_knowledge_settings_page.dart';
+import '../../knowledge/presentation/knowledge_provider.dart';
 import 'package:aurora/shared/widgets/aurora_page_route.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -27,6 +28,7 @@ class MobileAppSettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsState = ref.watch(settingsProvider);
+    final knowledgeState = ref.watch(knowledgeProvider);
     final l10n = AppLocalizations.of(context)!;
     final versionSubtitle = ref.watch(_packageInfoProvider).maybeWhen(
           data: (info) {
@@ -36,6 +38,22 @@ class MobileAppSettingsPage extends ConsumerWidget {
           },
           orElse: () => 'v...',
         );
+
+    final knownBaseIds = knowledgeState.bases.map((b) => b.baseId).toSet();
+    final validActiveIds = settingsState.activeKnowledgeBaseIds
+        .where((id) => knownBaseIds.contains(id))
+        .toList(growable: false);
+
+    if (!knowledgeState.isLoading &&
+        knowledgeState.error == null &&
+        validActiveIds.length != settingsState.activeKnowledgeBaseIds.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ref.read(settingsProvider.notifier).setActiveKnowledgeBaseIds(
+              validActiveIds,
+            );
+      });
+    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -178,8 +196,11 @@ class MobileAppSettingsPage extends ConsumerWidget {
                 leading: const Icon(Icons.library_books_outlined),
                 title: l10n.knowledgeBase,
                 subtitle: settingsState.isKnowledgeEnabled
-                    ? l10n.knowledgeEnabledWithActiveCount(
-                        settingsState.activeKnowledgeBaseIds.length)
+                    ? (knowledgeState.isLoading || knowledgeState.error != null
+                        ? l10n.enabled
+                        : l10n.knowledgeEnabledWithActiveCount(
+                            validActiveIds.length,
+                          ))
                     : l10n.disabled,
                 onTap: () => Navigator.push(
                   context,
