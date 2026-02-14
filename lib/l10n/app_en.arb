@@ -366,6 +366,16 @@
   "noProjectSelected": "No Project Selected",
   "createYourFirstProject": "Start Your Creative Journey",
   "createProjectDescription": "Create a new project to start building your story outline and chapters.",
+  "styleImitation": "Style Imitation",
+  "styleSampleHint": "Paste a sample text for AI to analyze its writing style",
+  "styleSamplePlaceholder": "Paste sample text here...",
+  "analyzeStyle": "Analyze Style",
+  "analyzingStyle": "Analyzing...",
+  "styleAnalysisResult": "Style Analysis Result",
+  "clearStyle": "Clear Style",
+  "styleAnalyzed": "Analyzed",
+  "styleNotAnalyzed": "Not Set",
+  "clearStyleConfirm": "Are you sure to clear style settings? This will clear both sample text and analysis result.",
   
   "aboutAurora": "About Aurora",
   "crossPlatformLlmClient": "A cross-platform LLM client",
@@ -1056,5 +1066,7 @@
       }
     }
   },
-  "cleanerLlmSuggestionFallback": "LLM suggestion"
+  "cleanerLlmSuggestionFallback": "LLM suggestion",
+  "novelUnlimitedMode": "Unrestricted Mode",
+  "novelUnlimitedModeHint": "Enable unrestricted creative writing mode with role-play directives"
 }

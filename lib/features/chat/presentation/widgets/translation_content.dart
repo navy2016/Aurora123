@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import '../chat_provider.dart';
 import '../../domain/message.dart';
@@ -456,3 +456,4 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
     );
   }
 }
+

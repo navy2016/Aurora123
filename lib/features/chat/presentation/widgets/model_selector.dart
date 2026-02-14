@@ -2,7 +2,7 @@ import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import 'custom_dropdown_overlay.dart';
 import 'package:aurora/l10n/app_localizations.dart';
@@ -302,3 +302,4 @@ class _ModelSelectorState extends ConsumerState<ModelSelector> {
     );
   }
 }
+

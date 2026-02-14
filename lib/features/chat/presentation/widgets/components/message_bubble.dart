@@ -3,11 +3,10 @@ import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 
 import '../selectable_markdown/animated_streaming_markdown.dart';
 import 'package:super_clipboard/super_clipboard.dart';
-import 'package:pasteboard/pasteboard.dart';
 import 'package:file_selector/file_selector.dart';
 import '../../chat_provider.dart';
 import '../../../domain/message.dart';
@@ -123,25 +122,6 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
         }
         return;
       }
-      try {
-        final imageBytes = await Pasteboard.image;
-        if (imageBytes != null && imageBytes.isNotEmpty) {
-          final attachDir = await getAttachmentsDir();
-          final path =
-              '${attachDir.path}${Platform.pathSeparator}paste_fb_${DateTime.now().millisecondsSinceEpoch}.png';
-          await File(path).writeAsBytes(imageBytes);
-          if (mounted) {
-            if (!_newAttachments.contains(path)) {
-              setState(() {
-                _newAttachments.add(path);
-              });
-            } else {}
-          }
-          return;
-        }
-      } catch (e) {
-        debugPrint('Pasteboard Fallback Error: $e');
-      }
     } finally {
       _isPasting = false;
     }
@@ -231,9 +211,7 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
             .addPostFrameCallback((_) => _focusNode.requestFocus());
         break;
       case 'copy':
-        final item = DataWriterItem();
-        item.add(Formats.plainText(msg.content));
-        SystemClipboard.instance?.write([item]);
+        await Clipboard.setData(ClipboardData(text: msg.content));
         break;
       case 'delete':
         notifier.deleteMessage(msg.id);
@@ -493,7 +471,8 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                                   focusNode: _focusNode,
                                                   maxLines: 15,
                                                   minLines: 1,
-                                                  placeholder: l10n.editMessagePlaceholder,
+                                                  placeholder: l10n
+                                                      .editMessagePlaceholder,
                                                   decoration: const fluent
                                                       .WidgetStatePropertyAll(
                                                       fluent.BoxDecoration(
@@ -608,15 +587,15 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                               else if (message.role == 'tool')
                                 BuildToolOutput(content: message.content)
                               else if (isUser)
-                                SelectableText(
-                                  message.content,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    height: 1.5,
-                                    color: theme.typography.body!.color,
+                                SelectionArea(
+                                  child: Text(
+                                    message.content,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      height: 1.5,
+                                      color: theme.typography.body!.color,
+                                    ),
                                   ),
-                                  selectionControls:
-                                      fluent.fluentTextSelectionControls,
                                 )
                               else
                                 fluent.FluentTheme(
@@ -1010,3 +989,4 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
     );
   }
 }
+

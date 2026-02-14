@@ -187,7 +187,7 @@ const MessageEntitySchema = CollectionSchema(
   getId: _messageEntityGetId,
   getLinks: _messageEntityGetLinks,
   attach: _messageEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _messageEntityEstimateSize(

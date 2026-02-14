@@ -53,7 +53,7 @@ const TopicEntitySchema = CollectionSchema(
   getId: _topicEntityGetId,
   getLinks: _topicEntityGetLinks,
   attach: _topicEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _topicEntityEstimateSize(

@@ -354,6 +354,8 @@ class NovelProject {
   final WorldContext worldContext; // Dynamic context that evolves with story
   final List<NovelChapter> chapters;
   final DateTime createdAt;
+  final String? styleSample; // User-pasted sample text for style imitation
+  final String? analyzedStyle; // LLM-analyzed writing style summary
 
   NovelProject({
     required this.id,
@@ -364,6 +366,8 @@ class NovelProject {
     this.worldContext = const WorldContext(),
     this.chapters = const [],
     DateTime? createdAt,
+    this.styleSample,
+    this.analyzedStyle,
   }) : createdAt = createdAt ?? DateTime.now();
 
   NovelProject copyWith({
@@ -375,6 +379,8 @@ class NovelProject {
     WorldContext? worldContext,
     List<NovelChapter>? chapters,
     DateTime? createdAt,
+    Object? styleSample = _sentinel,
+    Object? analyzedStyle = _sentinel,
   }) {
     return NovelProject(
       id: id ?? this.id,
@@ -387,6 +393,12 @@ class NovelProject {
       worldContext: worldContext ?? this.worldContext,
       chapters: chapters ?? this.chapters,
       createdAt: createdAt ?? this.createdAt,
+      styleSample: styleSample == _sentinel
+          ? this.styleSample
+          : styleSample as String?,
+      analyzedStyle: analyzedStyle == _sentinel
+          ? this.analyzedStyle
+          : analyzedStyle as String?,
     );
   }
 
@@ -408,6 +420,8 @@ class NovelProject {
         'worldContext': worldContext.toJson(),
         'chapters': chapters.map((c) => c.toJson()).toList(),
         'createdAt': createdAt.toIso8601String(),
+        'styleSample': styleSample,
+        'analyzedStyle': analyzedStyle,
       };
 
   factory NovelProject.fromJson(Map<String, dynamic> json) => NovelProject(
@@ -426,6 +440,8 @@ class NovelProject {
             [],
         createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
             DateTime.now(),
+        styleSample: json['styleSample'] as String?,
+        analyzedStyle: json['analyzedStyle'] as String?,
       );
 }
 
@@ -438,8 +454,10 @@ class NovelWritingState {
   final bool isRunning;
   final bool isPaused;
   final bool isReviewEnabled;
+  final bool isUnlimitedMode; // 破限模式开关
   final bool isDecomposing; // 新增：拆解中状态
   final bool isGeneratingOutline; // 新增：生成大纲中状态
+  final bool isAnalyzingStyle; // 文风分析中状态
   final String? decomposeStatus; // 当前拆解阶段说明
   final int decomposeCurrentBatch; // 从 0 开始，展示时 +1
   final int decomposeTotalBatches; // 总批次数
@@ -463,8 +481,10 @@ class NovelWritingState {
     this.isRunning = false,
     this.isPaused = false,
     this.isReviewEnabled = false,
+    this.isUnlimitedMode = false,
     this.isDecomposing = false,
     this.isGeneratingOutline = false,
+    this.isAnalyzingStyle = false,
     this.decomposeStatus,
     this.decomposeCurrentBatch = 0,
     this.decomposeTotalBatches = 0,
@@ -498,8 +518,10 @@ class NovelWritingState {
     bool? isRunning,
     bool? isPaused,
     bool? isReviewEnabled,
+    bool? isUnlimitedMode,
     bool? isDecomposing,
     bool? isGeneratingOutline,
+    bool? isAnalyzingStyle,
     Object? decomposeStatus = _sentinel,
     int? decomposeCurrentBatch,
     int? decomposeTotalBatches,
@@ -525,8 +547,10 @@ class NovelWritingState {
       isRunning: isRunning ?? this.isRunning,
       isPaused: isPaused ?? this.isPaused,
       isReviewEnabled: isReviewEnabled ?? this.isReviewEnabled,
+      isUnlimitedMode: isUnlimitedMode ?? this.isUnlimitedMode,
       isDecomposing: isDecomposing ?? this.isDecomposing,
       isGeneratingOutline: isGeneratingOutline ?? this.isGeneratingOutline,
+      isAnalyzingStyle: isAnalyzingStyle ?? this.isAnalyzingStyle,
       decomposeStatus: decomposeStatus == _sentinel
           ? this.decomposeStatus
           : decomposeStatus as String?,
@@ -560,6 +584,7 @@ class NovelWritingState {
         'selectedTaskId': selectedTaskId,
         'allTasks': allTasks.map((t) => t.toJson()).toList(),
         'isReviewEnabled': isReviewEnabled,
+        'isUnlimitedMode': isUnlimitedMode,
         'decomposeStatus': decomposeStatus,
         'decomposeCurrentBatch': decomposeCurrentBatch,
         'decomposeTotalBatches': decomposeTotalBatches,
@@ -585,6 +610,7 @@ class NovelWritingState {
                 .toList() ??
             [],
         isReviewEnabled: json['isReviewEnabled'] as bool? ?? false,
+        isUnlimitedMode: json['isUnlimitedMode'] as bool? ?? false,
         decomposeStatus: json['decomposeStatus'] as String?,
         decomposeCurrentBatch: json['decomposeCurrentBatch'] as int? ?? 0,
         decomposeTotalBatches: json['decomposeTotalBatches'] as int? ?? 0,

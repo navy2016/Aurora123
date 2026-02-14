@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import '../data/settings_storage.dart';
 
 import '../../../core/error/app_error_type.dart';
@@ -185,3 +185,4 @@ final usageStatsProvider =
   final storage = ref.watch(settingsStorageProvider);
   return UsageStatsNotifier(storage);
 });
+

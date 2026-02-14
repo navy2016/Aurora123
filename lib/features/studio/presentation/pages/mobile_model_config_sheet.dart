@@ -1,8 +1,8 @@
-import 'dart:async';
 import 'package:aurora/shared/theme/aurora_icons.dart';
+import 'package:aurora/shared/widgets/aurora_notice.dart';
 import 'package:flutter/material.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import '../novel/novel_provider.dart';
@@ -23,76 +23,7 @@ class _MobileModelConfigSheetState
   bool _isInitialized = false;
   String? _lastActivePresetId;
 
-  bool _toastVisible = false;
-  String _toastMessage = '';
-  IconData? _toastIcon;
-  Timer? _toastTimer;
-
-  void _showToast(String message, IconData icon) {
-    _toastTimer?.cancel();
-    setState(() {
-      _toastMessage = message;
-      _toastIcon = icon;
-      _toastVisible = true;
-    });
-    _toastTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _toastVisible = false);
-    });
-  }
-
-  Widget _buildToastWidget() {
-    final theme = Theme.of(context);
-    return Positioned(
-      top: 60,
-      left: 20,
-      right: 20,
-      child: IgnorePointer(
-        ignoring: !_toastVisible,
-        child: Center(
-          child: AnimatedOpacity(
-            opacity: _toastVisible ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(
-                  color: theme.dividerColor.withValues(alpha: 0.1),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_toastIcon != null) ...[
-                    Icon(_toastIcon,
-                        size: 18, color: theme.colorScheme.primary),
-                    const SizedBox(width: 10),
-                  ],
-                  Flexible(
-                    child: Text(
-                      _toastMessage,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  static const double _controlRadius = 12;
 
   @override
   void initState() {
@@ -107,7 +38,6 @@ class _MobileModelConfigSheetState
 
   @override
   void dispose() {
-    _toastTimer?.cancel();
     _controllers.forEach((_, controller) => controller.dispose());
     super.dispose();
   }
@@ -118,6 +48,16 @@ class _MobileModelConfigSheetState
     final novelNotifier = ref.read(novelProvider.notifier);
     final novelState = ref.watch(novelProvider);
     final settingsState = ref.watch(settingsProvider);
+    final activePresetId = novelState.activePromptPresetId;
+    NovelPromptPreset? activePreset;
+    if (activePresetId != null) {
+      for (final preset in novelState.promptPresets) {
+        if (preset.id == activePresetId) {
+          activePreset = preset;
+          break;
+        }
+      }
+    }
 
     final allModels = <NovelModelConfig>[];
     for (final provider in settingsState.providers) {
@@ -155,112 +95,162 @@ class _MobileModelConfigSheetState
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppBar(
-          title: Text(l10n.modelConfig,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          actions: [
-            // 全局预设管理
-            if (novelState.activePromptPresetId != null)
-              IconButton(
-                tooltip:
-                    '${l10n.save} "${novelState.promptPresets.firstWhere((p) => p.id == novelState.activePromptPresetId).name}"',
-                icon: const Icon(AuroraIcons.save),
-                onPressed: () {
-                  final activeId = novelState.activePromptPresetId!;
-                  final currentPreset = novelState.promptPresets
-                      .firstWhere((p) => p.id == activeId);
-                  final updatedPreset = currentPreset.copyWith(
-                    outlinePrompt: _controllers['outline']?.text ?? '',
-                    decomposePrompt: _controllers['decompose']?.text ?? '',
-                    writerPrompt: _controllers['writer']?.text ?? '',
-                    reviewerPrompt: _controllers['reviewer']?.text ?? '',
-                  );
-                  ref
-                      .read(novelProvider.notifier)
-                      .updatePromptPreset(updatedPreset);
-                  _showToast(
-                      l10n.presetSaved(updatedPreset.name), Icons.check_circle);
-                },
+        // 顶部标题栏
+        Padding(
+          padding:
+              const EdgeInsets.only(left: 16, right: 8, top: 12, bottom: 12),
+          child: Row(
+            children: [
+              const Icon(AuroraIcons.settings, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                l10n.modelConfig,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
-            IconButton(
-              tooltip: l10n.newNovelPreset,
-              icon: const Icon(AuroraIcons.add),
-              onPressed: () => _showSavePresetDialog(context, ref),
-            ),
-            IconButton(
-              tooltip: l10n.selectPreset,
-              icon: const Icon(AuroraIcons.parameter),
-              onPressed: () =>
-                  _showPresetPicker(context, novelState, novelNotifier, l10n),
-            ),
-            IconButton(
-              icon: const Icon(AuroraIcons.close, size: 20),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
+              const Spacer(),
+              // 预设管理按钮组
+              IconButton(
+                tooltip: l10n.selectPreset,
+                icon: const Icon(AuroraIcons.parameter, size: 20),
+                onPressed: () =>
+                    _showPresetPicker(context, novelState, novelNotifier, l10n),
+              ),
+              if (activePreset != null)
+                IconButton(
+                  tooltip: '${l10n.save} "${activePreset.name}"',
+                  icon: const Icon(AuroraIcons.save, size: 20),
+                  onPressed: () {
+                    final currentPreset = activePreset;
+                    if (currentPreset == null) return;
+                    final updatedPreset = currentPreset.copyWith(
+                      outlinePrompt: _controllers['outline']?.text ?? '',
+                      decomposePrompt: _controllers['decompose']?.text ?? '',
+                      writerPrompt: _controllers['writer']?.text ?? '',
+                      reviewerPrompt: _controllers['reviewer']?.text ?? '',
+                    );
+                    ref
+                        .read(novelProvider.notifier)
+                        .updatePromptPreset(updatedPreset);
+                    showAuroraNotice(
+                      context,
+                      l10n.presetSaved(updatedPreset.name),
+                      icon: AuroraIcons.success,
+                    );
+                  },
+                ),
+              IconButton(
+                tooltip: l10n.newNovelPreset,
+                icon: const Icon(AuroraIcons.add, size: 20),
+                onPressed: () => _showSavePresetDialog(context, ref),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(AuroraIcons.close, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
         const Divider(height: 1),
         Flexible(
-          child: Stack(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            shrinkWrap: true,
             children: [
-              ListView(
-                padding: const EdgeInsets.all(16),
-                shrinkWrap: true,
-                children: [
-                  _buildModelSection(
-                    context,
-                    'outline',
-                    l10n.outlineModel,
-                    NovelPromptPresets.outline,
-                    novelState.outlineModel,
-                    allModels,
-                    settingsState,
-                    novelNotifier.setOutlineModel,
-                    novelNotifier.setOutlinePrompt,
-                  ),
-                  _buildModelSection(
-                    context,
-                    'decompose',
-                    l10n.decomposeModel,
-                    NovelPromptPresets.decompose,
-                    novelState.decomposeModel,
-                    allModels,
-                    settingsState,
-                    novelNotifier.setDecomposeModel,
-                    novelNotifier.setDecomposePrompt,
-                  ),
-                  _buildModelSection(
-                    context,
-                    'writer',
-                    l10n.writerModel,
-                    NovelPromptPresets.writer,
-                    novelState.writerModel,
-                    allModels,
-                    settingsState,
-                    novelNotifier.setWriterModel,
-                    novelNotifier.setWriterPrompt,
-                  ),
-                  _buildModelSection(
-                    context,
-                    'reviewer',
-                    l10n.reviewModel,
-                    NovelPromptPresets.reviewer,
-                    novelState.reviewerModel,
-                    allModels,
-                    settingsState,
-                    novelNotifier.setReviewerModel,
-                    novelNotifier.setReviewerPrompt,
-                  ),
-                  const SizedBox(height: 16),
-                ],
+              _buildModelSection(
+                context,
+                'outline',
+                l10n.outlineModel,
+                AuroraIcons.list,
+                NovelPromptPresets.outline,
+                novelState.outlineModel,
+                allModels,
+                settingsState,
+                novelNotifier.setOutlineModel,
+                novelNotifier.setOutlinePrompt,
               ),
-              _buildToastWidget(),
+              const SizedBox(height: 16),
+              _buildModelSection(
+                context,
+                'decompose',
+                l10n.decomposeModel,
+                AuroraIcons.split,
+                NovelPromptPresets.decompose,
+                novelState.decomposeModel,
+                allModels,
+                settingsState,
+                novelNotifier.setDecomposeModel,
+                novelNotifier.setDecomposePrompt,
+              ),
+              const SizedBox(height: 16),
+              
+              // 破限模式开关 - 独立卡片
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: novelState.isUnlimitedMode 
+                        ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
+                        : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Row(
+                    children: [
+                      Icon(AuroraIcons.warning, 
+                          size: 18, 
+                          color: novelState.isUnlimitedMode ? Colors.orange : Theme.of(context).iconTheme.color),
+                      const SizedBox(width: 8),
+                      Text(l10n.novelUnlimitedMode,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  subtitle: Text(l10n.novelUnlimitedModeHint,
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor)),
+                  value: novelState.isUnlimitedMode,
+                  activeThumbColor: Colors.orange,
+                  onChanged: (val) {
+                    novelNotifier.setUnlimitedMode(val);
+                  },
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              _buildModelSection(
+                context,
+                'writer',
+                l10n.writerModel,
+                AuroraIcons.edit,
+                NovelPromptPresets.writerBase, // Use writerBase for display default
+                novelState.writerModel,
+                allModels,
+                settingsState,
+                novelNotifier.setWriterModel,
+                novelNotifier.setWriterPrompt,
+              ),
+              const SizedBox(height: 16),
+              _buildModelSection(
+                context,
+                'reviewer',
+                l10n.reviewModel,
+                AuroraIcons.view,
+                NovelPromptPresets.reviewer,
+                novelState.reviewerModel,
+                allModels,
+                settingsState,
+                novelNotifier.setReviewerModel,
+                novelNotifier.setReviewerPrompt,
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -272,6 +262,7 @@ class _MobileModelConfigSheetState
     BuildContext context,
     String key,
     String label,
+    IconData icon,
     String presetPrompt,
     NovelModelConfig? currentConfig,
     List<NovelModelConfig> allModels,
@@ -292,81 +283,153 @@ class _MobileModelConfigSheetState
                 modelId: currentConfig.modelId))
         : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () => _showModelPicker(
-            context,
-            label,
-            allModels,
-            settingsState,
-            selectedBase,
-            onModelChanged,
-            key,
+    final providerName = selectedBase != null
+        ? settingsState.providers
+            .firstWhere((p) => p.id == selectedBase.providerId,
+                orElse: () => ProviderConfig(id: '', name: 'Unknown'))
+            .name
+        : '';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: theme.primaryColor),
+              const SizedBox(width: 8),
+              Text(label,
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+            ],
           ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              border:
-                  Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-              borderRadius: BorderRadius.circular(8),
-              color: theme.cardColor.withValues(alpha: 0.5),
+          const SizedBox(height: 12),
+          
+          // Model Selector Button
+          InkWell(
+            onTap: () => _showModelPicker(
+              context,
+              label,
+              allModels,
+              settingsState,
+              selectedBase,
+              onModelChanged,
+              key,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    selectedBase != null
-                        ? '${settingsState.providers.firstWhere((p) => p.id == selectedBase.providerId, orElse: () => ProviderConfig(id: '', name: 'Unknown')).name} - ${selectedBase.modelId}'
-                        : l10n.selectModel,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: selectedBase != null ? null : theme.hintColor,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: selectedBase != null 
+                      ? theme.primaryColor.withValues(alpha: 0.3)
+                      : theme.dividerColor.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (selectedBase != null) 
+                          Text(
+                            providerName,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: theme.hintColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        Text(
+                          selectedBase != null ? selectedBase.modelId : l10n.selectModel,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: selectedBase != null ? theme.textTheme.bodyMedium?.color : theme.hintColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Icon(
+                    AuroraIcons.chevronDown,
+                    color: theme.hintColor,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // System Prompt Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(l10n.systemPrompt,
+                  style:
+                      TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.hintColor)),
+              // Reset Button
+              SizedBox(
+                height: 24,
+                child: TextButton.icon(
+                  onPressed: () {
+                    _controllers[key]!.text = presetPrompt;
+                    onPromptChanged(presetPrompt);
+                  },
+                  icon: const Icon(AuroraIcons.reset, size: 14),
+                  label: Text(l10n.defaultPreset,
+                      style: const TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
                 ),
-                Icon(Icons.arrow_drop_down, color: theme.hintColor),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(l10n.systemPrompt,
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            // 恢复默认
-            TextButton(
-              onPressed: () {
-                _controllers[key]!.text = presetPrompt;
-                onPromptChanged(presetPrompt);
-              },
-              child: Text(l10n.defaultPreset,
-                  style: const TextStyle(fontSize: 12)),
+          const SizedBox(height: 8),
+          
+          // Prompt Input
+          TextField(
+            controller: _controllers[key],
+            maxLines: null,
+            minLines: 3,
+            style: const TextStyle(fontSize: 13, height: 1.4),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: theme.scaffoldBackgroundColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.primaryColor, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.all(12),
+              hintText: l10n.systemPromptPlaceholder,
+              hintStyle: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
             ),
-          ],
-        ),
-        TextField(
-          controller: _controllers[key],
-          maxLines: null,
-          minLines: 3,
-          style: const TextStyle(fontSize: 13),
-          decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            hintText: l10n.systemPromptPlaceholder,
+            onChanged: onPromptChanged,
           ),
-          onChanged: onPromptChanged,
-        ),
-        const SizedBox(height: 24),
-      ],
+        ],
+      ),
     );
   }
 
@@ -409,8 +472,11 @@ class _MobileModelConfigSheetState
                     novelNotifier
                         .setReviewerPrompt(NovelPromptPresets.reviewer);
                     novelNotifier.setActivePromptPresetId(null);
-                    _showToast(l10n.systemDefaultRestored,
-                        Icons.settings_backup_restore);
+                    showAuroraNotice(
+                      context,
+                      l10n.systemDefaultRestored,
+                      icon: AuroraIcons.reset,
+                    );
                     Navigator.pop(ctx);
                   },
                 ),
@@ -444,12 +510,15 @@ class _MobileModelConfigSheetState
                                 .setReviewerPrompt(preset.reviewerPrompt);
                           }
                           novelNotifier.setActivePromptPresetId(preset.id);
-                          _showToast(l10n.presetLoaded(preset.name),
-                              Icons.check_circle);
+                          showAuroraNotice(
+                            context,
+                            l10n.presetLoaded(preset.name),
+                            icon: AuroraIcons.success,
+                          );
                           Navigator.pop(ctx);
                         },
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20),
+                          icon: const Icon(AuroraIcons.delete, size: 20),
                           onPressed: () {
                             novelNotifier.deletePromptPreset(preset.id);
                           },
@@ -556,12 +625,17 @@ class _MobileModelConfigSheetState
                   decoration: InputDecoration(
                     labelText: l10n.presetName,
                     hintText: '${l10n.pleaseEnter}${l10n.presetName}...',
-                    border: const OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(_controlRadius),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(l10n.savePresetHint,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  l10n.savePresetHint,
+                  style:
+                      TextStyle(fontSize: 12, color: Theme.of(ctx).hintColor),
+                ),
                 const SizedBox(height: 24),
                 Row(
                   children: [
@@ -591,8 +665,11 @@ class _MobileModelConfigSheetState
                                 .read(novelProvider.notifier)
                                 .addPromptPreset(preset);
                             Navigator.pop(ctx);
-                            _showToast(
-                                l10n.presetSaved(name), Icons.check_circle);
+                            showAuroraNotice(
+                              context,
+                              l10n.presetSaved(name),
+                              icon: AuroraIcons.success,
+                            );
                           }
                         },
                         child: Text(l10n.save),
@@ -609,3 +686,4 @@ class _MobileModelConfigSheetState
     );
   }
 }
+

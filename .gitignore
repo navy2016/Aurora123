@@ -40,13 +40,14 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
+/android/build/
+/android/app/build/
 /android/app/debug
 /android/app/profile
 /android/app/release
 
 # Local configuration and logs
 build_output.txt
-.metadata
 *.bak
 build_release.ps1
 

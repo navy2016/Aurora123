@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 
 import '../selectable_markdown/animated_streaming_markdown.dart';
-import 'package:super_clipboard/super_clipboard.dart';
 import '../../chat_provider.dart';
 import '../../../domain/message.dart';
 import '../chat_image_bubble.dart';
@@ -71,9 +71,9 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
             .addPostFrameCallback((_) => _focusNode.requestFocus());
         break;
       case 'copy':
-        final item = DataWriterItem();
-        item.add(Formats.plainText(widget.group.messages.last.content));
-        SystemClipboard.instance?.write([item]);
+        await Clipboard.setData(
+          ClipboardData(text: widget.group.messages.last.content),
+        );
         break;
       case 'delete':
         for (final msg in widget.group.messages) {
@@ -653,3 +653,4 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
     return parts;
   }
 }
+

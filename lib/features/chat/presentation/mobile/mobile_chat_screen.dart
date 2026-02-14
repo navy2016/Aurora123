@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import '../chat_provider.dart';
 import '../../../settings/presentation/settings_provider.dart';
@@ -526,19 +526,19 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     final current = ref.read(settingsProvider).themeMode;
     String next;
     switch (current) {
-      case 'system':
+      case 'custom':
         next = 'light';
         break;
       case 'light':
         next = 'dark';
         break;
       default:
-        next = 'system';
+        next = 'custom';
     }
     ref.read(settingsProvider.notifier).setThemeMode(next);
     final modeLabel = next == 'light'
         ? l10n.lightMode
-        : (next == 'dark' ? l10n.darkMode : l10n.followSystem);
+        : (next == 'dark' ? l10n.darkMode : l10n.themeCustom);
     showAuroraNotice(
       context,
       l10n.switchedToTheme(modeLabel),
@@ -585,3 +585,4 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     );
   }
 }
+

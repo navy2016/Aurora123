@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'novel/novel_writing_page.dart';
@@ -216,3 +216,4 @@ class _StudioContentState extends ConsumerState<StudioContent> {
     );
   }
 }
+

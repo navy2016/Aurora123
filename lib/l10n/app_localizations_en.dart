@@ -880,6 +880,38 @@ class AppLocalizationsEn extends AppLocalizations {
       'Create a new project to start building your story outline and chapters.';
 
   @override
+  String get styleImitation => 'Style Imitation';
+
+  @override
+  String get styleSampleHint =>
+      'Paste a sample text for AI to analyze its writing style';
+
+  @override
+  String get styleSamplePlaceholder => 'Paste sample text here...';
+
+  @override
+  String get analyzeStyle => 'Analyze Style';
+
+  @override
+  String get analyzingStyle => 'Analyzing...';
+
+  @override
+  String get styleAnalysisResult => 'Style Analysis Result';
+
+  @override
+  String get clearStyle => 'Clear Style';
+
+  @override
+  String get styleAnalyzed => 'Analyzed';
+
+  @override
+  String get styleNotAnalyzed => 'Not Set';
+
+  @override
+  String get clearStyleConfirm =>
+      'Are you sure to clear style settings? This will clear both sample text and analysis result.';
+
+  @override
   String get aboutAurora => 'About Aurora';
 
   @override
@@ -2253,4 +2285,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cleanerLlmSuggestionFallback => 'LLM suggestion';
+
+  @override
+  String get novelUnlimitedMode => 'Unrestricted Mode';
+
+  @override
+  String get novelUnlimitedModeHint =>
+      'Enable unrestricted creative writing mode with role-play directives';
 }

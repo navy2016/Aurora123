@@ -120,7 +120,7 @@ const AssistantMemoryItemEntitySchema = CollectionSchema(
   getId: _assistantMemoryItemEntityGetId,
   getLinks: _assistantMemoryItemEntityGetLinks,
   attach: _assistantMemoryItemEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _assistantMemoryItemEntityEstimateSize(

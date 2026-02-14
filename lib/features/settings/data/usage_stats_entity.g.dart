@@ -133,7 +133,7 @@ const UsageStatsEntitySchema = CollectionSchema(
   getId: _usageStatsEntityGetId,
   getLinks: _usageStatsEntityGetLinks,
   attach: _usageStatsEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _usageStatsEntityEstimateSize(

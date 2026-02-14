@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:aurora/shared/utils/platform_utils.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:path/path.dart' as p;
@@ -582,16 +582,12 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
                                     builder: (context, ref, child) {
                                       final currentTheme =
                                           ref.watch(settingsProvider).themeMode;
-                                      final bool isActuallyDark =
-                                          (currentTheme == 'dark') ||
-                                              (currentTheme == 'system' &&
-                                                  MediaQuery
-                                                          .platformBrightnessOf(
-                                                              context) ==
-                                                      Brightness.dark);
-                                      final IconData icon = isActuallyDark
-                                          ? AuroraIcons.themeDark
-                                          : AuroraIcons.themeLight;
+                                      final IconData icon =
+                                          switch (currentTheme) {
+                                        'dark' => AuroraIcons.themeDark,
+                                        'light' => AuroraIcons.themeLight,
+                                        _ => AuroraIcons.image,
+                                      };
                                       return fluent.HoverButton(
                                         onPressed: () => ref
                                             .read(settingsProvider.notifier)
@@ -675,3 +671,4 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
     );
   }
 }
+

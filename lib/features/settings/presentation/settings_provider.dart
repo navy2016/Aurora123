@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:dio/dio.dart';
 import '../data/settings_storage.dart';
 import '../data/provider_config_entity.dart';
@@ -103,6 +103,94 @@ class ProviderConfig {
       }
     }
     return true;
+  }
+
+  static List<ProviderConfig> fromEntities(
+      List<ProviderConfigEntity> entities) {
+    if (entities.isEmpty) {
+      return defaultProviders();
+    }
+    final providers = entities.map(ProviderConfig.fromEntity).toList();
+    if (!providers.any((provider) => provider.id == 'custom')) {
+      providers
+          .add(ProviderConfig(id: 'custom', name: 'Custom', isCustom: true));
+    }
+    return providers;
+  }
+
+  static List<ProviderConfig> defaultProviders() {
+    return [
+      ProviderConfig(id: 'openai', name: 'OpenAI', isCustom: false),
+      ProviderConfig(id: 'custom', name: 'Custom', isCustom: true),
+    ];
+  }
+
+  static ProviderConfig fromEntity(ProviderConfigEntity entity) {
+    final customParams = _decodeJsonMap(entity.customParametersJson);
+    final modelSettings = _decodeModelSettings(entity.modelSettingsJson);
+    final globalSettings = _decodeJsonMap(entity.globalSettingsJson);
+
+    List<String> apiKeys = List<String>.from(entity.apiKeys);
+    // ignore: deprecated_member_use_from_same_package
+    if (apiKeys.isEmpty && entity.apiKey.isNotEmpty) {
+      // ignore: deprecated_member_use_from_same_package
+      apiKeys = [entity.apiKey];
+    }
+
+    return ProviderConfig(
+      id: entity.providerId,
+      name: entity.name,
+      color: entity.color,
+      apiKeys: apiKeys,
+      currentKeyIndex: entity.currentKeyIndex,
+      autoRotateKeys: entity.autoRotateKeys,
+      baseUrl: entity.baseUrl,
+      isCustom: entity.isCustom,
+      customParameters: customParams,
+      modelSettings: modelSettings,
+      globalSettings: globalSettings,
+      globalExcludeModels: entity.globalExcludeModels,
+      models: entity.savedModels,
+      selectedModel: entity.lastSelectedModel,
+      isEnabled: entity.isEnabled,
+    );
+  }
+
+  static Map<String, dynamic> _decodeJsonMap(String? raw) {
+    if (raw == null || raw.isEmpty) {
+      return {};
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        return decoded.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
+      }
+    } catch (_) {}
+    return {};
+  }
+
+  static Map<String, Map<String, dynamic>> _decodeModelSettings(String? raw) {
+    if (raw == null || raw.isEmpty) {
+      return {};
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) {
+        return {};
+      }
+      final modelSettings = <String, Map<String, dynamic>>{};
+      decoded.forEach((key, value) {
+        if (value is Map) {
+          modelSettings[key.toString()] = value.map(
+            (mapKey, mapValue) => MapEntry(mapKey.toString(), mapValue),
+          );
+        }
+      });
+      return modelSettings;
+    } catch (_) {}
+    return {};
   }
 }
 
@@ -455,69 +543,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final providerEntities = await _storage.loadProviders();
     final appSettings = await _storage.loadAppSettings();
 
-    final List<ProviderConfig> newProviders;
-    if (providerEntities.isEmpty) {
-      newProviders = [
-        ProviderConfig(id: 'openai', name: 'OpenAI', isCustom: false),
-        ProviderConfig(id: 'custom', name: 'Custom', isCustom: true),
-      ];
-    } else {
-      newProviders = providerEntities.map((e) {
-        Map<String, dynamic> customParams = {};
-        Map<String, Map<String, dynamic>> modelSettings = {};
-        Map<String, dynamic> globalSettings = {};
-
-        if (e.customParametersJson != null &&
-            e.customParametersJson!.isNotEmpty) {
-          try {
-            customParams =
-                jsonDecode(e.customParametersJson!) as Map<String, dynamic>;
-          } catch (_) {}
-        }
-        if (e.modelSettingsJson != null && e.modelSettingsJson!.isNotEmpty) {
-          try {
-            final decoded = jsonDecode(e.modelSettingsJson!);
-            if (decoded is Map) {
-              modelSettings = decoded.map((key, value) =>
-                  MapEntry(key.toString(), value as Map<String, dynamic>));
-            }
-          } catch (_) {}
-        }
-        if (e.globalSettingsJson != null && e.globalSettingsJson!.isNotEmpty) {
-          try {
-            globalSettings =
-                jsonDecode(e.globalSettingsJson!) as Map<String, dynamic>;
-          } catch (_) {}
-        }
-        List<String> apiKeys = e.apiKeys;
-        // ignore: deprecated_member_use_from_same_package
-        if (apiKeys.isEmpty && e.apiKey.isNotEmpty) {
-          // ignore: deprecated_member_use_from_same_package
-          apiKeys = [e.apiKey];
-        }
-        return ProviderConfig(
-          id: e.providerId,
-          name: e.name,
-          color: e.color,
-          apiKeys: apiKeys,
-          currentKeyIndex: e.currentKeyIndex,
-          autoRotateKeys: e.autoRotateKeys,
-          baseUrl: e.baseUrl,
-          isCustom: e.isCustom,
-          customParameters: customParams,
-          modelSettings: modelSettings,
-          globalSettings: globalSettings,
-          globalExcludeModels: e.globalExcludeModels,
-          models: e.savedModels,
-          selectedModel: e.lastSelectedModel,
-          isEnabled: e.isEnabled,
-        );
-      }).toList();
-      if (!newProviders.any((p) => p.id == 'custom')) {
-        newProviders
-            .add(ProviderConfig(id: 'custom', name: 'Custom', isCustom: true));
-      }
-    }
+    final newProviders = ProviderConfig.fromEntities(providerEntities);
 
     final activeProviderId = appSettings?.activeProviderId ?? 'custom';
 
@@ -944,7 +970,11 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   Future<void> toggleThemeMode() async {
     final current = state.themeMode;
-    final next = current == 'light' ? 'dark' : 'light';
+    final next = switch (current) {
+      'custom' => 'light',
+      'light' => 'dark',
+      _ => 'custom',
+    };
     await setThemeMode(next);
   }
 
@@ -1366,3 +1396,4 @@ final settingsInitialStateProvider = Provider<SettingsState>((ref) {
   throw UnimplementedError();
 });
 final settingsPageIndexProvider = StateProvider<int>((ref) => 0);
+

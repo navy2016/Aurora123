@@ -74,7 +74,7 @@ const AssistantMemoryStateEntitySchema = CollectionSchema(
   getId: _assistantMemoryStateEntityGetId,
   getLinks: _assistantMemoryStateEntityGetLinks,
   attach: _assistantMemoryStateEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _assistantMemoryStateEntityEstimateSize(

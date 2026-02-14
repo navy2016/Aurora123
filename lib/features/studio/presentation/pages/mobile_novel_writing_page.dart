@@ -1,7 +1,8 @@
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:aurora/features/knowledge/domain/knowledge_models.dart';
+import 'package:aurora/shared/widgets/aurora_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:file_selector/file_selector.dart';
 import '../novel/novel_provider.dart';
@@ -24,13 +25,17 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _taskInputController = TextEditingController();
-  final _newProjectController = TextEditingController();
-  final _newChapterController = TextEditingController();
   final _outlineController = TextEditingController();
+  final _styleSampleController = TextEditingController();
   bool _isProjectKnowledgeBusy = false;
   int _projectKnowledgeRefreshToken = 0;
   String? _boundOutlineProjectId;
   bool _isSyncingOutlineText = false;
+  String? _boundStyleSampleProjectId;
+  bool _isSyncingStyleSampleText = false;
+
+  static const double _cardRadius = 16;
+  static const double _controlRadius = 12;
 
   @override
   void initState() {
@@ -42,9 +47,8 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
   void dispose() {
     _tabController.dispose();
     _taskInputController.dispose();
-    _newProjectController.dispose();
-    _newChapterController.dispose();
     _outlineController.dispose();
+    _styleSampleController.dispose();
     super.dispose();
   }
 
@@ -55,6 +59,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     final state = ref.watch(novelProvider);
     final notifier = ref.read(novelProvider.notifier);
     _syncOutlineController(state);
+    _syncStyleSampleController(state);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -204,6 +209,23 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     _isSyncingOutlineText = false;
   }
 
+  void _syncStyleSampleController(NovelWritingState state) {
+    final projectId = state.selectedProjectId;
+    final sample = state.selectedProject?.styleSample ?? '';
+    if (_boundStyleSampleProjectId == projectId &&
+        _styleSampleController.text == sample) {
+      return;
+    }
+
+    _boundStyleSampleProjectId = projectId;
+    _isSyncingStyleSampleText = true;
+    _styleSampleController.value = TextEditingValue(
+      text: sample,
+      selection: TextSelection.collapsed(offset: sample.length),
+    );
+    _isSyncingStyleSampleText = false;
+  }
+
   void _showProjectPicker(BuildContext context, AppLocalizations l10n,
       NovelWritingState state, NovelNotifier notifier) {
     AuroraBottomSheet.show(
@@ -299,6 +321,13 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
             child: _buildOutlineSection(context, l10n, theme, state, notifier),
           ),
         ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child:
+                _buildStyleImitationCard(context, l10n, theme, state, notifier),
+          ),
+        ),
         SliverToBoxAdapter(child: const SizedBox(height: 24)),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -365,12 +394,9 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
         state.selectedProject?.outlineRequirement?.trim().isNotEmpty ?? false;
     final decomposeStatus = state.decomposeStatus?.trim() ?? '';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
-      ),
+    return AuroraCard(
+      borderRadius: _cardRadius,
+      padding: EdgeInsets.zero,
       child: Theme(
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
@@ -400,7 +426,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                       Container(
                         decoration: BoxDecoration(
                           color: theme.scaffoldBackgroundColor,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(_controlRadius),
                         ),
                         child: TextField(
                           controller: _outlineController,
@@ -441,7 +467,8 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
+                                    borderRadius:
+                                        BorderRadius.circular(_controlRadius)),
                               ),
                             ),
                           ),
@@ -468,7 +495,8 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
+                                    borderRadius:
+                                        BorderRadius.circular(_controlRadius)),
                               ),
                             ),
                           ),
@@ -481,7 +509,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: theme.cardColor.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(_controlRadius),
                             border: Border.all(
                               color: theme.dividerColor.withValues(alpha: 0.2),
                             ),
@@ -517,7 +545,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
             filled: true,
             fillColor: theme.scaffoldBackgroundColor,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(_controlRadius),
               borderSide: BorderSide.none,
             ),
             contentPadding: const EdgeInsets.all(12),
@@ -525,7 +553,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
           maxLines: 4,
         ),
         const SizedBox(height: 12),
-        ElevatedButton(
+        FilledButton(
           onPressed: state.isGeneratingOutline
               ? null
               : () {
@@ -535,13 +563,11 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                     _taskInputController.clear();
                   }
                 },
-          style: ElevatedButton.styleFrom(
-            elevation: 0,
-            backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
-            foregroundColor: theme.primaryColor,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(_controlRadius),
+            ),
           ),
           child: Text(state.isGeneratingOutline
               ? l10n.generating
@@ -580,13 +606,10 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
       NovelNotifier notifier,
       bool isQueueRunning) {
     final status = tasks.isEmpty ? TaskStatus.pending : tasks.first.status;
-    return Container(
+    return AuroraCard(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05)),
-      ),
+      borderRadius: _cardRadius,
+      padding: EdgeInsets.zero,
       child: Theme(
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
@@ -610,7 +633,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: theme.scaffoldBackgroundColor,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(_controlRadius),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -639,7 +662,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: theme.primaryColor.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(_controlRadius),
                         border: Border.all(
                             color: theme.primaryColor.withValues(alpha: 0.1)),
                       ),
@@ -655,43 +678,66 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       if (tasks.first.status == TaskStatus.reviewing) ...[
-                        TextButton.icon(
+                        OutlinedButton.icon(
                           onPressed: isQueueRunning
                               ? null
                               : () => notifier.runSingleTask(tasks.first.id),
-                          icon: const Icon(AuroraIcons.close,
-                              size: 16, color: Colors.red),
+                          icon: const Icon(AuroraIcons.close, size: 16),
                           label: Text(l10n.reject,
-                              style: const TextStyle(
-                                  color: Colors.red, fontSize: 13)),
+                              style: const TextStyle(fontSize: 13)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.error,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(_controlRadius),
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        ElevatedButton.icon(
+                        FilledButton.icon(
                           onPressed: isQueueRunning
                               ? null
                               : () => notifier.approveTask(tasks.first.id),
                           icon: const Icon(AuroraIcons.check, size: 16),
                           label: Text(l10n.approve,
                               style: const TextStyle(fontSize: 13)),
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(_controlRadius),
+                            ),
+                          ),
                         ),
                       ] else if (tasks.first.status == TaskStatus.pending ||
                           tasks.first.status == TaskStatus.failed) ...[
-                        ElevatedButton.icon(
+                        FilledButton.icon(
                           onPressed: isQueueRunning
                               ? null
                               : () => notifier.runSingleTask(tasks.first.id),
                           icon: const Icon(AuroraIcons.play, size: 16),
                           label: Text(l10n.executeTask,
                               style: const TextStyle(fontSize: 13)),
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(_controlRadius),
+                            ),
+                          ),
                         ),
                       ] else if (tasks.first.status == TaskStatus.success) ...[
-                        TextButton.icon(
+                        OutlinedButton.icon(
                           onPressed: isQueueRunning
                               ? null
                               : () => notifier.runSingleTask(tasks.first.id),
                           icon: const Icon(AuroraIcons.retry, size: 16),
                           label: Text(l10n.regenerate,
                               style: const TextStyle(fontSize: 13)),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(_controlRadius),
+                            ),
+                          ),
                         ),
                       ],
                     ],
@@ -806,39 +852,219 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
         ),
         const SizedBox(height: 16),
         _buildContextSection(l10n.worldRules, ctx.rules, theme, l10n),
+        const SizedBox(height: 12),
         _buildContextSection(
             l10n.characterSettings, ctx.characters, theme, l10n),
+        const SizedBox(height: 12),
         _buildContextSection(
             l10n.relationships, ctx.relationships, theme, l10n),
+        const SizedBox(height: 12),
         _buildContextSection(l10n.locations, ctx.locations, theme, l10n),
+        const SizedBox(height: 12),
         _buildForeshadowingSection(ctx.foreshadowing, theme, l10n),
       ],
     );
   }
 
+  Widget _buildStyleImitationCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    NovelWritingState state,
+    NovelNotifier notifier,
+  ) {
+    final project = state.selectedProject;
+    if (project == null) return const SizedBox.shrink();
+
+    final hasAnalysis = (project.analyzedStyle ?? '').trim().isNotEmpty;
+    final hasSample = (project.styleSample ?? '').trim().isNotEmpty;
+
+    return AuroraCard(
+      borderRadius: _cardRadius,
+      padding: EdgeInsets.zero,
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: hasAnalysis || hasSample,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: const Icon(AuroraIcons.autoAwesome, size: 20),
+          title: Row(
+            children: [
+              Text(l10n.styleImitation),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: hasAnalysis
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : theme.hintColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  hasAnalysis ? l10n.styleAnalyzed : l10n.styleNotAnalyzed,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: hasAnalysis ? Colors.green : theme.hintColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            Text(
+              l10n.styleSampleHint,
+              style:
+                  theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _styleSampleController,
+              maxLines: 6,
+              decoration: InputDecoration(
+                hintText: l10n.styleSamplePlaceholder,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(_controlRadius),
+                ),
+                contentPadding: const EdgeInsets.all(12),
+              ),
+              onChanged: (value) {
+                if (_isSyncingStyleSampleText) return;
+                notifier.updateStyleSample(value);
+              },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: state.isAnalyzingStyle || !hasSample
+                        ? null
+                        : () async {
+                            try {
+                              await notifier.analyzeWritingStyle();
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              showAuroraNotice(
+                                context,
+                                e.toString(),
+                                icon: AuroraIcons.error,
+                              );
+                            }
+                          },
+                    icon: state.isAnalyzingStyle
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(AuroraIcons.autoAwesome, size: 18),
+                    label: Text(
+                      state.isAnalyzingStyle
+                          ? l10n.analyzingStyle
+                          : l10n.analyzeStyle,
+                    ),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(_controlRadius),
+                      ),
+                    ),
+                  ),
+                ),
+                if (hasSample || hasAnalysis) ...[
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: state.isAnalyzingStyle
+                        ? null
+                        : () async {
+                            final confirmed =
+                                await AuroraBottomSheet.showConfirm(
+                              context: context,
+                              title: l10n.clearStyle,
+                              content: l10n.clearStyleConfirm,
+                              confirmText: l10n.clear,
+                              isDestructive: true,
+                            );
+                            if (confirmed == true) {
+                              notifier.clearStyleSample();
+                            }
+                          },
+                    icon: const Icon(AuroraIcons.delete, size: 16),
+                    label: Text(l10n.clearStyle),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(_controlRadius),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (hasAnalysis) ...[
+              const SizedBox(height: 16),
+              Text(
+                l10n.styleAnalysisResult,
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.circular(_controlRadius),
+                  border: Border.all(
+                    color: theme.dividerColor.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: SelectableText(
+                  project.analyzedStyle!,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildContextSection(String title, Map<String, String> data,
       ThemeData theme, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(title,
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-        ),
-        if (data.isEmpty)
-          Text(l10n.noDataYet, style: theme.textTheme.bodySmall)
-        else
-          ...data.entries.map((e) => ListTile(
-                title: Text(e.key,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 13)),
-                subtitle: Text(e.value),
-                dense: true,
-              )),
-        const Divider(),
-      ],
+    return AuroraCard(
+      borderRadius: _cardRadius,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          if (data.isEmpty)
+            Text(l10n.noDataYet, style: theme.textTheme.bodySmall)
+          else
+            ...data.entries.map(
+              (entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.key,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(entry.value, style: theme.textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -851,108 +1077,114 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
         ? '导入中...'
         : 'Importing...';
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(AuroraIcons.database, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l10n.knowledgeBase,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
+    return AuroraCard(
+      borderRadius: _cardRadius,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(AuroraIcons.database, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.knowledgeBase,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                IconButton(
-                  icon: const Icon(AuroraIcons.refresh, size: 18),
-                  onPressed: _isProjectKnowledgeBusy
-                      ? null
-                      : () => setState(() => _projectKnowledgeRefreshToken++),
-                ),
-              ],
-            ),
-            Text(
-              projectOnlyHint,
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            FutureBuilder<KnowledgeBaseSummary?>(
-              key: ValueKey(
-                  '${state.selectedProjectId}-${state.selectedProject?.knowledgeBaseId}-$_projectKnowledgeRefreshToken'),
-              future: notifier.getSelectedProjectKnowledgeBaseSummary(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Text(
-                    snapshot.error.toString(),
-                    style: const TextStyle(color: Colors.red),
-                  );
-                }
-
-                final summary = snapshot.data;
-                if (summary == null) {
-                  return Text(l10n.noDataYet, style: theme.textTheme.bodySmall);
-                }
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      summary.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.knowledgeDocsAndChunks(
-                          summary.documentCount, summary.chunkCount),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
+              ),
+              IconButton(
+                icon: const Icon(AuroraIcons.refresh, size: 18),
                 onPressed: _isProjectKnowledgeBusy
                     ? null
-                    : () =>
-                        _importProjectKnowledgeFiles(context, l10n, notifier),
-                icon: const Icon(AuroraIcons.backup, size: 16),
-                label: Text(l10n.importFiles),
-              ),
-            ),
-            if (_isProjectKnowledgeBusy) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(importingLabel, style: theme.textTheme.bodySmall),
-                ],
+                    : () => setState(() => _projectKnowledgeRefreshToken++),
               ),
             ],
+          ),
+          Text(
+            projectOnlyHint,
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          FutureBuilder<KnowledgeBaseSummary?>(
+            key: ValueKey(
+              '${state.selectedProjectId}-${state.selectedProject?.knowledgeBaseId}-$_projectKnowledgeRefreshToken',
+            ),
+            future: notifier.getSelectedProjectKnowledgeBaseSummary(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Text(
+                  snapshot.error.toString(),
+                  style: TextStyle(color: theme.colorScheme.error),
+                );
+              }
+
+              final summary = snapshot.data;
+              if (summary == null) {
+                return Text(l10n.noDataYet, style: theme.textTheme.bodySmall);
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    summary.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.knowledgeDocsAndChunks(
+                      summary.documentCount,
+                      summary.chunkCount,
+                    ),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isProjectKnowledgeBusy
+                  ? null
+                  : () => _importProjectKnowledgeFiles(context, l10n, notifier),
+              icon: const Icon(AuroraIcons.backup, size: 16),
+              label: Text(l10n.importFiles),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(_controlRadius),
+                ),
+              ),
+            ),
+          ),
+          if (_isProjectKnowledgeBusy) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                Text(importingLabel, style: theme.textTheme.bodySmall),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -978,9 +1210,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
       if (!context.mounted) return;
 
       if (report == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.noDataYet)),
-        );
+        showAuroraNotice(context, l10n.noDataYet, icon: AuroraIcons.info);
         return;
       }
 
@@ -994,24 +1224,41 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
           ..write(report.errors.join('\n'));
       }
 
-      await showDialog<void>(
+      await AuroraBottomSheet.show(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l10n.importFinished),
-          content: Text(summary.toString()),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l10n.confirm),
-            ),
-          ],
+        builder: (ctx) => Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.importFinished,
+                style: Theme.of(ctx)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 320),
+                child: SingleChildScrollView(
+                  child: SelectableText(summary.toString()),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.confirm),
+              ),
+            ],
+          ),
         ),
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      showAuroraNotice(context, e.toString(), icon: AuroraIcons.error);
     } finally {
       if (mounted) {
         setState(() {
@@ -1024,25 +1271,36 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
 
   Widget _buildForeshadowingSection(
       List<String> data, ThemeData theme, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(l10n.foreshadowing,
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-        ),
-        if (data.isEmpty)
-          Text(l10n.noDataYet, style: theme.textTheme.bodySmall)
-        else
-          ...data.map((f) => ListTile(
-                title: Text(f),
-                dense: true,
-                leading: const Icon(AuroraIcons.flag, size: 16),
-              )),
-        const Divider(),
-      ],
+    return AuroraCard(
+      borderRadius: _cardRadius,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.foreshadowing,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          if (data.isEmpty)
+            Text(l10n.noDataYet, style: theme.textTheme.bodySmall)
+          else
+            ...data.map(
+              (f) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(AuroraIcons.flag, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(f)),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1073,7 +1331,7 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
                     Clipboard.setData(ClipboardData(text: content));
                     showAuroraNotice(
                       context,
-                      '已复制到剪贴板',
+                      l10n.contentCopied,
                       icon: AuroraIcons.copy,
                       top: MediaQuery.of(context).padding.top + 64 + 60,
                     );
@@ -1126,15 +1384,15 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
               ),
             ),
             const SizedBox(height: 32),
-            ElevatedButton.icon(
+            FilledButton.icon(
               onPressed: () => _showNewProjectDialog(context, l10n, notifier),
               icon: const Icon(AuroraIcons.add),
               label: Text(l10n.createProject),
-              style: ElevatedButton.styleFrom(
+              style: FilledButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(_controlRadius),
                 ),
               ),
             ),
@@ -1144,3 +1402,4 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     );
   }
 }
+

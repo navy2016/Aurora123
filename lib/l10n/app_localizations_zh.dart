@@ -857,6 +857,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get createProjectDescription => '新建一个项目来开始编写你的故事大纲和章节。';
 
   @override
+  String get styleImitation => '文风模仿';
+
+  @override
+  String get styleSampleHint => '粘贴一段例文，AI 将分析其文风特征供写作参考';
+
+  @override
+  String get styleSamplePlaceholder => '在此粘贴例文...';
+
+  @override
+  String get analyzeStyle => '分析文风';
+
+  @override
+  String get analyzingStyle => '分析中...';
+
+  @override
+  String get styleAnalysisResult => '文风分析结果';
+
+  @override
+  String get clearStyle => '清除文风';
+
+  @override
+  String get styleAnalyzed => '已分析';
+
+  @override
+  String get styleNotAnalyzed => '未设置';
+
+  @override
+  String get clearStyleConfirm => '确定要清除文风设置吗？这将同时清除例文和分析结果。';
+
+  @override
   String get aboutAurora => '关于 Aurora';
 
   @override
@@ -2182,4 +2212,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cleanerLlmSuggestionFallback => 'LLM 建议';
+
+  @override
+  String get novelUnlimitedMode => '破限';
+
+  @override
+  String get novelUnlimitedModeHint => '启用不受限制的创作模式，注入角色扮演指令';
 }

@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 
 class BuildToolOutput extends ConsumerStatefulWidget {
@@ -630,3 +630,4 @@ class _BuildToolOutputState extends ConsumerState<BuildToolOutput> {
     );
   }
 }
+

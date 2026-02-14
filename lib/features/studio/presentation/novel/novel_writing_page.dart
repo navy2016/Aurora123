@@ -4,7 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:super_clipboard/super_clipboard.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
@@ -152,6 +152,8 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
           // Preset Dropdown
           _buildPresetDropdown(
               context, theme, state, ref.read(novelProvider.notifier), l10n),
+          const SizedBox(width: 8),
+          _buildStyleImitationButton(context, l10n, theme, state, notifier),
 
           const Spacer(),
 
@@ -420,6 +422,41 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     }
   }
 
+  Widget _buildStyleImitationButton(
+    BuildContext context,
+    AppLocalizations l10n,
+    FluentThemeData theme,
+    NovelWritingState state,
+    NovelNotifier notifier,
+  ) {
+    final hasAnalysis = state.selectedProject?.analyzedStyle?.isNotEmpty ?? false;
+    return Button(
+      onPressed: () => _showStyleImitationDialog(context, l10n, theme),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(AuroraIcons.autoAwesome,
+              size: 14,
+              color: theme.typography.body?.color?.withValues(alpha: 0.8)),
+          const SizedBox(width: 6),
+          Text(l10n.styleImitation,
+              style: TextStyle(color: theme.typography.body?.color)),
+          if (hasAnalysis) ...[
+            const SizedBox(width: 6),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildPresetDropdown(BuildContext context, FluentThemeData theme,
       NovelWritingState state, NovelNotifier notifier, AppLocalizations l10n) {
     final presets = state.promptPresets;
@@ -445,7 +482,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(AuroraIcons.edit, size: 14),
+          const Icon(AuroraIcons.parameter, size: 14),
           const SizedBox(width: 6),
           Text(selectedLabel, style: const TextStyle(fontSize: 13)),
         ],
@@ -919,7 +956,7 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _buildProjectKnowledgeSection(
+                _buildProjectKnowledgeSection(
                       context, l10n, theme, state, notifier),
                   const SizedBox(height: 24),
                   Wrap(
@@ -1003,6 +1040,20 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
                 ),
               )),
       ],
+    );
+  }
+
+  void _showStyleImitationDialog(
+    BuildContext context,
+    AppLocalizations l10n,
+    FluentThemeData theme,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => _StyleImitationDialogContent(
+        l10n: l10n,
+        theme: theme,
+      ),
     );
   }
 
@@ -1772,3 +1823,137 @@ class _NovelWritingPageState extends ConsumerState<NovelWritingPage> {
     }
   }
 }
+
+class _StyleImitationDialogContent extends ConsumerStatefulWidget {
+  final AppLocalizations l10n;
+  final FluentThemeData theme;
+
+  const _StyleImitationDialogContent({
+    required this.l10n,
+    required this.theme,
+  });
+
+  @override
+  ConsumerState<_StyleImitationDialogContent> createState() =>
+      _StyleImitationDialogContentState();
+}
+
+class _StyleImitationDialogContentState
+    extends ConsumerState<_StyleImitationDialogContent> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = ref.read(novelProvider);
+    _controller =
+        TextEditingController(text: state.selectedProject?.styleSample ?? '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(novelProvider);
+    final notifier = ref.read(novelProvider.notifier);
+    final project = state.selectedProject;
+    final l10n = widget.l10n;
+    final theme = widget.theme;
+
+    if (project == null) return const SizedBox.shrink();
+
+    final hasAnalysis =
+        project.analyzedStyle != null && project.analyzedStyle!.isNotEmpty;
+
+    return ContentDialog(
+      title: Text(l10n.styleImitation),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.styleSampleHint,
+              style: theme.typography.caption,
+            ),
+            const SizedBox(height: 8),
+            TextBox(
+              placeholder: l10n.styleSamplePlaceholder,
+              maxLines: 8,
+              controller: _controller,
+              onChanged: (value) => notifier.updateStyleSample(value),
+            ),
+            const SizedBox(height: 12),
+            if (state.isAnalyzingStyle)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ProgressBar(),
+              ),
+            if (hasAnalysis) ...[
+              const SizedBox(height: 16),
+              Text(l10n.styleAnalysisResult, style: theme.typography.bodyStrong),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.cardColor.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                      color: theme.resources.controlStrokeColorDefault),
+                ),
+                child: SelectableText(
+                  project.analyzedStyle!,
+                  style: theme.typography.body,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        if (project.styleSample?.isNotEmpty == true)
+          FilledButton(
+            onPressed: state.isAnalyzingStyle
+                ? null
+                : () async {
+                    try {
+                      await notifier.analyzeWritingStyle();
+                    } catch (e) {
+                      if (context.mounted) {
+                        displayInfoBar(context,
+                            builder: (context, close) => InfoBar(
+                                  title: Text(l10n.error),
+                                  content: Text(e.toString()),
+                                  severity: InfoBarSeverity.error,
+                                ));
+                      }
+                    }
+                  },
+            child: Text(state.isAnalyzingStyle
+                ? l10n.analyzingStyle
+                : l10n.analyzeStyle),
+          ),
+        if (hasAnalysis || (project.styleSample?.isNotEmpty ?? false))
+          Button(
+            onPressed: state.isAnalyzingStyle
+                ? null
+                : () {
+                    notifier.clearStyleSample();
+                    _controller.clear();
+                  },
+            child: Text(l10n.clearStyle),
+          ),
+        Button(
+          child: Text(l10n.close),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    );
+  }
+}
+

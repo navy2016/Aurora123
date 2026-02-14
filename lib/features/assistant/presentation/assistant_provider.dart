@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:uuid/uuid.dart';
 import '../../settings/presentation/settings_provider.dart';
 import '../data/assistant_entity.dart';
@@ -143,3 +143,4 @@ final assistantProvider =
 final selectedAssistantProvider = Provider<Assistant?>((ref) {
   return ref.watch(assistantProvider).selectedAssistant;
 });
+

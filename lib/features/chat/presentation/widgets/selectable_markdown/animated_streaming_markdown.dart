@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'selectable_markdown.dart';
 
@@ -25,6 +26,8 @@ class AnimatedStreamingMarkdown extends StatefulWidget {
 class _AnimatedStreamingMarkdownState extends State<AnimatedStreamingMarkdown> {
   late String _displayedData;
   Timer? _timer;
+  int _activePointers = 0;
+  bool _suspendAnimation = false;
 
   @override
   void initState() {
@@ -36,16 +39,36 @@ class _AnimatedStreamingMarkdownState extends State<AnimatedStreamingMarkdown> {
   void didUpdateWidget(AnimatedStreamingMarkdown oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.data != oldWidget.data) {
+      // If widget.data is shorter or not a prefix (e.g. edit/delete), sync immediately.
+      // This should take precedence even if we're suspending animation.
+      if (_displayedData.length > widget.data.length ||
+          !widget.data.startsWith(_displayedData)) {
+        _displayedData = widget.data;
+        _timer?.cancel();
+        _timer = null;
+        if (mounted) setState(() {});
+        return;
+      }
+
+      if (_suspendAnimation) {
+        // Freeze the current render tree while the user is interacting (selection),
+        // and catch up on pointer up.
+        return;
+      }
+
       _startAnimation();
     }
   }
 
   void _startAnimation() {
+    if (_suspendAnimation) return;
+
     // If widget.data is shorter or not a prefix (e.g. edit/delete), sync immediately
     if (_displayedData.length > widget.data.length ||
         !widget.data.startsWith(_displayedData)) {
       _displayedData = widget.data;
       _timer?.cancel();
+      _timer = null;
       // Force rebuild to show immediate change
       if (mounted) setState(() {});
       return;
@@ -58,8 +81,9 @@ class _AnimatedStreamingMarkdownState extends State<AnimatedStreamingMarkdown> {
     if (_timer != null && _timer!.isActive) return;
 
     _timer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
-      if (!mounted) {
+      if (!mounted || _suspendAnimation) {
         timer.cancel();
+        _timer = null;
         return;
       }
 
@@ -69,6 +93,7 @@ class _AnimatedStreamingMarkdownState extends State<AnimatedStreamingMarkdown> {
       if (currentLength >= totalLength) {
         _displayedData = widget.data;
         timer.cancel();
+        _timer = null;
         setState(() {});
         return;
       }
@@ -97,11 +122,49 @@ class _AnimatedStreamingMarkdownState extends State<AnimatedStreamingMarkdown> {
 
   @override
   Widget build(BuildContext context) {
-    return SelectableMarkdown(
-      data: _displayedData,
-      isDark: widget.isDark,
-      textColor: widget.textColor,
-      baseFontSize: widget.baseFontSize,
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (event) {
+        // Only interfere while the streaming timer is actively mutating the tree.
+        if (_timer == null || !_timer!.isActive) return;
+        // Only suspend for primary button on mouse; touch selection uses different gestures.
+        if (event.kind == PointerDeviceKind.mouse &&
+            (event.buttons & kPrimaryButton) == 0) {
+          return;
+        }
+        _activePointers++;
+        _suspendAnimation = true;
+        _timer?.cancel();
+        _timer = null;
+      },
+      onPointerUp: (_) {
+        if (_activePointers > 0) _activePointers--;
+        if (_activePointers == 0 && _suspendAnimation) {
+          _suspendAnimation = false;
+          if (_displayedData != widget.data && mounted) {
+            setState(() {
+              _displayedData = widget.data;
+            });
+          }
+        }
+      },
+      onPointerCancel: (_) {
+        if (_activePointers > 0) _activePointers--;
+        if (_activePointers == 0 && _suspendAnimation) {
+          _suspendAnimation = false;
+          if (_displayedData != widget.data && mounted) {
+            setState(() {
+              _displayedData = widget.data;
+            });
+          }
+        }
+      },
+      child: SelectableMarkdown(
+        data: _displayedData,
+        isDark: widget.isDark,
+        textColor: widget.textColor,
+        baseFontSize: widget.baseFontSize,
+      ),
     );
   }
 }

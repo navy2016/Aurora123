@@ -11,665 +11,11 @@ import '../../features/settings/presentation/settings_provider.dart';
 import 'llm_service.dart';
 import '../../core/error/app_exception.dart';
 import '../../core/error/app_error_type.dart';
+import '../utils/app_logger.dart';
 
-const Set<String> _supportedVisionImageMimes = {
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-};
-
-String _normalizeBase64Data(String raw) {
-  var normalized = raw.replaceAll(RegExp(r'\s+'), '');
-  normalized = normalized.replaceAll('-', '+').replaceAll('_', '/');
-  final mod = normalized.length % 4;
-  if (mod != 0) {
-    normalized = normalized.padRight(normalized.length + (4 - mod), '=');
-  }
-  return normalized;
-}
-
-String? _detectImageMime(Uint8List bytes) {
-  if (bytes.length >= 8 &&
-      bytes[0] == 0x89 &&
-      bytes[1] == 0x50 &&
-      bytes[2] == 0x4E &&
-      bytes[3] == 0x47 &&
-      bytes[4] == 0x0D &&
-      bytes[5] == 0x0A &&
-      bytes[6] == 0x1A &&
-      bytes[7] == 0x0A) {
-    return 'image/png';
-  }
-  if (bytes.length >= 3 &&
-      bytes[0] == 0xFF &&
-      bytes[1] == 0xD8 &&
-      bytes[2] == 0xFF) {
-    return 'image/jpeg';
-  }
-  if (bytes.length >= 6 &&
-      bytes[0] == 0x47 &&
-      bytes[1] == 0x49 &&
-      bytes[2] == 0x46 &&
-      bytes[3] == 0x38 &&
-      (bytes[4] == 0x37 || bytes[4] == 0x39) &&
-      bytes[5] == 0x61) {
-    return 'image/gif';
-  }
-  if (bytes.length >= 12 &&
-      bytes[0] == 0x52 &&
-      bytes[1] == 0x49 &&
-      bytes[2] == 0x46 &&
-      bytes[3] == 0x46 &&
-      bytes[8] == 0x57 &&
-      bytes[9] == 0x45 &&
-      bytes[10] == 0x42 &&
-      bytes[11] == 0x50) {
-    return 'image/webp';
-  }
-  if (bytes.length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4D) {
-    return 'image/bmp';
-  }
-  return null;
-}
-
-String? _normalizeImageDataUrl(String url) {
-  if (!url.startsWith('data:')) return url;
-  final commaIndex = url.indexOf(',');
-  if (commaIndex <= 0) return null;
-  final header = url.substring(0, commaIndex);
-  final rawPayload = url.substring(commaIndex + 1);
-  final headerMatch =
-      RegExp(r'^data:([^;]+);base64$', caseSensitive: false).firstMatch(header);
-  if (headerMatch == null) return null;
-
-  final declaredMime = (headerMatch.group(1) ?? '').toLowerCase();
-  if (!declaredMime.startsWith('image/')) return url;
-
-  final payload = _normalizeBase64Data(rawPayload);
-  Uint8List bytes;
-  try {
-    bytes = Uint8List.fromList(base64Decode(payload));
-  } catch (_) {
-    return null;
-  }
-  if (bytes.isEmpty) return null;
-
-  final detectedMime = _detectImageMime(bytes);
-  if (detectedMime != null &&
-      _supportedVisionImageMimes.contains(detectedMime)) {
-    return 'data:$detectedMime;base64,${base64Encode(bytes)}';
-  }
-
-  final decoded = img.decodeImage(bytes);
-  if (decoded == null) return null;
-  final transcoded = img.encodeJpg(decoded, quality: 90);
-  if (transcoded.isEmpty) return null;
-  return 'data:image/jpeg;base64,${base64Encode(transcoded)}';
-}
-
-List<Map<String, dynamic>> _sanitizeOutgoingImageMessages(
-    List<Map<String, dynamic>> apiMessages) {
-  final List<Map<String, dynamic>> sanitized = [];
-  for (final msg in apiMessages) {
-    final Map<String, dynamic> newMsg = Map<String, dynamic>.from(msg);
-    final content = newMsg['content'];
-    if (content is List) {
-      final List<dynamic> newContent = [];
-      bool removedImage = false;
-      for (final item in content) {
-        if (item is Map && item['type'] == 'image_url') {
-          final imageUrlObj = item['image_url'];
-          final url = imageUrlObj is Map ? imageUrlObj['url'] : null;
-          if (url is String && url.startsWith('data:')) {
-            final normalizedUrl = _normalizeImageDataUrl(url);
-            if (normalizedUrl == null) {
-              removedImage = true;
-              continue;
-            }
-            final Map<String, dynamic> newItem =
-                Map<String, dynamic>.from(item);
-            if (imageUrlObj is Map) {
-              final newImageUrlObj = Map<String, dynamic>.from(imageUrlObj);
-              newImageUrlObj['url'] = normalizedUrl;
-              newItem['image_url'] = newImageUrlObj;
-            } else {
-              newItem['image_url'] = {'url': normalizedUrl};
-            }
-            newContent.add(newItem);
-            continue;
-          }
-        }
-        newContent.add(item);
-      }
-      if (newContent.isEmpty && removedImage) {
-        newMsg['content'] = '[Image omitted: invalid or unsupported format]';
-      } else {
-        newMsg['content'] = newContent;
-      }
-    }
-    sanitized.add(newMsg);
-  }
-  return sanitized;
-}
-
-Future<List<Map<String, dynamic>>> _compressImagesTask(
-    List<Map<String, dynamic>> apiMessages) async {
-  String? compressSingleImage(Uint8List bytes) {
-    try {
-      final image = img.decodeImage(bytes);
-      if (image == null) return null;
-      int targetWidth = image.width;
-      int targetHeight = image.height;
-      if (targetWidth > 1920 || targetHeight > 1080) {
-        final aspectRatio = targetWidth / targetHeight;
-        if (aspectRatio > 1920 / 1080) {
-          targetWidth = 1920;
-          targetHeight = (1920 / aspectRatio).round();
-        } else {
-          targetHeight = 1080;
-          targetWidth = (1080 * aspectRatio).round();
-        }
-      }
-      final resized =
-          (targetWidth != image.width || targetHeight != image.height)
-              ? img.copyResize(image, width: targetWidth, height: targetHeight)
-              : image;
-      final compressed = img.encodeJpg(resized, quality: 85);
-      return base64Encode(compressed);
-    } catch (e) {
-      return base64Encode(bytes);
-    }
-  }
-
-  final List<Map<String, dynamic>> result = [];
-  for (final msg in apiMessages) {
-    final Map<String, dynamic> newMsg = Map.from(msg);
-    final content = newMsg['content'];
-    if (content is List) {
-      final List<dynamic> newContentList = [];
-      for (final item in content) {
-        if (item is Map && item['type'] == 'image_url') {
-          final imageUrl = item['image_url']?['url'];
-          if (imageUrl is String && imageUrl.startsWith('data:')) {
-            final commaIndex = imageUrl.indexOf(',');
-            if (commaIndex != -1) {
-              final header = imageUrl.substring(0, commaIndex);
-              final mimeType = header.split(':')[1].split(';')[0];
-
-              // Only attempt to compress if it's an image
-              if (mimeType.startsWith('image/')) {
-                try {
-                  final bytes =
-                      base64Decode(imageUrl.substring(commaIndex + 1));
-                  final compressed =
-                      compressSingleImage(Uint8List.fromList(bytes));
-                  if (compressed == null) {
-                    newContentList.add(item);
-                    continue;
-                  }
-                  newContentList.add({
-                    'type': 'image_url',
-                    'image_url': {
-                      'url': 'data:image/jpeg;base64,$compressed',
-                    },
-                    if (item.containsKey('thought_signature'))
-                      'thought_signature': item['thought_signature'],
-                  });
-                  continue;
-                } catch (e) {
-                  newContentList.add(item);
-                  continue;
-                }
-              }
-            }
-          }
-        }
-        newContentList.add(item);
-      }
-      newMsg['content'] = newContentList;
-    }
-    result.add(newMsg);
-  }
-  return result;
-}
-
-enum _ThinkingTier { minimal, low, medium, high, xhigh }
-
-enum _ModelFamily { gemini, gemini3, anthropic, openai, unknown }
-
-class _ThinkingInput {
-  final String raw;
-  final int? budgetTokens;
-  final _ThinkingTier? tier;
-
-  const _ThinkingInput({required this.raw, this.budgetTokens, this.tier});
-}
-
-const Map<_ThinkingTier, int> _defaultBudgetTokensByTier = {
-  _ThinkingTier.minimal: 512,
-  _ThinkingTier.low: 1024,
-  _ThinkingTier.medium: 4096,
-  _ThinkingTier.high: 8192,
-  _ThinkingTier.xhigh: 32576,
-};
-
-_ThinkingInput _parseThinkingInput(String raw) {
-  final trimmed = raw.trim();
-  final budget = int.tryParse(trimmed);
-  if (budget != null) return _ThinkingInput(raw: trimmed, budgetTokens: budget);
-  final tier = _tryParseThinkingTier(trimmed);
-  return _ThinkingInput(raw: trimmed, tier: tier);
-}
-
-_ThinkingTier? _tryParseThinkingTier(String raw) {
-  final normalized = raw.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
-  switch (normalized) {
-    case 'minimal':
-    case 'min':
-    case 'mini':
-    case 'tiny':
-    case 'least':
-    case 'lowest':
-    case '最小':
-    case '最低':
-      return _ThinkingTier.minimal;
-    case 'low':
-    case 'l':
-    case 'small':
-    case '弱':
-    case '低':
-      return _ThinkingTier.low;
-    case 'medium':
-    case 'med':
-    case 'mid':
-    case 'middle':
-    case 'm':
-    case '中':
-    case '中等':
-      return _ThinkingTier.medium;
-    case 'high':
-    case 'h':
-    case 'big':
-    case 'strong':
-    case '高':
-      return _ThinkingTier.high;
-    case 'xhigh':
-    case 'xh':
-    case 'veryhigh':
-    case 'ultra':
-    case 'max':
-    case 'extreme':
-    case '最高':
-    case '极高':
-    case '超高':
-      return _ThinkingTier.xhigh;
-  }
-  return null;
-}
-
-_ModelFamily _inferModelFamily(String model) {
-  final lower = model.toLowerCase();
-  final isAnthropic = lower.contains('claude') || lower.contains('anthropic');
-
-  // Special case: "gemini-claude-*" are Claude models behind OpenAI-compatible
-  // proxies (e.g. Antigravity) where thinking is controlled via reasoning_effort.
-  // Treat them as OpenAI-family so numeric input can be mapped to effort tiers.
-  if (lower.contains('gemini') && isAnthropic) return _ModelFamily.openai;
-
-  final isGemini = lower.contains('gemini');
-  final isGemini3 = isGemini &&
-      (lower.contains('gemini-3') ||
-          lower.contains('gemini_3') ||
-          lower.contains('gemini3'));
-  if (isGemini3) return _ModelFamily.gemini3;
-  if (isGemini) return _ModelFamily.gemini;
-  if (isAnthropic) return _ModelFamily.anthropic;
-
-  final isOpenAI = lower.contains('openai') ||
-      lower.contains('gpt') ||
-      RegExp(r'(^|[\/_-])o[1-9](\b|[\/_-])').hasMatch(lower);
-  if (isOpenAI) return _ModelFamily.openai;
-
-  return _ModelFamily.unknown;
-}
-
-_ThinkingTier _tierFromBudgetForGemini3(int budgetTokens) {
-  final budget = budgetTokens.clamp(0, 1 << 30);
-  if (budget <= 512) return _ThinkingTier.minimal;
-  if (budget <= 1024) return _ThinkingTier.low;
-  if (budget <= 8192) return _ThinkingTier.medium;
-  return _ThinkingTier.high;
-}
-
-_ThinkingTier _tierFromBudgetForOpenAI(int budgetTokens) {
-  final budget = budgetTokens.clamp(0, 1 << 30);
-  if (budget <= _defaultBudgetTokensByTier[_ThinkingTier.low]!) {
-    return _ThinkingTier.low;
-  }
-  if (budget <= _defaultBudgetTokensByTier[_ThinkingTier.medium]!) {
-    return _ThinkingTier.medium;
-  }
-  if (budget <= _defaultBudgetTokensByTier[_ThinkingTier.high]!) {
-    return _ThinkingTier.high;
-  }
-  return _ThinkingTier.xhigh;
-}
-
-_ThinkingTier _coerceTierForGemini3(_ThinkingTier tier) {
-  if (tier == _ThinkingTier.xhigh) return _ThinkingTier.high;
-  return tier;
-}
-
-_ThinkingTier _coerceTierForOpenAI(_ThinkingTier tier) {
-  if (tier == _ThinkingTier.minimal) return _ThinkingTier.low;
-  return tier;
-}
-
-String _thinkingTierToGeminiEffort(_ThinkingTier tier) {
-  final coerced = _coerceTierForGemini3(tier);
-  switch (coerced) {
-    case _ThinkingTier.minimal:
-      return 'minimal';
-    case _ThinkingTier.low:
-      return 'low';
-    case _ThinkingTier.medium:
-      return 'medium';
-    case _ThinkingTier.high:
-      return 'high';
-    case _ThinkingTier.xhigh:
-      return 'high';
-  }
-}
-
-bool _supportsXHighReasoningEffort(String baseUrl, String model) {
-  final lowerModel = model.toLowerCase();
-  if (lowerModel.contains('gemini') &&
-      (lowerModel.contains('claude') || lowerModel.contains('anthropic'))) {
-    return true;
-  }
-  final uri = Uri.tryParse(baseUrl);
-  final host =
-      (uri?.host.isNotEmpty == true ? uri!.host : baseUrl).toLowerCase();
-  if (host.contains('openrouter')) return true;
-  if (host.endsWith('openai.com') ||
-      host.contains('openai.azure.com') ||
-      host.contains('azure.com')) {
-    return false;
-  }
-  return false;
-}
-
-String _thinkingTierToOpenAIEffort(_ThinkingTier tier,
-    {required bool supportsXHigh}) {
-  final coerced = _coerceTierForOpenAI(tier);
-  if (coerced == _ThinkingTier.xhigh && !supportsXHigh) return 'high';
-  switch (coerced) {
-    case _ThinkingTier.minimal:
-      return 'low';
-    case _ThinkingTier.low:
-      return 'low';
-    case _ThinkingTier.medium:
-      return 'medium';
-    case _ThinkingTier.high:
-      return 'high';
-    case _ThinkingTier.xhigh:
-      return 'xhigh';
-  }
-}
-
-bool _isClaudeRoutedModel(String model) {
-  final lowerModel = model.toLowerCase();
-  return lowerModel.contains('claude') || lowerModel.contains('anthropic');
-}
-
-int? _reasoningEffortToBudgetTokens(String effort) {
-  switch (effort.trim().toLowerCase()) {
-    case 'minimal':
-      return 512;
-    case 'low':
-      return 1024;
-    case 'medium':
-      return 8192;
-    case 'high':
-      return 24576;
-    case 'xhigh':
-      return 32768;
-    default:
-      return null;
-  }
-}
-
-void _ensureReasoningEffortCompatibleMaxTokens({
-  required Map<String, dynamic> requestData,
-  required String selectedModel,
-}) {
-  if (!_isClaudeRoutedModel(selectedModel)) return;
-
-  final candidates = <int>[];
-  final effortRaw = requestData['reasoning_effort'];
-  if (effortRaw != null) {
-    final budget = _reasoningEffortToBudgetTokens(effortRaw.toString());
-    if (budget != null && budget > 0) candidates.add(budget);
-  }
-  final extraBody = _safeStringKeyedMap(requestData['extra_body']);
-  final anthropic = _safeStringKeyedMap(extraBody['anthropic']);
-  final thinking = _safeStringKeyedMap(anthropic['thinking']);
-  final budgetRaw = thinking['budget_tokens'];
-  final anthropicBudget =
-      budgetRaw == null ? null : int.tryParse(budgetRaw.toString().trim());
-  if (anthropicBudget != null && anthropicBudget > 0) {
-    candidates.add(anthropicBudget);
-  }
-  if (candidates.isEmpty) return;
-  final budgetTokens = candidates.reduce(max);
-
-  final maxTokensRaw = requestData['max_tokens'];
-  final maxTokens = maxTokensRaw == null
-      ? null
-      : int.tryParse(maxTokensRaw.toString().trim());
-  if (maxTokens != null) {
-    if (maxTokens > budgetTokens) return;
-    requestData['max_tokens'] = budgetTokens + 1;
-    return;
-  }
-
-  // Some Claude-compatible backends apply a low implicit max_tokens default.
-  // Always set an explicit compatible value when thinking budget is enabled.
-  requestData['max_tokens'] = budgetTokens + 1;
-}
-
-int? _budgetTokensFromThinkingInput(_ThinkingInput input) {
-  if (input.budgetTokens != null) return input.budgetTokens!.clamp(0, 1 << 30);
-  if (input.tier != null) return _defaultBudgetTokensByTier[input.tier!];
-  return null;
-}
-
-Map<String, dynamic> _safeStringKeyedMap(dynamic value) {
-  if (value is! Map) return {};
-  final Map<String, dynamic> result = {};
-  value.forEach((key, val) {
-    if (key is String) result[key] = val;
-  });
-  return result;
-}
-
-void _mergeExtraBodyProvider(
-  Map<String, dynamic> requestData, {
-  required String providerKey,
-  required Map<String, dynamic> providerData,
-}) {
-  final Map<String, dynamic> extraBody =
-      _safeStringKeyedMap(requestData['extra_body']);
-
-  final Map<String, dynamic> mergedProvider =
-      _safeStringKeyedMap(extraBody[providerKey]);
-  mergedProvider.addAll(providerData);
-
-  extraBody[providerKey] = mergedProvider;
-  requestData['extra_body'] = extraBody;
-}
-
-bool _isAutoAspectRatio(String raw) {
-  final v = raw.trim().toLowerCase();
-  return v.isEmpty || v == 'auto' || v == '自动';
-}
-
-void _applyImageConfigToRequest({
-  required Map<String, dynamic> requestData,
-  required Map<String, dynamic> activeParams,
-  required String selectedModel,
-}) {
-  final imageConfig =
-      activeParams['_aurora_image_config'] ?? activeParams['image_config'];
-  if (imageConfig is! Map) return;
-
-  final isGemini = selectedModel.toLowerCase().contains('gemini');
-  if (!isGemini) return;
-
-  final aspectRatioRaw = imageConfig['aspect_ratio']?.toString();
-  final imageSizeRaw = imageConfig['image_size']?.toString();
-
-  final aspectRatio =
-      (aspectRatioRaw == null || _isAutoAspectRatio(aspectRatioRaw))
-          ? null
-          : aspectRatioRaw.trim();
-  final imageSize = (imageSizeRaw == null || imageSizeRaw.trim().isEmpty)
-      ? null
-      : imageSizeRaw.trim();
-
-  if (aspectRatio == null && imageSize == null) return;
-
-  requestData['image_config'] = {
-    if (aspectRatio != null) 'aspect_ratio': aspectRatio,
-    if (imageSize != null) 'image_size': imageSize,
-  };
-}
-
-void _applyThinkingConfigToRequest({
-  required Map<String, dynamic> requestData,
-  required Map<String, dynamic> activeParams,
-  required String selectedModel,
-  required String baseUrl,
-}) {
-  final thinkingConfig = activeParams['_aurora_thinking_config'];
-  bool thinkingEnabled = false;
-  String thinkingValue = '';
-  String thinkingMode = 'auto';
-
-  if (thinkingConfig != null && thinkingConfig is Map) {
-    thinkingEnabled = thinkingConfig['enabled'] == true;
-    thinkingValue = thinkingConfig['budget']?.toString() ?? '';
-    thinkingMode = thinkingConfig['mode']?.toString() ?? 'auto';
-  } else {
-    thinkingEnabled = activeParams['_aurora_thinking_enabled'] == true;
-    thinkingValue = activeParams['_aurora_thinking_value']?.toString() ?? '';
-    thinkingMode = activeParams['_aurora_thinking_mode']?.toString() ?? 'auto';
-  }
-
-  if (!thinkingEnabled) return;
-  final raw = thinkingValue.trim();
-  if (raw.isEmpty) return;
-
-  final modelFamily = _inferModelFamily(selectedModel);
-  if (thinkingMode == 'auto') {
-    if (modelFamily == _ModelFamily.gemini) {
-      thinkingMode = 'extra_body';
-    } else if (modelFamily == _ModelFamily.gemini3 ||
-        modelFamily == _ModelFamily.openai) {
-      thinkingMode = 'reasoning_effort';
-    } else if (modelFamily == _ModelFamily.anthropic) {
-      thinkingMode = 'extra_body';
-    } else {
-      thinkingMode = 'reasoning_effort';
-    }
-  }
-
-  final input = _parseThinkingInput(raw);
-
-  if (thinkingMode == 'extra_body') {
-    if (modelFamily == _ModelFamily.gemini ||
-        modelFamily == _ModelFamily.gemini3) {
-      final isGemini3 = modelFamily == _ModelFamily.gemini3;
-      if (isGemini3) {
-        final String level;
-        if (input.budgetTokens != null) {
-          level = _thinkingTierToGeminiEffort(
-              _tierFromBudgetForGemini3(input.budgetTokens!));
-        } else if (input.tier != null) {
-          level =
-              _thinkingTierToGeminiEffort(_coerceTierForGemini3(input.tier!));
-        } else {
-          level = input.raw.toLowerCase();
-        }
-        _mergeExtraBodyProvider(
-          requestData,
-          providerKey: 'google',
-          providerData: {
-            'thinking_config': {
-              'thinkingLevel': level,
-              'includeThoughts': true,
-            }
-          },
-        );
-      } else {
-        final budgetTokens = _budgetTokensFromThinkingInput(input);
-        if (budgetTokens == null) return;
-        _mergeExtraBodyProvider(
-          requestData,
-          providerKey: 'google',
-          providerData: {
-            'thinking_config': {
-              'thinking_budget': budgetTokens,
-              'include_thoughts': true,
-            }
-          },
-        );
-      }
-    } else if (modelFamily == _ModelFamily.anthropic) {
-      final budgetTokens = _budgetTokensFromThinkingInput(input);
-      if (budgetTokens == null) return;
-      _mergeExtraBodyProvider(
-        requestData,
-        providerKey: 'anthropic',
-        providerData: {
-          'thinking': {
-            'type': 'enabled',
-            'budget_tokens': budgetTokens,
-          }
-        },
-      );
-    }
-  } else if (thinkingMode == 'reasoning_effort') {
-    final supportsXHigh = _supportsXHighReasoningEffort(baseUrl, selectedModel);
-    String effort;
-    if (modelFamily == _ModelFamily.gemini3) {
-      if (input.budgetTokens != null) {
-        effort = _thinkingTierToGeminiEffort(
-            _tierFromBudgetForGemini3(input.budgetTokens!));
-      } else if (input.tier != null) {
-        effort =
-            _thinkingTierToGeminiEffort(_coerceTierForGemini3(input.tier!));
-      } else {
-        effort = input.raw.toLowerCase();
-      }
-    } else if (modelFamily == _ModelFamily.openai) {
-      if (input.budgetTokens != null) {
-        effort = _thinkingTierToOpenAIEffort(
-            _tierFromBudgetForOpenAI(input.budgetTokens!),
-            supportsXHigh: supportsXHigh);
-      } else if (input.tier != null) {
-        effort = _thinkingTierToOpenAIEffort(_coerceTierForOpenAI(input.tier!),
-            supportsXHigh: supportsXHigh);
-      } else {
-        effort = input.raw.toLowerCase();
-      }
-    } else {
-      effort = input.raw;
-    }
-    requestData['reasoning_effort'] = effort;
-  }
-}
+part 'openai/openai_attachments.dart';
+part 'openai/openai_provider_compat.dart';
+part 'openai/openai_request_builder.dart';
 
 class OpenAILLMService implements LLMService {
   final Dio _dio;
@@ -685,9 +31,25 @@ class OpenAILLMService implements LLMService {
           },
         ));
 
-  void _debugLog(String message) {
+  void _debugLog(String message,
+      {String level = 'DEBUG', String category = 'GENERAL'}) {
     assert(() {
-      debugPrint(message);
+      final normalizedMessage = message.replaceAll('\n', r'\n');
+      switch (level.toUpperCase()) {
+        case 'ERROR':
+          AppLogger.error('LLM', normalizedMessage, category: category);
+          break;
+        case 'WARN':
+          AppLogger.warn('LLM', normalizedMessage, category: category);
+          break;
+        case 'INFO':
+          AppLogger.info('LLM', normalizedMessage, category: category);
+          break;
+        case 'DEBUG':
+        default:
+          AppLogger.debug('LLM', normalizedMessage, category: category);
+          break;
+      }
       return true;
     }());
   }
@@ -695,6 +57,9 @@ class OpenAILLMService implements LLMService {
   dynamic _sanitizeForLog(dynamic data) {
     if (data is Map) {
       return data.map((k, v) {
+        if (k == 'messages' && v is List) {
+          return MapEntry(k, _summarizeMessagesForLog(v));
+        }
         if (k == 'b64_json' && v is String && v.length > 200) {
           return MapEntry(
               k, '${v.substring(0, 50)}...[TRUNCATED ${v.length} chars]');
@@ -711,6 +76,9 @@ class OpenAILLMService implements LLMService {
     } else if (data is List) {
       return data.map((i) => _sanitizeForLog(i)).toList();
     } else if (data is String) {
+      if (data.length > 800) {
+        return '${data.substring(0, 200)}...[TRUNCATED ${data.length} chars]';
+      }
       if (data.startsWith('data:') && data.length > 200) {
         return '${data.substring(0, 50)}...[TRUNCATED ${data.length} chars]';
       }
@@ -718,53 +86,129 @@ class OpenAILLMService implements LLMService {
     return data;
   }
 
-  void _prettyPrintLog(String title, String emoji, dynamic content) {
-    assert(() {
-      final now = DateTime.now();
-      final timestamp =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+  Map<String, dynamic> _summarizeMessagesForLog(List<dynamic> messages) {
+    const maxRecentMessages = 2;
+    final roleCounts = <String, int>{};
 
-      final buffer = StringBuffer();
-      buffer.writeln(
-          '$emoji ┌─────────────────────────────────────────────────────────────────────────');
-      buffer.writeln('$emoji │ $title');
-      buffer.writeln(
-          '$emoji ├─────────────────────────────────────────────────────────────────────────');
-      buffer.writeln('$emoji │ Time: $timestamp');
+    for (final item in messages) {
+      if (item is Map) {
+        final role = (item['role'] ?? 'unknown').toString();
+        roleCounts[role] = (roleCounts[role] ?? 0) + 1;
+      }
+    }
 
-      if (content is Map) {
-        if (content.containsKey('url')) {
-          buffer.writeln('$emoji │ URL: ${content['url']}');
-        }
-        if (content.containsKey('payload')) {
-          buffer.writeln('$emoji │ Payload:');
-          const encoder = JsonEncoder.withIndent('  ');
-          final prettyJson = encoder.convert(content['payload']);
-          // Add indentation to each line of the JSON
-          final lines = prettyJson.split('\n');
-          for (var line in lines) {
-            buffer.writeln('$emoji │   $line');
+    final total = messages.length;
+    final keep = total > maxRecentMessages ? maxRecentMessages : total;
+    final recent = keep == 0
+        ? const <Map<String, dynamic>>[]
+        : messages.sublist(total - keep).map(_summarizeMessageForLog).toList();
+
+    return {
+      'total_messages': total,
+      'omitted_messages': total - keep,
+      'role_counts': roleCounts,
+      'recent_messages': recent,
+    };
+  }
+
+  Map<String, dynamic> _summarizeMessageForLog(dynamic raw) {
+    if (raw is! Map) {
+      return {
+        'role': 'unknown',
+        'preview': _sanitizeForLog(raw.toString()),
+      };
+    }
+
+    final content = raw['content'];
+    return {
+      'role': (raw['role'] ?? 'unknown').toString(),
+      if (raw['name'] != null) 'name': raw['name'].toString(),
+      ..._summarizeMessageContentForLog(content),
+    };
+  }
+
+  Map<String, dynamic> _summarizeMessageContentForLog(dynamic content) {
+    if (content is String) {
+      return {
+        'content_type': 'text',
+        'content_length': content.length,
+        'content_preview': _sanitizeForLog(content),
+      };
+    }
+
+    if (content is List) {
+      int textParts = 0;
+      int imageParts = 0;
+      int otherParts = 0;
+      String? textPreview;
+
+      for (final item in content) {
+        if (item is Map) {
+          final type = (item['type'] ?? 'unknown').toString();
+          if (type == 'text') {
+            textParts++;
+            final text = item['text']?.toString() ?? '';
+            if (textPreview == null && text.isNotEmpty) {
+              textPreview = _sanitizeForLog(text).toString();
+            }
+          } else if (type == 'image_url') {
+            imageParts++;
+          } else {
+            otherParts++;
           }
         } else {
-          const encoder = JsonEncoder.withIndent('  ');
-          final prettyJson = encoder.convert(content);
-          final lines = prettyJson.split('\n');
-          for (var line in lines) {
-            buffer.writeln('$emoji │ $line');
-          }
+          otherParts++;
         }
-      } else if (content is String) {
-        final lines = content.split('\n');
-        for (var line in lines) {
-          buffer.writeln('$emoji │ $line');
-        }
-      } else {
-        buffer.writeln('$emoji │ $content');
       }
 
-      buffer.writeln(
-          '$emoji └─────────────────────────────────────────────────────────────────────────');
-      debugPrint(buffer.toString());
+      return {
+        'content_type': 'multipart',
+        'parts': content.length,
+        'text_parts': textParts,
+        'image_parts': imageParts,
+        'other_parts': otherParts,
+        if (textPreview != null) 'text_preview': textPreview,
+      };
+    }
+
+    return {
+      'content_type': 'other',
+      'content_preview': _sanitizeForLog(content.toString()),
+    };
+  }
+
+  void _logEvent(String category, dynamic payload, {String level = 'DEBUG'}) {
+    assert(() {
+      final sanitized = _sanitizeForLog(payload);
+      var effectiveCategory = category;
+      var effectiveLevel = level.toUpperCase();
+      dynamic effectivePayload = sanitized;
+      try {
+        jsonEncode(sanitized);
+      } catch (e) {
+        effectivePayload = 'Log serialization failed: $e';
+        effectiveLevel = 'ERROR';
+        effectiveCategory = 'LOG_SERIALIZATION';
+      }
+      switch (effectiveLevel) {
+        case 'ERROR':
+          AppLogger.error('LLM', 'event',
+              category: effectiveCategory, data: effectivePayload);
+          break;
+        case 'WARN':
+          AppLogger.warn('LLM', 'event',
+              category: effectiveCategory, data: effectivePayload);
+          break;
+        case 'INFO':
+          AppLogger.info('LLM', 'event',
+              category: effectiveCategory, data: effectivePayload);
+          break;
+        case 'DEBUG':
+        default:
+          AppLogger.debug('LLM', 'event',
+              category: effectiveCategory, data: effectivePayload);
+          break;
+      }
       return true;
     }());
   }
@@ -772,13 +216,10 @@ class OpenAILLMService implements LLMService {
   void _logRequest(String url, Map<String, dynamic> data) {
     assert(() {
       try {
-        final sanitized = _sanitizeForLog(data);
-        _prettyPrintLog('LLM REQUEST', '🔵', {
-          'url': url,
-          'payload': sanitized,
-        });
+        AppLogger.llmRequest(url: url, payload: _sanitizeForLog(data));
       } catch (e) {
-        debugPrint('🔴 [LLM REQUEST LOG ERROR]: $e');
+        AppLogger.error('LLM', 'Request log error: $e',
+            category: 'REQUEST_LOG');
       }
       return true;
     }());
@@ -787,10 +228,10 @@ class OpenAILLMService implements LLMService {
   void _logResponse(dynamic data) {
     assert(() {
       try {
-        final sanitized = _sanitizeForLog(data);
-        _prettyPrintLog('LLM RESPONSE', '🟢', sanitized);
+        AppLogger.llmResponse(payload: _sanitizeForLog(data));
       } catch (e) {
-        debugPrint('🔴 [LLM RESPONSE LOG ERROR]: $e');
+        AppLogger.error('LLM', 'Response log error: $e',
+            category: 'RESPONSE_LOG');
       }
       return true;
     }());
@@ -803,162 +244,31 @@ class OpenAILLMService implements LLMService {
       String? model,
       String? providerId,
       CancelToken? cancelToken}) async* {
-    final provider = providerId != null
-        ? _settings.providers.firstWhere((p) => p.id == providerId,
-            orElse: () => _settings.activeProvider)
-        : _settings.activeProvider;
-    final selectedModel = model ?? provider.selectedModel ?? 'gpt-3.5-turbo';
-    final apiKey = provider.apiKey;
-    final baseUrl = provider.baseUrl.endsWith('/')
-        ? provider.baseUrl
-        : '${provider.baseUrl}/';
-    if (apiKey.isEmpty) {
-      final message = _settings.language == 'zh'
-          ? '错误：API Key 为空。请检查设置。'
-          : 'Error: API key is empty. Please check your settings.';
-      yield LLMResponseChunk(content: message);
+    final provider = _resolveProvider(providerId);
+    final selectedModel = _resolveSelectedModel(
+      provider: provider,
+      requestedModel: model,
+    );
+    if (selectedModel == null) {
+      yield LLMResponseChunk(content: _missingModelMessage());
+      return;
+    }
+    if (provider.apiKey.isEmpty) {
+      yield LLMResponseChunk(content: _emptyApiKeyMessage());
       return;
     }
     try {
-      List<Map<String, dynamic>> apiMessages =
-          await _buildApiMessages(messages);
-      apiMessages = _sanitizeOutgoingImageMessages(apiMessages);
-      apiMessages = await _compressApiMessagesIfNeeded(apiMessages);
-      final now = DateTime.now();
-      final dateStr = now.toIso8601String().split('T')[0];
-      final timeInstruction = 'Current Date: $dateStr.';
-      final systemMsgIndex =
-          apiMessages.indexWhere((m) => m['role'] == 'system');
-      if (systemMsgIndex != -1) {
-        final oldContent = apiMessages[systemMsgIndex]['content'];
-        if (!oldContent.toString().contains('Current Date:')) {
-          apiMessages[systemMsgIndex]['content'] =
-              '$timeInstruction\n\n$oldContent';
-        }
-      } else {
-        apiMessages.insert(0, {'role': 'system', 'content': timeInstruction});
-      }
-
-      // Determine effective model settings
-      Map<String, dynamic> activeParams = {};
-
-      // 1. Get Global Settings (if enabled and not excluded)
-      final bool isExcluded =
-          provider.globalExcludeModels.contains(selectedModel);
-      if (!isExcluded) {
-        activeParams.addAll(provider.globalSettings);
-      }
-
-      // 2. Override with Specific Model Settings
-      if (provider.modelSettings.containsKey(selectedModel)) {
-        final specific = provider.modelSettings[selectedModel]!;
-        activeParams.addAll(specific);
-      }
-
-      final Map<String, dynamic> requestData = {
-        'model': selectedModel,
-        'messages': apiMessages,
-        'stream': true,
-        'stream_options': {'include_usage': true},
-      };
-
-      if (tools != null && tools.isNotEmpty) {
-        requestData['tools'] = tools;
-        if (toolChoice != null) {
-          requestData['tool_choice'] = toolChoice;
-        }
-      }
-
-      if (_settings.isSearchEnabled) {
-        final sysIdx = apiMessages.indexWhere((m) => m['role'] == 'system');
-        if (sysIdx != -1) {
-          final oldContent = apiMessages[sysIdx]['content'];
-          final searchGuide = '''
-## Web Search Capability
-You have access to web search. When you need to search for current information, output a search tag in this exact format:
-<search>your search query here</search>
-
-### When to Use
-Use search for:
-1. **Latest Information**: Current events, news, weather, sports scores
-2. **Fact Checking**: Verification of claims or data
-3. **Specific Knowledge**: Technical documentation or niche topics not in your training data
-
-### Important Rules
-- Output ONLY ONE <search> tag per response when you need to search
-- After outputting the search tag, STOP your response and wait for results
-- Do NOT make up search results - wait for real data
-- When you receive search results, cite sources using `[index](link)` format immediately after the relevant fact
-''';
-          if (!oldContent.toString().contains('Web Search Capability')) {
-            apiMessages[sysIdx]['content'] = '$oldContent\n\n$searchGuide';
-          }
-        }
-      }
-
-      // Add Custom Parameters (Global + Specific merged)
-      final filteredParams = Map<String, dynamic>.fromEntries(
-          activeParams.entries.where((e) => !e.key.startsWith('_aurora_')));
-      // Provider-level customParameters are always added (Base)
-
-      final providerParams = Map<String, dynamic>.fromEntries(
-          provider.customParameters.entries.where((e) {
-        final key = e.key.toLowerCase();
-        return key != 'api_keys' &&
-            key != 'base_url' &&
-            key != 'id' &&
-            key != 'name' &&
-            key != 'models' &&
-            key != 'color' &&
-            key != 'is_custom' &&
-            key != 'is_enabled' &&
-            !e.key.startsWith('_aurora_');
-      }));
-      requestData.addAll(providerParams);
-      requestData.addAll(filteredParams);
-
-      // Handle Generation Config (temperature, max_tokens, context_length)
-      final generationConfig = activeParams['_aurora_generation_config'];
-      if (generationConfig != null && generationConfig is Map) {
-        final temp = generationConfig['temperature'];
-        if (temp != null && temp.toString().isNotEmpty) {
-          final tempVal = double.tryParse(temp.toString());
-          if (tempVal != null) requestData['temperature'] = tempVal;
-        }
-        final maxTok = generationConfig['max_tokens'];
-        if (maxTok != null && maxTok.toString().isNotEmpty) {
-          final maxTokVal = int.tryParse(maxTok.toString());
-          if (maxTokVal != null) requestData['max_tokens'] = maxTokVal;
-        }
-        // Handle Context Length (Truncate history)
-        final ctxLen = generationConfig['context_length'];
-        if (ctxLen != null && ctxLen.toString().isNotEmpty) {
-          final limit = int.tryParse(ctxLen.toString());
-          if (limit != null && limit > 0) {
-            apiMessages = _limitContextLength(apiMessages, limit);
-            requestData['messages'] = apiMessages; // Update messages in request
-          }
-        }
-      }
-
-      // Handle Thinking Config (auto maps number/level to model-specific API)
-      _applyThinkingConfigToRequest(
-        requestData: requestData,
-        activeParams: activeParams,
+      final prepared = await _buildPreparedChatRequest(
+        messages: messages,
+        provider: provider,
         selectedModel: selectedModel,
-        baseUrl: baseUrl,
+        stream: true,
+        tools: tools,
+        toolChoice: toolChoice,
       );
-      _ensureReasoningEffortCompatibleMaxTokens(
-        requestData: requestData,
-        selectedModel: selectedModel,
-      );
-
-      // Handle Image Config (for gemini image models)
-      _applyImageConfigToRequest(
-        requestData: requestData,
-        activeParams: activeParams,
-        selectedModel: selectedModel,
-      );
+      final baseUrl = prepared.baseUrl;
+      final apiKey = prepared.apiKey;
+      final requestData = prepared.requestData;
 
       _logRequest('${baseUrl}chat/completions', requestData);
       Response<ResponseBody> response;
@@ -1019,7 +329,7 @@ Use search for:
           if (line.startsWith('data: ')) {
             final data = line.substring(6).trim();
             if (data == '[DONE]') {
-              _debugLog('🟢 [LLM RESPONSE STREAM]: [DONE]');
+              _debugLog('DONE', category: 'STREAM');
               return;
             }
             try {
@@ -1267,8 +577,8 @@ Use search for:
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) {
-        _prettyPrintLog('LLM REQUEST CANCELLED', '🔵',
-            'Request was cancelled by the user.');
+        _debugLog('Request was cancelled by the user.',
+            level: 'INFO', category: 'REQUEST_CANCELLED');
         return;
       }
       final statusCode = e.response?.statusCode;
@@ -1297,13 +607,13 @@ Use search for:
       try {
         if (e.response?.data != null) {
           final responseData = e.response?.data;
-          _prettyPrintLog('LLM ERROR RESPONSE', '🔴', responseData);
+          _logEvent('ERROR_RESPONSE', responseData, level: 'ERROR');
           if (responseData is ResponseBody) {
             final stream = responseData.stream;
             final bytes = await stream
                 .fold<List<int>>([], (prev, chunk) => prev..addAll(chunk));
             final errorBody = utf8.decode(bytes);
-            _prettyPrintLog('LLM ERROR BODY', '🔴', errorBody);
+            _logEvent('ERROR_BODY', errorBody, level: 'ERROR');
             try {
               final json = jsonDecode(errorBody);
               if (json is Map) {
@@ -1636,142 +946,29 @@ Use search for:
       String? model,
       String? providerId,
       CancelToken? cancelToken}) async {
-    final provider = providerId != null
-        ? _settings.providers.firstWhere((p) => p.id == providerId,
-            orElse: () => _settings.activeProvider)
-        : _settings.activeProvider;
-    final selectedModel = model ?? provider.selectedModel ?? 'gpt-3.5-turbo';
-    final apiKey = provider.apiKey;
-    final baseUrl = provider.baseUrl.endsWith('/')
-        ? provider.baseUrl
-        : '${provider.baseUrl}/';
-    if (apiKey.isEmpty) {
-      final message = _settings.language == 'zh'
-          ? '错误：API Key 为空。请检查设置。'
-          : 'Error: API key is empty. Please check your settings.';
-      return LLMResponseChunk(content: message);
+    final provider = _resolveProvider(providerId);
+    final selectedModel = _resolveSelectedModel(
+      provider: provider,
+      requestedModel: model,
+    );
+    if (selectedModel == null) {
+      return LLMResponseChunk(content: _missingModelMessage());
+    }
+    if (provider.apiKey.isEmpty) {
+      return LLMResponseChunk(content: _emptyApiKeyMessage());
     }
     try {
-      List<Map<String, dynamic>> apiMessages =
-          await _buildApiMessages(messages);
-      apiMessages = _sanitizeOutgoingImageMessages(apiMessages);
-      apiMessages = await _compressApiMessagesIfNeeded(apiMessages);
-      final now = DateTime.now();
-      final dateStr = now.toIso8601String().split('T')[0];
-      final timeInstruction = 'Current Date: $dateStr. Today is ${now.year}.';
-      final systemMsgIndex =
-          apiMessages.indexWhere((m) => m['role'] == 'system');
-      if (systemMsgIndex != -1) {
-        final oldContent = apiMessages[systemMsgIndex]['content'];
-        if (!oldContent.toString().contains('Current Date:')) {
-          apiMessages[systemMsgIndex]['content'] =
-              '$timeInstruction\n\n$oldContent';
-        }
-      } else {
-        apiMessages.insert(0, {'role': 'system', 'content': timeInstruction});
-      }
-
-      // Determine effective model settings
-      Map<String, dynamic> activeParams = {};
-
-      // 1. Get Global Settings (if enabled and not excluded)
-      final bool isExcluded =
-          provider.globalExcludeModels.contains(selectedModel);
-      if (!isExcluded) {
-        activeParams.addAll(provider.globalSettings);
-      }
-
-      // 2. Override with Specific Model Settings
-      if (provider.modelSettings.containsKey(selectedModel)) {
-        final specific = provider.modelSettings[selectedModel]!;
-        activeParams.addAll(specific);
-      }
-
-      final Map<String, dynamic> requestData = {
-        'model': selectedModel,
-        'messages': apiMessages,
-        'stream': false,
-      };
-
-      if (tools != null && tools.isNotEmpty) {
-        requestData['tools'] = tools;
-        if (toolChoice != null) {
-          requestData['tool_choice'] = toolChoice;
-        }
-      }
-
-      if (_settings.isSearchEnabled) {
-        final sysIdx = apiMessages.indexWhere((m) => m['role'] == 'system');
-        if (sysIdx != -1) {
-          final oldContent = apiMessages[sysIdx]['content'];
-          const searchGuide =
-              'You have access to a web search tool. Use it for current information.';
-          if (!oldContent.toString().contains('web search tool')) {
-            apiMessages[sysIdx]['content'] = '$oldContent\n\n$searchGuide';
-          }
-        }
-      }
-
-      // Add Custom Parameters (Global + Specific merged)
-      final filteredParams = Map<String, dynamic>.fromEntries(
-          activeParams.entries.where((e) => !e.key.startsWith('_aurora_')));
-      // Provider-level customParameters are always added (Base)
-      final providerParams = Map<String, dynamic>.fromEntries(
-          provider.customParameters.entries.where((e) {
-        final key = e.key.toLowerCase();
-        return key != 'api_keys' &&
-            key != 'base_url' &&
-            key != 'id' &&
-            key != 'name' &&
-            key != 'models' &&
-            key != 'color' &&
-            key != 'is_custom' &&
-            key != 'is_enabled' &&
-            !e.key.startsWith('_aurora_');
-      }));
-      requestData.addAll(providerParams);
-      requestData.addAll(filteredParams);
-
-      // Handle Generation Config (temperature, max_tokens)
-      final generationConfig = activeParams['_aurora_generation_config'];
-      if (generationConfig != null && generationConfig is Map) {
-        final temp = generationConfig['temperature'];
-        if (temp != null && temp.toString().isNotEmpty) {
-          final tempVal = double.tryParse(temp.toString());
-          if (tempVal != null) requestData['temperature'] = tempVal;
-        }
-        final maxTok = generationConfig['max_tokens'];
-        if (maxTok != null && maxTok.toString().isNotEmpty) {
-          final maxTokVal = int.tryParse(maxTok.toString());
-          if (maxTokVal != null) requestData['max_tokens'] = maxTokVal;
-        }
-        // Handle Context Length (Truncate history)
-        final ctxLen = generationConfig['context_length'];
-        if (ctxLen != null && ctxLen.toString().isNotEmpty) {
-          final limit = int.tryParse(ctxLen.toString());
-          if (limit != null && limit > 0) {
-            apiMessages = _limitContextLength(apiMessages, limit);
-            requestData['messages'] = apiMessages; // Update messages in request
-          }
-        }
-      }
-
-      // Handle Thinking Config (auto maps number/level to model-specific API)
-      _applyThinkingConfigToRequest(
-        requestData: requestData,
-        activeParams: activeParams,
+      final prepared = await _buildPreparedChatRequest(
+        messages: messages,
+        provider: provider,
         selectedModel: selectedModel,
-        baseUrl: baseUrl,
+        stream: false,
+        tools: tools,
+        toolChoice: toolChoice,
       );
-      _ensureReasoningEffortCompatibleMaxTokens(
-        requestData: requestData,
-        selectedModel: selectedModel,
-      );
-      _applyImageConfigToRequest(
-        requestData: requestData,
-        activeParams: activeParams,
-        selectedModel: selectedModel,
-      );
+      final baseUrl = prepared.baseUrl;
+      final apiKey = prepared.apiKey;
+      final requestData = prepared.requestData;
 
       _logRequest('${baseUrl}chat/completions', requestData);
       final response = await _dio.post(
@@ -1866,7 +1063,8 @@ Use search for:
       return const LLMResponseChunk(content: '');
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) {
-        _debugLog('🔵 [LLM REQUEST CANCELLED]');
+        _debugLog('Request was cancelled by the user.',
+            level: 'INFO', category: 'REQUEST_CANCELLED');
         return const LLMResponseChunk(content: '');
       }
       final statusCode = e.response?.statusCode;
@@ -1895,7 +1093,7 @@ Use search for:
       try {
         if (e.response?.data != null) {
           final data = e.response?.data;
-          _debugLog('🔴 [LLM ERROR RESPONSE]: $data');
+          _logEvent('ERROR_RESPONSE', data, level: 'ERROR');
           if (data is Map) {
             final error = data['error'];
             if (error is Map && error['message'] != null) {
@@ -2044,7 +1242,8 @@ Use search for:
         }
       }
     } catch (e) {
-      debugPrint('Docx deep processing failed: $e');
+      _debugLog('Docx deep processing failed: $e',
+          level: 'WARN', category: 'DOCX_PARSE');
     }
     return parts;
   }

@@ -366,6 +366,16 @@
   "noProjectSelected": "未选择项目",
   "createYourFirstProject": "开始你的创作吧",
   "createProjectDescription": "新建一个项目来开始编写你的故事大纲和章节。",
+  "styleImitation": "文风模仿",
+  "styleSampleHint": "粘贴一段例文，AI 将分析其文风特征供写作参考",
+  "styleSamplePlaceholder": "在此粘贴例文...",
+  "analyzeStyle": "分析文风",
+  "analyzingStyle": "分析中...",
+  "styleAnalysisResult": "文风分析结果",
+  "clearStyle": "清除文风",
+  "styleAnalyzed": "已分析",
+  "styleNotAnalyzed": "未设置",
+  "clearStyleConfirm": "确定要清除文风设置吗？这将同时清除例文和分析结果。",
   
   "aboutAurora": "关于 Aurora",
   "crossPlatformLlmClient": "一个跨平台 LLM 客户端",
@@ -1056,5 +1066,7 @@
       }
     }
   },
-  "cleanerLlmSuggestionFallback": "LLM 建议"
+  "cleanerLlmSuggestionFallback": "LLM 建议",
+  "novelUnlimitedMode": "破限",
+  "novelUnlimitedModeHint": "启用不受限制的创作模式，注入角色扮演指令"
 }

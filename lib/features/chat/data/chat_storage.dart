@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:aurora/shared/utils/translation_prompt_utils.dart';
 import 'package:flutter/foundation.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import '../../settings/data/settings_storage.dart';
 import 'message_entity.dart';
 import 'session_entity.dart';

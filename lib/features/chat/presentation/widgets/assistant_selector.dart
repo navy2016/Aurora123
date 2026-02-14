@@ -2,7 +2,7 @@ import 'package:aurora/features/assistant/presentation/widgets/assistant_avatar.
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/features/assistant/presentation/assistant_provider.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 
@@ -181,3 +181,4 @@ class _AssistantSelectorState extends ConsumerState<AssistantSelector> {
     );
   }
 }
+

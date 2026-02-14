@@ -7,7 +7,7 @@ import 'package:aurora/features/studio/presentation/widgets/studio_surface_compo
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 
 enum _DesktopSizeFilter {
   all,
@@ -1336,3 +1336,4 @@ class _StudioStorageCleaningPageState
     return '${value.toStringAsFixed(fractionDigits)} ${units[index]}';
   }
 }
+
