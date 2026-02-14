@@ -112,7 +112,7 @@ const AssistantMemoryJobEntitySchema = CollectionSchema(
   getId: _assistantMemoryJobEntityGetId,
   getLinks: _assistantMemoryJobEntityGetLinks,
   attach: _assistantMemoryJobEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _assistantMemoryJobEntityEstimateSize(

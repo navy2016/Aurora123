@@ -121,7 +121,7 @@ const AssistantEntitySchema = CollectionSchema(
   getId: _assistantEntityGetId,
   getLinks: _assistantEntityGetLinks,
   attach: _assistantEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _assistantEntityEstimateSize(

@@ -63,7 +63,7 @@ const ChatPresetEntitySchema = CollectionSchema(
   getId: _chatPresetEntityGetId,
   getLinks: _chatPresetEntityGetLinks,
   attach: _chatPresetEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _chatPresetEntityEstimateSize(

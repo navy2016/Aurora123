@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'desktop/desktop_chat_screen.dart';
 import 'mobile/mobile_chat_screen.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
@@ -15,3 +15,4 @@ class ChatScreen extends ConsumerWidget {
     }
   }
 }
+

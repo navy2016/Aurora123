@@ -1,6 +1,6 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 
@@ -561,3 +561,4 @@ class _MobileKnowledgeSettingsPageState
     );
   }
 }
+

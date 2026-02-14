@@ -2,7 +2,7 @@ import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:aurora/features/knowledge/domain/knowledge_models.dart';
 import 'package:aurora/shared/widgets/aurora_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:file_selector/file_selector.dart';
 import '../novel/novel_provider.dart';
@@ -1402,3 +1402,4 @@ class _MobileNovelWritingPageState extends ConsumerState<MobileNovelWritingPage>
     );
   }
 }
+

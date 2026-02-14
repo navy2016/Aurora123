@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
@@ -679,3 +679,4 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
     );
   }
 }
+

@@ -1,7 +1,7 @@
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:intl/intl.dart';
 import 'package:aurora/features/chat/presentation/chat_provider.dart';
 import 'package:aurora/features/chat/presentation/topic_provider.dart';
@@ -927,3 +927,4 @@ class SessionListWidget extends ConsumerWidget {
     );
   }
 }
+

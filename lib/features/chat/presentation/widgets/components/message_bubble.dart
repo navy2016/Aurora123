@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 
 import '../selectable_markdown/animated_streaming_markdown.dart';
 import 'package:super_clipboard/super_clipboard.dart';
@@ -989,3 +989,4 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
     );
   }
 }
+

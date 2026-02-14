@@ -4,7 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:super_clipboard/super_clipboard.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
@@ -1956,3 +1956,4 @@ class _StyleImitationDialogContentState
     );
   }
 }
+

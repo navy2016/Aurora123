@@ -136,7 +136,7 @@ const KnowledgeBaseEntitySchema = CollectionSchema(
   getId: _knowledgeBaseEntityGetId,
   getLinks: _knowledgeBaseEntityGetLinks,
   attach: _knowledgeBaseEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _knowledgeBaseEntityEstimateSize(
@@ -2104,7 +2104,7 @@ const KnowledgeDocumentEntitySchema = CollectionSchema(
   getId: _knowledgeDocumentEntityGetId,
   getLinks: _knowledgeDocumentEntityGetLinks,
   attach: _knowledgeDocumentEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _knowledgeDocumentEntityEstimateSize(
@@ -4281,7 +4281,7 @@ const KnowledgeChunkEntitySchema = CollectionSchema(
   getId: _knowledgeChunkEntityGetId,
   getLinks: _knowledgeChunkEntityGetLinks,
   attach: _knowledgeChunkEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _knowledgeChunkEntityEstimateSize(

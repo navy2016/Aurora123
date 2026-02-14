@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:aurora/l10n/app_localizations.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
 
 class ReasoningDisplay extends ConsumerStatefulWidget {
@@ -236,3 +236,4 @@ class _ReasoningDisplayState extends ConsumerState<ReasoningDisplay>
     );
   }
 }
+

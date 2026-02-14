@@ -1,6 +1,6 @@
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import '../domain/message.dart';
 import 'chat_provider.dart';
 import '../../settings/presentation/settings_provider.dart';
@@ -504,3 +504,4 @@ class _LanguageDropdown extends StatelessWidget {
     );
   }
 }
+

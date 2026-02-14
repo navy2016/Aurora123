@@ -83,7 +83,7 @@ const SessionEntitySchema = CollectionSchema(
   getId: _sessionEntityGetId,
   getLinks: _sessionEntityGetLinks,
   attach: _sessionEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _sessionEntityEstimateSize(

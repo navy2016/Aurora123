@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../settings/presentation/settings_provider.dart';
@@ -171,3 +171,4 @@ class SyncNotifier extends StateNotifier<SyncState> {
     }
   }
 }
+

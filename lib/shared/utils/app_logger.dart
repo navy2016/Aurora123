@@ -17,6 +17,7 @@ class AppLogger {
   static bool _installed = false;
   static bool _useColor = true;
   static bool _prettyJson = true;
+  static AppLogLevel _minLevel = AppLogLevel.debug;
 
   static const String _reset = '\x1B[0m';
   static const String _dim = '\x1B[90m';
@@ -25,10 +26,21 @@ class AppLogger {
   static const String _yellow = '\x1B[33m';
   static const String _red = '\x1B[31m';
 
-  static void install({bool useColor = true, bool prettyJson = true}) {
+  static void install({
+    bool useColor = true,
+    bool prettyJson = true,
+    bool allowVerboseInRelease = false,
+    AppLogLevel? minLevel,
+  }) {
     if (_installed) return;
     _useColor = useColor;
     _prettyJson = prettyJson;
+    final verboseRelease =
+        allowVerboseInRelease || _envFlag('AURORA_VERBOSE_LOGS');
+    _minLevel = minLevel ??
+        (kReleaseMode && !verboseRelease
+            ? AppLogLevel.warn
+            : AppLogLevel.debug);
 
     debugPrint = (String? message, {int? wrapWidth}) {
       if (message == null || message.trim().isEmpty) return;
@@ -36,6 +48,12 @@ class AppLogger {
     };
 
     _installed = true;
+  }
+
+  static AppLogLevel get minLevel => _minLevel;
+
+  static void setMinLevel(AppLogLevel level) {
+    _minLevel = level;
   }
 
   static ZoneSpecification zoneSpecification() {
@@ -133,6 +151,11 @@ class AppLogger {
     String? colorOverride,
     int? wrapWidth,
   }) {
+    if (!_shouldLog(level)) return;
+
+    final sanitizedMessage = _sanitizeText(message).trim();
+    final sanitizedData = _sanitizeData(data);
+
     final header = StringBuffer();
     header.write('[${_timestamp()}]');
     header.write('[${_levelName(level)}]');
@@ -140,11 +163,11 @@ class AppLogger {
     if (category != null && category.isNotEmpty) {
       header.write('[$category]');
     }
-    if (message.trim().isNotEmpty) {
-      header.write(' ${message.trim()}');
+    if (sanitizedMessage.isNotEmpty) {
+      header.write(' $sanitizedMessage');
     }
 
-    final dataText = _formatData(data);
+    final dataText = _formatData(sanitizedData);
     final text = dataText.isEmpty
         ? header.toString()
         : '${header.toString()}\n${_indent(dataText, 2)}';
@@ -340,6 +363,129 @@ class AppLogger {
 
   static bool _disableAnsiByEnv() {
     return Platform.environment.containsKey('NO_COLOR');
+  }
+
+  static bool _shouldLog(AppLogLevel level) {
+    return _levelWeight(level) >= _levelWeight(_minLevel);
+  }
+
+  static int _levelWeight(AppLogLevel level) {
+    switch (level) {
+      case AppLogLevel.debug:
+        return 10;
+      case AppLogLevel.info:
+        return 20;
+      case AppLogLevel.warn:
+        return 30;
+      case AppLogLevel.error:
+        return 40;
+    }
+  }
+
+  static bool _envFlag(String name) {
+    final raw = Platform.environment[name];
+    if (raw == null) return false;
+    final normalized = raw.trim().toLowerCase();
+    return normalized == '1' ||
+        normalized == 'true' ||
+        normalized == 'yes' ||
+        normalized == 'on';
+  }
+
+  static Object? _sanitizeData(Object? value, {String? keyHint}) {
+    if (value == null) return null;
+    if (value is Map) {
+      final sanitized = <String, dynamic>{};
+      value.forEach((key, mapValue) {
+        final textKey = key.toString();
+        if (_isSensitiveKey(textKey)) {
+          sanitized[textKey] = '[REDACTED]';
+          return;
+        }
+        sanitized[textKey] = _sanitizeData(mapValue, keyHint: textKey);
+      });
+      return sanitized;
+    }
+    if (value is List) {
+      return value
+          .map((item) => _sanitizeData(item, keyHint: keyHint))
+          .toList();
+    }
+    if (value is String) {
+      if (keyHint != null) {
+        if (_isSensitiveKey(keyHint)) return '[REDACTED]';
+        if (_isContentKey(keyHint) && value.trim().isNotEmpty) {
+          return '[REDACTED_TEXT len=${value.length}]';
+        }
+      }
+      return _sanitizeText(value);
+    }
+    return value;
+  }
+
+  static bool _isSensitiveKey(String key) {
+    final lower = key.toLowerCase();
+    const hints = [
+      'api_key',
+      'apikey',
+      'key',
+      'token',
+      'password',
+      'secret',
+      'authorization',
+      'cookie',
+    ];
+    for (final hint in hints) {
+      if (lower.contains(hint)) return true;
+    }
+    return false;
+  }
+
+  static bool _isContentKey(String key) {
+    final lower = key.toLowerCase();
+    const hints = [
+      'content',
+      'message',
+      'messages',
+      'prompt',
+      'text',
+      'reasoning',
+    ];
+    for (final hint in hints) {
+      if (lower.contains(hint)) return true;
+    }
+    return false;
+  }
+
+  static String _sanitizeText(String input) {
+    var output = input;
+
+    output = output.replaceAllMapped(
+      RegExp(r'\b(bearer)\s+[A-Za-z0-9._~+\-/=]{12,}\b', caseSensitive: false),
+      (match) => '${match.group(1)} [REDACTED]',
+    );
+    output = output.replaceAllMapped(
+      RegExp(r'\bsk-[A-Za-z0-9_-]{12,}\b', caseSensitive: false),
+      (_) => 'sk-[REDACTED]',
+    );
+    output = output.replaceAllMapped(
+      RegExp(r'\b[A-Z]:\\[^\s"]+', caseSensitive: false),
+      (match) => _redactPathToken(match.group(0)!),
+    );
+    output = output.replaceAllMapped(
+      RegExp(r'/(?:Users|home|var|private|tmp|data)/[^\s"]+'),
+      (match) => _redactPathToken(match.group(0)!),
+    );
+
+    return output;
+  }
+
+  static String _redactPathToken(String rawPath) {
+    final normalized = rawPath.replaceAll('\\', '/');
+    final parts =
+        normalized.split('/').where((part) => part.isNotEmpty).toList();
+    if (parts.isEmpty) return '<path>';
+    return '<path:${parts.last}>';
   }
 
   static String _indent(String text, int spaces) {

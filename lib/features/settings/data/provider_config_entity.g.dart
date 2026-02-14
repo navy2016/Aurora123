@@ -129,7 +129,7 @@ const ProviderConfigEntitySchema = CollectionSchema(
   getId: _providerConfigEntityGetId,
   getLinks: _providerConfigEntityGetLinks,
   attach: _providerConfigEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _providerConfigEntityEstimateSize(
@@ -3590,7 +3590,7 @@ const AppSettingsEntitySchema = CollectionSchema(
   getId: _appSettingsEntityGetId,
   getLinks: _appSettingsEntityGetLinks,
   attach: _appSettingsEntityAttach,
-  version: '3.1.0+1',
+  version: '3.3.0',
 );
 
 int _appSettingsEntityEstimateSize(

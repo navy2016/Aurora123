@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aurora/shared/riverpod_compat.dart';
 
 import '../../../shared/services/openai_llm_service.dart';
 import '../../settings/presentation/settings_provider.dart';
@@ -528,3 +528,4 @@ class CleanerNotifier extends StateNotifier<CleanerState> {
 final cleanerProvider = StateNotifierProvider<CleanerNotifier, CleanerState>(
   (ref) => CleanerNotifier(ref),
 );
+

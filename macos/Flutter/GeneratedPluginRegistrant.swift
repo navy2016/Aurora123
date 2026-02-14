@@ -9,7 +9,7 @@ import device_info_plus
 import file_selector_macos
 import gal
 import irondash_engine_context
-import isar_flutter_libs
+import isar_community_flutter_libs
 import package_info_plus
 import screen_retriever_macos
 import shared_preferences_foundation
