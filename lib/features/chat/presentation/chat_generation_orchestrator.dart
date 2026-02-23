@@ -156,20 +156,6 @@ class _ChatGenerationOrchestrator {
         aiMsg.content.contains('<skill');
   }
 
-  List<String> _mergeStreamingImages(
-      List<String> existing, List<String> incoming) {
-    if (incoming.isEmpty) return existing;
-    // Some OpenAI-compatible image backends emit iterative updates for the same
-    // image index in separate chunks. For the common single-image path, keep
-    // only the newest frame instead of appending duplicates.
-    if (incoming.length == 1 && existing.length <= 1) {
-      final next = incoming.first;
-      if (existing.isNotEmpty && existing.first == next) return existing;
-      return [next];
-    }
-    return [...existing, ...incoming];
-  }
-
   Future<_ChatTurnResult> _runStreamingTurn(Message aiMsg) async {
     final turnStartTime = DateTime.now();
     DateTime? turnFirstContentTime;
@@ -178,6 +164,7 @@ class _ChatGenerationOrchestrator {
     var turnCompletionTokens = 0;
     var turnReasoningTokens = 0;
     var turnTokenCount = 0;
+    var uiMsg = UiMessage.fromLegacy(aiMsg);
 
     final responseStream = _requestContext.llmService.streamResponse(
       _requestContext.messagesForApi,
@@ -210,7 +197,7 @@ class _ChatGenerationOrchestrator {
         turnFirstContentTime ??= DateTime.now();
       }
 
-      double? reasoningDuration = aiMsg.reasoningDurationSeconds;
+      double? reasoningDuration = uiMsg.reasoningDurationSeconds;
       if (reasoningDuration == null &&
           reasoningStartTime != null &&
           chunk.content != null &&
@@ -232,57 +219,41 @@ class _ChatGenerationOrchestrator {
         }
       }
 
+      uiMsg = uiMsg.appendChunk(chunk);
+
       if (chunk.finishReason == 'malformed_function_call') {
-        aiMsg = Message(
-          id: aiMsg.id,
-          content:
-              '${aiMsg.content}${chunk.content ?? ''}\n\n> ⚠️ **System Error**: The AI backend returned a "malformed_function_call" error. This usually means the model tried to call a tool but failed to generate a valid request format. Please try again or switch models.',
-          reasoningContent:
-              (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
-          isUser: false,
-          timestamp: aiMsg.timestamp,
-          attachments: aiMsg.attachments,
-          images: _mergeStreamingImages(aiMsg.images, chunk.images),
-          model: aiMsg.model,
-          provider: aiMsg.provider,
+        uiMsg = uiMsg.replaceText(
+          '${uiMsg.text}\n\n> ⚠️ **System Error**: The AI backend returned a "malformed_function_call" error. This usually means the model tried to call a tool but failed to generate a valid request format. Please try again or switch models.',
+        );
+        uiMsg = uiMsg.copyWith(
           reasoningDurationSeconds: reasoningDuration,
-          tokenCount: chunk.usage ?? aiMsg.tokenCount,
-          promptTokens: _promptTokens > 0 ? _promptTokens : aiMsg.promptTokens,
+          tokenCount: chunk.usage ?? uiMsg.tokenCount,
+          promptTokens:
+              _promptTokens > 0 ? _promptTokens : uiMsg.promptTokens,
           completionTokens: _completionTokens > 0
               ? _completionTokens
-              : aiMsg.completionTokens,
+              : uiMsg.completionTokens,
           reasoningTokens:
-              _reasoningTokens > 0 ? _reasoningTokens : aiMsg.reasoningTokens,
-          firstTokenMs:
-              _firstContentTime?.difference(_startTime).inMilliseconds,
-          toolCalls:
-              _notifier._mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
+              _reasoningTokens > 0 ? _reasoningTokens : uiMsg.reasoningTokens,
+          firstTokenMs: _firstContentTime?.difference(_startTime).inMilliseconds,
         );
+        aiMsg = uiMsg.toLegacy();
         _notifier._upsertTrailingMessage(aiMsg);
         break;
       }
 
-      aiMsg = Message(
-        id: aiMsg.id,
-        content: aiMsg.content + (chunk.content ?? ''),
-        reasoningContent:
-            (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
-        isUser: false,
-        timestamp: aiMsg.timestamp,
-        attachments: aiMsg.attachments,
-        images: _mergeStreamingImages(aiMsg.images, chunk.images),
-        model: aiMsg.model,
-        provider: aiMsg.provider,
+      uiMsg = uiMsg.copyWith(
         reasoningDurationSeconds: reasoningDuration,
-        tokenCount: chunk.usage ?? aiMsg.tokenCount,
-        promptTokens: _promptTokens > 0 ? _promptTokens : aiMsg.promptTokens,
-        completionTokens:
-            _completionTokens > 0 ? _completionTokens : aiMsg.completionTokens,
+        tokenCount: chunk.usage ?? uiMsg.tokenCount,
+        promptTokens: _promptTokens > 0 ? _promptTokens : uiMsg.promptTokens,
+        completionTokens: _completionTokens > 0
+            ? _completionTokens
+            : uiMsg.completionTokens,
         reasoningTokens:
-            _reasoningTokens > 0 ? _reasoningTokens : aiMsg.reasoningTokens,
+            _reasoningTokens > 0 ? _reasoningTokens : uiMsg.reasoningTokens,
         firstTokenMs: _firstContentTime?.difference(_startTime).inMilliseconds,
-        toolCalls: _notifier._mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
       );
+      aiMsg = uiMsg.toLegacy();
       _notifier._upsertTrailingMessage(aiMsg);
     }
 
@@ -389,13 +360,14 @@ class _ChatGenerationOrchestrator {
   }
 
   Future<_ChatTurnResult> _runForcedFinalization(Message aiMsg) async {
-    final cleanedContent = aiMsg.content
-        .replaceAll(RegExp(r'<search>.*?</search>', dotAll: true), '')
-        .replaceAll(
-            RegExp(r'''<skill\s+name=["'].*?["']>.*?</skill>''', dotAll: true),
-            '')
-        .trim();
-    aiMsg = aiMsg.copyWith(content: cleanedContent);
+    final context = MessageTransformContext(
+      language: _requestContext.settings.language,
+      model: _requestContext.currentModel,
+      providerName: _requestContext.currentProviderName,
+    );
+    aiMsg = chatMessageTransformers
+        .onGenerationFinish(UiMessage.fromLegacy(aiMsg), context)
+        .toLegacy();
 
     final finalizeInstruction = _requestContext.settings.language == 'zh'
         ? '请根据已有工具/技能结果直接给出答案，不要再调用搜索或技能。如果信息不足，请如实说明。'

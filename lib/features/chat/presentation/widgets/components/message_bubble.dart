@@ -10,6 +10,9 @@ import 'package:super_clipboard/super_clipboard.dart';
 import 'package:file_selector/file_selector.dart';
 import '../../chat_provider.dart';
 import '../../../domain/message.dart';
+import '../../../domain/chat_message_transformers.dart';
+import '../../../domain/message_transformer.dart';
+import '../../../domain/ui_message.dart';
 import '../chat_image_bubble.dart';
 import '../reasoning_display.dart';
 import '../../../../settings/presentation/settings_provider.dart';
@@ -213,7 +216,17 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
             .addPostFrameCallback((_) => _focusNode.requestFocus());
         break;
       case 'copy':
-        await Clipboard.setData(ClipboardData(text: msg.content));
+        final settingsState = ref.read(settingsProvider);
+        final context = MessageTransformContext(
+          language: settingsState.language,
+          model: msg.model ?? settingsState.selectedModel,
+          providerName: msg.provider ?? settingsState.activeProvider.name,
+        );
+        final transformed = chatMessageTransformers.visualTransform(
+          UiMessage.fromLegacy(msg),
+          context,
+        );
+        await Clipboard.setData(ClipboardData(text: transformed.text));
         break;
       case 'delete':
         notifier.deleteMessage(msg.id);
@@ -262,6 +275,21 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
     final settingsState = ref.watch(settingsProvider);
     final theme = fluent.FluentTheme.of(context);
     final l10n = AppLocalizations.of(context)!;
+
+    final transformContext = MessageTransformContext(
+      language: settingsState.language,
+      model: message.model ?? settingsState.selectedModel,
+      providerName: message.provider ?? settingsState.activeProvider.name,
+    );
+    final uiMessage = chatMessageTransformers.visualTransform(
+      UiMessage.fromLegacy(message),
+      transformContext,
+    );
+    final contentText = uiMessage.text;
+    final reasoningText = uiMessage.reasoning;
+    final attachmentPaths = uiMessage.attachments;
+    final imageUrls = uiMessage.images;
+    final isTool = uiMessage.role == UiRole.tool;
     return MouseRegion(
       child: Container(
         margin: EdgeInsets.only(
@@ -364,12 +392,12 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                              children: [
                               if (!message.isUser &&
                                   widget.isGenerating &&
-                                  message.content.isEmpty &&
-                                  (message.reasoningContent == null ||
-                                      message.reasoningContent!.isEmpty))
+                                  contentText.isEmpty &&
+                                  (reasoningText == null ||
+                                      reasoningText.isEmpty))
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 8.0),
                                   child: Row(
@@ -396,17 +424,17 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                   ),
                                 ),
                               if (!message.isUser &&
-                                  message.reasoningContent != null &&
-                                  message.reasoningContent!.isNotEmpty)
+                                  reasoningText != null &&
+                                  reasoningText.isNotEmpty)
                                 Padding(
                                   padding: _isEditing
                                       ? const EdgeInsets.fromLTRB(12, 0, 12, 8)
                                       : const EdgeInsets.only(bottom: 8.0),
                                   child: ReasoningDisplay(
-                                    content: message.reasoningContent!,
+                                    content: reasoningText,
                                     isWindows: PlatformUtils.isDesktop,
                                     isRunning: widget.isGenerating,
-                                    duration: message.reasoningDurationSeconds,
+                                    duration: uiMessage.reasoningDurationSeconds,
                                     startTime: message.timestamp,
                                   ),
                                 ),
@@ -586,12 +614,12 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                     ),
                                   ],
                                 )
-                              else if (message.role == 'tool')
-                                BuildToolOutput(content: message.content)
+                              else if (isTool)
+                                BuildToolOutput(content: contentText)
                               else if (isUser)
                                 SelectionArea(
                                   child: Text(
-                                    message.content,
+                                    contentText,
                                     style: TextStyle(
                                       fontSize: 14,
                                       height: 1.5,
@@ -603,18 +631,18 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                 fluent.FluentTheme(
                                   data: theme,
                                   child: AnimatedStreamingMarkdown(
-                                    data: message.content,
+                                    data: contentText,
                                     isDark: theme.brightness == Brightness.dark,
                                     textColor: theme.typography.body!.color!,
                                   ),
                                 ),
-                              if (message.attachments.isNotEmpty &&
+                              if (attachmentPaths.isNotEmpty &&
                                   !_isEditing) ...[
                                 const SizedBox(height: 8),
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: message.attachments.map((path) {
+                                  children: attachmentPaths.map((path) {
                                     final ext = path.toLowerCase();
                                     final isImage = ext.endsWith('.png') ||
                                         ext.endsWith('.jpg') ||
@@ -632,13 +660,13 @@ class MessageBubbleState extends ConsumerState<MessageBubble> {
                                   }).toList(),
                                 ),
                               ],
-                              if (message.images.isNotEmpty &&
+                              if (imageUrls.isNotEmpty &&
                                   !(isUser && _isEditing)) ...[
                                 const SizedBox(height: 8),
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: message.images
+                                  children: imageUrls
                                       .map((img) => ChatImageBubble(
                                             key: ValueKey(img.hashCode),
                                             imageUrl: img,

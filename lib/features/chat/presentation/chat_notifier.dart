@@ -650,33 +650,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     return null;
   }
 
-  List<ToolCall>? _mergeToolCalls(
-      List<ToolCall>? existing, List<ToolCallChunk>? chunks) {
-    if (chunks == null || chunks.isEmpty) return existing;
-    final merged =
-        existing != null ? List<ToolCall>.from(existing) : <ToolCall>[];
-    for (final chunk in chunks) {
-      final index = chunk.index ?? 0;
-      if (index >= merged.length) {
-        merged.add(ToolCall(
-            id: chunk.id ?? '',
-            type: chunk.type ?? 'function',
-            name: chunk.name ?? '',
-            arguments: chunk.arguments ?? ''));
-      } else {
-        final prev = merged[index];
-        merged[index] = ToolCall(
-            id: (prev.id == '' ? (chunk.id ?? '') : prev.id),
-            type: (prev.type == 'function'
-                ? (chunk.type ?? 'function')
-                : prev.type),
-            name: prev.name + (chunk.name ?? ''),
-            arguments: prev.arguments + (chunk.arguments ?? ''));
-      }
-    }
-    return merged;
-  }
-
   Future<void> deleteMessage(String id) async {
     final newMessages = state.messages.where((m) => m.id != id).toList();
     state = state.copyWith(messages: newMessages);

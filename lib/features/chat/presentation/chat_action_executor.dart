@@ -19,11 +19,6 @@ class _ChatActionResult {
 }
 
 class _ChatActionExecutor {
-  static final RegExp _searchPattern =
-      RegExp(r'<search>(.*?)</search>', dotAll: true);
-  static final RegExp _skillPattern =
-      RegExp(r'''<skill\s+name=["'](.*?)["']>(.*?)</skill>''', dotAll: true);
-
   final ChatNotifier _notifier;
   final _ChatRequestContext _requestContext;
   final String _generationId;
@@ -40,18 +35,37 @@ class _ChatActionExecutor {
       _notifier.mounted && _notifier._currentGenerationId == _generationId;
 
   Future<_ChatActionResult> execute(Message aiMsg) async {
-    final searchMatch = _searchPattern.firstMatch(aiMsg.content);
-    if (searchMatch != null) {
-      if (!_requestContext.allowLegacySearchTool) {
-        return _ChatActionResult.stop(
-            _cleanTagFromDisplay(aiMsg, _searchPattern));
-      }
-      return _handleSearch(aiMsg, searchMatch);
+    final context = MessageTransformContext(
+      language: _requestContext.settings.language,
+      model: _requestContext.currentModel,
+      providerName: _requestContext.currentProviderName,
+    );
+    final transformed = chatMessageTransformers.onGenerationFinish(
+      UiMessage.fromLegacy(aiMsg),
+      context,
+    );
+
+    final cleaned = transformed.toLegacy();
+    if (cleaned.content != aiMsg.content) {
+      _notifier._upsertTrailingMessage(cleaned);
+      aiMsg = cleaned;
     }
 
-    final skillMatch = _skillPattern.firstMatch(aiMsg.content);
-    if (skillMatch != null) {
-      return _handleSkillTag(aiMsg, skillMatch);
+    final searchRequest = transformed.firstSearchRequest;
+    if (searchRequest != null) {
+      if (!_requestContext.allowLegacySearchTool) {
+        return _ChatActionResult.stop(aiMsg);
+      }
+      return _handleSearch(aiMsg, searchQuery: searchRequest.query);
+    }
+
+    final skillRequest = transformed.firstSkillRequest;
+    if (skillRequest != null) {
+      return _handleSkillTag(
+        aiMsg,
+        skillName: skillRequest.skillName,
+        skillQuery: skillRequest.query,
+      );
     }
 
     if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
@@ -62,13 +76,12 @@ class _ChatActionExecutor {
   }
 
   Future<_ChatActionResult> _handleSearch(
-      Message aiMsg, RegExpMatch searchMatch) async {
-    final searchQuery = searchMatch.group(1)?.trim() ?? '';
+    Message aiMsg, {
+    required String searchQuery,
+  }) async {
     if (searchQuery.isEmpty || !_isGenerationActive) {
       return _ChatActionResult.stop(aiMsg);
     }
-
-    aiMsg = _cleanTagFromDisplay(aiMsg, _searchPattern);
 
     String searchResult;
     try {
@@ -112,14 +125,13 @@ class _ChatActionExecutor {
   }
 
   Future<_ChatActionResult> _handleSkillTag(
-      Message aiMsg, RegExpMatch skillMatch) async {
-    final skillName = skillMatch.group(1)?.trim() ?? '';
-    final skillQuery = skillMatch.group(2)?.trim() ?? '';
+    Message aiMsg, {
+    required String skillName,
+    required String skillQuery,
+  }) async {
     if (skillName.isEmpty || !_isGenerationActive) {
       return _ChatActionResult.stop(aiMsg);
     }
-
-    aiMsg = _cleanTagFromDisplay(aiMsg, _skillPattern);
 
     final originalUserMsg = _notifier.currentState.messages
         .lastWhere((m) => m.isUser, orElse: () => Message.user(''));
@@ -292,10 +304,4 @@ class _ChatActionExecutor {
     );
   }
 
-  Message _cleanTagFromDisplay(Message aiMsg, RegExp pattern) {
-    final cleaned =
-        aiMsg.copyWith(content: aiMsg.content.replaceAll(pattern, '').trim());
-    _notifier._upsertTrailingMessage(cleaned);
-    return cleaned;
-  }
 }
