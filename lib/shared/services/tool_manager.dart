@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:aurora_search/aurora_search.dart';
 import '../../features/mcp/domain/mcp_server_config.dart';
+import '../../features/mcp/presentation/mcp_connection_provider.dart';
 import '../../features/skills/domain/skill_entity.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
-import 'mcp/mcp_client_session.dart';
 
 class _McpToolBinding {
   final String serverId;
@@ -17,12 +17,14 @@ class _McpToolBinding {
 
 class ToolManager {
   ToolManager({
+    required McpConnectionNotifier mcpConnection,
     this.searchRegion = 'us-en',
     this.searchSafeSearch = 'moderate',
     int searchMaxResults = 5,
     this.searchTimeout = const Duration(seconds: 15),
   })  : searchMaxResults = searchMaxResults.clamp(1, 50),
-        _search = AuroraSearch(timeout: searchTimeout);
+        _search = AuroraSearch(timeout: searchTimeout),
+        _mcpConnection = mcpConnection;
 
   final String searchRegion;
   final String searchSafeSearch;
@@ -33,8 +35,9 @@ class ToolManager {
   final Dio _dio =
       Dio(BaseOptions(connectTimeout: const Duration(seconds: 10)));
 
+  final McpConnectionNotifier _mcpConnection;
+
   final Map<String, _McpToolBinding> _mcpToolBindings = {};
-  final Map<String, McpClientSession> _mcpSessions = {};
 
   Future<List<Map<String, dynamic>>> getTools({
     List<Skill> skills = const [],
@@ -42,7 +45,7 @@ class ToolManager {
   }) async {
     final tools = <Map<String, dynamic>>[];
 
-    _resetMcpState();
+    _mcpToolBindings.clear();
 
     for (final skill in skills) {
       if (!skill.isEnabled || !skill.forAI) continue;
@@ -71,19 +74,10 @@ class ToolManager {
       final Set<String> openAiToolNames = {};
 
       await Future.wait(enabledMcpServers.map((server) async {
-        McpClientSession? session;
         try {
-          session = await McpClientSession.connect(
-            command: server.command,
-            args: server.args,
-            cwd: server.cwd,
-            env: server.env.isEmpty ? null : server.env,
-            runInShell: server.runInShell,
-          );
           const timeout = Duration(seconds: 60);
-          await session.initialize(timeout: timeout);
-          final mcpTools = await session.listToolsAll(timeout: timeout);
-          _mcpSessions[server.id] = session;
+          final mcpTools =
+              await _mcpConnection.listTools(server, timeout: timeout);
 
           for (final mcpTool in mcpTools) {
             final sanitized = _sanitizeToolName(mcpTool.name);
@@ -108,9 +102,7 @@ class ToolManager {
             });
           }
         } catch (_) {
-          try {
-            await session?.close();
-          } catch (_) {}
+          // Ignore MCP servers that fail to connect/list tools.
         }
       }));
     }
@@ -129,16 +121,22 @@ class ToolManager {
     final binding = _mcpToolBindings[name];
     if (binding != null) {
       try {
-        final session =
-            await _getOrCreateMcpSession(binding.serverId, mcpServers);
-        if (session == null) {
+        final server = mcpServers.firstWhere(
+          (s) => s.id == binding.serverId,
+          orElse: () => throw StateError('MCP server not found'),
+        );
+        if (!server.enabled) {
           return jsonEncode({
             'error': 'MCP session not available',
             'serverId': binding.serverId,
             'tool': binding.toolName,
           });
         }
-        final result = await session.callTool(binding.toolName, args);
+        final result = await _mcpConnection.callTool(
+          server,
+          name: binding.toolName,
+          arguments: args,
+        );
         return jsonEncode(result);
       } catch (e) {
         return jsonEncode({
@@ -159,14 +157,6 @@ class ToolManager {
     }
 
     return jsonEncode({'error': 'Unknown tool: $name'});
-  }
-
-  void _resetMcpState() {
-    _mcpToolBindings.clear();
-    for (final session in _mcpSessions.values) {
-      unawaited(session.close());
-    }
-    _mcpSessions.clear();
   }
 
   String _sanitizeToolName(String name) {
@@ -201,37 +191,6 @@ class ToolManager {
     }
   }
 
-  Future<McpClientSession?> _getOrCreateMcpSession(
-    String serverId,
-    List<McpServerConfig> servers,
-  ) async {
-    final existing = _mcpSessions[serverId];
-    if (existing != null) return existing;
-
-    McpServerConfig? cfg;
-    for (final s in servers) {
-      if (s.id == serverId) {
-        cfg = s;
-        break;
-      }
-    }
-    if (cfg == null) return null;
-
-    try {
-      final session = await McpClientSession.connect(
-        command: cfg.command,
-        args: cfg.args,
-        cwd: cfg.cwd,
-        env: cfg.env.isEmpty ? null : cfg.env,
-        runInShell: cfg.runInShell,
-      );
-      await session.initialize(timeout: const Duration(seconds: 60));
-      _mcpSessions[serverId] = session;
-      return session;
-    } catch (_) {
-      return null;
-    }
-  }
 
   Future<String> _executeSkillTool(
       SkillTool tool, Map<String, dynamic> args) async {
@@ -411,7 +370,7 @@ class ToolManager {
   }
 
   void close() {
-    _resetMcpState();
+    _mcpToolBindings.clear();
     _search.close();
     _dio.close(force: true);
   }

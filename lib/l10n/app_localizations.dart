@@ -794,6 +794,228 @@ abstract class AppLocalizations {
   /// **'通过 shell 运行'**
   String get mcpRunInShell;
 
+  /// No description provided for @mcpTransport.
+  ///
+  /// In zh, this message translates to:
+  /// **'传输方式'**
+  String get mcpTransport;
+
+  /// No description provided for @mcpTransportStdio.
+  ///
+  /// In zh, this message translates to:
+  /// **'stdio'**
+  String get mcpTransportStdio;
+
+  /// No description provided for @mcpTransportHttp.
+  ///
+  /// In zh, this message translates to:
+  /// **'HTTP（Streamable）'**
+  String get mcpTransportHttp;
+
+  /// No description provided for @mcpUrl.
+  ///
+  /// In zh, this message translates to:
+  /// **'URL'**
+  String get mcpUrl;
+
+  /// No description provided for @mcpUrlHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器 URL（例如 http://127.0.0.1:3000/mcp）'**
+  String get mcpUrlHint;
+
+  /// No description provided for @mcpHeaders.
+  ///
+  /// In zh, this message translates to:
+  /// **'请求头'**
+  String get mcpHeaders;
+
+  /// No description provided for @mcpHeadersHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'每行一条：KEY=VALUE'**
+  String get mcpHeadersHint;
+
+  /// No description provided for @mcpStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接状态'**
+  String get mcpStatus;
+
+  /// No description provided for @mcpStatusConnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'已连接'**
+  String get mcpStatusConnected;
+
+  /// No description provided for @mcpStatusConnecting.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接中'**
+  String get mcpStatusConnecting;
+
+  /// No description provided for @mcpStatusDisconnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'未连接'**
+  String get mcpStatusDisconnected;
+
+  /// No description provided for @mcpStatusError.
+  ///
+  /// In zh, this message translates to:
+  /// **'错误'**
+  String get mcpStatusError;
+
+  /// No description provided for @mcpLastError.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近错误'**
+  String get mcpLastError;
+
+  /// No description provided for @mcpLastConnectedAt.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近连接'**
+  String get mcpLastConnectedAt;
+
+  /// No description provided for @mcpLastPingAt.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近心跳'**
+  String get mcpLastPingAt;
+
+  /// No description provided for @mcpLastToolListAt.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近 tools/list'**
+  String get mcpLastToolListAt;
+
+  /// No description provided for @mcpLastCallAt.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近 tools/call'**
+  String get mcpLastCallAt;
+
+  /// No description provided for @mcpCachedToolsCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'缓存工具数'**
+  String get mcpCachedToolsCount;
+
+  /// No description provided for @mcpLastToolListDuration.
+  ///
+  /// In zh, this message translates to:
+  /// **'tools/list 耗时'**
+  String get mcpLastToolListDuration;
+
+  /// No description provided for @mcpLastCallDuration.
+  ///
+  /// In zh, this message translates to:
+  /// **'tools/call 耗时'**
+  String get mcpLastCallDuration;
+
+  /// No description provided for @mcpRefreshToolsCache.
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新工具缓存'**
+  String get mcpRefreshToolsCache;
+
+  /// No description provided for @mcpRefreshToolsCacheSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'工具已刷新'**
+  String get mcpRefreshToolsCacheSuccess;
+
+  /// No description provided for @mcpReconnect.
+  ///
+  /// In zh, this message translates to:
+  /// **'重连'**
+  String get mcpReconnect;
+
+  /// No description provided for @mcpDisconnect.
+  ///
+  /// In zh, this message translates to:
+  /// **'断开'**
+  String get mcpDisconnect;
+
+  /// No description provided for @mcpStderrTail.
+  ///
+  /// In zh, this message translates to:
+  /// **'stderr 尾日志'**
+  String get mcpStderrTail;
+
+  /// No description provided for @mcpServersTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'MCP 服务器'**
+  String get mcpServersTitle;
+
+  /// No description provided for @mcpSessionServersTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'会话 MCP 服务器'**
+  String get mcpSessionServersTitle;
+
+  /// No description provided for @mcpNoEnabledServers.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有启用的 MCP 服务器'**
+  String get mcpNoEnabledServers;
+
+  /// No description provided for @mcpFollowAssistant.
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随助手/默认'**
+  String get mcpFollowAssistant;
+
+  /// No description provided for @mcpFollowAssistantHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭后可为当前会话自定义服务器。'**
+  String get mcpFollowAssistantHint;
+
+  /// No description provided for @mcpFollowGlobal.
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随全局'**
+  String get mcpFollowGlobal;
+
+  /// No description provided for @mcpFollowGlobalHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭后可为该助手自定义服务器。'**
+  String get mcpFollowGlobalHint;
+
+  /// No description provided for @mcpToggleTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'会话 MCP 服务器'**
+  String get mcpToggleTooltip;
+
+  /// No description provided for @mcpServersSelectedCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'已选择 {count} 个'**
+  String mcpServersSelectedCount(int count);
+
+  /// No description provided for @mcpValidationErrorName.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器名称不能为空。'**
+  String get mcpValidationErrorName;
+
+  /// No description provided for @mcpValidationErrorCommand.
+  ///
+  /// In zh, this message translates to:
+  /// **'stdio 传输需要填写命令。'**
+  String get mcpValidationErrorCommand;
+
+  /// No description provided for @mcpValidationErrorUrl.
+  ///
+  /// In zh, this message translates to:
+  /// **'HTTP 传输需要填写 URL。'**
+  String get mcpValidationErrorUrl;
+
   /// No description provided for @mcpValidationError.
   ///
   /// In zh, this message translates to:

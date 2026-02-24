@@ -300,6 +300,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
       _sessionId = realId;
       newRealId = realId;
 
+      if (oldId == 'new_chat') {
+        await _ref.read(mcpBindingsProvider.notifier).migrateSessionOverride(
+              fromSessionId: oldId,
+              toSessionId: realId,
+            );
+      }
+
       _generateTopic(text).then((smartTitle) async {
         if (smartTitle != title && smartTitle.isNotEmpty) {
           await _storage.updateSessionTitle(realId, smartTitle);

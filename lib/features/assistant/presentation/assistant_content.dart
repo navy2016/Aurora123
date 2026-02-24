@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
@@ -14,6 +16,9 @@ import 'package:aurora/features/assistant/domain/assistant.dart';
 import 'package:aurora/features/assistant/presentation/mobile_assistant_page.dart';
 import 'package:aurora/features/knowledge/presentation/knowledge_provider.dart';
 import 'package:aurora/features/skills/presentation/skill_provider.dart';
+import 'package:aurora/features/mcp/domain/mcp_server_config.dart';
+import 'package:aurora/features/mcp/presentation/mcp_bindings_provider.dart';
+import 'package:aurora/features/mcp/presentation/mcp_server_provider.dart';
 import 'package:aurora/features/chat/presentation/chat_provider.dart';
 import 'package:aurora/features/chat/presentation/desktop/desktop_tabs.dart';
 import '../../settings/presentation/settings_provider.dart';
@@ -284,6 +289,8 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
           const SizedBox(height: 24),
           _buildSkillSettings(assistant, l10n),
           const SizedBox(height: 24),
+          _buildMcpSettings(assistant, l10n),
+          const SizedBox(height: 24),
           _buildKnowledgeSettings(assistant, l10n),
           const SizedBox(height: 24),
           Container(
@@ -514,6 +521,120 @@ class _AssistantContentState extends ConsumerState<AssistantContent> {
                   ),
                 );
               }).toList(),
+            ),
+    );
+  }
+
+  Widget _buildMcpSettings(Assistant assistant, AppLocalizations l10n) {
+    final servers = ref
+        .watch(mcpServerProvider)
+        .servers
+        .where((s) => s.enabled)
+        .toList(growable: false);
+    final bindingsState = ref.watch(mcpBindingsProvider);
+    final override = bindingsState.assistantOverrides[assistant.id];
+    final followGlobal = override == null;
+
+    final enabledIds = servers.map((s) => s.id).toSet();
+    final selectedIds = followGlobal
+        ? enabledIds
+        : override.where((id) => enabledIds.contains(id)).toSet();
+
+    Future<void> setFollowGlobal(bool follow) async {
+      if (follow) {
+        await ref.read(mcpBindingsProvider.notifier).clearAssistantOverride(
+              assistant.id,
+            );
+        return;
+      }
+      final next = enabledIds.toList()..sort();
+      await ref.read(mcpBindingsProvider.notifier).setAssistantOverride(
+            assistant.id,
+            next,
+          );
+    }
+
+    Future<void> toggleServer(String serverId, bool enabled) async {
+      final current = Set<String>.from(selectedIds);
+      if (enabled) {
+        current.add(serverId);
+      } else {
+        current.remove(serverId);
+      }
+      final next = current.toList()..sort();
+      await ref.read(mcpBindingsProvider.notifier).setAssistantOverride(
+            assistant.id,
+            next,
+          );
+    }
+
+    return fluent.Expander(
+      header: Text(l10n.mcpServersTitle),
+      content: servers.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(l10n.mcpNoEnabledServers),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.mcpFollowGlobal,
+                        style: TextStyle(
+                          color: fluent.FluentTheme.of(context)
+                              .resources
+                              .textFillColorSecondary,
+                        ),
+                      ),
+                    ),
+                    fluent.ToggleSwitch(
+                      checked: followGlobal,
+                      onChanged: (v) => unawaited(setFollowGlobal(v)),
+                    ),
+                  ],
+                ),
+                if (followGlobal) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.mcpFollowGlobalHint,
+                    style: TextStyle(
+                      color: fluent.FluentTheme.of(context)
+                          .resources
+                          .textFillColorSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                ...servers.map((server) {
+                  final checked = selectedIds.contains(server.id);
+                  final summary = server.transport == McpServerTransport.http
+                      ? server.url.trim()
+                      : [
+                          server.command,
+                          ...server.args,
+                        ].where((s) => s.trim().isNotEmpty).join(' ');
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: fluent.Checkbox(
+                      checked: checked,
+                      onChanged: followGlobal
+                          ? null
+                          : (v) =>
+                              unawaited(toggleServer(server.id, v == true)),
+                      content: fluent.Tooltip(
+                        message: summary,
+                        child: Text(
+                          server.name.isNotEmpty ? server.name : l10n.unknown,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
             ),
     );
   }

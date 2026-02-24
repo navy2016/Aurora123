@@ -496,10 +496,10 @@ class ChatViewState extends ConsumerState<ChatView> {
                                 .typography
                                 .body
                                 ?.color
-                                ?.withOpacity(0.5) ??
-                            Colors.grey.withOpacity(0.5),
-                      ),
-                    ),
+                                ?.withValues(alpha: 0.5) ??
+                            Colors.grey.withValues(alpha: 0.5),
+                       ),
+                     ),
                   ],
                 ),
               ),

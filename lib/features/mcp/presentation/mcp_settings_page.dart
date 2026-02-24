@@ -8,8 +8,10 @@ import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:aurora/shared/widgets/aurora_notice.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../domain/mcp_server_config.dart';
+import 'mcp_connection_provider.dart';
 import 'mcp_server_provider.dart';
 
 class McpSettingsPage extends ConsumerStatefulWidget {
@@ -33,6 +35,7 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final mcpState = ref.watch(mcpServerProvider);
+    final connectionState = ref.watch(mcpConnectionProvider);
     final theme = fluent.FluentTheme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
@@ -112,6 +115,10 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
                 itemCount: mcpState.servers.length,
                 itemBuilder: (context, index) {
                   final server = mcpState.servers[index];
+                  final info = connectionState.connections[server.id] ??
+                      const McpConnectionInfo(
+                        status: McpConnectionStatus.disconnected,
+                      );
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: fluent.Expander(
@@ -120,8 +127,10 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
                         theme,
                         l10n,
                         server,
+                        info,
                       ),
-                      content: _buildServerDetails(theme, l10n, server),
+                      content:
+                          _buildServerDetails(context, theme, l10n, server, info),
                     ),
                   );
                 },
@@ -132,24 +141,90 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
     );
   }
 
+  String _statusLabel(AppLocalizations l10n, McpConnectionStatus status) {
+    switch (status) {
+      case McpConnectionStatus.ready:
+        return l10n.mcpStatusConnected;
+      case McpConnectionStatus.connecting:
+        return l10n.mcpStatusConnecting;
+      case McpConnectionStatus.error:
+        return l10n.mcpStatusError;
+      case McpConnectionStatus.disconnected:
+        return l10n.mcpStatusDisconnected;
+    }
+  }
+
+  Color _statusColor(fluent.FluentThemeData theme, McpConnectionStatus status) {
+    switch (status) {
+      case McpConnectionStatus.ready:
+        return theme.accentColor;
+      case McpConnectionStatus.connecting:
+        return Colors.orange;
+      case McpConnectionStatus.error:
+        return Colors.red;
+      case McpConnectionStatus.disconnected:
+        return theme.typography.caption?.color ?? Colors.grey;
+    }
+  }
+
+  Widget _buildStatusBadge(
+    fluent.FluentThemeData theme,
+    AppLocalizations l10n,
+    McpConnectionInfo info,
+  ) {
+    final color = _statusColor(theme, info.status);
+    final label = _statusLabel(l10n, info.status);
+    final badge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+
+    final lastError = info.lastError;
+    if (lastError != null && lastError.trim().isNotEmpty) {
+      return fluent.Tooltip(
+        message: lastError,
+        child: badge,
+      );
+    }
+    return badge;
+  }
+
   Widget _buildServerHeader(
     BuildContext context,
     fluent.FluentThemeData theme,
     AppLocalizations l10n,
     McpServerConfig server,
+    McpConnectionInfo info,
   ) {
     final isTesting = _testingServerIds.contains(server.id);
-    final commandSummary = [
-      server.command,
-      ...server.args,
-    ].where((s) => s.trim().isNotEmpty).join(' ');
+    final commandSummary = server.transport == McpServerTransport.http
+        ? server.url.trim()
+        : [
+            server.command,
+            ...server.args,
+          ].where((s) => s.trim().isNotEmpty).join(' ');
+    final lastCallMs = info.lastCallDurationMs;
 
     return Row(
       children: [
         Icon(
           AuroraIcons.mcp,
           size: 16,
-          color: server.enabled ? theme.accentColor : theme.typography.caption?.color,
+          color: server.enabled
+              ? theme.accentColor
+              : theme.typography.caption?.color,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -180,6 +255,18 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
             ],
           ),
         ),
+        const SizedBox(width: 8),
+        _buildStatusBadge(theme, l10n, info),
+        if (lastCallMs != null) ...[
+          const SizedBox(width: 8),
+          Text(
+            '${lastCallMs}ms',
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.typography.caption?.color,
+            ),
+          ),
+        ],
         const SizedBox(width: 8),
         fluent.ToggleSwitch(
           checked: server.enabled,
@@ -217,9 +304,11 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
   }
 
   Widget _buildServerDetails(
+    BuildContext context,
     fluent.FluentThemeData theme,
     AppLocalizations l10n,
     McpServerConfig server,
+    McpConnectionInfo info,
   ) {
     Widget kv(String key, String value) {
       return Padding(
@@ -255,18 +344,166 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
     final envText = server.env.isEmpty
         ? l10n.none
         : server.env.entries.map((e) => '${e.key}=${e.value}').join('\n');
+    final headersText = server.headers.isEmpty
+        ? l10n.none
+        : server.headers.entries.map((e) => '${e.key}=${e.value}').join('\n');
+    final stderrText = info.stderrTail.join('\n').trim();
 
     return Container(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          kv(l10n.mcpCommand, server.command),
-          kv(l10n.mcpArgs,
-              server.args.isEmpty ? l10n.none : server.args.join('\n')),
-          kv(l10n.mcpCwd, server.cwd ?? l10n.none),
-          kv(l10n.mcpEnv, envText),
-          kv(l10n.mcpRunInShell, server.runInShell ? l10n.yes : l10n.no),
+          kv(
+            l10n.mcpTransport,
+            server.transport == McpServerTransport.http
+                ? l10n.mcpTransportHttp
+                : l10n.mcpTransportStdio,
+          ),
+          if (server.transport == McpServerTransport.http) ...[
+            kv(l10n.mcpUrl, server.url.trim().isEmpty ? l10n.none : server.url),
+            kv(l10n.mcpHeaders, headersText),
+          ] else ...[
+            kv(l10n.mcpCommand, server.command),
+            kv(l10n.mcpArgs,
+                server.args.isEmpty ? l10n.none : server.args.join('\n')),
+            kv(l10n.mcpCwd, server.cwd ?? l10n.none),
+            kv(l10n.mcpEnv, envText),
+            kv(l10n.mcpRunInShell, server.runInShell ? l10n.yes : l10n.no),
+          ],
+          const fluent.Divider(),
+          kv(l10n.mcpStatus, _statusLabel(l10n, info.status)),
+          kv(
+            l10n.mcpLastError,
+            (info.lastError == null || info.lastError!.trim().isEmpty)
+                ? l10n.none
+                : info.lastError!,
+          ),
+          kv(
+            l10n.mcpLastConnectedAt,
+            info.lastConnectedAt == null ? l10n.none : '${info.lastConnectedAt}',
+          ),
+          kv(
+            l10n.mcpLastPingAt,
+            info.lastPingAt == null ? l10n.none : '${info.lastPingAt}',
+          ),
+          kv(
+            l10n.mcpLastToolListAt,
+            info.lastToolListAt == null ? l10n.none : '${info.lastToolListAt}',
+          ),
+          kv(
+            l10n.mcpLastCallAt,
+            info.lastCallAt == null ? l10n.none : '${info.lastCallAt}',
+          ),
+          kv(
+            l10n.mcpCachedToolsCount,
+            info.cachedToolsCount?.toString() ?? l10n.none,
+          ),
+          kv(
+            l10n.mcpLastToolListDuration,
+            info.lastToolListDurationMs == null
+                ? l10n.none
+                : '${info.lastToolListDurationMs}ms',
+          ),
+          kv(
+            l10n.mcpLastCallDuration,
+            info.lastCallDurationMs == null
+                ? l10n.none
+                : '${info.lastCallDurationMs}ms',
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              fluent.Button(
+                onPressed: () async {
+                  try {
+                    await ref
+                        .read(mcpConnectionProvider.notifier)
+                        .listTools(server, forceRefresh: true);
+                    if (!context.mounted) return;
+                    showAuroraNotice(
+                      context,
+                      l10n.mcpRefreshToolsCacheSuccess,
+                      icon: AuroraIcons.success,
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    showAuroraNotice(
+                      context,
+                      '${l10n.error}: $e',
+                      icon: AuroraIcons.error,
+                    );
+                  }
+                },
+                child: Text(l10n.mcpRefreshToolsCache),
+              ),
+              fluent.Button(
+                onPressed: () async {
+                  try {
+                    await ref.read(mcpConnectionProvider.notifier).reconnect(server);
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    showAuroraNotice(
+                      context,
+                      '${l10n.error}: $e',
+                      icon: AuroraIcons.error,
+                    );
+                  }
+                },
+                child: Text(l10n.mcpReconnect),
+              ),
+              fluent.Button(
+                onPressed: () async {
+                  await ref
+                      .read(mcpConnectionProvider.notifier)
+                      .disconnect(server.id);
+                },
+                child: Text(l10n.mcpDisconnect),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text(
+                l10n.mcpStderrTail,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const Spacer(),
+              fluent.IconButton(
+                icon: const Icon(AuroraIcons.copy, size: 14),
+                onPressed: stderrText.isEmpty
+                    ? null
+                    : () async {
+                        await Clipboard.setData(ClipboardData(text: stderrText));
+                        if (!context.mounted) return;
+                        showAuroraNotice(
+                          context,
+                          l10n.copied,
+                          icon: AuroraIcons.success,
+                        );
+                      },
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxHeight: 160),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                stderrText.isEmpty ? l10n.none : stderrText,
+                style: const TextStyle(fontFamily: 'Consolas', fontSize: 13),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -274,7 +511,9 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
 
   Future<void> _testServer(BuildContext context, McpServerConfig server) async {
     setState(() => _testingServerIds.add(server.id));
-    final result = await ref.read(mcpServerProvider.notifier).testConnection(server);
+    final result = await ref
+        .read(mcpConnectionProvider.notifier)
+        .testConnection(server);
     if (!context.mounted) return;
     setState(() => _testingServerIds.remove(server.id));
     _showTestResultDialog(context, server, result);
@@ -283,7 +522,7 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
   void _showTestResultDialog(
     BuildContext context,
     McpServerConfig server,
-    McpTestResult result,
+    McpConnectionTestResult result,
   ) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
@@ -309,11 +548,12 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
     );
   }
 
-  Widget _formatToolsResult(AppLocalizations l10n, McpTestResult result) {
+  Widget _formatToolsResult(
+      AppLocalizations l10n, McpConnectionTestResult result) {
     final tools = result.tools;
     final toolNames = tools.map((t) => t.name).where((s) => s.isNotEmpty).toList()
       ..sort();
-    final stderr = result.stderrLines.join('\n').trim();
+    final stderr = result.stderrTail.join('\n').trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,8 +593,8 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
     );
   }
 
-  Widget _formatErrorResult(AppLocalizations l10n, McpTestResult result) {
-    final stderr = result.stderrLines.join('\n').trim();
+  Widget _formatErrorResult(AppLocalizations l10n, McpConnectionTestResult result) {
+    final stderr = result.stderrTail.join('\n').trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -412,12 +652,21 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
   }) async {
     final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController(text: server?.name ?? '');
+    McpServerTransport transport =
+        server?.transport ?? McpServerTransport.stdio;
     final commandController = TextEditingController(text: server?.command ?? '');
     final argsController =
         TextEditingController(text: (server?.args ?? const []).join('\n'));
     final cwdController = TextEditingController(text: server?.cwd ?? '');
     final envController = TextEditingController(
         text: (server?.env.entries.map((e) => '${e.key}=${e.value}').toList() ??
+                const <String>[])
+            .join('\n'));
+    final urlController = TextEditingController(text: server?.url ?? '');
+    final headersController = TextEditingController(
+        text: (server?.headers.entries
+                    .map((e) => '${e.key}=${e.value}')
+                    .toList() ??
                 const <String>[])
             .join('\n'));
 
@@ -444,47 +693,88 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
                       placeholder: l10n.mcpServerNameHint,
                     ),
                     const SizedBox(height: 12),
-                    Text(l10n.mcpCommand, style: themeTextLabel(ctx)),
+                    Text(l10n.mcpTransport, style: themeTextLabel(ctx)),
                     const SizedBox(height: 6),
-                    fluent.TextBox(
-                      controller: commandController,
-                      placeholder: l10n.mcpCommandHint,
+                    fluent.ComboBox<McpServerTransport>(
+                      value: transport,
+                      items: [
+                        fluent.ComboBoxItem(
+                          value: McpServerTransport.stdio,
+                          child: Text(l10n.mcpTransportStdio),
+                        ),
+                        fluent.ComboBoxItem(
+                          value: McpServerTransport.http,
+                          child: Text(l10n.mcpTransportHttp),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() {
+                          transport = v;
+                        });
+                      },
                     ),
                     const SizedBox(height: 12),
-                    Text(l10n.mcpArgs, style: themeTextLabel(ctx)),
-                    const SizedBox(height: 6),
-                    fluent.TextBox(
-                      controller: argsController,
-                      placeholder: l10n.mcpArgsHint,
-                      maxLines: null,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(l10n.mcpCwd, style: themeTextLabel(ctx)),
-                    const SizedBox(height: 6),
-                    fluent.TextBox(
-                      controller: cwdController,
-                      placeholder: l10n.optional,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(l10n.mcpEnv, style: themeTextLabel(ctx)),
-                    const SizedBox(height: 6),
-                    fluent.TextBox(
-                      controller: envController,
-                      placeholder: l10n.mcpEnvHint,
-                      maxLines: null,
-                    ),
-                    const SizedBox(height: 12),
+                    if (transport == McpServerTransport.http) ...[
+                      Text(l10n.mcpUrl, style: themeTextLabel(ctx)),
+                      const SizedBox(height: 6),
+                      fluent.TextBox(
+                        controller: urlController,
+                        placeholder: l10n.mcpUrlHint,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(l10n.mcpHeaders, style: themeTextLabel(ctx)),
+                      const SizedBox(height: 6),
+                      fluent.TextBox(
+                        controller: headersController,
+                        placeholder: l10n.mcpHeadersHint,
+                        maxLines: null,
+                      ),
+                      const SizedBox(height: 12),
+                    ] else ...[
+                      Text(l10n.mcpCommand, style: themeTextLabel(ctx)),
+                      const SizedBox(height: 6),
+                      fluent.TextBox(
+                        controller: commandController,
+                        placeholder: l10n.mcpCommandHint,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(l10n.mcpArgs, style: themeTextLabel(ctx)),
+                      const SizedBox(height: 6),
+                      fluent.TextBox(
+                        controller: argsController,
+                        placeholder: l10n.mcpArgsHint,
+                        maxLines: null,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(l10n.mcpCwd, style: themeTextLabel(ctx)),
+                      const SizedBox(height: 6),
+                      fluent.TextBox(
+                        controller: cwdController,
+                        placeholder: l10n.optional,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(l10n.mcpEnv, style: themeTextLabel(ctx)),
+                      const SizedBox(height: 6),
+                      fluent.TextBox(
+                        controller: envController,
+                        placeholder: l10n.mcpEnvHint,
+                        maxLines: null,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     fluent.Checkbox(
                       checked: enabled,
                       onChanged: (v) => setState(() => enabled = v ?? true),
                       content: Text(l10n.enabledStatus),
                     ),
-                    fluent.Checkbox(
-                      checked: runInShell,
-                      onChanged: (v) =>
-                          setState(() => runInShell = v ?? false),
-                      content: Text(l10n.mcpRunInShell),
-                    ),
+                    if (transport == McpServerTransport.stdio)
+                      fluent.Checkbox(
+                        checked: runInShell,
+                        onChanged: (v) =>
+                            setState(() => runInShell = v ?? false),
+                        content: Text(l10n.mcpRunInShell),
+                      ),
                   ],
                 ),
               ),
@@ -498,32 +788,60 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
                 onPressed: () async {
                   final name = nameController.text.trim();
                   final command = commandController.text.trim();
-                  if (name.isEmpty || command.isEmpty) {
+                  final url = urlController.text.trim();
+                  if (name.isEmpty) {
                     showAuroraNotice(
                       context,
-                      l10n.mcpValidationError,
+                      l10n.mcpValidationErrorName,
                       icon: AuroraIcons.error,
                     );
                     return;
                   }
 
-                  final args = const LineSplitter()
-                      .convert(argsController.text)
-                      .map((s) => s.trim())
-                      .where((s) => s.isNotEmpty)
-                      .toList(growable: false);
-                  final cwd = cwdController.text.trim().isEmpty
-                      ? null
-                      : cwdController.text.trim();
-                  final env = _parseEnv(envController.text);
+                  var args = const <String>[];
+                  String? cwd;
+                  Map<String, String> env = const {};
+                  Map<String, String> headers = const {};
+                  if (transport == McpServerTransport.http) {
+                    if (url.isEmpty) {
+                      showAuroraNotice(
+                        context,
+                        l10n.mcpValidationErrorUrl,
+                        icon: AuroraIcons.error,
+                      );
+                      return;
+                    }
+                    headers = _parseKeyValueLines(headersController.text);
+                  } else {
+                    if (command.isEmpty) {
+                      showAuroraNotice(
+                        context,
+                        l10n.mcpValidationErrorCommand,
+                        icon: AuroraIcons.error,
+                      );
+                      return;
+                    }
+                    args = const LineSplitter()
+                        .convert(argsController.text)
+                        .map((s) => s.trim())
+                        .where((s) => s.isNotEmpty)
+                        .toList(growable: false);
+                    cwd = cwdController.text.trim().isEmpty
+                        ? null
+                        : cwdController.text.trim();
+                    env = _parseKeyValueLines(envController.text);
+                  }
 
                   if (server == null) {
                     await ref.read(mcpServerProvider.notifier).addServer(
                           name: name,
+                          transport: transport,
                           command: command,
                           args: args,
                           cwd: cwd,
                           env: env,
+                          url: url,
+                          headers: headers,
                           enabled: enabled,
                           runInShell: runInShell,
                         );
@@ -537,12 +855,15 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
                   await ref.read(mcpServerProvider.notifier).updateServer(
                         server.copyWith(
                           name: name,
+                          transport: transport,
                           command: command,
                           args: args,
                           cwd: cwd,
                           env: env,
                           enabled: enabled,
                           runInShell: runInShell,
+                          url: url,
+                          headers: headers,
                         ),
                       );
                   if (!ctx.mounted) return;
@@ -567,7 +888,7 @@ class _McpSettingsPageState extends ConsumerState<McpSettingsPage> {
     );
   }
 
-  Map<String, String> _parseEnv(String raw) {
+  Map<String, String> _parseKeyValueLines(String raw) {
     final result = <String, String>{};
     for (final line in const LineSplitter().convert(raw)) {
       final trimmed = line.trim();

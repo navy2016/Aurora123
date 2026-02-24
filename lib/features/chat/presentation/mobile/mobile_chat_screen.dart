@@ -16,6 +16,7 @@ import '../mobile_translation_page.dart';
 import 'mobile_navigation_drawer.dart';
 import '../../../assistant/presentation/mobile_assistant_page.dart';
 import '../../../studio/presentation/pages/mobile_studio_page.dart';
+import '../../../mcp/presentation/mobile_mcp_settings_page.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/utils/number_format_utils.dart';
 import 'package:aurora/shared/theme/chat_background_theme.dart';
@@ -36,6 +37,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   static const String keyBackup = '__backup__';
   static const String keyStudio = '__studio__';
   static const String keyAssistant = '__assistant__';
+  static const String keyMcp = '__mcp__';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _currentViewKey = 'new_chat';
   String _lastSessionId = 'new_chat';
@@ -97,7 +99,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
         key == keyStudio ||
         key == keyAppSettings ||
         key == keyBackup ||
-        key == keyAssistant;
+        key == keyAssistant ||
+        key == keyMcp;
   }
 
   @override
@@ -218,7 +221,6 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                 ref.read(sessionsProvider.notifier).startNewSession();
               },
               onNavigate: _navigateTo,
-              onThemeCycle: _cycleTheme,
               onAbout: _showAboutDialog,
             ),
             body: fluent.NavigationPaneTheme(
@@ -330,6 +332,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
       return MobileSyncSettingsPage(onBack: _navigateBackToSession);
     } else if (key == keyAssistant) {
       return MobileAssistantPage(onBack: _navigateBackToSession);
+    } else if (key == keyMcp) {
+      return MobileMcpSettingsPage(onBack: _navigateBackToSession);
     }
 
     return _buildSessionPage(
@@ -575,38 +579,6 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
           ),
         );
       },
-    );
-  }
-
-  void _cycleTheme() {
-    final l10n = AppLocalizations.of(context)!;
-    final settings = ref.read(settingsProvider);
-    final current = settings.useCustomTheme || settings.themeMode == 'custom'
-        ? 'custom'
-        : settings.themeMode;
-    String next;
-    switch (current) {
-      case 'light':
-        next = 'dark';
-        break;
-      case 'dark':
-        next = 'custom';
-        break;
-      case 'custom':
-        next = 'light';
-        break;
-      default:
-        next = 'light';
-    }
-    ref.read(settingsProvider.notifier).setThemeMode(next);
-    final modeLabel = next == 'light'
-        ? l10n.lightMode
-        : (next == 'dark' ? l10n.darkMode : l10n.themeCustom);
-    showAuroraNotice(
-      context,
-      l10n.switchedToTheme(modeLabel),
-      icon: AuroraIcons.info,
-      top: MediaQuery.of(context).padding.top + 64 + 60,
     );
   }
 

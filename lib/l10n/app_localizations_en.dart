@@ -372,6 +372,122 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpRunInShell => 'Run in shell';
 
   @override
+  String get mcpTransport => 'Transport';
+
+  @override
+  String get mcpTransportStdio => 'stdio';
+
+  @override
+  String get mcpTransportHttp => 'HTTP (Streamable)';
+
+  @override
+  String get mcpUrl => 'URL';
+
+  @override
+  String get mcpUrlHint => 'Server URL (e.g. http://127.0.0.1:3000/mcp)';
+
+  @override
+  String get mcpHeaders => 'Headers';
+
+  @override
+  String get mcpHeadersHint => 'One per line: KEY=VALUE';
+
+  @override
+  String get mcpStatus => 'Status';
+
+  @override
+  String get mcpStatusConnected => 'Connected';
+
+  @override
+  String get mcpStatusConnecting => 'Connecting';
+
+  @override
+  String get mcpStatusDisconnected => 'Disconnected';
+
+  @override
+  String get mcpStatusError => 'Error';
+
+  @override
+  String get mcpLastError => 'Last error';
+
+  @override
+  String get mcpLastConnectedAt => 'Last connected';
+
+  @override
+  String get mcpLastPingAt => 'Last ping';
+
+  @override
+  String get mcpLastToolListAt => 'Last tools/list';
+
+  @override
+  String get mcpLastCallAt => 'Last tools/call';
+
+  @override
+  String get mcpCachedToolsCount => 'Cached tools';
+
+  @override
+  String get mcpLastToolListDuration => 'tools/list duration';
+
+  @override
+  String get mcpLastCallDuration => 'tools/call duration';
+
+  @override
+  String get mcpRefreshToolsCache => 'Refresh tools cache';
+
+  @override
+  String get mcpRefreshToolsCacheSuccess => 'Tools refreshed';
+
+  @override
+  String get mcpReconnect => 'Reconnect';
+
+  @override
+  String get mcpDisconnect => 'Disconnect';
+
+  @override
+  String get mcpStderrTail => 'stderr tail';
+
+  @override
+  String get mcpServersTitle => 'MCP Servers';
+
+  @override
+  String get mcpSessionServersTitle => 'MCP Servers (Session)';
+
+  @override
+  String get mcpNoEnabledServers => 'No enabled MCP servers';
+
+  @override
+  String get mcpFollowAssistant => 'Follow assistant/default';
+
+  @override
+  String get mcpFollowAssistantHint =>
+      'Turn this off to customize servers for this session.';
+
+  @override
+  String get mcpFollowGlobal => 'Follow global';
+
+  @override
+  String get mcpFollowGlobalHint =>
+      'Turn this off to customize servers for this assistant.';
+
+  @override
+  String get mcpToggleTooltip => 'Session MCP servers';
+
+  @override
+  String mcpServersSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get mcpValidationErrorName => 'Name is required.';
+
+  @override
+  String get mcpValidationErrorCommand =>
+      'Command is required for stdio transport.';
+
+  @override
+  String get mcpValidationErrorUrl => 'URL is required for HTTP transport.';
+
+  @override
   String get mcpValidationError => 'Name and command are required.';
 
   @override

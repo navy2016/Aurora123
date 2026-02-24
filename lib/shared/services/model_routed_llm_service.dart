@@ -6,6 +6,14 @@ import 'gemini_native_llm_service.dart';
 import 'llm_service.dart';
 import 'llm_transport_mode.dart';
 import 'openai_llm_service.dart';
+import 'tool_schema_sanitizer.dart';
+
+class _ResolvedDelegate {
+  final LLMService service;
+  final LlmTransportMode mode;
+
+  const _ResolvedDelegate(this.service, this.mode);
+}
 
 class ModelRoutedLlmService implements LLMService {
   final SettingsState _settings;
@@ -37,14 +45,15 @@ class ModelRoutedLlmService implements LLMService {
     return normalized;
   }
 
-  LLMService _resolveDelegate({
+  _ResolvedDelegate _resolveDelegateResolution({
     String? model,
     String? providerId,
   }) {
     final provider = _resolveProvider(providerId);
     final modelName = _resolveModel(provider: provider, requestedModel: model);
     if (modelName == null) {
-      return _openAiCompatService;
+      // No model selected: fall back to OpenAI-compatible request shape.
+      return _ResolvedDelegate(_openAiCompatService, LlmTransportMode.openaiCompat);
     }
 
     final transportMode = resolveModelTransportMode(
@@ -52,16 +61,16 @@ class ModelRoutedLlmService implements LLMService {
       modelName: modelName,
     );
     if (transportMode == LlmTransportMode.openaiCompat) {
-      return _openAiCompatService;
+      return _ResolvedDelegate(_openAiCompatService, LlmTransportMode.openaiCompat);
     }
     if (transportMode == LlmTransportMode.geminiNative) {
-      return _geminiNativeService;
+      return _ResolvedDelegate(_geminiNativeService, LlmTransportMode.geminiNative);
     }
     if (_shouldUseGeminiNativeInAuto(
         provider: provider, modelName: modelName)) {
-      return _geminiNativeService;
+      return _ResolvedDelegate(_geminiNativeService, LlmTransportMode.geminiNative);
     }
-    return _openAiCompatService;
+    return _ResolvedDelegate(_openAiCompatService, LlmTransportMode.openaiCompat);
   }
 
   bool _shouldUseGeminiNativeInAuto({
@@ -95,13 +104,17 @@ class ModelRoutedLlmService implements LLMService {
     String? providerId,
     CancelToken? cancelToken,
   }) {
-    final delegate = _resolveDelegate(
+    final resolution = _resolveDelegateResolution(
       model: model,
       providerId: providerId,
     );
-    return delegate.streamResponse(
+    final sanitizedTools = ToolSchemaSanitizer.sanitizeToolsForTransportMode(
+      tools,
+      resolution.mode,
+    );
+    return resolution.service.streamResponse(
       messages,
-      tools: tools,
+      tools: sanitizedTools,
       toolChoice: toolChoice,
       model: model,
       providerId: providerId,
@@ -118,13 +131,17 @@ class ModelRoutedLlmService implements LLMService {
     String? providerId,
     CancelToken? cancelToken,
   }) {
-    final delegate = _resolveDelegate(
+    final resolution = _resolveDelegateResolution(
       model: model,
       providerId: providerId,
     );
-    return delegate.getResponse(
+    final sanitizedTools = ToolSchemaSanitizer.sanitizeToolsForTransportMode(
+      tools,
+      resolution.mode,
+    );
+    return resolution.service.getResponse(
       messages,
-      tools: tools,
+      tools: sanitizedTools,
       toolChoice: toolChoice,
       model: model,
       providerId: providerId,

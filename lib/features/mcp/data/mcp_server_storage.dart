@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import '../domain/mcp_server_config.dart';
 
 class McpServerStorage {
-  static const int currentVersion = 1;
+  static const int currentVersion = 2;
 
   Future<File> get _configFile async {
     final dir = await getApplicationSupportDirectory();
@@ -24,6 +24,7 @@ class McpServerStorage {
       if (decoded is! Map) return const [];
 
       final map = decoded.map((k, v) => MapEntry('$k', v));
+      final version = int.tryParse(map['version']?.toString() ?? '') ?? 1;
       final rawServers = map['servers'];
       if (rawServers is! List) return const [];
 
@@ -32,8 +33,19 @@ class McpServerStorage {
         if (item is Map) {
           final cfg = McpServerConfig.fromJson(
               item.map((k, v) => MapEntry('$k', v)));
-          if (cfg.id.trim().isNotEmpty && cfg.command.trim().isNotEmpty) {
+          if (cfg.id.trim().isEmpty) continue;
+
+          // v1 is stdio-only, so `command` is required. v2 adds http transport.
+          if (version <= 1 || cfg.transport == McpServerTransport.stdio) {
+            if (cfg.command.trim().isEmpty) continue;
+            servers.add(cfg.copyWith(transport: McpServerTransport.stdio));
+            continue;
+          }
+
+          if (cfg.transport == McpServerTransport.http) {
+            if (cfg.url.trim().isEmpty) continue;
             servers.add(cfg);
+            continue;
           }
         }
       }
@@ -80,4 +92,3 @@ class McpServerStorage {
     }
   }
 }
-

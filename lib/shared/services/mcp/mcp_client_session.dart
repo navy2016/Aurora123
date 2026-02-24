@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'mcp_constants.dart';
-import 'mcp_stdio_transport.dart';
 import 'json_rpc_peer.dart';
+import 'mcp_stdio_transport.dart';
+import 'mcp_streamable_http_transport.dart';
+import 'mcp_transport.dart';
 
 class McpTool {
   final String name;
@@ -29,14 +31,18 @@ class McpTool {
 }
 
 class McpClientSession {
-  final McpStdioTransport _transport;
+  final McpTransport _transport;
   final JsonRpcPeer _peer;
 
   bool _initialized = false;
+  bool _pingSupported = true;
+  String? _negotiatedProtocolVersion;
 
   McpClientSession._(this._transport, this._peer);
 
   Stream<String> get stderrLines => _transport.stderrLines;
+  bool get pingSupported => _pingSupported;
+  String? get negotiatedProtocolVersion => _negotiatedProtocolVersion;
 
   static Future<McpClientSession> connect({
     required String command,
@@ -45,7 +51,7 @@ class McpClientSession {
     Map<String, String>? env,
     bool runInShell = false,
   }) async {
-    final transport = McpStdioTransport(
+    final McpTransport transport = McpStdioTransport(
       command: command,
       args: args,
       workingDirectory: cwd,
@@ -57,12 +63,27 @@ class McpClientSession {
     return McpClientSession._(transport, peer);
   }
 
+  static Future<McpClientSession> connectHttp({
+    required Uri url,
+    Map<String, String> headers = const {},
+    String protocolVersion = kMcpDefaultProtocolVersion,
+  }) async {
+    final McpTransport transport = McpStreamableHttpTransport(
+      baseUri: url,
+      headers: headers,
+      initialProtocolVersion: protocolVersion,
+    );
+    await transport.connect();
+    final peer = JsonRpcPeer(incoming: transport.incoming, send: transport.send);
+    return McpClientSession._(transport, peer);
+  }
+
   Future<void> initialize({
     String protocolVersion = kMcpDefaultProtocolVersion,
     Duration timeout = const Duration(seconds: 20),
   }) async {
     if (_initialized) return;
-    await _peer.request(
+    final result = await _peer.request(
       'initialize',
       params: {
         'protocolVersion': protocolVersion,
@@ -74,8 +95,37 @@ class McpClientSession {
       },
       timeout: timeout,
     );
+
+    if (result is Map) {
+      final map = result.map((k, v) => MapEntry('$k', v));
+      final negotiated = map['protocolVersion']?.toString().trim();
+      if (negotiated != null && negotiated.isNotEmpty) {
+        _negotiatedProtocolVersion = negotiated;
+        _transport.updateProtocolVersion(negotiated);
+      }
+    }
     await _peer.notify('notifications/initialized');
     _initialized = true;
+  }
+
+  Future<void> ping({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    if (!_initialized) {
+      throw StateError('MCP session not initialized');
+    }
+    if (!_pingSupported) {
+      throw UnsupportedError('MCP ping not supported');
+    }
+    try {
+      await _peer.request('ping', timeout: timeout);
+    } on JsonRpcException catch (e) {
+      if (e.code == -32601) {
+        _pingSupported = false;
+        throw UnsupportedError('MCP ping not supported');
+      }
+      rethrow;
+    }
   }
 
   Future<List<McpTool>> listToolsAll({
@@ -135,4 +185,3 @@ class McpClientSession {
     await _transport.close();
   }
 }
-

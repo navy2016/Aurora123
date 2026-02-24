@@ -40,6 +40,7 @@ class _ChatRequestContextBuilder {
     final settings = _notifier._ref.read(settingsProvider);
     final llmService = _notifier._ref.read(llmServiceProvider);
     final toolManager = ToolManager(
+      mcpConnection: _notifier._ref.read(mcpConnectionProvider.notifier),
       searchRegion: settings.searchRegion,
       searchSafeSearch: settings.searchSafeSearch,
       searchMaxResults: settings.searchMaxResults,
@@ -73,13 +74,14 @@ class _ChatRequestContextBuilder {
     final nativeGoogleSearchEnabled = _isNativeGoogleSearchEnabled(settings);
     final allowLegacySearchTool =
         settings.isSearchEnabled && !nativeGoogleSearchEnabled;
-    final mcpServers = PlatformUtils.isDesktop
-        ? _notifier._ref
-            .read(mcpServerProvider)
-            .servers
-            .where((s) => s.enabled)
-            .toList(growable: false)
-        : const <McpServerConfig>[];
+
+    final configuredMcpServers =
+        _notifier._ref.read(mcpServerProvider).servers;
+    final mcpServers = _notifier._ref.read(mcpBindingsProvider.notifier).resolveEffectiveServers(
+          configuredServers: configuredMcpServers,
+          sessionId: _notifier._sessionId,
+          assistantId: assistant?.id,
+        );
 
     List<Map<String, dynamic>>? tools;
     if (allowLegacySearchTool || activeSkills.isNotEmpty || mcpServers.isNotEmpty) {

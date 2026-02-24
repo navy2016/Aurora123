@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
@@ -6,6 +8,10 @@ import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import '../../chat_provider.dart';
+import '../../../../assistant/presentation/assistant_provider.dart';
+import '../../../../mcp/domain/mcp_server_config.dart';
+import '../../../../mcp/presentation/mcp_bindings_provider.dart';
+import '../../../../mcp/presentation/mcp_server_provider.dart';
 import '../../../../settings/presentation/settings_provider.dart';
 import '../custom_dropdown_overlay.dart'; // for generateColorFromString
 import 'payload_config_panel.dart';
@@ -74,6 +80,7 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
   int? _triggerIndex;
   final fluent.FlyoutController _configFlyoutController =
       fluent.FlyoutController();
+  final fluent.FlyoutController _mcpFlyoutController = fluent.FlyoutController();
   OverlayEntry? _presetOverlayEntry;
   int _presetSelectedIndex = 0;
   List<PresetOption> _filteredPresets = [];
@@ -114,6 +121,7 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
     _presetScrollController.dispose();
     _animationController.dispose();
     _configFlyoutController.dispose();
+    _mcpFlyoutController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -580,6 +588,208 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
     _focusNode.requestFocus();
   }
 
+  void _showMcpSessionSelectorDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    _mcpFlyoutController.showFlyout(
+      autoModeConfiguration: fluent.FlyoutAutoConfiguration(
+        preferredMode: fluent.FlyoutPlacementMode.topCenter,
+      ),
+      barrierDismissible: true,
+      dismissOnPointerMoveAway: false,
+      dismissWithEsc: true,
+      builder: (context) {
+        return fluent.FlyoutContent(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 420,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final sessionId =
+                    ref.watch(selectedHistorySessionIdProvider) ?? 'new_chat';
+                final assistantId =
+                    ref.watch(assistantProvider).selectedAssistantId;
+                final configuredServers =
+                    ref.watch(mcpServerProvider).servers;
+                final enabledServers = configuredServers
+                    .where((s) => s.enabled)
+                    .toList(growable: false);
+                final enabledIds = enabledServers.map((s) => s.id).toSet();
+
+                final bindingsState = ref.watch(mcpBindingsProvider);
+                final sessionOverride =
+                    bindingsState.sessionOverrides[sessionId];
+                final followAssistant = sessionOverride == null;
+
+                final effectiveServers =
+                    ref.read(mcpBindingsProvider.notifier).resolveEffectiveServers(
+                          configuredServers: configuredServers,
+                          sessionId: sessionId,
+                          assistantId: assistantId,
+                        );
+                final baseIds = effectiveServers
+                    .map((s) => s.id)
+                    .where(enabledIds.contains)
+                    .toSet();
+                final selectedIds = followAssistant
+                    ? baseIds
+                    : sessionOverride.where(enabledIds.contains).toSet();
+
+                Future<void> setFollow(bool follow) async {
+                  if (follow) {
+                    await ref
+                        .read(mcpBindingsProvider.notifier)
+                        .clearSessionOverride(sessionId);
+                    return;
+                  }
+                  final next = baseIds.toList()..sort();
+                  await ref
+                      .read(mcpBindingsProvider.notifier)
+                      .setSessionOverride(sessionId, next);
+                }
+
+                Future<void> toggleServer(String serverId, bool enabled) async {
+                  final current = Set<String>.from(selectedIds);
+                  if (enabled) {
+                    current.add(serverId);
+                  } else {
+                    current.remove(serverId);
+                  }
+                  final next = current.toList()..sort();
+                  await ref
+                      .read(mcpBindingsProvider.notifier)
+                      .setSessionOverride(sessionId, next);
+                }
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.mcpSessionServersTitle,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (enabledServers.isEmpty)
+                      Text(l10n.mcpNoEnabledServers)
+                    else ...[
+                      Row(
+                        children: [
+                          Expanded(child: Text(l10n.mcpFollowAssistant)),
+                          fluent.ToggleSwitch(
+                            checked: followAssistant,
+                            onChanged: (v) {
+                              unawaited(setFollow(v));
+                            },
+                          ),
+                        ],
+                      ),
+                      if (followAssistant) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.mcpFollowAssistantHint,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: fluent.FluentTheme.of(context)
+                                .resources
+                                .textFillColorSecondary,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: enabledServers.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final server = enabledServers[index];
+                            final checked = selectedIds.contains(server.id);
+                            final summary =
+                                server.transport == McpServerTransport.http
+                                    ? server.url.trim()
+                                    : [
+                                        server.command,
+                                        ...server.args,
+                                      ]
+                                        .where((s) => s.trim().isNotEmpty)
+                                        .join(' ');
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: fluent.FluentTheme.of(context)
+                                    .resources
+                                    .cardBackgroundFillColorDefault,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: fluent.FluentTheme.of(context)
+                                      .resources
+                                      .dividerStrokeColorDefault,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          server.name.isNotEmpty
+                                              ? server.name
+                                              : l10n.unknown,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                        if (summary.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            summary,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: fluent.FluentTheme.of(context)
+                                                  .resources
+                                                  .textFillColorSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  fluent.ToggleSwitch(
+                                    checked: checked,
+                                    onChanged: followAssistant
+                                        ? null
+                                        : (v) {
+                                            unawaited(toggleServer(server.id, v));
+                                          },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -906,6 +1116,21 @@ class _DesktopChatInputAreaState extends ConsumerState<DesktopChatInputArea>
                 ),
               ),
               const SizedBox(width: 4),
+              fluent.Tooltip(
+                message: l10n.mcpToggleTooltip,
+                child: fluent.FlyoutTarget(
+                  controller: _mcpFlyoutController,
+                  child: fluent.IconButton(
+                    icon: Icon(
+                      AuroraIcons.mcp,
+                      size: 16,
+                      color: theme.resources.textFillColorSecondary,
+                    ),
+                    onPressed: _showMcpSessionSelectorDialog,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
               fluent.FlyoutTarget(
                 controller: _configFlyoutController,
                 child: fluent.IconButton(
@@ -1009,10 +1234,140 @@ class MobileChatInputArea extends ConsumerWidget {
     required this.onAttachmentTap,
     required this.onShowToast,
   });
+
+  void _showMcpSessionSelectorSheet(BuildContext context) {
+    AuroraBottomSheet.show(
+      context: context,
+      builder: (ctx) => Consumer(
+        builder: (ctx, ref, _) {
+          final l10n = AppLocalizations.of(ctx)!;
+          final sessionId =
+              ref.watch(selectedHistorySessionIdProvider) ?? 'new_chat';
+          final assistantId = ref.watch(assistantProvider).selectedAssistantId;
+          final configuredServers = ref.watch(mcpServerProvider).servers;
+          final enabledServers = configuredServers
+              .where((s) => s.enabled && s.transport != McpServerTransport.stdio)
+              .toList(growable: false);
+          final enabledIds = enabledServers.map((s) => s.id).toSet();
+
+          final bindingsState = ref.watch(mcpBindingsProvider);
+          final sessionOverride = bindingsState.sessionOverrides[sessionId];
+          final followAssistant = sessionOverride == null;
+
+          final effectiveServers =
+              ref.read(mcpBindingsProvider.notifier).resolveEffectiveServers(
+                    configuredServers: configuredServers,
+                    sessionId: sessionId,
+                    assistantId: assistantId,
+                  );
+          final baseIds = effectiveServers
+              .map((s) => s.id)
+              .where(enabledIds.contains)
+              .toSet();
+          final selectedIds = followAssistant
+              ? baseIds
+              : sessionOverride.where(enabledIds.contains).toSet();
+
+          Future<void> setFollow(bool follow) async {
+            if (follow) {
+              await ref
+                  .read(mcpBindingsProvider.notifier)
+                  .clearSessionOverride(sessionId);
+              return;
+            }
+            final next = baseIds.toList()..sort();
+            await ref
+                .read(mcpBindingsProvider.notifier)
+                .setSessionOverride(sessionId, next);
+          }
+
+          Future<void> toggleServer(String serverId, bool enabled) async {
+            final current = Set<String>.from(selectedIds);
+            if (enabled) {
+              current.add(serverId);
+            } else {
+              current.remove(serverId);
+            }
+            final next = current.toList()..sort();
+            await ref
+                .read(mcpBindingsProvider.notifier)
+                .setSessionOverride(sessionId, next);
+          }
+
+          return ConstrainedBox(
+            constraints:
+                BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.75),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AuroraBottomSheet.buildTitle(ctx, l10n.mcpSessionServersTitle),
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                    children: [
+                      SwitchListTile.adaptive(
+                        value: followAssistant,
+                        onChanged: (v) => unawaited(setFollow(v)),
+                        title: Text(l10n.mcpFollowAssistant),
+                        subtitle: followAssistant
+                            ? Text(l10n.mcpFollowAssistantHint)
+                            : null,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      if (enabledServers.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(l10n.mcpNoEnabledServers),
+                        )
+                      else
+                        ...enabledServers.map((server) {
+                          final checked = selectedIds.contains(server.id);
+                          final summary = server.transport ==
+                                  McpServerTransport.http
+                              ? server.url.trim()
+                              : [
+                                  server.command,
+                                  ...server.args,
+                                ].where((s) => s.trim().isNotEmpty).join(' ');
+                          return SwitchListTile.adaptive(
+                            value: checked,
+                            onChanged: followAssistant
+                                ? null
+                                : (v) => unawaited(toggleServer(server.id, v)),
+                            title: Text(server.name.isNotEmpty
+                                ? server.name
+                                : l10n.unknown),
+                            subtitle:
+                                summary.isEmpty ? null : Text(summary),
+                            contentPadding: EdgeInsets.zero,
+                          );
+                        }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsProvider);
+    final configuredMcpServers = ref.watch(mcpServerProvider).servers;
+    final assistantId = ref.watch(assistantProvider).selectedAssistantId;
+    final sessionId = ref.watch(selectedHistorySessionIdProvider) ?? 'new_chat';
+    final effectiveMcpServers =
+        ref.read(mcpBindingsProvider.notifier).resolveEffectiveServers(
+              configuredServers: configuredMcpServers,
+              sessionId: sessionId,
+              assistantId: assistantId,
+            );
+    final hasMcpServers = effectiveMcpServers.isNotEmpty;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
@@ -1140,6 +1495,21 @@ class MobileChatInputArea extends ConsumerWidget {
                   child: Icon(
                     AuroraIcons.globe,
                     color: settings.isSearchEnabled
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey,
+                    size: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              InkWell(
+                onTap: () => _showMcpSessionSelectorSheet(context),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.all(6.0),
+                  child: Icon(
+                    AuroraIcons.mcp,
+                    color: hasMcpServers
                         ? Theme.of(context).colorScheme.primary
                         : Colors.grey,
                     size: 18,

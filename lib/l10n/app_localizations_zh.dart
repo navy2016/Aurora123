@@ -367,6 +367,119 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpRunInShell => '通过 shell 运行';
 
   @override
+  String get mcpTransport => '传输方式';
+
+  @override
+  String get mcpTransportStdio => 'stdio';
+
+  @override
+  String get mcpTransportHttp => 'HTTP（Streamable）';
+
+  @override
+  String get mcpUrl => 'URL';
+
+  @override
+  String get mcpUrlHint => '服务器 URL（例如 http://127.0.0.1:3000/mcp）';
+
+  @override
+  String get mcpHeaders => '请求头';
+
+  @override
+  String get mcpHeadersHint => '每行一条：KEY=VALUE';
+
+  @override
+  String get mcpStatus => '连接状态';
+
+  @override
+  String get mcpStatusConnected => '已连接';
+
+  @override
+  String get mcpStatusConnecting => '连接中';
+
+  @override
+  String get mcpStatusDisconnected => '未连接';
+
+  @override
+  String get mcpStatusError => '错误';
+
+  @override
+  String get mcpLastError => '最近错误';
+
+  @override
+  String get mcpLastConnectedAt => '最近连接';
+
+  @override
+  String get mcpLastPingAt => '最近心跳';
+
+  @override
+  String get mcpLastToolListAt => '最近 tools/list';
+
+  @override
+  String get mcpLastCallAt => '最近 tools/call';
+
+  @override
+  String get mcpCachedToolsCount => '缓存工具数';
+
+  @override
+  String get mcpLastToolListDuration => 'tools/list 耗时';
+
+  @override
+  String get mcpLastCallDuration => 'tools/call 耗时';
+
+  @override
+  String get mcpRefreshToolsCache => '刷新工具缓存';
+
+  @override
+  String get mcpRefreshToolsCacheSuccess => '工具已刷新';
+
+  @override
+  String get mcpReconnect => '重连';
+
+  @override
+  String get mcpDisconnect => '断开';
+
+  @override
+  String get mcpStderrTail => 'stderr 尾日志';
+
+  @override
+  String get mcpServersTitle => 'MCP 服务器';
+
+  @override
+  String get mcpSessionServersTitle => '会话 MCP 服务器';
+
+  @override
+  String get mcpNoEnabledServers => '没有启用的 MCP 服务器';
+
+  @override
+  String get mcpFollowAssistant => '跟随助手/默认';
+
+  @override
+  String get mcpFollowAssistantHint => '关闭后可为当前会话自定义服务器。';
+
+  @override
+  String get mcpFollowGlobal => '跟随全局';
+
+  @override
+  String get mcpFollowGlobalHint => '关闭后可为该助手自定义服务器。';
+
+  @override
+  String get mcpToggleTooltip => '会话 MCP 服务器';
+
+  @override
+  String mcpServersSelectedCount(int count) {
+    return '已选择 $count 个';
+  }
+
+  @override
+  String get mcpValidationErrorName => '服务器名称不能为空。';
+
+  @override
+  String get mcpValidationErrorCommand => 'stdio 传输需要填写命令。';
+
+  @override
+  String get mcpValidationErrorUrl => 'HTTP 传输需要填写 URL。';
+
+  @override
   String get mcpValidationError => '名称和命令不能为空。';
 
   @override

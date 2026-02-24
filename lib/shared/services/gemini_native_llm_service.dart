@@ -669,7 +669,11 @@ class GeminiNativeLlmService implements LLMService {
       final name = fn['name']?.toString().trim();
       if (name == null || name.isEmpty) continue;
       final description = fn['description']?.toString().trim();
-      final parameters = _sanitizeFunctionParameters(fn['parameters']);
+      Map<String, dynamic>? parameters;
+      final rawParameters = fn['parameters'];
+      if (rawParameters is Map) {
+        parameters = rawParameters.map((k, v) => MapEntry('$k', v));
+      }
 
       declarations.add({
         'name': name,
@@ -679,35 +683,6 @@ class GeminiNativeLlmService implements LLMService {
       });
     }
     return declarations;
-  }
-
-  Map<String, dynamic>? _sanitizeFunctionParameters(dynamic rawParameters) {
-    if (rawParameters is! Map) return null;
-    final sanitized = _sanitizeGeminiSchemaValue(rawParameters);
-    if (sanitized is Map<String, dynamic>) return sanitized;
-    if (sanitized is Map) {
-      return Map<String, dynamic>.from(sanitized);
-    }
-    return null;
-  }
-
-  dynamic _sanitizeGeminiSchemaValue(dynamic value) {
-    if (value is Map) {
-      final sanitized = <String, dynamic>{};
-      value.forEach((key, entryValue) {
-        final keyStr = key.toString();
-        // Gemini native Schema rejects JSON Schema metadata keys like "$schema".
-        if (keyStr.startsWith(r'$')) return;
-        sanitized[keyStr] = _sanitizeGeminiSchemaValue(entryValue);
-      });
-      return sanitized;
-    }
-
-    if (value is List) {
-      return value.map(_sanitizeGeminiSchemaValue).toList();
-    }
-
-    return value;
   }
 
   Map<String, dynamic>? _buildToolConfig({

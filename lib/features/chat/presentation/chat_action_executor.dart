@@ -185,6 +185,7 @@ class _ChatActionExecutor {
     }
 
     _requestContext.messagesForApi.add(aiMsg);
+    final mcpSummaries = <_McpToolCallSummary>[];
 
     for (final tc in aiMsg.toolCalls!) {
       String toolResult;
@@ -209,9 +210,28 @@ class _ChatActionExecutor {
         return _ChatActionResult.stop(aiMsg);
       }
 
+      if (tc.name.startsWith('mcp__')) {
+        mcpSummaries.add(_McpToolCallSummary(tc.name, toolResult));
+      }
+
       final toolMsg = Message.tool(toolResult, toolCallId: tc.id);
       _requestContext.messagesForApi.add(toolMsg);
       _notifier._appendMessage(toolMsg);
+    }
+
+    if (mcpSummaries.isNotEmpty) {
+      final summaryText = _buildMcpSummaryMessage(mcpSummaries);
+      if (summaryText.trim().isNotEmpty) {
+        _requestContext.messagesForApi.add(
+          Message(
+            id: const Uuid().v4(),
+            role: 'user',
+            content: summaryText,
+            timestamp: DateTime.now(),
+            isUser: false,
+          ),
+        );
+      }
     }
 
     final nextAi = Message.ai('',
@@ -219,6 +239,100 @@ class _ChatActionExecutor {
         provider: _requestContext.currentProviderName);
     _notifier._appendMessage(nextAi);
     return _ChatActionResult.continueWith(nextAi);
+  }
+
+  String _buildMcpSummaryMessage(List<_McpToolCallSummary> items) {
+    final lines = <String>[];
+    for (final item in items) {
+      final parsed = _parseMcpToolResult(item.resultJson);
+      final status = parsed.isError ? 'error' : 'ok';
+      final parts = <String>[status];
+
+      if (parsed.contentTypes.isNotEmpty) {
+        parts.add('types=${parsed.contentTypes.join(',')}');
+      }
+      if (parsed.textPreview.isNotEmpty) {
+        parts.add('text="${parsed.textPreview}"');
+      }
+      if (parsed.structuredKeys.isNotEmpty) {
+        parts.add('structuredKeys=${parsed.structuredKeys.join(',')}');
+      }
+
+      lines.add('${item.toolName}: ${parts.join('; ')}');
+    }
+
+    return '<tool_summaries>\n${lines.join('\n')}\n</tool_summaries>';
+  }
+
+  _McpParsedResult _parseMcpToolResult(String rawJson) {
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(rawJson);
+    } catch (_) {
+      return _McpParsedResult(
+        isError: true,
+        contentTypes: const [],
+        textPreview: _truncate(rawJson, 280),
+        structuredKeys: const [],
+      );
+    }
+
+    if (decoded is! Map) {
+      return _McpParsedResult(
+        isError: false,
+        contentTypes: const [],
+        textPreview: _truncate(decoded.toString(), 280),
+        structuredKeys: const [],
+      );
+    }
+
+    final map = decoded.map((k, v) => MapEntry('$k', v));
+    final isError = map.containsKey('error') || map['isError'] == true || map['is_error'] == true;
+
+    final contentTypes = <String>{};
+    final textParts = <String>[];
+
+    final content = map['content'];
+    if (content is List) {
+      for (final item in content) {
+        if (item is! Map) continue;
+        final itemMap = item.map((k, v) => MapEntry('$k', v));
+        final type = itemMap['type']?.toString();
+        if (type != null && type.isNotEmpty) {
+          contentTypes.add(type);
+        }
+        if (type == 'text') {
+          final text = itemMap['text']?.toString();
+          if (text != null && text.trim().isNotEmpty) {
+            textParts.add(text.trim());
+          }
+        }
+      }
+    }
+
+    final structuredKeys = <String>[];
+    final structured = map['structuredContent'];
+    if (structured is Map) {
+      structuredKeys.addAll(structured.keys.map((k) => k.toString()));
+      if (structuredKeys.length > 10) {
+        structuredKeys.removeRange(10, structuredKeys.length);
+      }
+    }
+
+    final textPreview = _truncate(textParts.join('\n'), 280);
+
+    return _McpParsedResult(
+      isError: isError,
+      contentTypes: contentTypes.toList()..sort(),
+      textPreview: textPreview,
+      structuredKeys: structuredKeys,
+    );
+  }
+
+  String _truncate(String value, int maxChars) {
+    final trimmed = value.trim();
+    if (trimmed.length <= maxChars) return trimmed;
+    return '${trimmed.substring(0, maxChars)}...';
   }
 
   Future<String> _executeLegacySkillCall(String rawArguments) async {
@@ -306,4 +420,25 @@ class _ChatActionExecutor {
     );
   }
 
+}
+
+class _McpToolCallSummary {
+  final String toolName;
+  final String resultJson;
+
+  const _McpToolCallSummary(this.toolName, this.resultJson);
+}
+
+class _McpParsedResult {
+  final bool isError;
+  final List<String> contentTypes;
+  final String textPreview;
+  final List<String> structuredKeys;
+
+  const _McpParsedResult({
+    required this.isError,
+    required this.contentTypes,
+    required this.textPreview,
+    required this.structuredKeys,
+  });
 }

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-class McpStdioTransport {
+import 'mcp_transport.dart';
+
+class McpStdioTransport implements McpTransport {
   final String command;
   final List<String> args;
   final String? workingDirectory;
@@ -26,11 +28,21 @@ class McpStdioTransport {
   final StreamController<String> _stderrController =
       StreamController<String>.broadcast();
 
+  @override
   Stream<Map<String, dynamic>> get incoming => _incomingController.stream;
+
+  @override
   Stream<String> get stderrLines => _stderrController.stream;
 
+  @override
   bool get isConnected => _process != null;
 
+  @override
+  void updateProtocolVersion(String protocolVersion) {
+    // stdio transport does not use protocol version headers.
+  }
+
+  @override
   Future<void> connect() async {
     if (_process != null) return;
 
@@ -74,6 +86,7 @@ class McpStdioTransport {
     }));
   }
 
+  @override
   Future<void> send(Map<String, dynamic> message) async {
     final p = _process;
     if (p == null) {
@@ -82,6 +95,7 @@ class McpStdioTransport {
     p.stdin.writeln(jsonEncode(message));
   }
 
+  @override
   Future<void> close() async {
     final p = _process;
     _process = null;
@@ -115,4 +129,3 @@ class McpStdioTransport {
     } catch (_) {}
   }
 }
-

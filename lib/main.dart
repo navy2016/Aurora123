@@ -19,6 +19,8 @@ import 'shared/theme/wallpaper_tint_provider.dart';
 import 'shared/utils/windows_injector.dart';
 import 'features/skills/presentation/skill_provider.dart';
 import 'features/mcp/presentation/mcp_server_provider.dart';
+import 'features/mcp/presentation/mcp_bindings_provider.dart';
+import 'features/mcp/presentation/mcp_connection_provider.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'features/chat/presentation/widgets/chat_image_bubble.dart'
     show clearImageCache;
@@ -173,19 +175,22 @@ void main() async {
             selectedHistorySessionIdProvider
                 .overrideWith((ref) => initialSelectedHistorySessionId),
             settingsProvider.overrideWith((ref) {
-               // Load skills from a default directory (Desktop only)
-               if (PlatformUtils.isDesktop) {
-                 Future.microtask(() {
-                   final skillsDir =
-                       '${Directory.current.path}${Platform.pathSeparator}skills';
-                   final language = appSettings?.language ??
-                       (Platform.localeName.startsWith('zh') ? 'zh' : 'en');
-                   ref
-                       .read(skillProvider.notifier)
-                       .loadSkills(skillsDir, language: language);
-                   ref.read(mcpServerProvider.notifier).load();
-                 });
-               }
+              Future.microtask(() {
+                // Load skills from a default directory (Desktop only)
+                if (PlatformUtils.isDesktop) {
+                  final skillsDir =
+                      '${Directory.current.path}${Platform.pathSeparator}skills';
+                  final language = appSettings?.language ??
+                      (Platform.localeName.startsWith('zh') ? 'zh' : 'en');
+                  ref
+                      .read(skillProvider.notifier)
+                      .loadSkills(skillsDir, language: language);
+                }
+
+                // MCP is available on all platforms (stdio is desktop-only).
+                ref.read(mcpServerProvider.notifier).load();
+                ref.read(mcpBindingsProvider.notifier).load();
+              });
 
               return SettingsNotifier(
                 storage: storage,
@@ -255,6 +260,9 @@ class MyApp extends ConsumerWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(mcpServerProvider, (prev, next) {
+      ref.read(mcpConnectionProvider.notifier).syncConfiguredServers(next.servers);
+    });
     ref.listen<String?>(selectedHistorySessionIdProvider, (prev, next) {
       if (prev != next) {
         clearImageCache();
