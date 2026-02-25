@@ -13,7 +13,6 @@
 migrate_working_dir/
 release_output/
 .metadata
-test/
 
 # IntelliJ related
 *.iml
