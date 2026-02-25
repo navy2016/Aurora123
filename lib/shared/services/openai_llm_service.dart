@@ -21,6 +21,10 @@ class OpenAILLMService implements LLMService {
   final Dio _dio;
   final SettingsState _settings;
   final Map<String, String> _imageThoughtSignatureByUrl = {};
+  static final RegExp _markdownDataImageRegExp = RegExp(
+    r'!\[[^\]]*]\(\s*<?(data:image/[^)\s>]+)>?\s*\)',
+    caseSensitive: false,
+  );
   OpenAILLMService(this._settings)
       : _dio = Dio(BaseOptions(
           connectTimeout: const Duration(seconds: 30),
@@ -74,6 +78,26 @@ class OpenAILLMService implements LLMService {
     // the original signature value end-to-end (no synthetic sentinel).
     // Remove this sentinel once translator compatibility is verified.
     return 'skip_thought_signature_validator';
+  }
+
+  List<String> _extractMarkdownDataImageUrls(String? text) {
+    if (text == null || text.isEmpty) return const <String>[];
+    final urls = <String>[];
+    final seen = <String>{};
+    for (final match in _markdownDataImageRegExp.allMatches(text)) {
+      final url = match.group(1)?.trim();
+      if (url == null || url.isEmpty) continue;
+      if (seen.add(url)) {
+        urls.add(url);
+      }
+    }
+    return urls;
+  }
+
+  String? _removeMarkdownDataImageTags(String? text) {
+    if (text == null || text.isEmpty) return text;
+    final stripped = text.replaceAll(_markdownDataImageRegExp, '').trim();
+    return stripped.isEmpty ? null : stripped;
   }
 
   void _debugLog(String message,
@@ -510,6 +534,16 @@ class OpenAILLMService implements LLMService {
                           );
                         }
                       }
+                    }
+                  }
+                  if (content != null && content.isNotEmpty) {
+                    final markdownDataImages =
+                        _extractMarkdownDataImageUrls(content);
+                    if (markdownDataImages.isNotEmpty) {
+                      for (final markdownImage in markdownDataImages) {
+                        addImageCandidate(markdownImage);
+                      }
+                      content = _removeMarkdownDataImageTags(content);
                     }
                   }
 
@@ -997,7 +1031,9 @@ class OpenAILLMService implements LLMService {
       final choices = data['choices'] as List;
       if (choices.isNotEmpty) {
         final message = choices[0]['message'];
-        final String? content = message['content'];
+        final dynamic rawMessageContent = message['content'];
+        String? content =
+            rawMessageContent is String ? rawMessageContent : null;
         final String? reasoning =
             (message['reasoning_content'] ?? message['reasoning'])?.toString();
         List<ToolCallChunk>? toolCalls;
@@ -1031,8 +1067,8 @@ class OpenAILLMService implements LLMService {
             }
           }
         }
-        if (message['content'] is List) {
-          for (final item in message['content']) {
+        if (rawMessageContent is List) {
+          for (final item in rawMessageContent) {
             if (item is Map && item['type'] == 'image_url') {
               final url = item['image_url']?['url'];
               if (url != null) {
@@ -1042,6 +1078,17 @@ class OpenAILLMService implements LLMService {
                     normalized, _extractThoughtSignatureFromImageItem(item));
               }
             }
+          }
+        }
+        if (content != null && content.isNotEmpty) {
+          final markdownDataImages = _extractMarkdownDataImageUrls(content);
+          if (markdownDataImages.isNotEmpty) {
+            for (final markdownImage in markdownDataImages) {
+              if (!images.contains(markdownImage)) {
+                images.add(markdownImage);
+              }
+            }
+            content = _removeMarkdownDataImageTags(content);
           }
         }
         final String? finishReason = choices[0]['finish_reason'];
