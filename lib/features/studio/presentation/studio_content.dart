@@ -5,6 +5,7 @@ import 'novel/novel_writing_page.dart';
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import '../../settings/presentation/settings_provider.dart';
 import 'pages/storage_cleaning_page.dart';
+import 'agent_workflow/agent_workflow_page.dart';
 
 class StudioContent extends ConsumerStatefulWidget {
   const StudioContent({super.key});
@@ -14,7 +15,7 @@ class StudioContent extends ConsumerStatefulWidget {
 }
 
 class _StudioContentState extends ConsumerState<StudioContent> {
-  // 0: Dashboard, 1: Novel Writing, 2: Storage Cleaning
+  // 0: Dashboard, 1: Novel Writing, 2: Storage Cleaning, 3: Agent Workflow
   int _viewIndex = 0;
 
   @override
@@ -37,11 +38,18 @@ class _StudioContentState extends ConsumerState<StudioContent> {
         },
       );
     }
+    if (_viewIndex == 3) {
+      return AgentWorkflowPage(
+        onBack: () {
+          setState(() {
+            _viewIndex = 0;
+          });
+        },
+      );
+    }
 
     final theme = FluentTheme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final isZh =
-        Localizations.localeOf(context).languageCode.toLowerCase() == 'zh';
     final settings = ref.watch(settingsProvider);
     final hasBackground = settings.useCustomTheme &&
         settings.backgroundImagePath != null &&
@@ -91,10 +99,8 @@ class _StudioContentState extends ConsumerState<StudioContent> {
                   _buildFeatureCard(
                     context,
                     icon: AuroraIcons.broom,
-                    title: isZh ? '智能清理' : 'AI Cleanup',
-                    description: isZh
-                        ? '扫描可访问目录并给出 AI 删除建议'
-                        : 'Scan accessible files and get AI cleanup advice',
+                    title: l10n.cleanerTitle,
+                    description: l10n.cleanerRuleAiPolicySubtitle,
                     hasBackground: hasBackground,
                     onTap: () {
                       setState(() {
@@ -110,6 +116,18 @@ class _StudioContentState extends ConsumerState<StudioContent> {
                     comingSoon: true,
                     hasBackground: hasBackground,
                     onTap: null,
+                  ),
+                  _buildFeatureCard(
+                    context,
+                    icon: AuroraIcons.branch,
+                    title: l10n.agentWorkflow,
+                    description: l10n.agentWorkflowDescription,
+                    hasBackground: hasBackground,
+                    onTap: () {
+                      setState(() {
+                        _viewIndex = 3;
+                      });
+                    },
                   ),
                 ],
               ),

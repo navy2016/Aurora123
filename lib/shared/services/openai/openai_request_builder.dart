@@ -196,8 +196,18 @@ Use search for:
     List<Map<String, dynamic>>? tools,
     String? toolChoice,
   }) async {
+    final baseUrl = _normalizeBaseUrl(provider.baseUrl);
     var apiMessages = await _buildApiMessages(messages);
-    apiMessages = _sanitizeOutgoingImageMessages(apiMessages);
+    apiMessages = _sanitizeOutgoingImageMessages(
+      apiMessages,
+      selectedModel: selectedModel,
+      baseUrl: baseUrl,
+    );
+    apiMessages = _applyGeminiImageEditFallback(
+      apiMessages,
+      selectedModel: selectedModel,
+      baseUrl: baseUrl,
+    );
     apiMessages = await _compressApiMessagesIfNeeded(apiMessages);
     _injectSystemInstructions(apiMessages);
 
@@ -212,7 +222,31 @@ Use search for:
     if (tools != null && tools.isNotEmpty) {
       requestData['tools'] = tools;
       if (toolChoice != null) {
-        requestData['tool_choice'] = toolChoice;
+        final raw = toolChoice.trim();
+        if (raw.isNotEmpty) {
+          if (raw.startsWith('{') || raw.startsWith('[')) {
+            try {
+              final decoded = jsonDecode(raw);
+              if (decoded is Map || decoded is List) {
+                requestData['tool_choice'] = decoded;
+              } else {
+                requestData['tool_choice'] = toolChoice;
+              }
+            } catch (_) {
+              requestData['tool_choice'] = toolChoice;
+            }
+          } else if (raw.startsWith('function:')) {
+            final name = raw.substring('function:'.length).trim();
+            requestData['tool_choice'] = name.isEmpty
+                ? toolChoice
+                : {
+                    'type': 'function',
+                    'function': {'name': name},
+                  };
+          } else {
+            requestData['tool_choice'] = toolChoice;
+          }
+        }
       }
     }
 
@@ -227,7 +261,6 @@ Use search for:
       apiMessages: apiMessages,
     );
 
-    final baseUrl = _normalizeBaseUrl(provider.baseUrl);
     _applyThinkingConfigToRequest(
       requestData: requestData,
       activeParams: activeParams,

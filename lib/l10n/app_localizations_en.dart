@@ -51,6 +51,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get none => 'None';
+
+  @override
+  String get optional => 'Optional';
+
+  @override
+  String get deleteSuccess => 'Deleted Successfully';
+
+  @override
   String get history => 'History';
 
   @override
@@ -103,6 +118,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatExperience => 'Chat Experience';
+
+  @override
+  String get restoreLastChatOnLaunch => 'Restore last chat on launch';
+
+  @override
+  String get restoreLastChatOnLaunchHint =>
+      'When enabled, the app opens the conversation you were using before you quit.';
 
   @override
   String get smartTopicGeneration => 'Smart Topic Generation';
@@ -284,6 +306,189 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get agentSkills => 'Skills';
+
+  @override
+  String get mcpNavLabel => 'MCP';
+
+  @override
+  String get mcpTitle => 'MCP';
+
+  @override
+  String get mcpNoServers => 'No MCP servers configured';
+
+  @override
+  String get mcpAddServer => 'Add Server';
+
+  @override
+  String get mcpEditServer => 'Edit Server';
+
+  @override
+  String get mcpDeleteServerTitle => 'Delete MCP Server';
+
+  @override
+  String get mcpDeleteServerConfirm =>
+      'Are you sure you want to delete this MCP server? This action cannot be undone.';
+
+  @override
+  String get mcpTestConnection => 'Test Connection';
+
+  @override
+  String get mcpTestResultTitle => 'Test Result';
+
+  @override
+  String get mcpToolsCount => 'Tools';
+
+  @override
+  String get mcpStderr => 'stderr';
+
+  @override
+  String get mcpServerName => 'Server Name';
+
+  @override
+  String get mcpServerNameHint => 'Enter a name (e.g. Git MCP)';
+
+  @override
+  String get mcpCommand => 'Command';
+
+  @override
+  String get mcpCommandHint => 'Executable (e.g. npx)';
+
+  @override
+  String get mcpArgs => 'Args';
+
+  @override
+  String get mcpArgsHint => 'One argument per line (e.g. -y)';
+
+  @override
+  String get mcpCwd => 'Working Directory';
+
+  @override
+  String get mcpEnv => 'Environment Variables';
+
+  @override
+  String get mcpEnvHint => 'One per line: KEY=VALUE';
+
+  @override
+  String get mcpRunInShell => 'Run in shell';
+
+  @override
+  String get mcpTransport => 'Transport';
+
+  @override
+  String get mcpTransportStdio => 'stdio';
+
+  @override
+  String get mcpTransportHttp => 'HTTP (Streamable)';
+
+  @override
+  String get mcpUrl => 'URL';
+
+  @override
+  String get mcpUrlHint => 'Server URL (e.g. http://127.0.0.1:3000/mcp)';
+
+  @override
+  String get mcpHeaders => 'Headers';
+
+  @override
+  String get mcpHeadersHint => 'One per line: KEY=VALUE';
+
+  @override
+  String get mcpStatus => 'Status';
+
+  @override
+  String get mcpStatusConnected => 'Connected';
+
+  @override
+  String get mcpStatusConnecting => 'Connecting';
+
+  @override
+  String get mcpStatusDisconnected => 'Disconnected';
+
+  @override
+  String get mcpStatusError => 'Error';
+
+  @override
+  String get mcpLastError => 'Last error';
+
+  @override
+  String get mcpLastConnectedAt => 'Last connected';
+
+  @override
+  String get mcpLastPingAt => 'Last ping';
+
+  @override
+  String get mcpLastToolListAt => 'Last tools/list';
+
+  @override
+  String get mcpLastCallAt => 'Last tools/call';
+
+  @override
+  String get mcpCachedToolsCount => 'Cached tools';
+
+  @override
+  String get mcpLastToolListDuration => 'tools/list duration';
+
+  @override
+  String get mcpLastCallDuration => 'tools/call duration';
+
+  @override
+  String get mcpRefreshToolsCache => 'Refresh tools cache';
+
+  @override
+  String get mcpRefreshToolsCacheSuccess => 'Tools refreshed';
+
+  @override
+  String get mcpReconnect => 'Reconnect';
+
+  @override
+  String get mcpDisconnect => 'Disconnect';
+
+  @override
+  String get mcpStderrTail => 'stderr tail';
+
+  @override
+  String get mcpServersTitle => 'MCP Servers';
+
+  @override
+  String get mcpSessionServersTitle => 'MCP Servers (Session)';
+
+  @override
+  String get mcpNoEnabledServers => 'No enabled MCP servers';
+
+  @override
+  String get mcpFollowAssistant => 'Follow assistant/default';
+
+  @override
+  String get mcpFollowAssistantHint =>
+      'Turn this off to customize servers for this session.';
+
+  @override
+  String get mcpFollowGlobal => 'Follow global';
+
+  @override
+  String get mcpFollowGlobalHint =>
+      'Turn this off to customize servers for this assistant.';
+
+  @override
+  String get mcpToggleTooltip => 'Session MCP servers';
+
+  @override
+  String mcpServersSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get mcpValidationErrorName => 'Name is required.';
+
+  @override
+  String get mcpValidationErrorCommand =>
+      'Command is required for stdio transport.';
+
+  @override
+  String get mcpValidationErrorUrl => 'URL is required for HTTP transport.';
+
+  @override
+  String get mcpValidationError => 'Name and command are required.';
 
   @override
   String get executionModel => 'Execution Model';
@@ -1301,6 +1506,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mobileInputHint => 'Type something...';
 
   @override
+  String get greetingMessage => 'How can I help you today?';
+
+  @override
   String get topics => 'Topic Groups';
 
   @override
@@ -1345,16 +1553,53 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter number (e.g. 1024) or level (e.g. low, high)';
 
   @override
-  String get transmissionMode => 'Transmission Mode';
+  String get transmissionMode => 'Thinking Transport Mode';
 
   @override
-  String get modeAuto => 'Smart Auto';
+  String get modeAuto => 'Auto (By Model Family)';
 
   @override
   String get modeExtraBody => 'Extra Body (Google)';
 
   @override
   String get modeReasoningEffort => 'Reasoning Effort (OpenAI)';
+
+  @override
+  String get transportMode => 'Transport Mode';
+
+  @override
+  String get transportModeSubtitle => 'Select request protocol per model';
+
+  @override
+  String get transportModeType => 'Mode';
+
+  @override
+  String get transportModeAuto => 'Auto (By Model & Provider)';
+
+  @override
+  String get transportModeOpenaiCompat => 'OpenAI Compatible';
+
+  @override
+  String get transportModeGeminiNative => 'Gemini Native';
+
+  @override
+  String get geminiNativeTools => 'Gemini Native Tools';
+
+  @override
+  String get geminiNativeToolsSubtitle => 'Official built-in tools';
+
+  @override
+  String get geminiNativeGoogleSearch => 'Google Search';
+
+  @override
+  String get geminiNativeUrlContext => 'URL Context';
+
+  @override
+  String get geminiNativeCodeExecution => 'Code Execution';
+
+  @override
+  String get geminiNativeSearchDisablesLegacySearch =>
+      'When Google Search is enabled, Aurora legacy web-search flow is disabled for this model.';
 
   @override
   String get providers => 'Providers';
@@ -2292,4 +2537,143 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get novelUnlimitedModeHint =>
       'Enable unrestricted creative writing mode with role-play directives';
+
+  @override
+  String get agentWorkflow => 'Agent Workflow';
+
+  @override
+  String get agentWorkflowDescription =>
+      'Build and debug agent workflows with nodes and wires.';
+
+  @override
+  String get templates => 'Templates';
+
+  @override
+  String get newTemplate => 'New Template';
+
+  @override
+  String get templateNameHint => 'Template name';
+
+  @override
+  String get renameTemplate => 'Rename Template';
+
+  @override
+  String deleteTemplateConfirm(String name) {
+    return 'Delete template \"$name\"?';
+  }
+
+  @override
+  String deleteNodeConfirm(String name) {
+    return 'Delete node \"$name\"?';
+  }
+
+  @override
+  String get noTemplate => 'No template';
+
+  @override
+  String get createTemplateHint =>
+      'Create a template to start building a workflow.';
+
+  @override
+  String get startInput => 'Start Input';
+
+  @override
+  String get startInputHint => 'Text passed from Start to the workflow';
+
+  @override
+  String get run => 'Run';
+
+  @override
+  String get stop => 'Stop';
+
+  @override
+  String get addNode => 'Add Node';
+
+  @override
+  String get addLlmNode => 'Add LLM Node';
+
+  @override
+  String get addSkillNode => 'Add Skill Node';
+
+  @override
+  String get addMcpNode => 'Add MCP Node';
+
+  @override
+  String get saved => 'Saved';
+
+  @override
+  String get inspector => 'Inspector';
+
+  @override
+  String get selectNodeToEdit => 'Select a node to edit its settings.';
+
+  @override
+  String get typeLabel => 'Type';
+
+  @override
+  String get titleLabel => 'Title';
+
+  @override
+  String get bodyTemplate => 'Body template';
+
+  @override
+  String get bodyTemplateHint =>
+      'Use placeholders (double curly braces) to reference inputs.';
+
+  @override
+  String get toolName => 'Tool name';
+
+  @override
+  String get toolNameHint => 'Enter MCP tool name';
+
+  @override
+  String get debug => 'Debug';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get durationMs => 'Duration (ms)';
+
+  @override
+  String get output => 'Output';
+
+  @override
+  String get finalOutput => 'Final Output';
+
+  @override
+  String get noOutputYet => 'No output yet.';
+
+  @override
+  String get skill => 'Skill';
+
+  @override
+  String get selectSkillHint => 'Select a skill';
+
+  @override
+  String get mcpServer => 'MCP Server';
+
+  @override
+  String get selectMcpServerHint => 'Select an MCP server';
+
+  @override
+  String get renamePort => 'Rename port';
+
+  @override
+  String get inputs => 'Inputs';
+
+  @override
+  String get outputs => 'Outputs';
+
+  @override
+  String get connections => 'Connections';
+
+  @override
+  String get inbound => 'Inbound';
+
+  @override
+  String get outbound => 'Outbound';
+
+  @override
+  String get noConnectionsYet => 'No connections yet.';
 }

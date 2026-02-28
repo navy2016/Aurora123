@@ -13,10 +13,10 @@ import '../../../settings/presentation/mobile_user_page.dart';
 import '../../../settings/presentation/mobile_app_settings_page.dart';
 import '../../../sync/presentation/mobile_sync_settings_page.dart';
 import '../mobile_translation_page.dart';
-import '../widgets/cached_page_stack.dart';
 import 'mobile_navigation_drawer.dart';
 import '../../../assistant/presentation/mobile_assistant_page.dart';
 import '../../../studio/presentation/pages/mobile_studio_page.dart';
+import '../../../mcp/presentation/mobile_mcp_settings_page.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/utils/number_format_utils.dart';
 import 'package:aurora/shared/theme/chat_background_theme.dart';
@@ -37,6 +37,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
   static const String keyBackup = '__backup__';
   static const String keyStudio = '__studio__';
   static const String keyAssistant = '__assistant__';
+  static const String keyMcp = '__mcp__';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _currentViewKey = 'new_chat';
   String _lastSessionId = 'new_chat';
@@ -98,7 +99,8 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
         key == keyStudio ||
         key == keyAppSettings ||
         key == keyBackup ||
-        key == keyAssistant;
+        key == keyAssistant ||
+        key == keyMcp;
   }
 
   @override
@@ -120,9 +122,15 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
         });
       }
     });
+    final isRestoringSession = ref.watch(sessionRestoreInProgressProvider);
     final settingsState = ref.watch(settingsProvider);
     final selectedSessionId = ref.watch(selectedHistorySessionIdProvider);
     final sessionsState = ref.watch(sessionsProvider);
+
+    if (isRestoringSession) {
+      return _buildSessionRestoreLoading(context, settingsState);
+    }
+
     String sessionTitle = AppLocalizations.of(context)!.startNewChat;
 
     if (selectedSessionId != null &&
@@ -142,6 +150,11 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
       settingsState.backgroundColor,
       isDark: isDark,
     );
+    final customThemeEnabled =
+        settingsState.useCustomTheme || settingsState.themeMode == 'custom';
+    final hasCustomBackground = customThemeEnabled &&
+        settingsState.backgroundImagePath != null &&
+        settingsState.backgroundImagePath!.isNotEmpty;
     final bool isSpecialView = _isSpecialKey(_currentViewKey);
     final bool isFirstRoute = ModalRoute.of(context)?.isFirst ?? true;
     final bool canPop = _isDrawerOpen ||
@@ -174,10 +187,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
       },
       child: Stack(
         children: [
-          if (backgroundGradient != null &&
-              (!settingsState.useCustomTheme ||
-                  settingsState.backgroundImagePath == null ||
-                  settingsState.backgroundImagePath!.isEmpty))
+          if (backgroundGradient != null && !hasCustomBackground)
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -211,7 +221,6 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                 ref.read(sessionsProvider.notifier).startNewSession();
               },
               onNavigate: _navigateTo,
-              onThemeCycle: _cycleTheme,
               onAbout: _showAboutDialog,
             ),
             body: fluent.NavigationPaneTheme(
@@ -233,43 +242,12 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                       : viewInsets;
                   return MediaQuery(
                     data: mediaQuery.copyWith(viewInsets: frozenViewInsets),
-                    child: CachedPageStack(
-                      selectedKey: _currentViewKey,
-                      cacheSize: 10,
-                      itemBuilder: (context, key) {
-                        if (key == keySettings) {
-                          return MobileSettingsPage(
-                              onBack: _navigateBackToSession);
-                        } else if (key == keyAppSettings) {
-                          return MobileAppSettingsPage(
-                              onBack: _navigateBackToSession);
-                        } else if (key == keyTranslation) {
-                          return MobileTranslationPage(
-                              onBack: _navigateBackToSession);
-                        } else if (key == keyUser) {
-                          return MobileUserPage(onBack: _navigateBackToSession);
-                        } else if (key == keyStudio) {
-                          return MobileStudioPage(
-                              onBack: _navigateBackToSession);
-                        } else if (key == keyBackup) {
-                          return MobileSyncSettingsPage(
-                              onBack: _navigateBackToSession);
-                        } else if (key == keyAssistant) {
-                          return MobileAssistantPage(
-                              onBack: _navigateBackToSession);
-                        } else {
-                          return _buildSessionPage(
-                            context,
-                            key,
-                            sessionTitle,
-                            settingsState,
-                            sessionsState,
-                            selectedSessionId,
-                            isDark,
-                            freezeKeyboardInsets: _isDrawerOpen,
-                          );
-                        }
-                      },
+                    child: _buildPageForKey(
+                      context,
+                      key: _currentViewKey,
+                      sessionTitle: sessionTitle,
+                      isDark: isDark,
+                      freezeKeyboardInsets: _isDrawerOpen,
                     ),
                   );
                 },
@@ -281,13 +259,96 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     );
   }
 
+  Widget _buildSessionRestoreLoading(
+      BuildContext context, SettingsState settingsState) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundGradient = ChatBackgroundTheme.getGradient(
+      settingsState.backgroundColor,
+      isDark: isDark,
+    );
+    final customThemeEnabled =
+        settingsState.useCustomTheme || settingsState.themeMode == 'custom';
+    final hasCustomBackground = customThemeEnabled &&
+        settingsState.backgroundImagePath != null &&
+        settingsState.backgroundImagePath!.isNotEmpty;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Stack(
+      children: [
+        if (backgroundGradient != null && !hasCustomBackground)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: backgroundGradient,
+                ),
+              ),
+            ),
+          ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.loadingEllipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPageForKey(
+    BuildContext context, {
+    required String key,
+    required String sessionTitle,
+    required bool isDark,
+    required bool freezeKeyboardInsets,
+  }) {
+    if (key == keySettings) {
+      return MobileSettingsPage(onBack: _navigateBackToSession);
+    } else if (key == keyAppSettings) {
+      return MobileAppSettingsPage(onBack: _navigateBackToSession);
+    } else if (key == keyTranslation) {
+      return MobileTranslationPage(onBack: _navigateBackToSession);
+    } else if (key == keyUser) {
+      return MobileUserPage(onBack: _navigateBackToSession);
+    } else if (key == keyStudio) {
+      return MobileStudioPage(onBack: _navigateBackToSession);
+    } else if (key == keyBackup) {
+      return MobileSyncSettingsPage(onBack: _navigateBackToSession);
+    } else if (key == keyAssistant) {
+      return MobileAssistantPage(onBack: _navigateBackToSession);
+    } else if (key == keyMcp) {
+      return MobileMcpSettingsPage(onBack: _navigateBackToSession);
+    }
+
+    return _buildSessionPage(
+      context,
+      key,
+      sessionTitle,
+      isDark,
+      freezeKeyboardInsets: freezeKeyboardInsets,
+    );
+  }
+
   Widget _buildSessionPage(
     BuildContext context,
     String sessionId,
     String sessionTitle,
-    SettingsState settingsState,
-    SessionsState sessionsState,
-    String? selectedSessionId,
     bool isDark, {
     bool freezeKeyboardInsets = false,
   }) {
@@ -311,6 +372,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
         titleSpacing: 0,
         title: Consumer(
           builder: (context, ref, _) {
+            final l10n = AppLocalizations.of(context)!;
             final currentSettings = ref.watch(settingsProvider);
             final sessionsState = ref.watch(sessionsProvider);
             String dynamicTitle = sessionTitle;
@@ -380,8 +442,7 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
                             Flexible(
                               child: Text(
                                 currentSettings.selectedModel ??
-                                    AppLocalizations.of(context)!
-                                        .modelNotSelected,
+                                    l10n.modelNotSelected,
                                 style: TextStyle(
                                     fontSize: 13, color: Colors.grey[600]),
                                 overflow: TextOverflow.ellipsis,
@@ -521,32 +582,6 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     );
   }
 
-  void _cycleTheme() {
-    final l10n = AppLocalizations.of(context)!;
-    final current = ref.read(settingsProvider).themeMode;
-    String next;
-    switch (current) {
-      case 'custom':
-        next = 'light';
-        break;
-      case 'light':
-        next = 'dark';
-        break;
-      default:
-        next = 'custom';
-    }
-    ref.read(settingsProvider.notifier).setThemeMode(next);
-    final modeLabel = next == 'light'
-        ? l10n.lightMode
-        : (next == 'dark' ? l10n.darkMode : l10n.themeCustom);
-    showAuroraNotice(
-      context,
-      l10n.switchedToTheme(modeLabel),
-      icon: AuroraIcons.info,
-      top: MediaQuery.of(context).padding.top + 64 + 60,
-    );
-  }
-
   void _showAboutDialog() {
     final l10n = AppLocalizations.of(context)!;
     AuroraBottomSheet.show(
@@ -585,4 +620,3 @@ class _MobileChatScreenState extends ConsumerState<MobileChatScreen> {
     );
   }
 }
-

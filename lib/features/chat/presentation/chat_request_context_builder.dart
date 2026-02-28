@@ -6,7 +6,9 @@ class _ChatRequestContext {
   final ToolManager toolManager;
   final List<Message> messagesForApi;
   final List<Skill> activeSkills;
+  final List<McpServerConfig> mcpServers;
   final List<Map<String, dynamic>>? tools;
+  final bool allowLegacySearchTool;
   final String? currentModel;
   final String currentProviderName;
 
@@ -16,7 +18,9 @@ class _ChatRequestContext {
     required this.toolManager,
     required this.messagesForApi,
     required this.activeSkills,
+    required this.mcpServers,
     required this.tools,
+    required this.allowLegacySearchTool,
     required this.currentModel,
     required this.currentProviderName,
   });
@@ -36,6 +40,7 @@ class _ChatRequestContextBuilder {
     final settings = _notifier._ref.read(settingsProvider);
     final llmService = _notifier._ref.read(llmServiceProvider);
     final toolManager = ToolManager(
+      mcpConnection: _notifier._ref.read(mcpConnectionProvider.notifier),
       searchRegion: settings.searchRegion,
       searchSafeSearch: settings.searchSafeSearch,
       searchMaxResults: settings.searchMaxResults,
@@ -66,10 +71,24 @@ class _ChatRequestContextBuilder {
 
     final activeSkills =
         _resolveActiveSkills(settings: settings, assistant: assistant);
+    final nativeGoogleSearchEnabled = _isNativeGoogleSearchEnabled(settings);
+    final allowLegacySearchTool =
+        settings.isSearchEnabled && !nativeGoogleSearchEnabled;
+
+    final configuredMcpServers =
+        _notifier._ref.read(mcpServerProvider).servers;
+    final mcpServers = _notifier._ref.read(mcpBindingsProvider.notifier).resolveEffectiveServers(
+          configuredServers: configuredMcpServers,
+          sessionId: _notifier._sessionId,
+          assistantId: assistant?.id,
+        );
 
     List<Map<String, dynamic>>? tools;
-    if (settings.isSearchEnabled || activeSkills.isNotEmpty) {
-      tools = toolManager.getTools(skills: activeSkills);
+    if (allowLegacySearchTool || activeSkills.isNotEmpty || mcpServers.isNotEmpty) {
+      tools = await toolManager.getTools(
+        skills: activeSkills,
+        mcpServers: mcpServers,
+      );
     }
 
     if (activeSkills.isNotEmpty) {
@@ -103,10 +122,28 @@ To invoke a skill, output a skill tag in this exact format:
       toolManager: toolManager,
       messagesForApi: messagesForApi,
       activeSkills: activeSkills,
+      mcpServers: mcpServers,
       tools: tools,
+      allowLegacySearchTool: allowLegacySearchTool,
       currentModel: settings.activeProvider.selectedModel,
       currentProviderName: settings.activeProvider.name,
     );
+  }
+
+  bool _isNativeGoogleSearchEnabled(SettingsState settings) {
+    final provider = settings.activeProvider;
+    final rawModelName = provider.selectedModel;
+    final modelName = rawModelName?.trim();
+    if (modelName == null || modelName.isEmpty) return false;
+    final transportMode = resolveModelTransportMode(
+      provider: provider,
+      modelName: modelName,
+    );
+    if (transportMode != LlmTransportMode.geminiNative) return false;
+    final modelSettings = provider.modelSettings[modelName] ??
+        provider.modelSettings[rawModelName];
+    final nativeTools = resolveGeminiNativeToolsFromSettings(modelSettings);
+    return nativeTools.googleSearch;
   }
 
   List<Skill> _resolveActiveSkills({

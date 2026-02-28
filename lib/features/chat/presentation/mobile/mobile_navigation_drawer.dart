@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import '../chat_provider.dart';
-import '../../../settings/presentation/settings_provider.dart';
 import '../../../settings/presentation/usage_stats_view.dart';
 import '../../../history/presentation/history_content.dart';
 import '../widgets/topic_dropdown.dart';
@@ -17,7 +16,6 @@ class MobileNavigationDrawer extends ConsumerWidget {
   final String? selectedSessionId;
   final VoidCallback onNewChat;
   final Function(String) onNavigate;
-  final VoidCallback onThemeCycle;
   final VoidCallback onAbout;
   const MobileNavigationDrawer({
     super.key,
@@ -25,7 +23,6 @@ class MobileNavigationDrawer extends ConsumerWidget {
     required this.selectedSessionId,
     required this.onNewChat,
     required this.onNavigate,
-    required this.onThemeCycle,
     required this.onAbout,
   });
   @override
@@ -220,10 +217,9 @@ class MobileNavigationDrawer extends ConsumerWidget {
                         ),
                         Expanded(
                           child: _MobileDrawerNavItem(
-                            icon: _getThemeIcon(
-                                ref.watch(settingsProvider).themeMode),
-                            label: AppLocalizations.of(context)!.theme,
-                            onTap: onThemeCycle,
+                            icon: AuroraIcons.mcp,
+                            label: AppLocalizations.of(context)!.mcpNavLabel,
+                            onTap: () => onNavigate('__mcp__'),
                           ),
                         ),
                         Expanded(
@@ -280,19 +276,6 @@ class MobileNavigationDrawer extends ConsumerWidget {
       ),
     );
   }
-
-  IconData _getThemeIcon(String themeMode) {
-    switch (themeMode) {
-      case 'dark':
-        return AuroraIcons.themeDark;
-      case 'light':
-        return AuroraIcons.themeLight;
-      case 'custom':
-        return AuroraIcons.image;
-      default:
-        return AuroraIcons.image;
-    }
-  }
 }
 
 class _MobileDrawerNavItem extends StatelessWidget {
@@ -329,4 +312,3 @@ class _MobileDrawerNavItem extends StatelessWidget {
     );
   }
 }
-

@@ -10,6 +10,7 @@ import 'package:window_manager/window_manager.dart';
 import 'features/chat/presentation/chat_screen.dart';
 import 'features/chat/presentation/chat_provider.dart';
 import 'features/chat/presentation/topic_provider.dart';
+import 'features/chat/data/chat_storage.dart';
 import 'features/settings/data/settings_storage.dart';
 import 'features/settings/presentation/settings_provider.dart';
 import 'shared/widgets/global_background.dart';
@@ -17,6 +18,9 @@ import 'shared/theme/wallpaper_tint.dart';
 import 'shared/theme/wallpaper_tint_provider.dart';
 import 'shared/utils/windows_injector.dart';
 import 'features/skills/presentation/skill_provider.dart';
+import 'features/mcp/presentation/mcp_server_provider.dart';
+import 'features/mcp/presentation/mcp_bindings_provider.dart';
+import 'features/mcp/presentation/mcp_connection_provider.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'features/chat/presentation/widgets/chat_image_bubble.dart'
     show clearImageCache;
@@ -121,6 +125,43 @@ void main() async {
         _bootLog('loading providers and settings');
         final providerEntities = await storage.loadProviders();
         final appSettings = await storage.loadAppSettings();
+        final rawThemeMode = appSettings?.themeMode ?? 'system';
+        final rawUseCustomTheme = appSettings?.useCustomTheme ?? false;
+        final rawBackgroundImagePath = appSettings?.backgroundImagePath;
+        final startupThemeState = resolveThemeBackgroundState(
+          themeMode: rawThemeMode,
+          useCustomTheme: rawUseCustomTheme,
+          backgroundImagePath: rawBackgroundImagePath,
+        );
+        if (appSettings != null &&
+            startupThemeState.differsFrom(
+              themeMode: rawThemeMode,
+              useCustomTheme: rawUseCustomTheme,
+              backgroundImagePath: rawBackgroundImagePath,
+            )) {
+          _bootLog('normalizing invalid custom background settings');
+          await storage.saveAppSettings(
+            activeProviderId: appSettings.activeProviderId,
+            themeMode: startupThemeState.themeMode,
+            useCustomTheme: startupThemeState.useCustomTheme,
+            backgroundImagePath: startupThemeState.backgroundImagePath,
+            clearBackgroundImage: startupThemeState.backgroundImagePath == null,
+          );
+        }
+        final restoreLastSessionOnLaunch =
+            appSettings?.restoreLastSessionOnLaunch ?? true;
+        String? initialSelectedHistorySessionId =
+            PlatformUtils.isMobile ? null : 'new_chat';
+        if (restoreLastSessionOnLaunch && !PlatformUtils.isMobile) {
+          final lastId = appSettings?.lastSessionId;
+          if (lastId != null && lastId.isNotEmpty) {
+            final chatStorage = ChatStorage(storage);
+            final existingSession = await chatStorage.getSession(lastId);
+            if (existingSession != null) {
+              initialSelectedHistorySessionId = lastId;
+            }
+          }
+        }
         _bootLog(
             'providers=${providerEntities.length}, hasAppSettings=${appSettings != null}');
 
@@ -131,10 +172,12 @@ void main() async {
         runApp(ProviderScope(
           overrides: [
             settingsStorageProvider.overrideWithValue(storage),
+            selectedHistorySessionIdProvider
+                .overrideWith((ref) => initialSelectedHistorySessionId),
             settingsProvider.overrideWith((ref) {
-              // Load skills from a default directory (Desktop only)
-              if (PlatformUtils.isDesktop) {
-                Future.microtask(() {
+              Future.microtask(() {
+                // Load skills from a default directory (Desktop only)
+                if (PlatformUtils.isDesktop) {
                   final skillsDir =
                       '${Directory.current.path}${Platform.pathSeparator}skills';
                   final language = appSettings?.language ??
@@ -142,8 +185,12 @@ void main() async {
                   ref
                       .read(skillProvider.notifier)
                       .loadSkills(skillsDir, language: language);
-                });
-              }
+                }
+
+                // MCP is available on all platforms (stdio is desktop-only).
+                ref.read(mcpServerProvider.notifier).load();
+                ref.read(mcpBindingsProvider.notifier).load();
+              });
 
               return SettingsNotifier(
                 storage: storage,
@@ -153,7 +200,7 @@ void main() async {
                 userAvatar: appSettings?.userAvatar,
                 llmName: appSettings?.llmName ?? 'Assistant',
                 llmAvatar: appSettings?.llmAvatar,
-                themeMode: appSettings?.themeMode ?? 'system',
+                themeMode: startupThemeState.themeMode,
                 isStreamEnabled: appSettings?.isStreamEnabled ?? true,
                 isSearchEnabled: appSettings?.isSearchEnabled ?? false,
                 isKnowledgeEnabled: appSettings?.isKnowledgeEnabled ?? false,
@@ -174,6 +221,8 @@ void main() async {
                     appSettings?.activeKnowledgeBaseIds ?? const [],
                 enableSmartTopic: appSettings?.enableSmartTopic ?? true,
                 topicGenerationModel: appSettings?.topicGenerationModel,
+                restoreLastSessionOnLaunch:
+                    appSettings?.restoreLastSessionOnLaunch ?? true,
                 language: appSettings?.language ??
                     (Platform.localeName.startsWith('zh') ? 'zh' : 'en'),
                 themeColor: appSettings?.themeColor ?? 'teal',
@@ -182,10 +231,10 @@ void main() async {
                 executionModel: appSettings?.executionModel,
                 executionProviderId: appSettings?.executionProviderId,
                 fontSize: appSettings?.fontSize ?? 14.0,
-                backgroundImagePath: appSettings?.backgroundImagePath,
+                backgroundImagePath: startupThemeState.backgroundImagePath,
                 backgroundBrightness: appSettings?.backgroundBrightness ?? 0.5,
                 backgroundBlur: appSettings?.backgroundBlur ?? 0.0,
-                useCustomTheme: appSettings?.useCustomTheme ?? false,
+                useCustomTheme: startupThemeState.useCustomTheme,
               );
             }),
           ],
@@ -211,6 +260,9 @@ class MyApp extends ConsumerWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(mcpServerProvider, (prev, next) {
+      ref.read(mcpConnectionProvider.notifier).syncConfiguredServers(next.servers);
+    });
     ref.listen<String?>(selectedHistorySessionIdProvider, (prev, next) {
       if (prev != next) {
         clearImageCache();
@@ -277,9 +329,14 @@ class MyApp extends ConsumerWidget {
 
     bool hasCustomBackground(WidgetRef ref) {
       final settings = ref.watch(settingsProvider);
-      return (settings.useCustomTheme || settings.themeMode == 'custom') &&
-          settings.backgroundImagePath != null &&
-          settings.backgroundImagePath!.isNotEmpty;
+      final resolved = resolveThemeBackgroundState(
+        themeMode: settings.themeMode,
+        useCustomTheme: settings.useCustomTheme,
+        backgroundImagePath: settings.backgroundImagePath,
+      );
+      return (resolved.useCustomTheme || resolved.themeMode == 'custom') &&
+          resolved.backgroundImagePath != null &&
+          resolved.backgroundImagePath!.isNotEmpty;
     }
 
     fluent.Color getBackgroundColor(
@@ -371,13 +428,14 @@ class MyApp extends ConsumerWidget {
 
     fluent.ThemeMode fluentMode;
     final settingsForMode = ref.watch(settingsProvider);
-    if (hasCustomBackground(ref)) {
-      fluentMode = fluent.ThemeMode.dark;
-    } else if (settingsForMode.themeMode == 'light') {
+    if (settingsForMode.themeMode == 'light') {
       fluentMode = fluent.ThemeMode.light;
     } else if (settingsForMode.themeMode == 'dark') {
       fluentMode = fluent.ThemeMode.dark;
     } else if (settingsForMode.themeMode == 'custom') {
+      fluentMode = fluent.ThemeMode.dark;
+    } else if (hasCustomBackground(ref) && settingsForMode.useCustomTheme) {
+      // Keep compatibility for custom-theme mode while allowing explicit light mode.
       fluentMode = fluent.ThemeMode.dark;
     } else {
       fluentMode = fluent.ThemeMode.system;
@@ -504,8 +562,11 @@ class MyApp extends ConsumerWidget {
                     selectionHandleColor: materialPrimary,
                   ),
                 ),
-                child: ScaffoldMessenger(
-                  child: child ?? const SizedBox.shrink(),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: ScaffoldMessenger(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
             );
@@ -531,4 +592,3 @@ class MyApp extends ConsumerWidget {
     );
   }
 }
-

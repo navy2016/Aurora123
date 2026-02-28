@@ -3,6 +3,7 @@ import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/material.dart';
 import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/features/settings/presentation/settings_provider.dart';
+import 'package:aurora/features/chat/presentation/desktop/desktop_tabs.dart';
 import '../chat_provider.dart';
 
 import 'custom_dropdown_overlay.dart';
@@ -16,6 +17,8 @@ class PresetSelector extends ConsumerStatefulWidget {
 }
 
 class _PresetSelectorState extends ConsumerState<PresetSelector> {
+  static const int _desktopSettingsTabIndex = kDesktopTabSettings;
+  static const int _presetSettingsPageIndex = 4;
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
@@ -97,11 +100,12 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(preset.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+            Text(preset.name,
+                style: const TextStyle(fontWeight: FontWeight.w500)),
             if (preset.description.isNotEmpty)
               Text(preset.description,
-                  style:
-                      TextStyle(fontSize: 10, color: theme.typography.caption?.color),
+                  style: TextStyle(
+                      fontSize: 10, color: theme.typography.caption?.color),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
           ],
@@ -113,8 +117,10 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
     items.add(ColoredDropdownItem(
       onPressed: () {
         _removeOverlay();
-        ref.read(desktopActiveTabProvider.notifier).state = 4;
-        ref.read(settingsPageIndexProvider.notifier).state = 2;
+        ref.read(desktopActiveTabProvider.notifier).state =
+            _desktopSettingsTabIndex;
+        ref.read(settingsPageIndexProvider.notifier).state =
+            _presetSettingsPageIndex;
       },
       child: Row(
         children: [
@@ -130,6 +136,10 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
   @override
   Widget build(BuildContext context) {
     final theme = fluent.FluentTheme.of(context);
+    final textStyle = theme.typography.body?.copyWith(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+    );
     final l10n = AppLocalizations.of(context)!;
     ref.watch(chatStateUpdateTriggerProvider);
     final chatState = ref
@@ -168,8 +178,7 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
                   constraints: const BoxConstraints(maxWidth: 160),
                   child: fluent.Text(
                     activePresetName ?? l10n.defaultPreset,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w500, fontSize: 13),
+                    style: textStyle,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -186,4 +195,3 @@ class _PresetSelectorState extends ConsumerState<PresetSelector> {
     );
   }
 }
-

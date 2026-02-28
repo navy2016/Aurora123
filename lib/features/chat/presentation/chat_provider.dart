@@ -17,9 +17,17 @@ import 'package:aurora/features/chat/data/session_entity.dart';
 import 'package:aurora/features/chat/presentation/topic_provider.dart';
 import 'package:aurora/features/skills/presentation/skill_provider.dart';
 import 'package:aurora/features/skills/domain/skill_entity.dart';
+import 'package:aurora/features/mcp/presentation/mcp_server_provider.dart';
+import 'package:aurora/features/mcp/presentation/mcp_bindings_provider.dart';
+import 'package:aurora/features/mcp/presentation/mcp_connection_provider.dart';
+import 'package:aurora/features/mcp/domain/mcp_server_config.dart';
 import 'package:aurora/features/chat/domain/message.dart';
-import 'package:aurora/shared/services/openai_llm_service.dart';
+import 'package:aurora/features/chat/domain/chat_message_transformers.dart';
+import 'package:aurora/features/chat/domain/message_transformer.dart';
+import 'package:aurora/features/chat/domain/ui_message.dart';
+import 'package:aurora/shared/services/model_routed_llm_service.dart';
 import 'package:aurora/shared/services/llm_service.dart';
+import 'package:aurora/shared/services/llm_transport_mode.dart';
 import 'package:aurora/shared/services/tool_manager.dart';
 import 'package:aurora/shared/services/worker_service.dart';
 import 'package:aurora/features/knowledge/presentation/knowledge_provider.dart';
@@ -29,6 +37,7 @@ import 'package:fluent_ui/fluent_ui.dart'
 import 'package:uuid/uuid.dart';
 import 'package:aurora/core/error/app_error_type.dart';
 import 'package:aurora/core/error/app_exception.dart';
+import 'package:aurora/shared/utils/image_compression.dart';
 
 part 'chat_state.dart';
 part 'chat_notifier.dart';
@@ -39,4 +48,3 @@ part 'chat_persistence.dart';
 part 'sessions_notifier.dart';
 part 'chat_session_manager.dart';
 part 'chat_providers.dart';
-

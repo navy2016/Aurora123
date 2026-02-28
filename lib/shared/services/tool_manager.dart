@@ -1,18 +1,30 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:aurora_search/aurora_search.dart';
+import '../../features/mcp/domain/mcp_server_config.dart';
+import '../../features/mcp/presentation/mcp_connection_provider.dart';
 import '../../features/skills/domain/skill_entity.dart';
 import 'package:aurora/shared/utils/platform_utils.dart';
 
+class _McpToolBinding {
+  final String serverId;
+  final String toolName;
+
+  const _McpToolBinding({required this.serverId, required this.toolName});
+}
+
 class ToolManager {
   ToolManager({
+    required McpConnectionNotifier mcpConnection,
     this.searchRegion = 'us-en',
     this.searchSafeSearch = 'moderate',
     int searchMaxResults = 5,
     this.searchTimeout = const Duration(seconds: 15),
   })  : searchMaxResults = searchMaxResults.clamp(1, 50),
-        _search = AuroraSearch(timeout: searchTimeout);
+        _search = AuroraSearch(timeout: searchTimeout),
+        _mcpConnection = mcpConnection;
 
   final String searchRegion;
   final String searchSafeSearch;
@@ -23,8 +35,17 @@ class ToolManager {
   final Dio _dio =
       Dio(BaseOptions(connectTimeout: const Duration(seconds: 10)));
 
-  List<Map<String, dynamic>> getTools({List<Skill> skills = const []}) {
+  final McpConnectionNotifier _mcpConnection;
+
+  final Map<String, _McpToolBinding> _mcpToolBindings = {};
+
+  Future<List<Map<String, dynamic>>> getTools({
+    List<Skill> skills = const [],
+    List<McpServerConfig> mcpServers = const [],
+  }) async {
     final tools = <Map<String, dynamic>>[];
+
+    _mcpToolBindings.clear();
 
     for (final skill in skills) {
       if (!skill.isEnabled || !skill.forAI) continue;
@@ -48,14 +69,82 @@ class ToolManager {
       }
     }
 
+    final enabledMcpServers = mcpServers.where((s) => s.enabled).toList();
+    if (enabledMcpServers.isNotEmpty) {
+      final Set<String> openAiToolNames = {};
+
+      await Future.wait(enabledMcpServers.map((server) async {
+        try {
+          const timeout = Duration(seconds: 60);
+          final mcpTools =
+              await _mcpConnection.listTools(server, timeout: timeout);
+
+          for (final mcpTool in mcpTools) {
+            final sanitized = _sanitizeToolName(mcpTool.name);
+            final openAiName = _buildOpenAiToolName(
+              serverId: server.id,
+              toolName: sanitized.isEmpty ? 'tool' : sanitized,
+              taken: openAiToolNames,
+            );
+            _mcpToolBindings[openAiName] = _McpToolBinding(
+              serverId: server.id,
+              toolName: mcpTool.name,
+            );
+            tools.add({
+              'type': 'function',
+              'function': {
+                'name': openAiName,
+                'description': (mcpTool.description.isNotEmpty
+                    ? mcpTool.description
+                    : mcpTool.name),
+                'parameters': mcpTool.inputSchema,
+              },
+            });
+          }
+        } catch (_) {
+          // Ignore MCP servers that fail to connect/list tools.
+        }
+      }));
+    }
+
     return tools;
   }
 
   Future<String> executeTool(String name, Map<String, dynamic> args,
       {String preferredEngine = 'duckduckgo',
-       List<Skill> skills = const []}) async {
+      List<Skill> skills = const [],
+      List<McpServerConfig> mcpServers = const []}) async {
     if (name == 'SearchWeb') {
       return await _searchWeb(args['query'] ?? '', preferredEngine);
+    }
+
+    final binding = _mcpToolBindings[name];
+    if (binding != null) {
+      try {
+        final server = mcpServers.firstWhere(
+          (s) => s.id == binding.serverId,
+          orElse: () => throw StateError('MCP server not found'),
+        );
+        if (!server.enabled) {
+          return jsonEncode({
+            'error': 'MCP session not available',
+            'serverId': binding.serverId,
+            'tool': binding.toolName,
+          });
+        }
+        final result = await _mcpConnection.callTool(
+          server,
+          name: binding.toolName,
+          arguments: args,
+        );
+        return jsonEncode(result);
+      } catch (e) {
+        return jsonEncode({
+          'error': 'MCP tool execution failed: $e',
+          'serverId': binding.serverId,
+          'tool': binding.toolName,
+        });
+      }
     }
 
     // Check if it's a skill tool
@@ -69,6 +158,39 @@ class ToolManager {
 
     return jsonEncode({'error': 'Unknown tool: $name'});
   }
+
+  String _sanitizeToolName(String name) {
+    final sanitized = name.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+    return sanitized.isEmpty ? 'tool' : sanitized;
+  }
+
+  String _buildOpenAiToolName({
+    required String serverId,
+    required String toolName,
+    required Set<String> taken,
+  }) {
+    const prefix = 'mcp__';
+    const sep = '__';
+    final prefixPart = '$prefix$serverId$sep';
+    var base = toolName;
+
+    var n = 0;
+    while (true) {
+      final suffix = n == 0 ? '' : '_${n + 1}';
+      final maxToolLen = 64 - prefixPart.length - suffix.length;
+      final end = maxToolLen <= 0
+          ? 0
+          : (base.length > maxToolLen ? maxToolLen : base.length);
+      final truncated = base.substring(0, end);
+      final candidate = '$prefixPart$truncated$suffix';
+      if (!taken.contains(candidate)) {
+        taken.add(candidate);
+        return candidate;
+      }
+      n++;
+    }
+  }
+
 
   Future<String> _executeSkillTool(
       SkillTool tool, Map<String, dynamic> args) async {
@@ -150,12 +272,12 @@ class ToolManager {
         // Replace placeholders in URL and determine what goes into queryParams/body
         args.forEach((key, value) {
           final placeholder = '{{$key}}';
-          final encodedValue = Uri.encodeComponent(value.toString());
+          final rawValue = value.toString();
           if (url.contains(placeholder)) {
-            url = url.replaceAll(placeholder, encodedValue);
+            url = url.replaceAll(placeholder, Uri.encodeComponent(rawValue));
           } else {
             if (method == 'GET') {
-              queryParams[key] = encodedValue;
+              queryParams[key] = value;
             } else {
               bodyData[key] = value;
             }
@@ -244,5 +366,11 @@ class ToolManager {
       'engine': successfulEngine,
       'results': formattedResults
     });
+  }
+
+  void close() {
+    _mcpToolBindings.clear();
+    _search.close();
+    _dio.close(force: true);
   }
 }

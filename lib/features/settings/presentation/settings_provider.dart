@@ -221,6 +221,7 @@ class SettingsState {
   final List<String> activeKnowledgeBaseIds;
   final bool enableSmartTopic;
   final String? topicGenerationModel;
+  final bool restoreLastSessionOnLaunch;
   final String language;
   final List<ChatPreset> presets;
   final String? lastPresetId;
@@ -266,6 +267,7 @@ class SettingsState {
     this.activeKnowledgeBaseIds = const [],
     this.enableSmartTopic = true,
     this.topicGenerationModel,
+    this.restoreLastSessionOnLaunch = true,
     this.language = 'zh',
     this.presets = const [],
     this.lastPresetId,
@@ -319,6 +321,7 @@ class SettingsState {
     List<String>? activeKnowledgeBaseIds,
     bool? enableSmartTopic,
     String? topicGenerationModel,
+    bool? restoreLastSessionOnLaunch,
     String? language,
     List<ChatPreset>? presets,
     Object? lastPresetId = _settingsSentinel,
@@ -379,6 +382,8 @@ class SettingsState {
           activeKnowledgeBaseIds ?? this.activeKnowledgeBaseIds,
       enableSmartTopic: enableSmartTopic ?? this.enableSmartTopic,
       topicGenerationModel: topicGenerationModel ?? this.topicGenerationModel,
+      restoreLastSessionOnLaunch:
+          restoreLastSessionOnLaunch ?? this.restoreLastSessionOnLaunch,
       language: language ?? this.language,
       presets: presets ?? this.presets,
       lastPresetId: lastPresetId == _settingsSentinel
@@ -445,6 +450,63 @@ String _normalizeSafeSearch(String safeSearch) {
   }
 }
 
+class ThemeBackgroundStateResolution {
+  final String themeMode;
+  final bool useCustomTheme;
+  final String? backgroundImagePath;
+
+  const ThemeBackgroundStateResolution({
+    required this.themeMode,
+    required this.useCustomTheme,
+    required this.backgroundImagePath,
+  });
+
+  bool differsFrom({
+    required String themeMode,
+    required bool useCustomTheme,
+    required String? backgroundImagePath,
+  }) {
+    return this.themeMode != themeMode ||
+        this.useCustomTheme != useCustomTheme ||
+        this.backgroundImagePath != backgroundImagePath;
+  }
+}
+
+ThemeBackgroundStateResolution resolveThemeBackgroundState({
+  required String themeMode,
+  required bool useCustomTheme,
+  required String? backgroundImagePath,
+}) {
+  final trimmedPath = backgroundImagePath?.trim();
+  String? normalizedPath;
+  if (trimmedPath != null && trimmedPath.isNotEmpty) {
+    try {
+      if (File(trimmedPath).existsSync()) {
+        normalizedPath = trimmedPath;
+      }
+    } catch (_) {
+      normalizedPath = null;
+    }
+  }
+
+  var normalizedThemeMode = themeMode;
+  var normalizedUseCustomTheme = useCustomTheme;
+
+  if (normalizedPath == null &&
+      (normalizedUseCustomTheme || normalizedThemeMode == 'custom')) {
+    normalizedUseCustomTheme = false;
+    if (normalizedThemeMode == 'custom') {
+      normalizedThemeMode = 'system';
+    }
+  }
+
+  return ThemeBackgroundStateResolution(
+    themeMode: normalizedThemeMode,
+    useCustomTheme: normalizedUseCustomTheme,
+    backgroundImagePath: normalizedPath,
+  );
+}
+
 class SettingsNotifier extends StateNotifier<SettingsState> {
   final SettingsStorage _storage;
   SettingsStorage get storage => _storage;
@@ -473,6 +535,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     List<String> activeKnowledgeBaseIds = const [],
     bool enableSmartTopic = true,
     String? topicGenerationModel,
+    bool restoreLastSessionOnLaunch = true,
     String language = 'zh',
     String themeColor = 'teal',
     String backgroundColor = 'default',
@@ -515,6 +578,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
           activeKnowledgeBaseIds: activeKnowledgeBaseIds,
           enableSmartTopic: enableSmartTopic,
           topicGenerationModel: topicGenerationModel,
+          restoreLastSessionOnLaunch: restoreLastSessionOnLaunch,
           language: language,
           presets: [],
           themeColor: themeColor,
@@ -546,6 +610,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final newProviders = ProviderConfig.fromEntities(providerEntities);
 
     final activeProviderId = appSettings?.activeProviderId ?? 'custom';
+    final rawThemeMode = appSettings?.themeMode ?? 'system';
+    final rawUseCustomTheme = appSettings?.useCustomTheme ?? false;
+    final rawBackgroundImagePath = appSettings?.backgroundImagePath;
+    final resolvedThemeState = resolveThemeBackgroundState(
+      themeMode: rawThemeMode,
+      useCustomTheme: rawUseCustomTheme,
+      backgroundImagePath: rawBackgroundImagePath,
+    );
 
     state = state.copyWith(
       providers: newProviders,
@@ -555,7 +627,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       userAvatar: appSettings?.userAvatar,
       llmName: appSettings?.llmName ?? 'Assistant',
       llmAvatar: appSettings?.llmAvatar,
-      themeMode: appSettings?.themeMode ?? 'system',
+      themeMode: resolvedThemeState.themeMode,
       isStreamEnabled: appSettings?.isStreamEnabled ?? true,
       isSearchEnabled: appSettings?.isSearchEnabled ?? false,
       isKnowledgeEnabled: appSettings?.isKnowledgeEnabled ?? false,
@@ -593,13 +665,30 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       memoryContextWindowSize:
           _clampInt(appSettings?.memoryContextWindowSize ?? 80, 20, 240),
       fontSize: appSettings?.fontSize ?? 14.0,
-      backgroundImagePath: appSettings?.backgroundImagePath,
+      backgroundImagePath: resolvedThemeState.backgroundImagePath,
       backgroundBrightness: appSettings?.backgroundBrightness ?? 0.5,
       backgroundBlur: appSettings?.backgroundBlur ?? 0.0,
-      useCustomTheme: appSettings?.useCustomTheme ?? false,
+      useCustomTheme: resolvedThemeState.useCustomTheme,
     );
+
+    if (appSettings != null &&
+        resolvedThemeState.differsFrom(
+          themeMode: rawThemeMode,
+          useCustomTheme: rawUseCustomTheme,
+          backgroundImagePath: rawBackgroundImagePath,
+        )) {
+      await _storage.saveAppSettings(
+        activeProviderId: state.activeProviderId,
+        themeMode: resolvedThemeState.themeMode,
+        useCustomTheme: resolvedThemeState.useCustomTheme,
+        backgroundImagePath: resolvedThemeState.backgroundImagePath,
+        clearBackgroundImage: resolvedThemeState.backgroundImagePath == null,
+      );
+      debugPrint(
+          'Normalized invalid custom background settings during refresh.');
+    }
     debugPrint(
-        'Settings reloaded with backgroundImagePath: ${appSettings?.backgroundImagePath}');
+        'Settings reloaded with backgroundImagePath: ${resolvedThemeState.backgroundImagePath}');
     debugPrint(
         'DEBUG: refreshSettings loaded - executionModel: ${appSettings?.executionModel}, executionProviderId: ${appSettings?.executionProviderId}');
 
@@ -959,21 +1048,34 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   Future<void> setThemeMode(String mode) async {
-    final useCustom = mode == 'custom';
-    state = state.copyWith(themeMode: mode, useCustomTheme: useCustom);
+    final resolvedThemeState = resolveThemeBackgroundState(
+      themeMode: mode,
+      useCustomTheme: mode == 'custom',
+      backgroundImagePath: state.backgroundImagePath,
+    );
+    state = state.copyWith(
+      themeMode: resolvedThemeState.themeMode,
+      useCustomTheme: resolvedThemeState.useCustomTheme,
+      backgroundImagePath: resolvedThemeState.backgroundImagePath,
+    );
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
-      themeMode: mode,
-      useCustomTheme: useCustom,
+      themeMode: resolvedThemeState.themeMode,
+      useCustomTheme: resolvedThemeState.useCustomTheme,
+      backgroundImagePath: resolvedThemeState.backgroundImagePath,
+      clearBackgroundImage: resolvedThemeState.backgroundImagePath == null,
     );
   }
 
   Future<void> toggleThemeMode() async {
-    final current = state.themeMode;
+    final current = state.useCustomTheme || state.themeMode == 'custom'
+        ? 'custom'
+        : state.themeMode;
     final next = switch (current) {
-      'custom' => 'light',
       'light' => 'dark',
-      _ => 'custom',
+      'dark' => 'custom',
+      'custom' => 'light',
+      _ => 'light',
     };
     await setThemeMode(next);
   }
@@ -1125,6 +1227,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     );
   }
 
+  Future<void> toggleRestoreLastSessionOnLaunch(bool enabled) async {
+    state = state.copyWith(restoreLastSessionOnLaunch: enabled);
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      restoreLastSessionOnLaunch: enabled,
+    );
+  }
+
   Future<void> setTopicGenerationModel(String? model) async {
     String? normalized = model;
     if (normalized != null) {
@@ -1228,13 +1338,22 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 
   Future<void> setUseCustomTheme(bool value) async {
-    final mode =
-        value ? 'custom' : 'system'; // Fallback to system if disabling custom
-    state = state.copyWith(useCustomTheme: value, themeMode: mode);
+    final resolvedThemeState = resolveThemeBackgroundState(
+      themeMode: value ? 'custom' : 'system',
+      useCustomTheme: value,
+      backgroundImagePath: state.backgroundImagePath,
+    );
+    state = state.copyWith(
+      useCustomTheme: resolvedThemeState.useCustomTheme,
+      themeMode: resolvedThemeState.themeMode,
+      backgroundImagePath: resolvedThemeState.backgroundImagePath,
+    );
     await _storage.saveAppSettings(
       activeProviderId: state.activeProviderId,
-      useCustomTheme: value,
-      themeMode: mode,
+      useCustomTheme: resolvedThemeState.useCustomTheme,
+      themeMode: resolvedThemeState.themeMode,
+      backgroundImagePath: resolvedThemeState.backgroundImagePath,
+      clearBackgroundImage: resolvedThemeState.backgroundImagePath == null,
     );
   }
 
@@ -1326,17 +1445,24 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       } catch (_) {}
     }
 
-    state = state.copyWith(backgroundImagePath: finalPath);
-    await _storage.saveAppSettings(
-      activeProviderId: state.activeProviderId,
+    final resolvedThemeState = resolveThemeBackgroundState(
+      themeMode: finalPath == null ? state.themeMode : 'custom',
+      useCustomTheme: finalPath == null ? state.useCustomTheme : true,
       backgroundImagePath: finalPath,
-      clearBackgroundImage: finalPath == null,
     );
 
-    // If a new background image is set, automatically enable custom theme
-    if (finalPath != null && finalPath.isNotEmpty) {
-      await setUseCustomTheme(true);
-    }
+    state = state.copyWith(
+      backgroundImagePath: resolvedThemeState.backgroundImagePath,
+      themeMode: resolvedThemeState.themeMode,
+      useCustomTheme: resolvedThemeState.useCustomTheme,
+    );
+    await _storage.saveAppSettings(
+      activeProviderId: state.activeProviderId,
+      backgroundImagePath: resolvedThemeState.backgroundImagePath,
+      clearBackgroundImage: resolvedThemeState.backgroundImagePath == null,
+      themeMode: resolvedThemeState.themeMode,
+      useCustomTheme: resolvedThemeState.useCustomTheme,
+    );
   }
 
   Future<void> setBackgroundBrightness(double brightness) async {
@@ -1392,8 +1518,4 @@ final settingsProvider =
   throw UnimplementedError(
       'settingsProvider must be overridden or dependencies provided');
 });
-final settingsInitialStateProvider = Provider<SettingsState>((ref) {
-  throw UnimplementedError();
-});
 final settingsPageIndexProvider = StateProvider<int>((ref) => 0);
-

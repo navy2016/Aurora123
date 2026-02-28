@@ -3,6 +3,8 @@ import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/l10n/app_localizations.dart';
+import 'package:aurora/shared/services/llm_transport_mode.dart';
+import 'package:aurora/shared/widgets/aurora_dropdown.dart';
 import 'settings_provider.dart';
 
 class ModelConfigDialog extends ConsumerStatefulWidget {
@@ -25,6 +27,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
   // Thinking config temporary state
   bool _thinkingEnabled = false;
   String _thinkingMode = 'auto';
+  LlmTransportMode _transportMode = LlmTransportMode.auto;
 
   // Controllers
   late final TextEditingController _thinkingBudgetController;
@@ -81,16 +84,20 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
       _thinkingEnabled = false;
       _thinkingMode = 'auto';
     }
+    _transportMode = resolveTransportModeFromSettings(_modelSettings);
   }
 
   void _saveSettings({
     bool? thinkingEnabled,
     String? thinkingMode,
+    LlmTransportMode? transportMode,
+    GeminiNativeToolsConfig? geminiNativeTools,
     Map<String, dynamic>? customParams,
   }) {
     // Update local state
     if (thinkingEnabled != null) _thinkingEnabled = thinkingEnabled;
     if (thinkingMode != null) _thinkingMode = thinkingMode;
+    if (transportMode != null) _transportMode = transportMode;
 
     // Construct new settings map
     final newSettings = Map<String, dynamic>.from(_modelSettings);
@@ -129,8 +136,14 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
       newSettings.addAll(customParams);
     }
 
+    var normalizedSettings = withTransportMode(newSettings, _transportMode);
+    if (geminiNativeTools != null) {
+      normalizedSettings =
+          withGeminiNativeTools(normalizedSettings, geminiNativeTools);
+    }
+
     setState(() {
-      _modelSettings = newSettings;
+      _modelSettings = normalizedSettings;
     });
 
     // Save to provider
@@ -140,10 +153,10 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
 
     final allModelSettings =
         Map<String, Map<String, dynamic>>.from(liveProvider.modelSettings);
-    if (newSettings.isEmpty) {
+    if (normalizedSettings.isEmpty) {
       allModelSettings.remove(widget.modelName);
     } else {
-      allModelSettings[widget.modelName] = newSettings;
+      allModelSettings[widget.modelName] = normalizedSettings;
     }
 
     ref.read(settingsProvider.notifier).updateProvider(
@@ -156,6 +169,7 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = FluentTheme.of(context);
+    final nativeTools = resolveGeminiNativeToolsFromSettings(_modelSettings);
 
     // Extract custom params for display (exclude _aurora_ keys)
     final customParams = Map<String, dynamic>.fromEntries(
@@ -188,6 +202,123 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
       content: SingleChildScrollView(
         child: Column(
           children: [
+            _buildSectionCard(
+              title: l10n.transportMode,
+              subtitle: l10n.transportModeSubtitle,
+              icon: AuroraIcons.globe,
+              headerAction: null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  InfoLabel(
+                    label: l10n.transportModeType,
+                    child: AuroraFluentDropdownField<LlmTransportMode>(
+                      value: _transportMode,
+                      options: LlmTransportMode.values
+                          .map((mode) => AuroraDropdownOption<LlmTransportMode>(
+                                value: mode,
+                                label: _transportModeLabel(mode, l10n),
+                              ))
+                          .toList(),
+                      onChanged: (mode) {
+                        if (mode != null) {
+                          _saveSettings(transportMode: mode);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_transportMode == LlmTransportMode.geminiNative) ...[
+              const SizedBox(height: 16),
+              _buildSectionCard(
+                title: l10n.geminiNativeTools,
+                subtitle: l10n.geminiNativeToolsSubtitle,
+                icon: AuroraIcons.skills,
+                headerAction: null,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: Text(l10n.geminiNativeGoogleSearch)),
+                        ToggleSwitch(
+                          checked: nativeTools.googleSearch,
+                          onChanged: (v) {
+                            _saveSettings(
+                              geminiNativeTools: GeminiNativeToolsConfig(
+                                googleSearch: v,
+                                urlContext: nativeTools.urlContext,
+                                codeExecution: nativeTools.codeExecution,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(child: Text(l10n.geminiNativeUrlContext)),
+                        ToggleSwitch(
+                          checked: nativeTools.urlContext,
+                          onChanged: (v) {
+                            _saveSettings(
+                              geminiNativeTools: GeminiNativeToolsConfig(
+                                googleSearch: nativeTools.googleSearch,
+                                urlContext: v,
+                                codeExecution: nativeTools.codeExecution,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(child: Text(l10n.geminiNativeCodeExecution)),
+                        ToggleSwitch(
+                          checked: nativeTools.codeExecution,
+                          onChanged: (v) {
+                            _saveSettings(
+                              geminiNativeTools: GeminiNativeToolsConfig(
+                                googleSearch: nativeTools.googleSearch,
+                                urlContext: nativeTools.urlContext,
+                                codeExecution: v,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.resources.subtleFillColorSecondary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        l10n.geminiNativeSearchDisablesLegacySearch,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.resources.textFillColorPrimary
+                              .withValues(alpha: 0.82),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 16),
+
             // Thinking Configuration Card
             _buildSectionCard(
               title: l10n.thinkingConfig,
@@ -214,18 +345,21 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
                         const SizedBox(height: 12),
                         InfoLabel(
                           label: l10n.transmissionMode,
-                          child: ComboBox<String>(
+                          child: AuroraFluentDropdownField<String>(
                             value: _thinkingMode,
-                            isExpanded: true,
-                            items: [
-                              ComboBoxItem(
-                                  value: 'auto', child: Text(l10n.modeAuto)),
-                              ComboBoxItem(
-                                  value: 'extra_body',
-                                  child: Text(l10n.modeExtraBody)),
-                              ComboBoxItem(
-                                  value: 'reasoning_effort',
-                                  child: Text(l10n.modeReasoningEffort)),
+                            options: [
+                              AuroraDropdownOption(
+                                value: 'auto',
+                                label: l10n.modeAuto,
+                              ),
+                              AuroraDropdownOption(
+                                value: 'extra_body',
+                                label: l10n.modeExtraBody,
+                              ),
+                              AuroraDropdownOption(
+                                value: 'reasoning_effort',
+                                label: l10n.modeReasoningEffort,
+                              ),
                             ],
                             onChanged: (v) {
                               if (v != null) _saveSettings(thinkingMode: v);
@@ -339,6 +473,17 @@ class _ModelConfigDialogState extends ConsumerState<ModelConfigDialog> {
         ),
       ],
     );
+  }
+
+  String _transportModeLabel(LlmTransportMode mode, AppLocalizations l10n) {
+    switch (mode) {
+      case LlmTransportMode.auto:
+        return l10n.transportModeAuto;
+      case LlmTransportMode.openaiCompat:
+        return l10n.transportModeOpenaiCompat;
+      case LlmTransportMode.geminiNative:
+        return l10n.transportModeGeminiNative;
+    }
   }
 
   Widget _buildSectionCard({
@@ -540,12 +685,11 @@ class _AddParamDialogState extends State<_AddParamDialog> {
           const SizedBox(height: 12),
           InfoLabel(
             label: l10n.paramType,
-            child: ComboBox<String>(
+            child: AuroraFluentDropdownField<String>(
               value: _type,
-              isExpanded: true,
-              items: [
-                ComboBoxItem(value: 'String', child: Text(l10n.typeText)),
-                ComboBoxItem(value: 'JSON', child: Text(l10n.typeJson)),
+              options: [
+                AuroraDropdownOption(value: 'String', label: l10n.typeText),
+                AuroraDropdownOption(value: 'JSON', label: l10n.typeJson),
               ],
               onChanged: (v) => setState(() => _type = v!),
             ),
@@ -589,4 +733,3 @@ class _AddParamDialogState extends State<_AddParamDialog> {
     );
   }
 }
-

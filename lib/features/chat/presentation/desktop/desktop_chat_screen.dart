@@ -19,8 +19,10 @@ import 'package:aurora/features/chat/presentation/widgets/fade_indexed_stack.dar
 import 'package:aurora/features/studio/presentation/studio_content.dart';
 import 'package:aurora/features/skills/presentation/skills_page.dart';
 import 'package:aurora/features/assistant/presentation/assistant_content.dart';
+import 'package:aurora/features/mcp/presentation/mcp_settings_page.dart';
 import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:aurora/shared/theme/chat_background_theme.dart';
+import 'desktop_tabs.dart';
 import '../chat_provider.dart';
 
 class DesktopChatScreen extends ConsumerStatefulWidget {
@@ -233,6 +235,7 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
         label: l10n.agentSkills,
         body: SkillSettingsPage()
       ),
+      (icon: AuroraIcons.mcp, label: l10n.mcpNavLabel, body: McpSettingsPage()),
       (icon: AuroraIcons.studio, label: l10n.studio, body: StudioContent()),
       (
         icon: AuroraIcons.settings,
@@ -246,15 +249,20 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
       ),
     ];
     String currentSessionId;
-    if (selectedIndex == 0) {
+    if (selectedIndex == kDesktopTabHistory) {
       currentSessionId = ref.watch(selectedHistorySessionIdProvider) ?? '';
-    } else if (selectedIndex == 1) {
+    } else if (selectedIndex == kDesktopTabTranslation) {
       currentSessionId = 'translation';
     } else {
       currentSessionId = '';
     }
     final backgroundColor =
         ref.watch(settingsProvider.select((s) => s.backgroundColor));
+    final customThemeEnabled =
+        settings.useCustomTheme || settings.themeMode == 'custom';
+    final hasCustomBackground = customThemeEnabled &&
+        settings.backgroundImagePath != null &&
+        settings.backgroundImagePath!.isNotEmpty;
 
     final isDark = theme.brightness == fluent.Brightness.dark;
     final backgroundGradient =
@@ -266,18 +274,13 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
 
     return Stack(
       children: [
-        if (!settings.useCustomTheme ||
-            settings.backgroundImagePath == null ||
-            settings.backgroundImagePath!.isEmpty)
+        if (!hasCustomBackground)
           Positioned.fill(
             child: Container(
               color: solidBackgroundColor, // Base color
             ),
           ),
-        if (backgroundGradient != null &&
-            (!settings.useCustomTheme ||
-                settings.backgroundImagePath == null ||
-                settings.backgroundImagePath!.isEmpty))
+        if (backgroundGradient != null && !hasCustomBackground)
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -580,13 +583,24 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
                                   const SizedBox(height: 4),
                                   Consumer(
                                     builder: (context, ref, child) {
+                                      final settingsTheme = ref.watch(
+                                        settingsProvider.select((s) => (
+                                              useCustomTheme: s.useCustomTheme,
+                                              themeMode: s.themeMode,
+                                            )),
+                                      );
                                       final currentTheme =
-                                          ref.watch(settingsProvider).themeMode;
+                                          settingsTheme.useCustomTheme ||
+                                                  settingsTheme.themeMode ==
+                                                      'custom'
+                                              ? 'custom'
+                                              : settingsTheme.themeMode;
                                       final IconData icon =
                                           switch (currentTheme) {
                                         'dark' => AuroraIcons.themeDark,
                                         'light' => AuroraIcons.themeLight,
-                                        _ => AuroraIcons.image,
+                                        'custom' => AuroraIcons.image,
+                                        _ => AuroraIcons.themeAuto,
                                       };
                                       return fluent.HoverButton(
                                         onPressed: () => ref
@@ -671,4 +685,3 @@ class _DesktopChatScreenState extends ConsumerState<DesktopChatScreen>
     );
   }
 }
-

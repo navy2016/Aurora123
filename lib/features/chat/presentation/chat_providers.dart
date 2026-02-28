@@ -2,7 +2,7 @@ part of 'chat_provider.dart';
 
 final llmServiceProvider = Provider<LLMService>((ref) {
   final settings = ref.watch(settingsProvider);
-  return OpenAILLMService(settings);
+  return ModelRoutedLlmService(settings);
 });
 
 final assistantMemoryServiceProvider = Provider<AssistantMemoryService>((ref) {
@@ -30,6 +30,8 @@ final sessionsProvider =
   return SessionsNotifier(ref, storage);
 });
 final selectedHistorySessionIdProvider = StateProvider<String?>((ref) => null);
+final sessionRestoreInProgressProvider =
+    StateProvider<bool>((ref) => PlatformUtils.isMobile);
 final collapsedHistorySessionIdsProvider =
     StateProvider<Set<String>>((ref) => <String>{});
 final isHistorySidebarVisibleProvider = StateProvider<bool>((ref) => true);
@@ -54,19 +56,9 @@ final historyChatProvider = Provider<ChatNotifier>((ref) {
   }
   return manager.getOrCreate(sessionId);
 });
-final historyChatStateProvider = Provider<ChatState>((ref) {
-  final notifier = ref.watch(historyChatProvider);
-  ref.watch(chatStateUpdateTriggerProvider);
-  return notifier.currentState;
-});
 final chatSessionNotifierProvider =
     Provider.family<ChatNotifier, String>((ref, sessionId) {
   final manager = ref.watch(chatSessionManagerProvider);
   ref.watch(chatStateUpdateTriggerProvider);
   return manager.getOrCreate(sessionId);
-});
-
-final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
-  final storage = ref.watch(chatStorageProvider);
-  return ChatNotifier(ref: ref, storage: storage, sessionId: 'chat');
 });

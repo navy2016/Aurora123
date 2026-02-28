@@ -51,6 +51,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get close => '关闭';
 
   @override
+  String get yes => '是';
+
+  @override
+  String get no => '否';
+
+  @override
+  String get none => '无';
+
+  @override
+  String get optional => '可选';
+
+  @override
+  String get deleteSuccess => '删除成功';
+
+  @override
   String get history => '历史';
 
   @override
@@ -102,6 +117,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatExperience => '对话体验';
+
+  @override
+  String get restoreLastChatOnLaunch => '启动时恢复上次对话';
+
+  @override
+  String get restoreLastChatOnLaunchHint => '开启后，应用启动时会回到上次退出前使用的对话。';
 
   @override
   String get smartTopicGeneration => '智能话题生成';
@@ -281,6 +302,185 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get agentSkills => '技能';
+
+  @override
+  String get mcpNavLabel => 'MCP';
+
+  @override
+  String get mcpTitle => 'MCP';
+
+  @override
+  String get mcpNoServers => '未配置 MCP 服务器';
+
+  @override
+  String get mcpAddServer => '添加服务器';
+
+  @override
+  String get mcpEditServer => '编辑服务器';
+
+  @override
+  String get mcpDeleteServerTitle => '删除 MCP 服务器';
+
+  @override
+  String get mcpDeleteServerConfirm => '确定要删除该 MCP 服务器吗？此操作不可撤销。';
+
+  @override
+  String get mcpTestConnection => '测试连接';
+
+  @override
+  String get mcpTestResultTitle => '测试结果';
+
+  @override
+  String get mcpToolsCount => '工具数';
+
+  @override
+  String get mcpStderr => 'stderr';
+
+  @override
+  String get mcpServerName => '服务器名称';
+
+  @override
+  String get mcpServerNameHint => '输入名称（例如：Git MCP）';
+
+  @override
+  String get mcpCommand => '命令';
+
+  @override
+  String get mcpCommandHint => '可执行文件（例如：npx）';
+
+  @override
+  String get mcpArgs => '参数';
+
+  @override
+  String get mcpArgsHint => '每行一个参数（例如：-y）';
+
+  @override
+  String get mcpCwd => '工作目录';
+
+  @override
+  String get mcpEnv => '环境变量';
+
+  @override
+  String get mcpEnvHint => '每行一条：KEY=VALUE';
+
+  @override
+  String get mcpRunInShell => '通过 shell 运行';
+
+  @override
+  String get mcpTransport => '传输方式';
+
+  @override
+  String get mcpTransportStdio => 'stdio';
+
+  @override
+  String get mcpTransportHttp => 'HTTP（Streamable）';
+
+  @override
+  String get mcpUrl => 'URL';
+
+  @override
+  String get mcpUrlHint => '服务器 URL（例如 http://127.0.0.1:3000/mcp）';
+
+  @override
+  String get mcpHeaders => '请求头';
+
+  @override
+  String get mcpHeadersHint => '每行一条：KEY=VALUE';
+
+  @override
+  String get mcpStatus => '连接状态';
+
+  @override
+  String get mcpStatusConnected => '已连接';
+
+  @override
+  String get mcpStatusConnecting => '连接中';
+
+  @override
+  String get mcpStatusDisconnected => '未连接';
+
+  @override
+  String get mcpStatusError => '错误';
+
+  @override
+  String get mcpLastError => '最近错误';
+
+  @override
+  String get mcpLastConnectedAt => '最近连接';
+
+  @override
+  String get mcpLastPingAt => '最近心跳';
+
+  @override
+  String get mcpLastToolListAt => '最近 tools/list';
+
+  @override
+  String get mcpLastCallAt => '最近 tools/call';
+
+  @override
+  String get mcpCachedToolsCount => '缓存工具数';
+
+  @override
+  String get mcpLastToolListDuration => 'tools/list 耗时';
+
+  @override
+  String get mcpLastCallDuration => 'tools/call 耗时';
+
+  @override
+  String get mcpRefreshToolsCache => '刷新工具缓存';
+
+  @override
+  String get mcpRefreshToolsCacheSuccess => '工具已刷新';
+
+  @override
+  String get mcpReconnect => '重连';
+
+  @override
+  String get mcpDisconnect => '断开';
+
+  @override
+  String get mcpStderrTail => 'stderr 尾日志';
+
+  @override
+  String get mcpServersTitle => 'MCP 服务器';
+
+  @override
+  String get mcpSessionServersTitle => '会话 MCP 服务器';
+
+  @override
+  String get mcpNoEnabledServers => '没有启用的 MCP 服务器';
+
+  @override
+  String get mcpFollowAssistant => '跟随助手/默认';
+
+  @override
+  String get mcpFollowAssistantHint => '关闭后可为当前会话自定义服务器。';
+
+  @override
+  String get mcpFollowGlobal => '跟随全局';
+
+  @override
+  String get mcpFollowGlobalHint => '关闭后可为该助手自定义服务器。';
+
+  @override
+  String get mcpToggleTooltip => '会话 MCP 服务器';
+
+  @override
+  String mcpServersSelectedCount(int count) {
+    return '已选择 $count 个';
+  }
+
+  @override
+  String get mcpValidationErrorName => '服务器名称不能为空。';
+
+  @override
+  String get mcpValidationErrorCommand => 'stdio 传输需要填写命令。';
+
+  @override
+  String get mcpValidationErrorUrl => 'HTTP 传输需要填写 URL。';
+
+  @override
+  String get mcpValidationError => '名称和命令不能为空。';
 
   @override
   String get executionModel => '执行模型';
@@ -1266,6 +1466,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mobileInputHint => '随便输入点什么吧';
 
   @override
+  String get greetingMessage => '有什么可以帮您？';
+
+  @override
   String get topics => '话题分组';
 
   @override
@@ -1308,16 +1511,53 @@ class AppLocalizationsZh extends AppLocalizations {
   String get thinkingBudgetHint => '输入数字 (如 1024) 或级别 (如 low, high)';
 
   @override
-  String get transmissionMode => '传输模式';
+  String get transmissionMode => '思考传输模式';
 
   @override
-  String get modeAuto => '自动智能';
+  String get modeAuto => '自动（按模型族）';
 
   @override
   String get modeExtraBody => 'Extra Body (Google)';
 
   @override
   String get modeReasoningEffort => 'Reasoning Effort (OpenAI)';
+
+  @override
+  String get transportMode => '传输模式';
+
+  @override
+  String get transportModeSubtitle => '按模型选择请求协议';
+
+  @override
+  String get transportModeType => '模式';
+
+  @override
+  String get transportModeAuto => '自动（按模型与服务商）';
+
+  @override
+  String get transportModeOpenaiCompat => 'OpenAI 兼容';
+
+  @override
+  String get transportModeGeminiNative => 'Gemini 原生';
+
+  @override
+  String get geminiNativeTools => 'Gemini 原生工具';
+
+  @override
+  String get geminiNativeToolsSubtitle => '官方内置工具';
+
+  @override
+  String get geminiNativeGoogleSearch => 'Google 搜索';
+
+  @override
+  String get geminiNativeUrlContext => 'URL 上下文';
+
+  @override
+  String get geminiNativeCodeExecution => '代码执行';
+
+  @override
+  String get geminiNativeSearchDisablesLegacySearch =>
+      '启用 Google 搜索后，该模型会禁用 Aurora 旧版联网搜索流程。';
 
   @override
   String get providers => '服务商';
@@ -2218,4 +2458,140 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get novelUnlimitedModeHint => '启用不受限制的创作模式，注入角色扮演指令';
+
+  @override
+  String get agentWorkflow => 'Agent 工作流';
+
+  @override
+  String get agentWorkflowDescription => '用节点与连线搭建并调试 Agent 工作流。';
+
+  @override
+  String get templates => '模板';
+
+  @override
+  String get newTemplate => '新建模板';
+
+  @override
+  String get templateNameHint => '模板名称';
+
+  @override
+  String get renameTemplate => '重命名模板';
+
+  @override
+  String deleteTemplateConfirm(String name) {
+    return '删除模板“$name”？';
+  }
+
+  @override
+  String deleteNodeConfirm(String name) {
+    return '删除节点“$name”？';
+  }
+
+  @override
+  String get noTemplate => '暂无模板';
+
+  @override
+  String get createTemplateHint => '先创建一个模板开始搭建工作流。';
+
+  @override
+  String get startInput => 'Start 输入';
+
+  @override
+  String get startInputHint => '作为 Start 节点输出传入工作流';
+
+  @override
+  String get run => '运行';
+
+  @override
+  String get stop => '停止';
+
+  @override
+  String get addNode => '添加节点';
+
+  @override
+  String get addLlmNode => '添加 LLM 节点';
+
+  @override
+  String get addSkillNode => '添加 Skill 节点';
+
+  @override
+  String get addMcpNode => '添加 MCP 节点';
+
+  @override
+  String get saved => '已保存';
+
+  @override
+  String get inspector => '检查器';
+
+  @override
+  String get selectNodeToEdit => '选择一个节点以编辑其配置。';
+
+  @override
+  String get typeLabel => '类型';
+
+  @override
+  String get titleLabel => '标题';
+
+  @override
+  String get bodyTemplate => '内容模板';
+
+  @override
+  String get bodyTemplateHint => '使用占位符（双大括号）引用输入。';
+
+  @override
+  String get toolName => '工具名';
+
+  @override
+  String get toolNameHint => '请输入 MCP 工具名';
+
+  @override
+  String get debug => '调试';
+
+  @override
+  String get status => '状态';
+
+  @override
+  String get durationMs => '耗时（ms）';
+
+  @override
+  String get output => '输出';
+
+  @override
+  String get finalOutput => '最终结果';
+
+  @override
+  String get noOutputYet => '暂无输出。';
+
+  @override
+  String get skill => '技能';
+
+  @override
+  String get selectSkillHint => '选择一个技能';
+
+  @override
+  String get mcpServer => 'MCP 服务器';
+
+  @override
+  String get selectMcpServerHint => '选择一个 MCP 服务器';
+
+  @override
+  String get renamePort => '重命名端口';
+
+  @override
+  String get inputs => '输入';
+
+  @override
+  String get outputs => '输出';
+
+  @override
+  String get connections => '连接';
+
+  @override
+  String get inbound => '入边';
+
+  @override
+  String get outbound => '出边';
+
+  @override
+  String get noConnectionsYet => '暂无连接。';
 }

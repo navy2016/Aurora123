@@ -19,11 +19,6 @@ class _ChatActionResult {
 }
 
 class _ChatActionExecutor {
-  static final RegExp _searchPattern =
-      RegExp(r'<search>(.*?)</search>', dotAll: true);
-  static final RegExp _skillPattern =
-      RegExp(r'''<skill\s+name=["'](.*?)["']>(.*?)</skill>''', dotAll: true);
-
   final ChatNotifier _notifier;
   final _ChatRequestContext _requestContext;
   final String _generationId;
@@ -40,14 +35,37 @@ class _ChatActionExecutor {
       _notifier.mounted && _notifier._currentGenerationId == _generationId;
 
   Future<_ChatActionResult> execute(Message aiMsg) async {
-    final searchMatch = _searchPattern.firstMatch(aiMsg.content);
-    if (searchMatch != null) {
-      return _handleSearch(aiMsg, searchMatch);
+    final context = MessageTransformContext(
+      language: _requestContext.settings.language,
+      model: _requestContext.currentModel,
+      providerName: _requestContext.currentProviderName,
+    );
+    final transformed = chatMessageTransformers.onGenerationFinish(
+      UiMessage.fromLegacy(aiMsg),
+      context,
+    );
+
+    final cleaned = transformed.toLegacy();
+    if (cleaned.content != aiMsg.content) {
+      _notifier._upsertTrailingMessage(cleaned);
+      aiMsg = cleaned;
     }
 
-    final skillMatch = _skillPattern.firstMatch(aiMsg.content);
-    if (skillMatch != null) {
-      return _handleSkillTag(aiMsg, skillMatch);
+    final searchRequest = transformed.firstSearchRequest;
+    if (searchRequest != null) {
+      if (!_requestContext.allowLegacySearchTool) {
+        return _ChatActionResult.stop(aiMsg);
+      }
+      return _handleSearch(aiMsg, searchQuery: searchRequest.query);
+    }
+
+    final skillRequest = transformed.firstSkillRequest;
+    if (skillRequest != null) {
+      return _handleSkillTag(
+        aiMsg,
+        skillName: skillRequest.skillName,
+        skillQuery: skillRequest.query,
+      );
     }
 
     if (aiMsg.toolCalls != null && aiMsg.toolCalls!.isNotEmpty) {
@@ -58,25 +76,25 @@ class _ChatActionExecutor {
   }
 
   Future<_ChatActionResult> _handleSearch(
-      Message aiMsg, RegExpMatch searchMatch) async {
-    final searchQuery = searchMatch.group(1)?.trim() ?? '';
+    Message aiMsg, {
+    required String searchQuery,
+  }) async {
     if (searchQuery.isEmpty || !_isGenerationActive) {
       return _ChatActionResult.stop(aiMsg);
     }
 
-    aiMsg = _cleanTagFromDisplay(aiMsg, _searchPattern);
-
     String searchResult;
-    try {
-      searchResult = await _requestContext.toolManager.executeTool(
-        'SearchWeb',
-        {'query': searchQuery},
-        preferredEngine: _requestContext.settings.searchEngine,
-        skills: _requestContext.activeSkills,
-      );
-    } catch (e) {
-      searchResult = jsonEncode({'error': e.toString()});
-    }
+      try {
+        searchResult = await _requestContext.toolManager.executeTool(
+          'SearchWeb',
+          {'query': searchQuery},
+          preferredEngine: _requestContext.settings.searchEngine,
+          skills: _requestContext.activeSkills,
+          mcpServers: _requestContext.mcpServers,
+        );
+      } catch (e) {
+        searchResult = jsonEncode({'error': e.toString()});
+      }
 
     if (!_isGenerationActive) {
       return _ChatActionResult.stop(aiMsg);
@@ -108,14 +126,13 @@ class _ChatActionExecutor {
   }
 
   Future<_ChatActionResult> _handleSkillTag(
-      Message aiMsg, RegExpMatch skillMatch) async {
-    final skillName = skillMatch.group(1)?.trim() ?? '';
-    final skillQuery = skillMatch.group(2)?.trim() ?? '';
+    Message aiMsg, {
+    required String skillName,
+    required String skillQuery,
+  }) async {
     if (skillName.isEmpty || !_isGenerationActive) {
       return _ChatActionResult.stop(aiMsg);
     }
-
-    aiMsg = _cleanTagFromDisplay(aiMsg, _skillPattern);
 
     final originalUserMsg = _notifier.currentState.messages
         .lastWhere((m) => m.isUser, orElse: () => Message.user(''));
@@ -168,6 +185,7 @@ class _ChatActionExecutor {
     }
 
     _requestContext.messagesForApi.add(aiMsg);
+    final mcpSummaries = <_McpToolCallSummary>[];
 
     for (final tc in aiMsg.toolCalls!) {
       String toolResult;
@@ -175,20 +193,25 @@ class _ChatActionExecutor {
         if (tc.name == 'call_skill') {
           toolResult = await _executeLegacySkillCall(tc.arguments);
         } else {
-          final args = jsonDecode(tc.arguments);
-          toolResult = await _requestContext.toolManager.executeTool(
-            tc.name,
-            args,
-            preferredEngine: _requestContext.settings.searchEngine,
-            skills: _requestContext.activeSkills,
-          );
-        }
-      } catch (e) {
-        toolResult = jsonEncode({'error': e.toString()});
-      }
+           final args = jsonDecode(tc.arguments);
+           toolResult = await _requestContext.toolManager.executeTool(
+             tc.name,
+             args,
+             preferredEngine: _requestContext.settings.searchEngine,
+             skills: _requestContext.activeSkills,
+             mcpServers: _requestContext.mcpServers,
+           );
+         }
+       } catch (e) {
+         toolResult = jsonEncode({'error': e.toString()});
+       }
 
       if (!_isGenerationActive) {
         return _ChatActionResult.stop(aiMsg);
+      }
+
+      if (tc.name.startsWith('mcp__')) {
+        mcpSummaries.add(_McpToolCallSummary(tc.name, toolResult));
       }
 
       final toolMsg = Message.tool(toolResult, toolCallId: tc.id);
@@ -196,11 +219,120 @@ class _ChatActionExecutor {
       _notifier._appendMessage(toolMsg);
     }
 
+    if (mcpSummaries.isNotEmpty) {
+      final summaryText = _buildMcpSummaryMessage(mcpSummaries);
+      if (summaryText.trim().isNotEmpty) {
+        _requestContext.messagesForApi.add(
+          Message(
+            id: const Uuid().v4(),
+            role: 'user',
+            content: summaryText,
+            timestamp: DateTime.now(),
+            isUser: false,
+          ),
+        );
+      }
+    }
+
     final nextAi = Message.ai('',
         model: _requestContext.currentModel,
         provider: _requestContext.currentProviderName);
     _notifier._appendMessage(nextAi);
     return _ChatActionResult.continueWith(nextAi);
+  }
+
+  String _buildMcpSummaryMessage(List<_McpToolCallSummary> items) {
+    final lines = <String>[];
+    for (final item in items) {
+      final parsed = _parseMcpToolResult(item.resultJson);
+      final status = parsed.isError ? 'error' : 'ok';
+      final parts = <String>[status];
+
+      if (parsed.contentTypes.isNotEmpty) {
+        parts.add('types=${parsed.contentTypes.join(',')}');
+      }
+      if (parsed.textPreview.isNotEmpty) {
+        parts.add('text="${parsed.textPreview}"');
+      }
+      if (parsed.structuredKeys.isNotEmpty) {
+        parts.add('structuredKeys=${parsed.structuredKeys.join(',')}');
+      }
+
+      lines.add('${item.toolName}: ${parts.join('; ')}');
+    }
+
+    return '<tool_summaries>\n${lines.join('\n')}\n</tool_summaries>';
+  }
+
+  _McpParsedResult _parseMcpToolResult(String rawJson) {
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(rawJson);
+    } catch (_) {
+      return _McpParsedResult(
+        isError: true,
+        contentTypes: const [],
+        textPreview: _truncate(rawJson, 280),
+        structuredKeys: const [],
+      );
+    }
+
+    if (decoded is! Map) {
+      return _McpParsedResult(
+        isError: false,
+        contentTypes: const [],
+        textPreview: _truncate(decoded.toString(), 280),
+        structuredKeys: const [],
+      );
+    }
+
+    final map = decoded.map((k, v) => MapEntry('$k', v));
+    final isError = map.containsKey('error') || map['isError'] == true || map['is_error'] == true;
+
+    final contentTypes = <String>{};
+    final textParts = <String>[];
+
+    final content = map['content'];
+    if (content is List) {
+      for (final item in content) {
+        if (item is! Map) continue;
+        final itemMap = item.map((k, v) => MapEntry('$k', v));
+        final type = itemMap['type']?.toString();
+        if (type != null && type.isNotEmpty) {
+          contentTypes.add(type);
+        }
+        if (type == 'text') {
+          final text = itemMap['text']?.toString();
+          if (text != null && text.trim().isNotEmpty) {
+            textParts.add(text.trim());
+          }
+        }
+      }
+    }
+
+    final structuredKeys = <String>[];
+    final structured = map['structuredContent'];
+    if (structured is Map) {
+      structuredKeys.addAll(structured.keys.map((k) => k.toString()));
+      if (structuredKeys.length > 10) {
+        structuredKeys.removeRange(10, structuredKeys.length);
+      }
+    }
+
+    final textPreview = _truncate(textParts.join('\n'), 280);
+
+    return _McpParsedResult(
+      isError: isError,
+      contentTypes: contentTypes.toList()..sort(),
+      textPreview: textPreview,
+      structuredKeys: structuredKeys,
+    );
+  }
+
+  String _truncate(String value, int maxChars) {
+    final trimmed = value.trim();
+    if (trimmed.length <= maxChars) return trimmed;
+    return '${trimmed.substring(0, maxChars)}...';
   }
 
   Future<String> _executeLegacySkillCall(String rawArguments) async {
@@ -288,10 +420,25 @@ class _ChatActionExecutor {
     );
   }
 
-  Message _cleanTagFromDisplay(Message aiMsg, RegExp pattern) {
-    final cleaned =
-        aiMsg.copyWith(content: aiMsg.content.replaceAll(pattern, '').trim());
-    _notifier._upsertTrailingMessage(cleaned);
-    return cleaned;
-  }
+}
+
+class _McpToolCallSummary {
+  final String toolName;
+  final String resultJson;
+
+  const _McpToolCallSummary(this.toolName, this.resultJson);
+}
+
+class _McpParsedResult {
+  final bool isError;
+  final List<String> contentTypes;
+  final String textPreview;
+  final List<String> structuredKeys;
+
+  const _McpParsedResult({
+    required this.isError,
+    required this.contentTypes,
+    required this.textPreview,
+    required this.structuredKeys,
+  });
 }

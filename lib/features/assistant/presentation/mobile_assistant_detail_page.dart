@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:aurora/l10n/app_localizations.dart';
 import 'package:aurora/shared/widgets/aurora_bottom_sheet.dart';
 import 'package:aurora/shared/widgets/aurora_notice.dart';
+import 'package:aurora/shared/theme/aurora_icons.dart';
 import '../domain/assistant.dart';
 import 'widgets/assistant_avatar.dart';
 import 'assistant_provider.dart';
@@ -10,6 +13,9 @@ import '../../settings/presentation/widgets/mobile_settings_widgets.dart';
 import '../../settings/presentation/settings_provider.dart';
 import '../../skills/presentation/skill_provider.dart';
 import '../../knowledge/presentation/knowledge_provider.dart';
+import '../../mcp/domain/mcp_server_config.dart';
+import '../../mcp/presentation/mcp_bindings_provider.dart';
+import '../../mcp/presentation/mcp_server_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:aurora/shared/utils/avatar_storage.dart';
@@ -79,6 +85,17 @@ class _MobileAssistantDetailPageState
             : _currentAssistant.knowledgeBaseIds
                 .where(enabledKnowledgeBaseIds.contains)
                 .length;
+    final configuredMcpServers = ref.watch(mcpServerProvider).servers;
+    final enabledMcpServers = configuredMcpServers
+        .where((s) => s.enabled && s.transport != McpServerTransport.stdio)
+        .toList(growable: false);
+    final enabledMcpIds = enabledMcpServers.map((s) => s.id).toSet();
+    final assistantMcpOverride =
+        ref.watch(mcpBindingsProvider).assistantOverrides[_currentAssistant.id];
+    final followGlobalMcp = assistantMcpOverride == null;
+    final selectedMcpCount = followGlobalMcp
+        ? enabledMcpServers.length
+        : assistantMcpOverride.where(enabledMcpIds.contains).length;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.65),
@@ -168,6 +185,16 @@ class _MobileAssistantDetailPageState
                         assistantKnowledgeBaseCount,
                       ),
                 onTap: () => _showKnowledgeBasePicker(context),
+              ),
+              MobileSettingsTile(
+                leading: const Icon(AuroraIcons.mcp),
+                title: l10n.mcpServersTitle,
+                subtitle: enabledMcpServers.isEmpty
+                    ? l10n.disabled
+                    : (followGlobalMcp
+                        ? l10n.mcpFollowGlobal
+                        : l10n.mcpServersSelectedCount(selectedMcpCount)),
+                onTap: () => _showMcpServerPicker(context),
               ),
               MobileSettingsTile(
                 leading: const Icon(Icons.memory_outlined),
@@ -393,6 +420,114 @@ class _MobileAssistantDetailPageState
           ],
         );
       }),
+    );
+  }
+
+  void _showMcpServerPicker(BuildContext context) {
+    AuroraBottomSheet.show(
+      context: context,
+      builder: (ctx) => Consumer(
+        builder: (ctx, ref, _) {
+          final l10n = AppLocalizations.of(ctx)!;
+          final configuredServers = ref.watch(mcpServerProvider).servers;
+          final enabledServers = configuredServers
+              .where((s) =>
+                  s.enabled && s.transport != McpServerTransport.stdio)
+              .toList(growable: false);
+          final enabledIds = enabledServers.map((s) => s.id).toSet();
+          final bindingsState = ref.watch(mcpBindingsProvider);
+          final override =
+              bindingsState.assistantOverrides[_currentAssistant.id];
+          final followGlobal = override == null;
+          final selectedIds = followGlobal
+              ? enabledIds
+              : override.where(enabledIds.contains).toSet();
+
+          Future<void> setFollowGlobal(bool follow) async {
+            if (follow) {
+              await ref
+                  .read(mcpBindingsProvider.notifier)
+                  .clearAssistantOverride(_currentAssistant.id);
+              return;
+            }
+            final next = enabledIds.toList()..sort();
+            await ref
+                .read(mcpBindingsProvider.notifier)
+                .setAssistantOverride(_currentAssistant.id, next);
+          }
+
+          Future<void> toggleServer(String serverId, bool enabled) async {
+            final current = Set<String>.from(selectedIds);
+            if (enabled) {
+              current.add(serverId);
+            } else {
+              current.remove(serverId);
+            }
+            final next = current.toList()..sort();
+            await ref
+                .read(mcpBindingsProvider.notifier)
+                .setAssistantOverride(_currentAssistant.id, next);
+          }
+
+          return ConstrainedBox(
+            constraints:
+                BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.75),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AuroraBottomSheet.buildTitle(ctx, l10n.mcpServersTitle),
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                    children: [
+                      SwitchListTile.adaptive(
+                        value: followGlobal,
+                        onChanged: (v) => unawaited(setFollowGlobal(v)),
+                        title: Text(l10n.mcpFollowGlobal),
+                        subtitle:
+                            followGlobal ? Text(l10n.mcpFollowGlobalHint) : null,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      if (enabledServers.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(l10n.mcpNoEnabledServers),
+                        )
+                      else
+                        ...enabledServers.map((server) {
+                          final checked = selectedIds.contains(server.id);
+                          final summary = server.transport ==
+                                  McpServerTransport.http
+                              ? server.url.trim()
+                              : [
+                                  server.command,
+                                  ...server.args,
+                                ]
+                                    .where((s) => s.trim().isNotEmpty)
+                                    .join(' ');
+                          return SwitchListTile.adaptive(
+                            value: checked,
+                            onChanged: followGlobal
+                                ? null
+                                : (v) =>
+                                    unawaited(toggleServer(server.id, v)),
+                            title: Text(server.name.isNotEmpty
+                                ? server.name
+                                : l10n.unknown),
+                            subtitle:
+                                summary.isEmpty ? null : Text(summary),
+                            contentPadding: EdgeInsets.zero,
+                          );
+                        }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 

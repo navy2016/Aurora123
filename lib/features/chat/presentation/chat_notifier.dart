@@ -172,17 +172,19 @@ class ChatNotifier extends StateNotifier<ChatState> {
         state.copyWith(isLoading: true, error: null, hasUnreadResponse: false);
     final startSaveIndex = state.messages.length;
     final startTime = DateTime.now();
+    _ChatRequestContext? requestContext;
 
     try {
-      final requestContext = await _ChatRequestContextBuilder(notifier: this)
+      requestContext = await _ChatRequestContextBuilder(notifier: this)
           .build(text: text, apiContent: apiContent, assistant: assistant);
       if (!mounted || _currentGenerationId != generationId) {
         return _sessionId;
       }
+      final context = requestContext;
 
       final initialAiMessage = _createInitialAiMessage(
-        model: requestContext.currentModel,
-        provider: requestContext.currentProviderName,
+        model: context.currentModel,
+        provider: context.currentProviderName,
         generationId: generationId,
         assistantIdForRequest: assistantIdForRequest,
       );
@@ -190,7 +192,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       final orchestrator = _ChatGenerationOrchestrator(
         notifier: this,
-        requestContext: requestContext,
+        requestContext: context,
         generationId: generationId,
         startTime: startTime,
         recordMainModelUsage: ({
@@ -203,7 +205,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
           int reasoningTokens = 0,
           AppErrorType? errorType,
         }) {
-          final currentModel = requestContext.currentModel;
+          final currentModel = context.currentModel;
           if (currentModel == null || currentModel.isEmpty) return;
           _ref.read(usageStatsProvider.notifier).incrementUsage(
                 currentModel,
@@ -241,14 +243,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
         unawaited(
           _ref.read(assistantMemoryServiceProvider).onRequestCompleted(
                 assistant: assistant,
-                settings: requestContext.settings,
+                settings: context.settings,
                 requestId: generationId,
               ),
         );
       }
 
       if (_currentGenerationId == generationId) {
-        final activeProvider = requestContext.settings.activeProvider;
+        final activeProvider = context.settings.activeProvider;
         if (activeProvider.autoRotateKeys &&
             activeProvider.apiKeys.length > 1) {
           _ref.read(settingsProvider.notifier).rotateApiKey(activeProvider.id);
@@ -261,6 +263,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         startTime: startTime,
       );
     } finally {
+      requestContext?.toolManager.close();
       if (mounted) state = state.copyWith(isLoading: false);
     }
 
@@ -296,6 +299,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       _sessionId = realId;
       newRealId = realId;
+
+      if (oldId == 'new_chat') {
+        await _ref.read(mcpBindingsProvider.notifier).migrateSessionOverride(
+              fromSessionId: oldId,
+              toSessionId: realId,
+            );
+      }
 
       _generateTopic(text).then((smartTitle) async {
         if (smartTitle != title && smartTitle.isNotEmpty) {
@@ -647,33 +657,6 @@ class ChatNotifier extends StateNotifier<ChatState> {
     return null;
   }
 
-  List<ToolCall>? _mergeToolCalls(
-      List<ToolCall>? existing, List<ToolCallChunk>? chunks) {
-    if (chunks == null || chunks.isEmpty) return existing;
-    final merged =
-        existing != null ? List<ToolCall>.from(existing) : <ToolCall>[];
-    for (final chunk in chunks) {
-      final index = chunk.index ?? 0;
-      if (index >= merged.length) {
-        merged.add(ToolCall(
-            id: chunk.id ?? '',
-            type: chunk.type ?? 'function',
-            name: chunk.name ?? '',
-            arguments: chunk.arguments ?? ''));
-      } else {
-        final prev = merged[index];
-        merged[index] = ToolCall(
-            id: (prev.id == '' ? (chunk.id ?? '') : prev.id),
-            type: (prev.type == 'function'
-                ? (chunk.type ?? 'function')
-                : prev.type),
-            name: prev.name + (chunk.name ?? ''),
-            arguments: prev.arguments + (chunk.arguments ?? ''));
-      }
-    }
-    return merged;
-  }
-
   Future<void> deleteMessage(String id) async {
     final newMessages = state.messages.where((m) => m.id != id).toList();
     state = state.copyWith(messages: newMessages);
@@ -882,7 +865,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       activeProviderId: providerId,
       providers: tempProviders,
     );
-    final tempLLMService = OpenAILLMService(tempSettings);
+    final tempLLMService = ModelRoutedLlmService(tempSettings);
     try {
       final inputContent = text.length > 3000 ? text.substring(0, 3000) : text;
       final prompt =

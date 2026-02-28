@@ -210,6 +210,7 @@ class SettingsStorage {
     List<String>? activeKnowledgeBaseIds,
     bool? enableSmartTopic,
     String? topicGenerationModel,
+    bool? restoreLastSessionOnLaunch,
     String? lastSessionId,
     String? lastTopicId,
     String? language,
@@ -266,13 +267,17 @@ class SettingsStorage {
           enableSmartTopic ?? existing?.enableSmartTopic ?? true
       ..topicGenerationModel =
           topicGenerationModel ?? existing?.topicGenerationModel
+      ..restoreLastSessionOnLaunch = restoreLastSessionOnLaunch ??
+          existing?.restoreLastSessionOnLaunch ??
+          true
       ..lastSessionId = lastSessionId ?? existing?.lastSessionId
       ..lastTopicId = lastTopicId ?? existing?.lastTopicId
       ..language = language ?? existing?.language ?? 'zh'
       ..lastPresetId = existing?.lastPresetId
       ..lastAssistantId = existing?.lastAssistantId
-      ..themeColor = themeColor ?? existing?.themeColor
-      ..backgroundColor = backgroundColor ?? existing?.backgroundColor
+      ..themeColor = themeColor ?? existing?.themeColor ?? 'teal'
+      ..backgroundColor =
+          backgroundColor ?? existing?.backgroundColor ?? 'default'
       ..closeBehavior = closeBehavior ?? existing?.closeBehavior ?? 0
       ..executionModel = executionModel ?? existing?.executionModel
       ..executionProviderId =
@@ -328,6 +333,11 @@ class SettingsStorage {
     return File('${dir.path}/session_order.json');
   }
 
+  Future<File> get _startupMaintenanceFile async {
+    final dir = await getApplicationSupportDirectory();
+    return File('${dir.path}/startup_maintenance.json');
+  }
+
   Future<List<String>> loadSessionOrder() async {
     try {
       final file = await _orderFile;
@@ -348,6 +358,35 @@ class SettingsStorage {
       await file.writeAsString(jsonEncode(order));
     } catch (e, st) {
       debugPrint('Failed to save session order: $e\n$st');
+    }
+  }
+
+  Future<DateTime?> loadStartupMaintenanceLastRun() async {
+    try {
+      final file = await _startupMaintenanceFile;
+      if (!await file.exists()) return null;
+      final content = await file.readAsString();
+      final decoded = jsonDecode(content);
+      if (decoded is Map<String, dynamic>) {
+        final raw = decoded['last_run_utc'];
+        if (raw is String) {
+          return DateTime.tryParse(raw)?.toLocal();
+        }
+      }
+    } catch (e, st) {
+      debugPrint('Failed to load startup maintenance state: $e\n$st');
+    }
+    return null;
+  }
+
+  Future<void> saveStartupMaintenanceLastRun(DateTime lastRun) async {
+    try {
+      final file = await _startupMaintenanceFile;
+      await file.writeAsString(jsonEncode({
+        'last_run_utc': lastRun.toUtc().toIso8601String(),
+      }));
+    } catch (e, st) {
+      debugPrint('Failed to save startup maintenance state: $e\n$st');
     }
   }
 
@@ -659,6 +698,7 @@ class SettingsStorage {
           List<String>.from(source.activeKnowledgeBaseIds)
       ..enableSmartTopic = source.enableSmartTopic
       ..topicGenerationModel = source.topicGenerationModel
+      ..restoreLastSessionOnLaunch = source.restoreLastSessionOnLaunch
       ..lastSessionId = source.lastSessionId
       ..lastTopicId = source.lastTopicId
       ..language = source.language

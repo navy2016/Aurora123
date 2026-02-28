@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isar_community/isar.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../assistant/data/assistant_entity.dart';
@@ -35,6 +36,37 @@ class BackupService {
   static const String _prefKnowledgeChunks = 'knowledgeChunks';
   static const String _prefUsageStats = 'usageStats';
   static const String _prefDailyUsageStats = 'dailyUsageStats';
+  static const String _prefBackgroundImageBackupFile =
+      'backgroundImageBackupFile';
+  static const String _backgroundAssetsDir = 'backgrounds';
+
+  static const Set<String> _allowedThemeModes = {
+    'light',
+    'dark',
+    'system',
+    'custom',
+  };
+  static const Set<String> _allowedBackgroundStyles = {
+    'default',
+    'pure_black',
+    'warm',
+    'cool',
+    'rose',
+    'lavender',
+    'mint',
+    'sky',
+    'gray',
+    'sunset',
+    'ocean',
+    'forest',
+    'dream',
+    'aurora',
+    'volcano',
+    'midnight',
+    'dawn',
+    'neon',
+    'blossom',
+  };
 
   final SettingsStorage _storage;
 
@@ -156,10 +188,36 @@ class BackupService {
     if (options.includeStudioContent) {
       try {
         final docsDir = await getApplicationDocumentsDirectory();
-        final studioFile = File('${docsDir.path}/novel_writing_state.json');
-        if (await studioFile.exists()) {
-          final content = await studioFile.readAsString();
-          studioContent = jsonDecode(content) as Map<String, dynamic>;
+        Map<String, dynamic>? novelWritingState;
+        Map<String, dynamic>? agentWorkflows;
+
+        final novelFile = File('${docsDir.path}/novel_writing_state.json');
+        if (await novelFile.exists()) {
+          final content = await novelFile.readAsString();
+          final decoded = jsonDecode(content);
+          if (decoded is Map) {
+            novelWritingState = decoded.map((k, v) => MapEntry('$k', v));
+          }
+        }
+
+        final workflowFile = File('${docsDir.path}/agent_workflows.json');
+        if (await workflowFile.exists()) {
+          final content = await workflowFile.readAsString();
+          final decoded = jsonDecode(content);
+          if (decoded is Map) {
+            agentWorkflows = decoded.map((k, v) => MapEntry('$k', v));
+          }
+        }
+
+        if (novelWritingState != null || agentWorkflows != null) {
+          final map = <String, dynamic>{};
+          if (novelWritingState != null) {
+            map['novelWritingState'] = novelWritingState;
+          }
+          if (agentWorkflows != null) {
+            map['agentWorkflows'] = agentWorkflows;
+          }
+          studioContent = map;
         }
       } catch (e) {
         debugPrint('Error exporting studio content: $e');
@@ -304,12 +362,37 @@ class BackupService {
 
     final archive = Archive();
 
+    final dataJson = data.toJson();
+    final preferences = _asMap(dataJson['preferences']);
+    final appSettingsJson = _asMap(preferences[_prefAppSettings]);
+    if (appSettingsJson.isNotEmpty) {
+      final sourceBackgroundPath =
+          _asNullableString(appSettingsJson['backgroundImagePath']);
+      if (sourceBackgroundPath != null) {
+        final backgroundFile = File(sourceBackgroundPath);
+        if (await backgroundFile.exists()) {
+          final fileName = p.basename(sourceBackgroundPath);
+          final archivePath = '$_backgroundAssetsDir/$fileName';
+          final bytes = await backgroundFile.readAsBytes();
+          archive.addFile(ArchiveFile(archivePath, bytes.length, bytes));
+          appSettingsJson[_prefBackgroundImageBackupFile] = fileName;
+        } else {
+          appSettingsJson['backgroundImagePath'] = null;
+          appSettingsJson.remove(_prefBackgroundImageBackupFile);
+        }
+      } else {
+        appSettingsJson.remove(_prefBackgroundImageBackupFile);
+      }
+
+      _normalizeAppSettingsJson(appSettingsJson);
+      preferences[_prefAppSettings] = appSettingsJson;
+      dataJson['preferences'] = preferences;
+    }
+
     // Add data.json
-    final jsonStr = jsonEncode(data.toJson());
+    final jsonStr = jsonEncode(dataJson);
     final jsonBytes = utf8.encode(jsonStr);
     archive.addFile(ArchiveFile('data.json', jsonBytes.length, jsonBytes));
-
-    // TODO: Add images logic here if needed (skipping for now as per plan to focus on lightweight sync first)
 
     final encoded = ZipEncoder().encode(archive);
 
@@ -328,6 +411,35 @@ class BackupService {
 
     final content = utf8.decode(dataFile.content as List<int>);
     final json = jsonDecode(content);
+    if (json is Map<String, dynamic>) {
+      final preferences = _asMap(json['preferences']);
+      final appSettingsJson = _asMap(preferences[_prefAppSettings]);
+      if (appSettingsJson.isNotEmpty) {
+        final backgroundFileName =
+            _asNullableString(appSettingsJson[_prefBackgroundImageBackupFile]);
+        if (backgroundFileName != null) {
+          final archiveBgPath = '$_backgroundAssetsDir/$backgroundFileName';
+          final bgFile = archive.findFile(archiveBgPath);
+          if (bgFile != null) {
+            final bgBytes = _readArchiveFileBytes(bgFile);
+            final supportDir = await getApplicationSupportDirectory();
+            final bgDir = Directory(p.join(supportDir.path, 'backgrounds'));
+            if (!await bgDir.exists()) {
+              await bgDir.create(recursive: true);
+            }
+            final localBgPath = p.join(bgDir.path, backgroundFileName);
+            await File(localBgPath).writeAsBytes(bgBytes, flush: true);
+            appSettingsJson['backgroundImagePath'] = localBgPath;
+          } else {
+            appSettingsJson['backgroundImagePath'] = null;
+          }
+        }
+        appSettingsJson.remove(_prefBackgroundImageBackupFile);
+        _normalizeAppSettingsJson(appSettingsJson);
+        preferences[_prefAppSettings] = appSettingsJson;
+        json['preferences'] = preferences;
+      }
+    }
     return BackupEntity.fromJson(json);
   }
 
@@ -471,8 +583,27 @@ class BackupService {
     if (backup.studioContent != null) {
       try {
         final docsDir = await getApplicationDocumentsDirectory();
-        final studioFile = File('${docsDir.path}/novel_writing_state.json');
-        await studioFile.writeAsString(jsonEncode(backup.studioContent));
+        final studio = backup.studioContent!;
+        final hasNewKeys =
+            studio.containsKey('novelWritingState') || studio.containsKey('agentWorkflows');
+
+        if (!hasNewKeys) {
+          // Backward compatibility: old backups stored novel state directly.
+          final studioFile = File('${docsDir.path}/novel_writing_state.json');
+          await studioFile.writeAsString(jsonEncode(studio));
+        } else {
+          final novelState = studio['novelWritingState'];
+          if (novelState is Map) {
+            final studioFile = File('${docsDir.path}/novel_writing_state.json');
+            await studioFile.writeAsString(jsonEncode(novelState));
+          }
+
+          final workflows = studio['agentWorkflows'];
+          if (workflows is Map) {
+            final workflowFile = File('${docsDir.path}/agent_workflows.json');
+            await workflowFile.writeAsString(jsonEncode(workflows));
+          }
+        }
       } catch (e) {
         debugPrint('Error restoring studio content: $e');
       }
@@ -650,7 +781,7 @@ class BackupService {
       ..userAvatar = _asNullableString(json['userAvatar'])
       ..llmName = _asString(json['llmName'], fallback: 'Assistant')
       ..llmAvatar = _asNullableString(json['llmAvatar'])
-      ..themeMode = _asString(json['themeMode'], fallback: 'system')
+      ..themeMode = _normalizeThemeMode(_asNullableString(json['themeMode']))
       ..isStreamEnabled = _asBool(json['isStreamEnabled'], fallback: true)
       ..isSearchEnabled = _asBool(json['isSearchEnabled'], fallback: false)
       ..isKnowledgeEnabled =
@@ -679,8 +810,9 @@ class BackupService {
       ..language = _asString(json['language'], fallback: 'zh')
       ..lastPresetId = _asNullableString(json['lastPresetId'])
       ..lastAssistantId = _asNullableString(json['lastAssistantId'])
-      ..themeColor = _asNullableString(json['themeColor'])
-      ..backgroundColor = _asNullableString(json['backgroundColor'])
+      ..themeColor = _asNullableString(json['themeColor']) ?? 'teal'
+      ..backgroundColor =
+          _normalizeBackgroundStyle(_asNullableString(json['backgroundColor']))
       ..closeBehavior = _asInt(json['closeBehavior'], fallback: 0)
       ..executionModel = _asNullableString(json['executionModel'])
       ..executionProviderId = _asNullableString(json['executionProviderId'])
@@ -994,6 +1126,64 @@ class BackupService {
       ..successCount = _asInt(json['successCount'], fallback: 0)
       ..failureCount = _asInt(json['failureCount'], fallback: 0)
       ..tokenCount = _asInt(json['tokenCount'], fallback: 0);
+  }
+
+  List<int> _readArchiveFileBytes(ArchiveFile file) =>
+      file.content as List<int>;
+
+  void _normalizeAppSettingsJson(Map<String, dynamic> appSettingsJson) {
+    var themeMode =
+        _normalizeThemeMode(_asNullableString(appSettingsJson['themeMode']));
+    var useCustomTheme =
+        _asBool(appSettingsJson['useCustomTheme'], fallback: false);
+    var backgroundImagePath =
+        _asNullableString(appSettingsJson['backgroundImagePath']);
+    var backgroundColor = _normalizeBackgroundStyle(
+      _asNullableString(appSettingsJson['backgroundColor']),
+    );
+
+    if (backgroundImagePath != null) {
+      try {
+        if (!File(backgroundImagePath).existsSync()) {
+          backgroundImagePath = null;
+        }
+      } catch (_) {
+        backgroundImagePath = null;
+      }
+    }
+
+    if (backgroundImagePath == null &&
+        (useCustomTheme || themeMode == 'custom')) {
+      useCustomTheme = false;
+      if (themeMode == 'custom') {
+        themeMode = 'system';
+      }
+    }
+
+    if (themeMode == 'light' && backgroundColor == 'pure_black') {
+      backgroundColor = 'default';
+    }
+
+    appSettingsJson['themeMode'] = themeMode;
+    appSettingsJson['useCustomTheme'] = useCustomTheme;
+    appSettingsJson['backgroundImagePath'] = backgroundImagePath;
+    appSettingsJson['backgroundColor'] = backgroundColor;
+  }
+
+  String _normalizeThemeMode(String? value) {
+    final normalized = (value ?? '').trim().toLowerCase();
+    if (_allowedThemeModes.contains(normalized)) {
+      return normalized;
+    }
+    return 'system';
+  }
+
+  String _normalizeBackgroundStyle(String? value) {
+    final normalized = (value ?? '').trim().toLowerCase();
+    if (_allowedBackgroundStyles.contains(normalized)) {
+      return normalized;
+    }
+    return 'default';
   }
 
   List<T> _decodeEntityList<T>(

@@ -18,6 +18,7 @@ class AppLogger {
   static bool _useColor = true;
   static bool _prettyJson = true;
   static AppLogLevel _minLevel = AppLogLevel.debug;
+  static bool _showRawLlmPayload = !kReleaseMode;
 
   static const String _reset = '\x1B[0m';
   static const String _dim = '\x1B[90m';
@@ -30,6 +31,7 @@ class AppLogger {
     bool useColor = true,
     bool prettyJson = true,
     bool allowVerboseInRelease = false,
+    bool? showRawLlmPayload,
     AppLogLevel? minLevel,
   }) {
     if (_installed) return;
@@ -41,6 +43,9 @@ class AppLogger {
         (kReleaseMode && !verboseRelease
             ? AppLogLevel.warn
             : AppLogLevel.debug);
+    _showRawLlmPayload = showRawLlmPayload ??
+        _envFlagOptional('AURORA_LOG_RAW_LLM_PAYLOAD') ??
+        !kReleaseMode;
 
     debugPrint = (String? message, {int? wrapWidth}) {
       if (message == null || message.trim().isEmpty) return;
@@ -51,6 +56,7 @@ class AppLogger {
   }
 
   static AppLogLevel get minLevel => _minLevel;
+  static bool get showRawLlmPayload => _showRawLlmPayload;
 
   static void setMinLevel(AppLogLevel level) {
     _minLevel = level;
@@ -154,7 +160,8 @@ class AppLogger {
     if (!_shouldLog(level)) return;
 
     final sanitizedMessage = _sanitizeText(message).trim();
-    final sanitizedData = _sanitizeData(data);
+    final redactContent = _shouldRedactContent(channel: channel);
+    final sanitizedData = _sanitizeData(data, redactContent: redactContent);
 
     final header = StringBuffer();
     header.write('[${_timestamp()}]');
@@ -383,38 +390,70 @@ class AppLogger {
   }
 
   static bool _envFlag(String name) {
-    final raw = Platform.environment[name];
-    if (raw == null) return false;
-    final normalized = raw.trim().toLowerCase();
-    return normalized == '1' ||
-        normalized == 'true' ||
-        normalized == 'yes' ||
-        normalized == 'on';
+    return _envFlagOptional(name) ?? false;
   }
 
-  static Object? _sanitizeData(Object? value, {String? keyHint}) {
+  static bool? _envFlagOptional(String name) {
+    final raw = Platform.environment[name];
+    if (raw == null) return null;
+    final normalized = raw.trim().toLowerCase();
+    if (normalized == '1' ||
+        normalized == 'true' ||
+        normalized == 'yes' ||
+        normalized == 'on') {
+      return true;
+    }
+    if (normalized == '0' ||
+        normalized == 'false' ||
+        normalized == 'no' ||
+        normalized == 'off') {
+      return false;
+    }
+    return null;
+  }
+
+  static bool _shouldRedactContent({required String channel}) {
+    if (channel == 'LLM') return !_showRawLlmPayload;
+    return true;
+  }
+
+  static Object? _sanitizeData(Object? value,
+      {required bool redactContent,
+      String? keyHint,
+      List<String> path = const []}) {
     if (value == null) return null;
     if (value is Map) {
       final sanitized = <String, dynamic>{};
       value.forEach((key, mapValue) {
         final textKey = key.toString();
+        final childPath = [...path, textKey];
         if (_isSensitiveKey(textKey)) {
           sanitized[textKey] = '[REDACTED]';
           return;
         }
-        sanitized[textKey] = _sanitizeData(mapValue, keyHint: textKey);
+        sanitized[textKey] = _sanitizeData(
+          mapValue,
+          redactContent: redactContent,
+          keyHint: textKey,
+          path: childPath,
+        );
       });
       return sanitized;
     }
     if (value is List) {
       return value
-          .map((item) => _sanitizeData(item, keyHint: keyHint))
+          .map((item) => _sanitizeData(item,
+              redactContent: redactContent, keyHint: keyHint, path: path))
           .toList();
     }
     if (value is String) {
       if (keyHint != null) {
         if (_isSensitiveKey(keyHint)) return '[REDACTED]';
-        if (_isContentKey(keyHint) && value.trim().isNotEmpty) {
+        // Keep backend error messages visible for troubleshooting.
+        if (_isErrorMessagePath(path)) return _sanitizeText(value);
+        if (redactContent &&
+            _isContentKey(keyHint) &&
+            value.trim().isNotEmpty) {
           return '[REDACTED_TEXT len=${value.length}]';
         }
       }
@@ -425,6 +464,7 @@ class AppLogger {
 
   static bool _isSensitiveKey(String key) {
     final lower = key.toLowerCase();
+    if (_isUsageMetricKey(lower)) return false;
     const hints = [
       'api_key',
       'apikey',
@@ -441,20 +481,47 @@ class AppLogger {
     return false;
   }
 
-  static bool _isContentKey(String key) {
-    final lower = key.toLowerCase();
-    const hints = [
-      'content',
-      'message',
-      'messages',
-      'prompt',
-      'text',
-      'reasoning',
-    ];
-    for (final hint in hints) {
-      if (lower.contains(hint)) return true;
+  static bool _isUsageMetricKey(String key) {
+    if (key == 'tokens' ||
+        key == 'token_count' ||
+        key == 'token_counts' ||
+        key == 'token_usage' ||
+        key == 'usage') {
+      return true;
+    }
+    if (key.endsWith('_tokens') ||
+        key.endsWith('_token_count') ||
+        key.endsWith('_token_counts') ||
+        key.endsWith('_token_usage') ||
+        key.endsWith('_tokens_details')) {
+      return true;
     }
     return false;
+  }
+
+  static bool _isContentKey(String key) {
+    final lower = key.toLowerCase();
+    // Only redact actual payload text fields, not metadata like content_type.
+    if (lower == 'content' ||
+        lower == 'text' ||
+        lower == 'prompt' ||
+        lower == 'reasoning' ||
+        lower == 'reasoning_content') {
+      return true;
+    }
+    if (lower.endsWith('_content') && !lower.endsWith('content_type')) {
+      return true;
+    }
+    // Keep generic message fields redacted by default unless they are under
+    // error objects (handled in _sanitizeData).
+    return lower == 'message' || lower == 'messages';
+  }
+
+  static bool _isErrorMessagePath(List<String> path) {
+    if (path.isEmpty) return false;
+    final normalized = path.map((p) => p.toLowerCase()).toList();
+    if (normalized.last != 'message') return false;
+    return normalized.contains('error') || normalized.contains('errors');
   }
 
   static String _sanitizeText(String input) {

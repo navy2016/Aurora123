@@ -4,6 +4,15 @@ enum _ThinkingTier { minimal, low, medium, high, xhigh }
 
 enum _ModelFamily { gemini, gemini3, anthropic, openai, unknown }
 
+final RegExp _gemini3ImageModelPattern =
+    RegExp(r'gemini.*3.*image.*', caseSensitive: false);
+
+/// Matches Gemini 3.1+ image models (e.g. gemini-3.1-flash-image-preview).
+/// These models support explicit thinking_level (High, etc.) unlike 3.0 image
+/// models that only accept auto.
+final RegExp _gemini31PlusImageModelPattern =
+    RegExp(r'gemini.*3\.([1-9]\d*).*image', caseSensitive: false);
+
 class _ThinkingInput {
   final String raw;
   final int? budgetTokens;
@@ -98,6 +107,36 @@ _ModelFamily _inferModelFamily(String model) {
   if (isOpenAI) return _ModelFamily.openai;
 
   return _ModelFamily.unknown;
+}
+
+String _normalizeModelNameForPattern(String model) {
+  return model
+      .trim()
+      .toLowerCase()
+      .replaceAll('（', '(')
+      .replaceAll('）', ')')
+      .replaceAll(RegExp(r'\s+'), '');
+}
+
+bool _isGemini3ImageModel(String model) {
+  final normalized = _normalizeModelNameForPattern(model);
+  if (normalized.isEmpty) return false;
+  return _gemini3ImageModelPattern.hasMatch(normalized);
+}
+
+bool _isGemini31PlusImageModel(String model) {
+  final normalized = _normalizeModelNameForPattern(model);
+  if (normalized.isEmpty) return false;
+  return _gemini31PlusImageModelPattern.hasMatch(normalized);
+}
+
+bool _isThinkingUnsupportedModel(String model) {
+  final lower = model.toLowerCase();
+  return lower.contains('image');
+}
+
+bool _isImageModel(String model) {
+  return model.toLowerCase().contains('image');
 }
 
 _ThinkingTier _tierFromBudgetForGemini3(int budgetTokens) {
@@ -221,6 +260,62 @@ String? _thinkingInputToCompatReasoningEffort(
   return null;
 }
 
+bool _isOfficialGeminiOpenAIEndpoint(String baseUrl) {
+  final uri = Uri.tryParse(baseUrl);
+  final host = (uri?.host ?? '').toLowerCase();
+  if (host.isNotEmpty) {
+    return host == 'generativelanguage.googleapis.com';
+  }
+  return baseUrl.toLowerCase().contains('generativelanguage.googleapis.com');
+}
+
+void _removeGoogleThinkingConfigFromRequest(Map<String, dynamic> requestData) {
+  final extraBody = _safeStringKeyedMap(requestData['extra_body']);
+  if (extraBody.isEmpty) return;
+  final google = _safeStringKeyedMap(extraBody['google']);
+  if (google.isEmpty) return;
+
+  google.remove('thinking_config');
+  if (google.isEmpty) {
+    extraBody.remove('google');
+  } else {
+    extraBody['google'] = google;
+  }
+
+  if (extraBody.isEmpty) {
+    requestData.remove('extra_body');
+  } else {
+    requestData['extra_body'] = extraBody;
+  }
+}
+
+void _removeAnthropicThinkingConfigFromRequest(
+    Map<String, dynamic> requestData) {
+  final extraBody = _safeStringKeyedMap(requestData['extra_body']);
+  if (extraBody.isEmpty) return;
+  final anthropic = _safeStringKeyedMap(extraBody['anthropic']);
+  if (anthropic.isEmpty) return;
+
+  anthropic.remove('thinking');
+  if (anthropic.isEmpty) {
+    extraBody.remove('anthropic');
+  } else {
+    extraBody['anthropic'] = anthropic;
+  }
+
+  if (extraBody.isEmpty) {
+    requestData.remove('extra_body');
+  } else {
+    requestData['extra_body'] = extraBody;
+  }
+}
+
+void _removeThinkingConfigFromRequest(Map<String, dynamic> requestData) {
+  requestData.remove('reasoning_effort');
+  _removeGoogleThinkingConfigFromRequest(requestData);
+  _removeAnthropicThinkingConfigFromRequest(requestData);
+}
+
 void _applyGeminiExtraBodyReasoningCompat({
   required Map<String, dynamic> requestData,
   required _ThinkingInput input,
@@ -232,6 +327,7 @@ void _applyGeminiExtraBodyReasoningCompat({
       modelFamily != _ModelFamily.gemini3) {
     return;
   }
+  if (_isOfficialGeminiOpenAIEndpoint(baseUrl)) return;
   if (requestData.containsKey('reasoning_effort')) return;
 
   final effort = _thinkingInputToCompatReasoningEffort(
@@ -377,6 +473,50 @@ void _applyThinkingConfigToRequest({
   required String selectedModel,
   required String baseUrl,
 }) {
+  final modelFamily = _inferModelFamily(selectedModel);
+  final isGeminiImageModel = _isImageModel(selectedModel) &&
+      (modelFamily == _ModelFamily.gemini ||
+          modelFamily == _ModelFamily.gemini3);
+  if (isGeminiImageModel) {
+    _removeAnthropicThinkingConfigFromRequest(requestData);
+    requestData.remove('reasoning_effort');
+
+    // CLIProxyAPI automatically sets includeThoughts based on reasoning_effort:
+    //   effort != "none" → includeThoughts=true
+    //   effort == "auto" → thinkingBudget=-1 + includeThoughts=true
+    // So we only need to set reasoning_effort here; no extra_body needed.
+
+    if (_isGemini31PlusImageModel(selectedModel)) {
+      // Gemini 3.1+ image models support explicit thinking levels (high, etc.)
+      final thinkingConfig = activeParams['_aurora_thinking_config'];
+      String effort = 'high'; // sensible default for 3.1+
+      if (thinkingConfig is Map && thinkingConfig['enabled'] == true) {
+        final raw = thinkingConfig['budget']?.toString().trim() ?? '';
+        if (raw.isNotEmpty) {
+          final parsed = _parseThinkingInput(raw);
+          if (parsed.tier != null) {
+            effort = _thinkingTierToGeminiEffort(
+                _coerceTierForGemini3(parsed.tier!));
+          } else if (parsed.budgetTokens != null) {
+            effort = _thinkingTierToGeminiEffort(
+                _tierFromBudgetForGemini3(parsed.budgetTokens!));
+          } else {
+            effort = raw.toLowerCase();
+          }
+        }
+      }
+      requestData['reasoning_effort'] = effort;
+    } else if (_isGemini3ImageModel(selectedModel)) {
+      // Gemini 3.0 image models: only auto is safe.
+      requestData['reasoning_effort'] = 'auto';
+    }
+    return;
+  }
+  if (_isThinkingUnsupportedModel(selectedModel)) {
+    _removeThinkingConfigFromRequest(requestData);
+    return;
+  }
+
   final thinkingConfig = activeParams['_aurora_thinking_config'];
   bool thinkingEnabled = false;
   String thinkingValue = '';
@@ -396,7 +536,16 @@ void _applyThinkingConfigToRequest({
   final raw = thinkingValue.trim();
   if (raw.isEmpty) return;
 
-  final modelFamily = _inferModelFamily(selectedModel);
+  final isOfficialGeminiOpenAI = _isOfficialGeminiOpenAIEndpoint(baseUrl);
+  if (isOfficialGeminiOpenAI) {
+    // Official Gemini OpenAI-compatible endpoint requires strict mutual exclusion:
+    // Gemini 2.x => thinking_config, Gemini 3.x => reasoning_effort.
+    if (modelFamily == _ModelFamily.gemini) {
+      thinkingMode = 'extra_body';
+    } else if (modelFamily == _ModelFamily.gemini3) {
+      thinkingMode = 'reasoning_effort';
+    }
+  }
   if (thinkingMode == 'auto') {
     if (modelFamily == _ModelFamily.gemini) {
       thinkingMode = 'extra_body';
@@ -503,5 +652,15 @@ void _applyThinkingConfigToRequest({
       effort = input.raw;
     }
     requestData['reasoning_effort'] = effort;
+  }
+
+  // Enforce official Gemini endpoint mutual exclusion even if user/custom params
+  // pre-populated one side before compatibility mapping runs.
+  if (isOfficialGeminiOpenAI) {
+    if (modelFamily == _ModelFamily.gemini) {
+      requestData.remove('reasoning_effort');
+    } else if (modelFamily == _ModelFamily.gemini3) {
+      _removeGoogleThinkingConfigFromRequest(requestData);
+    }
   }
 }

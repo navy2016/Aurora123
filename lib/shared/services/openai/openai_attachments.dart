@@ -97,16 +97,32 @@ String? _normalizeImageDataUrl(String url) {
 }
 
 List<Map<String, dynamic>> _sanitizeOutgoingImageMessages(
-    List<Map<String, dynamic>> apiMessages) {
+  List<Map<String, dynamic>> apiMessages, {
+  required String selectedModel,
+  required String baseUrl,
+}) {
   final List<Map<String, dynamic>> sanitized = [];
+  final isGeminiModel = selectedModel.toLowerCase().contains('gemini');
+  final enforceGeminiRoleCompat =
+      isGeminiModel && _isOfficialGeminiOpenAIEndpoint(baseUrl);
   for (final msg in apiMessages) {
     final Map<String, dynamic> newMsg = Map<String, dynamic>.from(msg);
+    final role = (newMsg['role'] ?? '').toString().toLowerCase();
     final content = newMsg['content'];
     if (content is List) {
       final List<dynamic> newContent = [];
       bool removedImage = false;
+      bool removedForGeminiRoleCompat = false;
       for (final item in content) {
         if (item is Map && item['type'] == 'image_url') {
+          if (enforceGeminiRoleCompat && role != 'user') {
+            // Gemini OpenAI-compatible chat/completions currently rejects
+            // non-user image parts on the official endpoint and expects
+            // assistant parts to be text/refusal.
+            removedImage = true;
+            removedForGeminiRoleCompat = true;
+            continue;
+          }
           final imageUrlObj = item['image_url'];
           final url = imageUrlObj is Map ? imageUrlObj['url'] : null;
           if (url is String && url.startsWith('data:')) {
@@ -131,7 +147,12 @@ List<Map<String, dynamic>> _sanitizeOutgoingImageMessages(
         newContent.add(item);
       }
       if (newContent.isEmpty && removedImage) {
-        newMsg['content'] = '[Image omitted: invalid or unsupported format]';
+        if (removedForGeminiRoleCompat) {
+          newMsg['content'] =
+              '[Image omitted: unsupported in non-user role for Gemini compatibility]';
+        } else {
+          newMsg['content'] = '[Image omitted: invalid or unsupported format]';
+        }
       } else {
         newMsg['content'] = newContent;
       }
@@ -139,6 +160,125 @@ List<Map<String, dynamic>> _sanitizeOutgoingImageMessages(
     sanitized.add(newMsg);
   }
   return sanitized;
+}
+
+String? _extractImageUrlFromContent(dynamic content) {
+  if (content is! List) return null;
+  for (int i = content.length - 1; i >= 0; i--) {
+    final item = content[i];
+    if (item is! Map) continue;
+    if (item['type'] != 'image_url') continue;
+    final imageUrlObj = item['image_url'];
+    if (imageUrlObj is Map) {
+      final url = imageUrlObj['url'];
+      if (url is String && url.trim().isNotEmpty) return url;
+    } else if (imageUrlObj is String && imageUrlObj.trim().isNotEmpty) {
+      return imageUrlObj;
+    }
+  }
+  return null;
+}
+
+bool _contentHasImagePart(dynamic content) {
+  if (content is! List) return false;
+  for (final item in content) {
+    if (item is Map && item['type'] == 'image_url') return true;
+  }
+  return false;
+}
+
+List<Map<String, dynamic>> _applyGeminiImageEditFallback(
+  List<Map<String, dynamic>> apiMessages, {
+  required String selectedModel,
+  required String baseUrl,
+}) {
+  // TODO(usaki): Temporary workaround for Gemini-compatible proxy chains
+  // (Aurora -> OpenAI-compatible endpoint -> CLIProxyAPI/antigravity -> Gemini).
+  // Current behavior:
+  // 1) Move latest assistant image into current user turn when user has no image.
+  // 2) Remove image from source assistant turn to avoid duplicate context.
+  // Known debt:
+  // - Changes original role semantics (assistant output becomes user input).
+  // - Can hide upstream incompatibilities instead of fixing translator behavior.
+  // Replace with proper upstream support once assistant image context is
+  // consistently forwarded and accepted for multi-turn image edits.
+  final isGeminiModel = selectedModel.toLowerCase().contains('gemini');
+  if (!isGeminiModel) return apiMessages;
+  if (_isOfficialGeminiOpenAIEndpoint(baseUrl)) return apiMessages;
+
+  final List<Map<String, dynamic>> result =
+      apiMessages.map((m) => Map<String, dynamic>.from(m)).toList();
+
+  final lastUserIndex = result.lastIndexWhere(
+      (m) => (m['role'] ?? '').toString().toLowerCase() == 'user');
+  if (lastUserIndex <= 0) return result;
+
+  final userMessage = Map<String, dynamic>.from(result[lastUserIndex]);
+  final userContent = userMessage['content'];
+  if (_contentHasImagePart(userContent)) return result;
+
+  String? referenceImageUrl;
+  int sourceAssistantIndex = -1;
+  for (int i = lastUserIndex - 1; i >= 0; i--) {
+    final role = (result[i]['role'] ?? '').toString().toLowerCase();
+    if (role != 'assistant') continue;
+    referenceImageUrl = _extractImageUrlFromContent(result[i]['content']);
+    if (referenceImageUrl != null) {
+      sourceAssistantIndex = i;
+      break;
+    }
+  }
+  if (referenceImageUrl == null) return result;
+
+  final List<dynamic> nextContent = [
+    {
+      'type': 'image_url',
+      'image_url': {'url': referenceImageUrl},
+    }
+  ];
+
+  if (userContent is String) {
+    if (userContent.trim().isNotEmpty) {
+      nextContent.add({'type': 'text', 'text': userContent});
+    }
+  } else if (userContent is List) {
+    nextContent.addAll(userContent);
+  } else if (userContent != null) {
+    final fallbackText = userContent.toString();
+    if (fallbackText.trim().isNotEmpty) {
+      nextContent.add({'type': 'text', 'text': fallbackText});
+    }
+  }
+
+  userMessage['content'] = nextContent;
+  result[lastUserIndex] = userMessage;
+
+  // Avoid duplicated reference image: once moved into current user turn,
+  // strip image parts from the source assistant turn.
+  if (sourceAssistantIndex >= 0) {
+    final sourceMessage =
+        Map<String, dynamic>.from(result[sourceAssistantIndex]);
+    final sourceContent = sourceMessage['content'];
+    if (sourceContent is List) {
+      final stripped = <dynamic>[];
+      for (final item in sourceContent) {
+        if (item is Map && item['type'] == 'image_url') continue;
+        stripped.add(item);
+      }
+      if (stripped.isEmpty) {
+        // A model-turn with zero parts can be rejected by some proxy layers.
+        // Drop the now-empty assistant message after moving its image to user.
+        // TODO(usaki): Remove this branch after upstream fix; assistant turns
+        // should remain intact once proxy supports assistant image parts.
+        result.removeAt(sourceAssistantIndex);
+      } else {
+        sourceMessage['content'] = stripped;
+        result[sourceAssistantIndex] = sourceMessage;
+      }
+    }
+  }
+
+  return result;
 }
 
 Future<List<Map<String, dynamic>>> _compressImagesTask(

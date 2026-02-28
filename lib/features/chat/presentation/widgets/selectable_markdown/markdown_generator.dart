@@ -1045,6 +1045,26 @@ class MarkdownGenerator {
     if (src.isEmpty) {
       return Text('[$alt]', style: TextStyle(color: textColor));
     }
+    if (src.startsWith('data:')) {
+      try {
+        final uriData = Uri.parse(src).data;
+        if (uriData != null) {
+          final bytes = uriData.contentAsBytes();
+          return Container(
+            key: ValueKey('img_$index'),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: Image.memory(
+              bytes,
+              errorBuilder: (context, error, stackTrace) {
+                return Text('[$alt]', style: TextStyle(color: textColor));
+              },
+            ),
+          );
+        }
+      } catch (_) {
+        // Fall through to network renderer.
+      }
+    }
     return Container(
       key: ValueKey('img_$index'),
       margin: const EdgeInsets.symmetric(vertical: 8),

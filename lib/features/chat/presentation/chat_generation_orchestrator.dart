@@ -164,6 +164,7 @@ class _ChatGenerationOrchestrator {
     var turnCompletionTokens = 0;
     var turnReasoningTokens = 0;
     var turnTokenCount = 0;
+    var uiMsg = UiMessage.fromLegacy(aiMsg);
 
     final responseStream = _requestContext.llmService.streamResponse(
       _requestContext.messagesForApi,
@@ -196,7 +197,7 @@ class _ChatGenerationOrchestrator {
         turnFirstContentTime ??= DateTime.now();
       }
 
-      double? reasoningDuration = aiMsg.reasoningDurationSeconds;
+      double? reasoningDuration = uiMsg.reasoningDurationSeconds;
       if (reasoningDuration == null &&
           reasoningStartTime != null &&
           chunk.content != null &&
@@ -218,57 +219,41 @@ class _ChatGenerationOrchestrator {
         }
       }
 
+      uiMsg = uiMsg.appendChunk(chunk);
+
       if (chunk.finishReason == 'malformed_function_call') {
-        aiMsg = Message(
-          id: aiMsg.id,
-          content:
-              '${aiMsg.content}${chunk.content ?? ''}\n\n> ⚠️ **System Error**: The AI backend returned a "malformed_function_call" error. This usually means the model tried to call a tool but failed to generate a valid request format. Please try again or switch models.',
-          reasoningContent:
-              (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
-          isUser: false,
-          timestamp: aiMsg.timestamp,
-          attachments: aiMsg.attachments,
-          images: [...aiMsg.images, ...chunk.images],
-          model: aiMsg.model,
-          provider: aiMsg.provider,
+        uiMsg = uiMsg.replaceText(
+          '${uiMsg.text}\n\n> ⚠️ **System Error**: The AI backend returned a "malformed_function_call" error. This usually means the model tried to call a tool but failed to generate a valid request format. Please try again or switch models.',
+        );
+        uiMsg = uiMsg.copyWith(
           reasoningDurationSeconds: reasoningDuration,
-          tokenCount: chunk.usage ?? aiMsg.tokenCount,
-          promptTokens: _promptTokens > 0 ? _promptTokens : aiMsg.promptTokens,
+          tokenCount: chunk.usage ?? uiMsg.tokenCount,
+          promptTokens:
+              _promptTokens > 0 ? _promptTokens : uiMsg.promptTokens,
           completionTokens: _completionTokens > 0
               ? _completionTokens
-              : aiMsg.completionTokens,
+              : uiMsg.completionTokens,
           reasoningTokens:
-              _reasoningTokens > 0 ? _reasoningTokens : aiMsg.reasoningTokens,
-          firstTokenMs:
-              _firstContentTime?.difference(_startTime).inMilliseconds,
-          toolCalls:
-              _notifier._mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
+              _reasoningTokens > 0 ? _reasoningTokens : uiMsg.reasoningTokens,
+          firstTokenMs: _firstContentTime?.difference(_startTime).inMilliseconds,
         );
+        aiMsg = uiMsg.toLegacy();
         _notifier._upsertTrailingMessage(aiMsg);
         break;
       }
 
-      aiMsg = Message(
-        id: aiMsg.id,
-        content: aiMsg.content + (chunk.content ?? ''),
-        reasoningContent:
-            (aiMsg.reasoningContent ?? '') + (chunk.reasoning ?? ''),
-        isUser: false,
-        timestamp: aiMsg.timestamp,
-        attachments: aiMsg.attachments,
-        images: [...aiMsg.images, ...chunk.images],
-        model: aiMsg.model,
-        provider: aiMsg.provider,
+      uiMsg = uiMsg.copyWith(
         reasoningDurationSeconds: reasoningDuration,
-        tokenCount: chunk.usage ?? aiMsg.tokenCount,
-        promptTokens: _promptTokens > 0 ? _promptTokens : aiMsg.promptTokens,
-        completionTokens:
-            _completionTokens > 0 ? _completionTokens : aiMsg.completionTokens,
+        tokenCount: chunk.usage ?? uiMsg.tokenCount,
+        promptTokens: _promptTokens > 0 ? _promptTokens : uiMsg.promptTokens,
+        completionTokens: _completionTokens > 0
+            ? _completionTokens
+            : uiMsg.completionTokens,
         reasoningTokens:
-            _reasoningTokens > 0 ? _reasoningTokens : aiMsg.reasoningTokens,
+            _reasoningTokens > 0 ? _reasoningTokens : uiMsg.reasoningTokens,
         firstTokenMs: _firstContentTime?.difference(_startTime).inMilliseconds,
-        toolCalls: _notifier._mergeToolCalls(aiMsg.toolCalls, chunk.toolCalls),
       );
+      aiMsg = uiMsg.toLegacy();
       _notifier._upsertTrailingMessage(aiMsg);
     }
 
@@ -309,9 +294,6 @@ class _ChatGenerationOrchestrator {
       cancelToken: _notifier._currentCancelToken,
     );
 
-    _firstContentTime ??= DateTime.now();
-    final turnFirstContentTime = DateTime.now();
-
     var turnPromptTokens = 0;
     var turnCompletionTokens = 0;
     var turnReasoningTokens = 0;
@@ -333,8 +315,9 @@ class _ChatGenerationOrchestrator {
         (turnPromptTokens + turnCompletionTokens + turnReasoningTokens);
     final turnDurationMs =
         DateTime.now().difference(turnStartTime).inMilliseconds;
-    final turnFirstTokenMs =
-        turnFirstContentTime.difference(turnStartTime).inMilliseconds;
+    // Non-streaming responses do not have an accurate TTFT signal.
+    // Keep TTFT at 0 so TPS is calculated from request start time.
+    const turnFirstTokenMs = 0;
 
     if (_isGenerationActive) {
       aiMsg = Message(
@@ -351,7 +334,6 @@ class _ChatGenerationOrchestrator {
         promptTokens: response.promptTokens,
         completionTokens: response.completionTokens,
         reasoningTokens: response.reasoningTokens,
-        firstTokenMs: _firstContentTime!.difference(_startTime).inMilliseconds,
         toolCalls: response.toolCalls
             ?.map((tc) => ToolCall(
                   id: tc.id ?? '',
@@ -378,13 +360,14 @@ class _ChatGenerationOrchestrator {
   }
 
   Future<_ChatTurnResult> _runForcedFinalization(Message aiMsg) async {
-    final cleanedContent = aiMsg.content
-        .replaceAll(RegExp(r'<search>.*?</search>', dotAll: true), '')
-        .replaceAll(
-            RegExp(r'''<skill\s+name=["'].*?["']>.*?</skill>''', dotAll: true),
-            '')
-        .trim();
-    aiMsg = aiMsg.copyWith(content: cleanedContent);
+    final context = MessageTransformContext(
+      language: _requestContext.settings.language,
+      model: _requestContext.currentModel,
+      providerName: _requestContext.currentProviderName,
+    );
+    aiMsg = chatMessageTransformers
+        .onGenerationFinish(UiMessage.fromLegacy(aiMsg), context)
+        .toLegacy();
 
     final finalizeInstruction = _requestContext.settings.language == 'zh'
         ? '请根据已有工具/技能结果直接给出答案，不要再调用搜索或技能。如果信息不足，请如实说明。'

@@ -9,6 +9,9 @@ import 'package:aurora/shared/riverpod_compat.dart';
 import '../selectable_markdown/animated_streaming_markdown.dart';
 import '../../chat_provider.dart';
 import '../../../domain/message.dart';
+import '../../../domain/chat_message_transformers.dart';
+import '../../../domain/message_transformer.dart';
+import '../../../domain/ui_message.dart';
 import '../chat_image_bubble.dart';
 import '../reasoning_display.dart';
 import 'chat_utils.dart';
@@ -71,9 +74,20 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
             .addPostFrameCallback((_) => _focusNode.requestFocus());
         break;
       case 'copy':
-        await Clipboard.setData(
-          ClipboardData(text: widget.group.messages.last.content),
-        );
+        {
+          final msg = widget.group.messages.last;
+          final settingsState = ref.read(settingsProvider);
+          final context = MessageTransformContext(
+            language: settingsState.language,
+            model: msg.model ?? settingsState.selectedModel,
+            providerName: msg.provider ?? settingsState.activeProvider.name,
+          );
+          final transformed = chatMessageTransformers.visualTransform(
+            UiMessage.fromLegacy(msg),
+            context,
+          );
+          await Clipboard.setData(ClipboardData(text: transformed.text));
+        }
         break;
       case 'delete':
         for (final msg in widget.group.messages) {
@@ -127,6 +141,11 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
     final l10n = AppLocalizations.of(context);
     final headerMsg = messages.firstWhere((m) => m.role != 'tool',
         orElse: () => messages.last);
+    final transformContext = MessageTransformContext(
+      language: settingsState.language,
+      model: headerMsg.model ?? settingsState.selectedModel,
+      providerName: headerMsg.provider ?? settingsState.activeProvider.name,
+    );
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
       child: Row(
@@ -213,14 +232,21 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                             color: theme.resources.dividerStrokeColorDefault),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (!_isEditing) ...[
-                        ..._buildMergedContent(messages, theme, lastMsg),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!_isEditing) ...[
+                        ..._buildMergedContent(
+                            messages, theme, lastMsg, transformContext),
                         if (widget.isGenerating &&
-                            lastMsg.role != 'tool' &&
-                            lastMsg.content.isEmpty &&
-                            (lastMsg.reasoningContent?.isEmpty ?? true) &&
+                            UiMessage.fromLegacy(lastMsg).role != UiRole.tool &&
+                            chatMessageTransformers
+                                .visualTransform(
+                                    UiMessage.fromLegacy(lastMsg),
+                                    transformContext)
+                                .text
+                                .isEmpty &&
+                            ((UiMessage.fromLegacy(lastMsg).reasoning?.isEmpty ??
+                                true)) &&
                             (lastMsg.toolCalls == null ||
                                 lastMsg.toolCalls!.isEmpty))
                           Padding(
@@ -420,7 +446,11 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
 
   /// Build merged content: aggregate all reasoning, all tool outputs, then all text content
   List<Widget> _buildMergedContent(
-      List<Message> messages, fluent.FluentThemeData theme, Message lastMsg) {
+    List<Message> messages,
+    fluent.FluentThemeData theme,
+    Message lastMsg,
+    MessageTransformContext transformContext,
+  ) {
     final parts = <Widget>[];
 
     // 1. Aggregate all reasoning content
@@ -430,12 +460,14 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
     bool hasActiveReasoning = false;
 
     for (final msg in messages) {
-      if (msg.reasoningContent != null && msg.reasoningContent!.isNotEmpty) {
+      final reasoning = UiMessage.fromLegacy(msg).reasoning;
+      if (reasoning != null && reasoning.isNotEmpty) {
         if (allReasoning.isNotEmpty) {
           allReasoning.write('\n\n');
         }
-        allReasoning.write(msg.reasoningContent!);
-        totalReasoningDuration += msg.reasoningDurationSeconds ?? 0;
+        allReasoning.write(reasoning);
+        totalReasoningDuration +=
+            UiMessage.fromLegacy(msg).reasoningDurationSeconds ?? 0;
         firstReasoningTimestamp ??= msg.timestamp;
         if (widget.isGenerating && msg == lastMsg) {
           hasActiveReasoning = true;
@@ -509,25 +541,29 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
     for (final message in messages) {
       if (message.role == 'tool') continue;
 
-      if (message.content.isNotEmpty) {
+      final ui = chatMessageTransformers.visualTransform(
+        UiMessage.fromLegacy(message),
+        transformContext,
+      );
+      if (ui.text.isNotEmpty) {
         parts.add(fluent.FluentTheme(
           data: theme,
           child: AnimatedStreamingMarkdown(
-            data: message.content,
+            data: ui.text,
             isDark: theme.brightness == Brightness.dark,
             textColor: theme.typography.body!.color!,
           ),
         ));
       }
 
-      if (message.images.isNotEmpty) {
+      if (ui.images.isNotEmpty) {
         parts.add(
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: message.images
+              children: ui.images
                   .map((img) => ChatImageBubble(
                         key: ValueKey(img.hashCode),
                         imageUrl: img,
@@ -551,7 +587,6 @@ class _MergedMessageBubbleState extends ConsumerState<MergedMessageBubble>
                 if (message.tokenCount != null && message.tokenCount! > 0) ...[
                   Builder(builder: (context) {
                     final total = message.tokenCount!;
-
                     final tokenText = formatFullTokenCount(total);
 
                     return Text(

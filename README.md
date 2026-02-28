@@ -27,22 +27,26 @@
 
 ## Features
 
-*   **Multi-Model**: Supports OpenAI, DeepSeek, and custom OpenAI-compatible endpoints.
+*   **Multi-Provider & Routing**: Supports OpenAI, DeepSeek, custom OpenAI-compatible endpoints, and optional Gemini Native transport per model.
+*   **Provider Management**: Multiple providers, model list fetching, per-model/global parameters, and automatic multi-key rotation.
 *   **Privacy**: Chat history and settings are stored locally on the device.
-*   **Reasoning**: Displays Chain-of-Thought (CoT) and reasoning processes.
+*   **Reasoning**: Displays reasoning/thinking outputs when available.
 *   **Internet Access**: Built-in web search capability with source citations.
+*   **MCP Integration**: Connect MCP servers (stdio / streamable HTTP) and call MCP tools directly in chat.
+*   **Skills**: Extend capabilities via local skill plugins (`SKILL.md`) with shell/http tools.
+*   **Assistant System**: Custom assistants with independent prompts and model/provider preferences.
+*   **Assistant Memory**: Optional long-term memory extraction and consolidation per assistant.
+*   **Knowledge Base (RAG)**: Ingest local files and retrieve context via lexical/embedding search.
+*   **Conversation Workflow**: Topic generation, tree-style history, session branching, and message-level edit/retry/delete.
+*   **Input Productivity**: Quick model switch (`@`), quick preset switch (`/`), and keyboard shortcuts.
 *   **Attachments**: Supports various file types (images, audio, video, documents) with multimodal analysis.
 *   **Rendering**: Full Markdown support with syntax highlighting and LaTeX math.
-*   **Session Management**: Auto-generates topics for conversations; easy history management.
 *   **Interface**: Dark/Light mode, custom background (with blur and brightness control), global transparency style, accent colors, Fluent Design with Mica effect, and custom avatars.
 *   **Translation**: Built-in text translation feature powered by LLM.
-*   **Studio (WIP)**: Multi-LLM joint execution environment for complex collaborative workflows.
-*   **Skills (WIP)**: Extend capabilities via external skill plugins (SKILL.md).
-*   **Multi-Key Polling**: Automatically switch between API keys.
-*   **Multi-Device Sync**: Sync chat history and settings across devices via WebDAV.
-*   **Custom Backup**: Support for selective backup and restore of chat history, presets, and settings.
+*   **Sync & Backup**: WebDAV sync plus local import/export with selective backup/restore scopes.
 *   **Usage Statistics**: View token usage and response metrics.
 *   **Prompt Presets**: Quickly apply different persona or context settings.
+*   **Studio (WIP)**: Experimental module; core Studio workflows are not finalized yet.
 
 ## License
 

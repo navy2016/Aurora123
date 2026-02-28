@@ -3,6 +3,7 @@ import 'package:aurora/shared/theme/aurora_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:aurora/shared/riverpod_compat.dart';
 import 'package:super_clipboard/super_clipboard.dart';
+import 'package:aurora/shared/widgets/aurora_dropdown.dart';
 import '../chat_provider.dart';
 import '../../domain/message.dart';
 import 'package:aurora/l10n/app_localizations.dart';
@@ -76,35 +77,22 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
 
   void _translate() {
     if (_sourceController.text.trim().isEmpty) return;
-    final isZh = Localizations.localeOf(context).languageCode == 'zh';
+    final l10n = AppLocalizations.of(context)!;
     final sourceLangLabel =
         _sourceLang == 'auto' ? '' : _getDisplayLanguage(context, _sourceLang);
     final targetLangLabel = _getDisplayLanguage(context, _targetLang);
     final notifier = ref.read(translationProvider.notifier);
     notifier.clearContext().then((_) {
       final sb = StringBuffer();
-      if (isZh) {
-        sb.writeln(
-            '你是一位精通多国语言的专业翻译专家。请将以下${sourceLangLabel.isEmpty ? '' : sourceLangLabel}文本翻译成$targetLangLabel。');
-        sb.writeln('要求：');
-        sb.writeln('1. 翻译准确、地道，符合目标语言的表达习惯。');
-        sb.writeln('2. 严格保留原文的换行格式和段落结构，不要合并段落。');
-        sb.writeln('3. 只输出翻译后的内容，不要包含任何解释、前言或后缀。');
-        sb.writeln('');
-        sb.writeln('原文内容：');
-      } else {
-        sb.writeln(
-            'You are a professional translator proficient in multiple languages. Please translate the following${sourceLangLabel.isEmpty ? '' : ' $sourceLangLabel'} text into $targetLangLabel.');
-        sb.writeln('Requirements:');
-        sb.writeln(
-            '1. The translation should be accurate and natural, matching the target language’s style.');
-        sb.writeln(
-            '2. Preserve line breaks and paragraph structure exactly; do not merge paragraphs.');
-        sb.writeln(
-            '3. Output only the translated content; do not include explanations, prefaces, or suffixes.');
-        sb.writeln('');
-        sb.writeln('Source text:');
-      }
+      sb.writeln(_sourceLang == 'auto'
+          ? l10n.translationPromptIntroAuto(targetLangLabel)
+          : l10n.translationPromptIntro(sourceLangLabel, targetLangLabel));
+      sb.writeln(l10n.translationPromptRequirements);
+      sb.writeln(l10n.translationPromptRequirement1);
+      sb.writeln(l10n.translationPromptRequirement2);
+      sb.writeln(l10n.translationPromptRequirement3);
+      sb.writeln();
+      sb.writeln(l10n.translationPromptSourceText);
       sb.writeln(_sourceController.text);
       notifier.sendMessage(_sourceController.text, apiContent: sb.toString());
     });
@@ -289,17 +277,19 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
   }) {
     return SizedBox(
       width: 200,
-      child: fluent.ComboBox<String>(
+      child: AuroraFluentDropdownField<String>(
         value: value,
-        items: items
-            .map((e) => fluent.ComboBoxItem(
-                value: e,
-                child: Text(_getDisplayLanguage(context, e),
-                    style: const TextStyle(fontSize: 13))))
-            .toList(),
+        textStyle: const TextStyle(fontSize: 13),
+        options: items
+            .map(
+              (item) => AuroraDropdownOption<String>(
+                value: item,
+                label: _getDisplayLanguage(context, item),
+              ),
+            )
+            .toList(growable: false),
         onChanged: onChanged,
-        placeholder: Text(AppLocalizations.of(context)!.selectLanguage,
-            style: const TextStyle(fontSize: 13)),
+        placeholder: AppLocalizations.of(context)!.selectLanguage,
       ),
     );
   }
@@ -456,4 +446,3 @@ class _TranslationContentState extends ConsumerState<TranslationContent> {
     );
   }
 }
-

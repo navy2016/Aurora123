@@ -182,6 +182,36 @@ abstract class AppLocalizations {
   /// **'关闭'**
   String get close;
 
+  /// No description provided for @yes.
+  ///
+  /// In zh, this message translates to:
+  /// **'是'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In zh, this message translates to:
+  /// **'否'**
+  String get no;
+
+  /// No description provided for @none.
+  ///
+  /// In zh, this message translates to:
+  /// **'无'**
+  String get none;
+
+  /// No description provided for @optional.
+  ///
+  /// In zh, this message translates to:
+  /// **'可选'**
+  String get optional;
+
+  /// No description provided for @deleteSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除成功'**
+  String get deleteSuccess;
+
   /// No description provided for @history.
   ///
   /// In zh, this message translates to:
@@ -283,6 +313,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'对话体验'**
   String get chatExperience;
+
+  /// No description provided for @restoreLastChatOnLaunch.
+  ///
+  /// In zh, this message translates to:
+  /// **'启动时恢复上次对话'**
+  String get restoreLastChatOnLaunch;
+
+  /// No description provided for @restoreLastChatOnLaunchHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'开启后，应用启动时会回到上次退出前使用的对话。'**
+  String get restoreLastChatOnLaunchHint;
 
   /// No description provided for @smartTopicGeneration.
   ///
@@ -625,6 +667,360 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'技能'**
   String get agentSkills;
+
+  /// No description provided for @mcpNavLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'MCP'**
+  String get mcpNavLabel;
+
+  /// No description provided for @mcpTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'MCP'**
+  String get mcpTitle;
+
+  /// No description provided for @mcpNoServers.
+  ///
+  /// In zh, this message translates to:
+  /// **'未配置 MCP 服务器'**
+  String get mcpNoServers;
+
+  /// No description provided for @mcpAddServer.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加服务器'**
+  String get mcpAddServer;
+
+  /// No description provided for @mcpEditServer.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑服务器'**
+  String get mcpEditServer;
+
+  /// No description provided for @mcpDeleteServerTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除 MCP 服务器'**
+  String get mcpDeleteServerTitle;
+
+  /// No description provided for @mcpDeleteServerConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除该 MCP 服务器吗？此操作不可撤销。'**
+  String get mcpDeleteServerConfirm;
+
+  /// No description provided for @mcpTestConnection.
+  ///
+  /// In zh, this message translates to:
+  /// **'测试连接'**
+  String get mcpTestConnection;
+
+  /// No description provided for @mcpTestResultTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'测试结果'**
+  String get mcpTestResultTitle;
+
+  /// No description provided for @mcpToolsCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'工具数'**
+  String get mcpToolsCount;
+
+  /// No description provided for @mcpStderr.
+  ///
+  /// In zh, this message translates to:
+  /// **'stderr'**
+  String get mcpStderr;
+
+  /// No description provided for @mcpServerName.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器名称'**
+  String get mcpServerName;
+
+  /// No description provided for @mcpServerNameHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入名称（例如：Git MCP）'**
+  String get mcpServerNameHint;
+
+  /// No description provided for @mcpCommand.
+  ///
+  /// In zh, this message translates to:
+  /// **'命令'**
+  String get mcpCommand;
+
+  /// No description provided for @mcpCommandHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'可执行文件（例如：npx）'**
+  String get mcpCommandHint;
+
+  /// No description provided for @mcpArgs.
+  ///
+  /// In zh, this message translates to:
+  /// **'参数'**
+  String get mcpArgs;
+
+  /// No description provided for @mcpArgsHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'每行一个参数（例如：-y）'**
+  String get mcpArgsHint;
+
+  /// No description provided for @mcpCwd.
+  ///
+  /// In zh, this message translates to:
+  /// **'工作目录'**
+  String get mcpCwd;
+
+  /// No description provided for @mcpEnv.
+  ///
+  /// In zh, this message translates to:
+  /// **'环境变量'**
+  String get mcpEnv;
+
+  /// No description provided for @mcpEnvHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'每行一条：KEY=VALUE'**
+  String get mcpEnvHint;
+
+  /// No description provided for @mcpRunInShell.
+  ///
+  /// In zh, this message translates to:
+  /// **'通过 shell 运行'**
+  String get mcpRunInShell;
+
+  /// No description provided for @mcpTransport.
+  ///
+  /// In zh, this message translates to:
+  /// **'传输方式'**
+  String get mcpTransport;
+
+  /// No description provided for @mcpTransportStdio.
+  ///
+  /// In zh, this message translates to:
+  /// **'stdio'**
+  String get mcpTransportStdio;
+
+  /// No description provided for @mcpTransportHttp.
+  ///
+  /// In zh, this message translates to:
+  /// **'HTTP（Streamable）'**
+  String get mcpTransportHttp;
+
+  /// No description provided for @mcpUrl.
+  ///
+  /// In zh, this message translates to:
+  /// **'URL'**
+  String get mcpUrl;
+
+  /// No description provided for @mcpUrlHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器 URL（例如 http://127.0.0.1:3000/mcp）'**
+  String get mcpUrlHint;
+
+  /// No description provided for @mcpHeaders.
+  ///
+  /// In zh, this message translates to:
+  /// **'请求头'**
+  String get mcpHeaders;
+
+  /// No description provided for @mcpHeadersHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'每行一条：KEY=VALUE'**
+  String get mcpHeadersHint;
+
+  /// No description provided for @mcpStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接状态'**
+  String get mcpStatus;
+
+  /// No description provided for @mcpStatusConnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'已连接'**
+  String get mcpStatusConnected;
+
+  /// No description provided for @mcpStatusConnecting.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接中'**
+  String get mcpStatusConnecting;
+
+  /// No description provided for @mcpStatusDisconnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'未连接'**
+  String get mcpStatusDisconnected;
+
+  /// No description provided for @mcpStatusError.
+  ///
+  /// In zh, this message translates to:
+  /// **'错误'**
+  String get mcpStatusError;
+
+  /// No description provided for @mcpLastError.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近错误'**
+  String get mcpLastError;
+
+  /// No description provided for @mcpLastConnectedAt.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近连接'**
+  String get mcpLastConnectedAt;
+
+  /// No description provided for @mcpLastPingAt.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近心跳'**
+  String get mcpLastPingAt;
+
+  /// No description provided for @mcpLastToolListAt.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近 tools/list'**
+  String get mcpLastToolListAt;
+
+  /// No description provided for @mcpLastCallAt.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近 tools/call'**
+  String get mcpLastCallAt;
+
+  /// No description provided for @mcpCachedToolsCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'缓存工具数'**
+  String get mcpCachedToolsCount;
+
+  /// No description provided for @mcpLastToolListDuration.
+  ///
+  /// In zh, this message translates to:
+  /// **'tools/list 耗时'**
+  String get mcpLastToolListDuration;
+
+  /// No description provided for @mcpLastCallDuration.
+  ///
+  /// In zh, this message translates to:
+  /// **'tools/call 耗时'**
+  String get mcpLastCallDuration;
+
+  /// No description provided for @mcpRefreshToolsCache.
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新工具缓存'**
+  String get mcpRefreshToolsCache;
+
+  /// No description provided for @mcpRefreshToolsCacheSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'工具已刷新'**
+  String get mcpRefreshToolsCacheSuccess;
+
+  /// No description provided for @mcpReconnect.
+  ///
+  /// In zh, this message translates to:
+  /// **'重连'**
+  String get mcpReconnect;
+
+  /// No description provided for @mcpDisconnect.
+  ///
+  /// In zh, this message translates to:
+  /// **'断开'**
+  String get mcpDisconnect;
+
+  /// No description provided for @mcpStderrTail.
+  ///
+  /// In zh, this message translates to:
+  /// **'stderr 尾日志'**
+  String get mcpStderrTail;
+
+  /// No description provided for @mcpServersTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'MCP 服务器'**
+  String get mcpServersTitle;
+
+  /// No description provided for @mcpSessionServersTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'会话 MCP 服务器'**
+  String get mcpSessionServersTitle;
+
+  /// No description provided for @mcpNoEnabledServers.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有启用的 MCP 服务器'**
+  String get mcpNoEnabledServers;
+
+  /// No description provided for @mcpFollowAssistant.
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随助手/默认'**
+  String get mcpFollowAssistant;
+
+  /// No description provided for @mcpFollowAssistantHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭后可为当前会话自定义服务器。'**
+  String get mcpFollowAssistantHint;
+
+  /// No description provided for @mcpFollowGlobal.
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随全局'**
+  String get mcpFollowGlobal;
+
+  /// No description provided for @mcpFollowGlobalHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭后可为该助手自定义服务器。'**
+  String get mcpFollowGlobalHint;
+
+  /// No description provided for @mcpToggleTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'会话 MCP 服务器'**
+  String get mcpToggleTooltip;
+
+  /// No description provided for @mcpServersSelectedCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'已选择 {count} 个'**
+  String mcpServersSelectedCount(int count);
+
+  /// No description provided for @mcpValidationErrorName.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器名称不能为空。'**
+  String get mcpValidationErrorName;
+
+  /// No description provided for @mcpValidationErrorCommand.
+  ///
+  /// In zh, this message translates to:
+  /// **'stdio 传输需要填写命令。'**
+  String get mcpValidationErrorCommand;
+
+  /// No description provided for @mcpValidationErrorUrl.
+  ///
+  /// In zh, this message translates to:
+  /// **'HTTP 传输需要填写 URL。'**
+  String get mcpValidationErrorUrl;
+
+  /// No description provided for @mcpValidationError.
+  ///
+  /// In zh, this message translates to:
+  /// **'名称和命令不能为空。'**
+  String get mcpValidationError;
 
   /// No description provided for @executionModel.
   ///
@@ -2516,6 +2912,12 @@ abstract class AppLocalizations {
   /// **'随便输入点什么吧'**
   String get mobileInputHint;
 
+  /// No description provided for @greetingMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'有什么可以帮您？'**
+  String get greetingMessage;
+
   /// No description provided for @topics.
   ///
   /// In zh, this message translates to:
@@ -2603,13 +3005,13 @@ abstract class AppLocalizations {
   /// No description provided for @transmissionMode.
   ///
   /// In zh, this message translates to:
-  /// **'传输模式'**
+  /// **'思考传输模式'**
   String get transmissionMode;
 
   /// No description provided for @modeAuto.
   ///
   /// In zh, this message translates to:
-  /// **'自动智能'**
+  /// **'自动（按模型族）'**
   String get modeAuto;
 
   /// No description provided for @modeExtraBody.
@@ -2623,6 +3025,78 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'Reasoning Effort (OpenAI)'**
   String get modeReasoningEffort;
+
+  /// No description provided for @transportMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'传输模式'**
+  String get transportMode;
+
+  /// No description provided for @transportModeSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'按模型选择请求协议'**
+  String get transportModeSubtitle;
+
+  /// No description provided for @transportModeType.
+  ///
+  /// In zh, this message translates to:
+  /// **'模式'**
+  String get transportModeType;
+
+  /// No description provided for @transportModeAuto.
+  ///
+  /// In zh, this message translates to:
+  /// **'自动（按模型与服务商）'**
+  String get transportModeAuto;
+
+  /// No description provided for @transportModeOpenaiCompat.
+  ///
+  /// In zh, this message translates to:
+  /// **'OpenAI 兼容'**
+  String get transportModeOpenaiCompat;
+
+  /// No description provided for @transportModeGeminiNative.
+  ///
+  /// In zh, this message translates to:
+  /// **'Gemini 原生'**
+  String get transportModeGeminiNative;
+
+  /// No description provided for @geminiNativeTools.
+  ///
+  /// In zh, this message translates to:
+  /// **'Gemini 原生工具'**
+  String get geminiNativeTools;
+
+  /// No description provided for @geminiNativeToolsSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'官方内置工具'**
+  String get geminiNativeToolsSubtitle;
+
+  /// No description provided for @geminiNativeGoogleSearch.
+  ///
+  /// In zh, this message translates to:
+  /// **'Google 搜索'**
+  String get geminiNativeGoogleSearch;
+
+  /// No description provided for @geminiNativeUrlContext.
+  ///
+  /// In zh, this message translates to:
+  /// **'URL 上下文'**
+  String get geminiNativeUrlContext;
+
+  /// No description provided for @geminiNativeCodeExecution.
+  ///
+  /// In zh, this message translates to:
+  /// **'代码执行'**
+  String get geminiNativeCodeExecution;
+
+  /// No description provided for @geminiNativeSearchDisablesLegacySearch.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用 Google 搜索后，该模型会禁用 Aurora 旧版联网搜索流程。'**
+  String get geminiNativeSearchDisablesLegacySearch;
 
   /// No description provided for @providers.
   ///
@@ -4316,6 +4790,270 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'启用不受限制的创作模式，注入角色扮演指令'**
   String get novelUnlimitedModeHint;
+
+  /// No description provided for @agentWorkflow.
+  ///
+  /// In zh, this message translates to:
+  /// **'Agent 工作流'**
+  String get agentWorkflow;
+
+  /// No description provided for @agentWorkflowDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'用节点与连线搭建并调试 Agent 工作流。'**
+  String get agentWorkflowDescription;
+
+  /// No description provided for @templates.
+  ///
+  /// In zh, this message translates to:
+  /// **'模板'**
+  String get templates;
+
+  /// No description provided for @newTemplate.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建模板'**
+  String get newTemplate;
+
+  /// No description provided for @templateNameHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'模板名称'**
+  String get templateNameHint;
+
+  /// No description provided for @renameTemplate.
+  ///
+  /// In zh, this message translates to:
+  /// **'重命名模板'**
+  String get renameTemplate;
+
+  /// No description provided for @deleteTemplateConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除模板“{name}”？'**
+  String deleteTemplateConfirm(String name);
+
+  /// No description provided for @deleteNodeConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除节点“{name}”？'**
+  String deleteNodeConfirm(String name);
+
+  /// No description provided for @noTemplate.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无模板'**
+  String get noTemplate;
+
+  /// No description provided for @createTemplateHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'先创建一个模板开始搭建工作流。'**
+  String get createTemplateHint;
+
+  /// No description provided for @startInput.
+  ///
+  /// In zh, this message translates to:
+  /// **'Start 输入'**
+  String get startInput;
+
+  /// No description provided for @startInputHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'作为 Start 节点输出传入工作流'**
+  String get startInputHint;
+
+  /// No description provided for @run.
+  ///
+  /// In zh, this message translates to:
+  /// **'运行'**
+  String get run;
+
+  /// No description provided for @stop.
+  ///
+  /// In zh, this message translates to:
+  /// **'停止'**
+  String get stop;
+
+  /// No description provided for @addNode.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加节点'**
+  String get addNode;
+
+  /// No description provided for @addLlmNode.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加 LLM 节点'**
+  String get addLlmNode;
+
+  /// No description provided for @addSkillNode.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加 Skill 节点'**
+  String get addSkillNode;
+
+  /// No description provided for @addMcpNode.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加 MCP 节点'**
+  String get addMcpNode;
+
+  /// No description provided for @saved.
+  ///
+  /// In zh, this message translates to:
+  /// **'已保存'**
+  String get saved;
+
+  /// No description provided for @inspector.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查器'**
+  String get inspector;
+
+  /// No description provided for @selectNodeToEdit.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择一个节点以编辑其配置。'**
+  String get selectNodeToEdit;
+
+  /// No description provided for @typeLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'类型'**
+  String get typeLabel;
+
+  /// No description provided for @titleLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'标题'**
+  String get titleLabel;
+
+  /// No description provided for @bodyTemplate.
+  ///
+  /// In zh, this message translates to:
+  /// **'内容模板'**
+  String get bodyTemplate;
+
+  /// No description provided for @bodyTemplateHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'使用占位符（双大括号）引用输入。'**
+  String get bodyTemplateHint;
+
+  /// No description provided for @toolName.
+  ///
+  /// In zh, this message translates to:
+  /// **'工具名'**
+  String get toolName;
+
+  /// No description provided for @toolNameHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入 MCP 工具名'**
+  String get toolNameHint;
+
+  /// No description provided for @debug.
+  ///
+  /// In zh, this message translates to:
+  /// **'调试'**
+  String get debug;
+
+  /// No description provided for @status.
+  ///
+  /// In zh, this message translates to:
+  /// **'状态'**
+  String get status;
+
+  /// No description provided for @durationMs.
+  ///
+  /// In zh, this message translates to:
+  /// **'耗时（ms）'**
+  String get durationMs;
+
+  /// No description provided for @output.
+  ///
+  /// In zh, this message translates to:
+  /// **'输出'**
+  String get output;
+
+  /// No description provided for @finalOutput.
+  ///
+  /// In zh, this message translates to:
+  /// **'最终结果'**
+  String get finalOutput;
+
+  /// No description provided for @noOutputYet.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无输出。'**
+  String get noOutputYet;
+
+  /// No description provided for @skill.
+  ///
+  /// In zh, this message translates to:
+  /// **'技能'**
+  String get skill;
+
+  /// No description provided for @selectSkillHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择一个技能'**
+  String get selectSkillHint;
+
+  /// No description provided for @mcpServer.
+  ///
+  /// In zh, this message translates to:
+  /// **'MCP 服务器'**
+  String get mcpServer;
+
+  /// No description provided for @selectMcpServerHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择一个 MCP 服务器'**
+  String get selectMcpServerHint;
+
+  /// No description provided for @renamePort.
+  ///
+  /// In zh, this message translates to:
+  /// **'重命名端口'**
+  String get renamePort;
+
+  /// No description provided for @inputs.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入'**
+  String get inputs;
+
+  /// No description provided for @outputs.
+  ///
+  /// In zh, this message translates to:
+  /// **'输出'**
+  String get outputs;
+
+  /// No description provided for @connections.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接'**
+  String get connections;
+
+  /// No description provided for @inbound.
+  ///
+  /// In zh, this message translates to:
+  /// **'入边'**
+  String get inbound;
+
+  /// No description provided for @outbound.
+  ///
+  /// In zh, this message translates to:
+  /// **'出边'**
+  String get outbound;
+
+  /// No description provided for @noConnectionsYet.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无连接。'**
+  String get noConnectionsYet;
 }
 
 class _AppLocalizationsDelegate
